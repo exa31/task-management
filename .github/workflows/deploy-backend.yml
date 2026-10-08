@@ -60,7 +60,7 @@ jobs:
     uses: exa31/github-workflows/.github/workflows/backend.yml@v1.0.0
     with:
       app_name: task-hub-backend
-      namespace: dev-coffe
+      namespace: task-management
       image_name: ghcr.io/exa31/task-hub-backend
       docker_context: ./backend
       dockerfile: ./backend/Dockerfile
