@@ -55,13 +55,14 @@ jobs:
     name: Build & Deploy Frontend
     needs: test
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-    uses: exa31/github-workflows/.github/workflows/frontend.yml@main
+    uses: exa31/github-workflows/.github/workflows/frontend.yml@v1.0.0
     with:
       app_name: task-hub-frontend
       namespace: dev-coffe
       image_name: ghcr.io/exa31/task-hub-frontend
       docker_context: ./frontend
       dockerfile: ./frontend/Dockerfile
+      tag_prefix: "frontend-"
       node_version: "22"
       ssh_port: 31080
       kubeconfig: /home/deploy/.kube/config

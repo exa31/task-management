@@ -57,13 +57,14 @@ jobs:
     name: Build & Deploy Backend
     needs: test
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-    uses: exa31/github-workflows/.github/workflows/backend.yml@main
+    uses: exa31/github-workflows/.github/workflows/backend.yml@v1.0.0
     with:
       app_name: task-hub-backend
       namespace: dev-coffe
       image_name: ghcr.io/exa31/task-hub-backend
       docker_context: ./backend
       dockerfile: ./backend/Dockerfile
+      tag_prefix: "backend-"
       ssh_port: 31080
       kubeconfig: /home/deploy/.kube/config
       rollout_timeout: 300s
