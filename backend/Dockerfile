@@ -18,6 +18,8 @@ RUN go mod download
 COPY . .
 
 # Build statically-linked optimized binary
+ARG APP_VERSION=""
+ARG ENVIRONMENT="production"
 RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build \
     -ldflags="-s -w" \
     -o /build/bin/server \

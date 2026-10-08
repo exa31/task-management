@@ -69,7 +69,7 @@ jobs:
       kubeconfig: /home/deploy/.kube/config
       rollout_timeout: 300s
       build_args: |
-        ENVIRONMENT=production
+        ENVIRONMENT=${{ vars.ENVIRONMENT || 'production' }}
         APP_VERSION=${{ github.sha }}
       push_latest: true
     secrets:
