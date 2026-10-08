@@ -120,8 +120,13 @@ func (h *Hub) Run() {
 // with the origin instance ID so listenBridge can drop it when it comes back.
 func (h *Hub) publishToBridges(message *Message) {
 	for _, bridge := range h.bridges {
-		out := *message
-		out.ID = h.id
+		msgCopy := &Message{
+			Type:    message.Type,
+			Channel: message.Channel,
+			Data:    message.Data,
+			UserID:  message.UserID,
+			ID:      h.id,
+		}
 		go func(b Bridge, m *Message) {
 			if err := b.Publish(h.ctx, m); err != nil {
 				h.logger.Error("hub bridge publish failed",
@@ -129,7 +134,7 @@ func (h *Hub) publishToBridges(message *Message) {
 					logging.Err(err),
 				)
 			}
-		}(bridge, &out)
+		}(bridge, msgCopy)
 	}
 }
 

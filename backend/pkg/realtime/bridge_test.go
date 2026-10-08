@@ -3,6 +3,7 @@ package realtime
 import (
 	"context"
 	"encoding/json"
+	"sync"
 	"testing"
 	"time"
 
@@ -12,6 +13,7 @@ import (
 // fakeBridge implements Bridge in-memory so hub behavior around fan-out and
 // echo suppression can be tested without any external service.
 type fakeBridge struct {
+	mu        sync.RWMutex
 	name      string
 	in        chan *Message
 	published []*Message
@@ -25,8 +27,28 @@ func (b *fakeBridge) Name() string              { return b.name }
 func (b *fakeBridge) Incoming() <-chan *Message { return b.in }
 func (b *fakeBridge) Close() error              { return nil }
 func (b *fakeBridge) Publish(_ context.Context, m *Message) error {
-	b.published = append(b.published, m)
+	b.mu.Lock()
+	defer b.mu.Unlock()
+	msgCopy := *m
+	b.published = append(b.published, &msgCopy)
 	return nil
+}
+
+func (b *fakeBridge) getPublished() []*Message {
+	b.mu.RLock()
+	defer b.mu.RUnlock()
+	res := make([]*Message, len(b.published))
+	for i, msg := range b.published {
+		cp := *msg
+		res[i] = &cp
+	}
+	return res
+}
+
+func (b *fakeBridge) publishedLen() int {
+	b.mu.RLock()
+	defer b.mu.RUnlock()
+	return len(b.published)
 }
 
 func startHubWithBridge(t *testing.T) (*Hub, *fakeBridge, *fakeBridge) {
@@ -45,13 +67,15 @@ func TestHubPublishesToEveryBridge(t *testing.T) {
 	hub, redis, rabbit := startHubWithBridge(t)
 
 	hub.Broadcast(&Message{Type: "ping", Data: "hello"})
-	waitFor(t, func() bool { return len(redis.published) > 0 && len(rabbit.published) > 0 },
+	waitFor(t, func() bool { return redis.publishedLen() > 0 && rabbit.publishedLen() > 0 },
 		"bridges to receive the broadcast")
 
-	if got := redis.published[0].Type; got != "ping" {
+	redisPub := redis.getPublished()
+	rabbitPub := rabbit.getPublished()
+	if got := redisPub[0].Type; got != "ping" {
 		t.Errorf("redis bridge got type %q, want ping", got)
 	}
-	if got := rabbit.published[0].Type; got != "ping" {
+	if got := rabbitPub[0].Type; got != "ping" {
 		t.Errorf("rabbitmq bridge got type %q, want ping", got)
 	}
 }
@@ -67,9 +91,9 @@ func TestHubSuppressesOwnEcho(t *testing.T) {
 	// Simulate the message traveling out and coming straight back on the
 	// bridge, stamped with this hub's own ID.
 	hub.Broadcast(&Message{Type: "tick"})
-	waitFor(t, func() bool { return len(redis.published) > 0 }, "outbound publish")
+	waitFor(t, func() bool { return redis.publishedLen() > 0 }, "outbound publish")
 
-	echo := *redis.published[0]
+	echo := *redis.getPublished()[0]
 	redis.in <- &echo
 
 	// The broadcast + echo should deliver exactly one tick (echo suppressed).
