@@ -1,0 +1,76 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <!-- Primary SEO Meta Tags -->
+  <title>TaskHub — Developer Task & MCP AI Workspace</title>
+  <meta name="title" content="TaskHub — Developer Task & MCP AI Workspace" />
+  <meta name="description"
+    content="TaskHub is a modern, high-performance developer workspace featuring task Kanban boards, Markdown scratchpad, and Model Context Protocol (MCP) AI integration." />
+  <meta name="keywords"
+    content="task management, developer workspace, kanban board, mcp, model context protocol, markdown scratchpad, taskhub, productivity, local-first" />
+  <meta name="author" content="TaskHub" />
+  <meta name="robots" content="index, follow" />
+  <meta name="color-scheme" content="dark light" />
+
+  <!-- Favicon & Touch Icons -->
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+  <link rel="apple-touch-icon" href="/favicon.svg" />
+  <link rel="manifest" href="/manifest.webmanifest" />
+
+
+  <!-- Open Graph / Facebook -->
+  <meta property="og:type" content="website" />
+  <meta property="og:site_name" content="TaskHub" />
+  <meta property="og:title" content="TaskHub — Developer Task & MCP AI Workspace" />
+  <meta property="og:description"
+    content="Streamline your development workflow with priority task tracking, markdown scratchpad, and Model Context Protocol (MCP) AI capabilities." />
+  <meta property="og:image" content="/favicon.svg" />
+
+  <!-- Twitter -->
+  <meta name="twitter:card" content="summary" />
+  <meta name="twitter:title" content="TaskHub — Developer Task & MCP AI Workspace" />
+  <meta name="twitter:description"
+    content="Streamline your development workflow with priority task tracking, markdown scratchpad, and Model Context Protocol (MCP) AI capabilities." />
+  <meta name="twitter:image" content="/favicon.svg" />
+
+  <!-- Theme Colors for System Bars -->
+  <meta name="theme-color" content="#4f46e5" media="(prefers-color-scheme: light)" />
+  <meta name="theme-color" content="#030712" media="(prefers-color-scheme: dark)" />
+
+  <!-- Apple Web App Status -->
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="TaskHub" />
+
+  <!-- Inline Theme Bootstrap Script (Avoids Flash of Unstyled Theme) -->
+  <script>
+    (function () {
+      try {
+        var stored = localStorage.getItem('theme');
+        var isDark = stored === 'dark' || (!stored && !window.matchMedia('(prefers-color-scheme: light)').matches);
+        if (isDark) {
+          document.documentElement.classList.add('dark');
+          document.documentElement.setAttribute('data-theme', 'dark');
+          document.documentElement.style.colorScheme = 'dark';
+        } else {
+          document.documentElement.classList.remove('dark');
+          document.documentElement.setAttribute('data-theme', 'light');
+          document.documentElement.style.colorScheme = 'light';
+        }
+      } catch (e) { }
+    })();
+  </script>
+  <!-- Google Identity Services (GIS) SDK -->
+  <script src="https://accounts.google.com/gsi/client" async defer></script>
+</head>
+
+<body>
+  <div id="root"></div>
+  <script type="module" src="/src/main.tsx"></script>
+</body>
+
+</html>

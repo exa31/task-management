@@ -1,0 +1,33 @@
+export const dashboard = {
+  welcome: 'Selamat datang kembali, {name} 👋',
+  subtitle: 'Berikut progres dan fokus prioritas utama Anda hari ini.',
+  newTask: 'Tugas Baru',
+  todaysFocus: 'Fokus Hari Ini',
+  priorityTasksToday: 'Tugas prioritas hari ini',
+  inProgress: 'Sedang Dikerjakan',
+  activeTasks: 'Tugas aktif',
+  scratchpadIdeas: 'Ide Coretan',
+  savedInNotes: 'Tersimpan di catatan',
+  completedTasks: 'Selesai',
+  tasksFinished: 'Tugas selesai',
+  quickIdeaPlaceholder: 'Ada ide seketika? Tulis di sini dan tekan Enter...',
+  captureIdea: 'Catat Ide',
+  activeTasksTitle: 'Tugas Aktif',
+  recentIdeasTitle: 'Ide Terbaru',
+  viewAll: 'Lihat Semua ({count})',
+  viewScratchpad: 'Lihat Coretan ({count})',
+  noActiveTasks: 'Belum ada tugas aktif saat ini.',
+  noIdeasSaved: 'Belum ada ide tersimpan. Catat ide kilat di atas!',
+  markCompleted: 'Tandai selesai',
+}
+
+export const focus = {
+  title: 'Horizon Fokus Hari Ini',
+  activeCount: '{count} tugas aktif',
+  subtitle: 'Fokus hari ini',
+  removeFromFocus: 'Hapus dari Horizon Fokus',
+  pinToFocus: 'Sematkan ke Fokus Hari Ini',
+  checklistProgress: '{completed}/{total} checklist ({percent}%)',
+  noProgressLog: 'Belum ada catatan progres',
+  completeTask: 'Selesaikan tugas ini',
+}

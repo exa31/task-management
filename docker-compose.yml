@@ -1,0 +1,98 @@
+version: '3.8'
+
+services:
+  # ==========================================
+  # 1. Backend Service (Go Fiber API)
+  # ==========================================
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: task-hub-backend
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      - ENVIRONMENT=development
+      - SERVER_HOST=0.0.0.0
+      - SERVER_PORT=3000
+      - DB_HOST=postgres
+      - DB_PORT=5432
+      - DB_USER=postgres
+      - DB_PASSWORD=postgres
+      - DB_NAME=task-management
+      - DB_SSLMODE=disable
+      - REDIS_ENABLED=true
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - JWT_ACCESS_SECRET=change-this-to-a-random-secret-key-min-32-characters
+      - JWT_REFRESH_SECRET=change-this-to-another-random-secret-key-min-32-chars
+      - JWT_ISSUER=my-api
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_started
+    networks:
+      - app-network
+
+  # ==========================================
+  # 2. Frontend Service (Vite React + Nginx)
+  # ==========================================
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: task-hub-frontend
+    restart: unless-stopped
+    ports:
+      - "8080:80"
+    depends_on:
+      - backend
+    networks:
+      - app-network
+
+  # ==========================================
+  # 3. Database (PostgreSQL 16)
+  # ==========================================
+  postgres:
+    image: postgres:16-alpine
+    container_name: task-hub-postgres
+    restart: unless-stopped
+    ports:
+      - "5432:5432"
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_DB=task-management
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - app-network
+
+  # ==========================================
+  # 4. Cache (Redis 7)
+  # ==========================================
+  redis:
+    image: redis:7-alpine
+    container_name: task-hub-redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - app-network
+
+networks:
+  app-network:
+    driver: bridge
+
+volumes:
+  postgres_data:
+  redis_data:

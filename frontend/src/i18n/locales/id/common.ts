@@ -1,0 +1,16 @@
+export const common = {
+  save: 'Simpan',
+  cancel: 'Batal',
+  delete: 'Hapus',
+  create: 'Buat',
+  edit: 'Ubah',
+  close: 'Tutup',
+  retry: 'Coba Lagi',
+  loading: 'Memuat...',
+  copied: 'Tersalin!',
+  required: 'Wajib diisi',
+  confirm: 'Konfirmasi',
+  yes: 'Ya',
+  no: 'Tidak',
+  success: 'Berhasil',
+}

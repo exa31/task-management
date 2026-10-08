@@ -1,0 +1,445 @@
+package authmodule
+
+import (
+	"database/sql"
+	"encoding/json"
+	stderrors "errors"
+	"io"
+	"log/slog"
+	"net/http"
+	"net/url"
+	"strings"
+	"time"
+
+	"golang/config"
+	"golang/database"
+	"golang/pkg/auth"
+	"golang/pkg/errors"
+	"golang/pkg/logging"
+
+	"github.com/google/uuid"
+	"github.com/jmoiron/sqlx"
+	"golang.org/x/crypto/bcrypt"
+)
+
+// AuthService contains the authentication business logic.
+type AuthService struct {
+	db         *database.PostgresDB
+	jwtService *auth.JWTService
+	cfg        *config.Config
+}
+
+// NewAuthService builds the auth service.
+func NewAuthService(db *database.PostgresDB, jwtService *auth.JWTService, cfg *config.Config) *AuthService {
+	return &AuthService{db: db, jwtService: jwtService, cfg: cfg}
+}
+
+type authUser struct {
+	ID           string     `db:"id"`
+	Name         string     `db:"name"`
+	Email        string     `db:"email"`
+	Password     *string    `db:"password"`
+	AvatarURL    *string    `db:"avatar_url"`
+	AuthProvider *string    `db:"auth_provider"`
+	ProviderID   *string    `db:"provider_id"`
+	IsActive     bool       `db:"is_active"`
+	CreatedAt    *time.Time `db:"created_at"`
+}
+
+// Register creates a user and returns the auth response.
+func (s *AuthService) Register(req *RegisterRequest) (*AuthResponse, error) {
+	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(req.Password), bcrypt.DefaultCost)
+	if err != nil {
+		return nil, errors.InternalError("Failed to hash password", err)
+	}
+
+	user, err := database.Transact(s.db, func(tx *sqlx.Tx) (*authUser, error) {
+		uid := uuid.New().String()
+		var u authUser
+		err := tx.QueryRowx(
+			`INSERT INTO users (id, name, email, password, is_active, created_at, updated_at)
+			 VALUES ($1, $2, $3, $4, TRUE, NOW(), NOW())
+			 RETURNING id, name, email, created_at`,
+			uid, req.Name, req.Email, string(hashedPassword),
+		).StructScan(&u)
+		if err != nil {
+			return nil, errors.ParseDatabaseError(err)
+		}
+		return &u, nil
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	tokens, err := s.jwtService.GenerateTokenPair(user.ID, user.Email)
+	if err != nil {
+		return nil, errors.InternalError("Failed to generate tokens", err)
+	}
+
+	return &AuthResponse{
+		User: UserPayload{
+			ID:        user.ID,
+			Name:      user.Name,
+			Email:     user.Email,
+			CreatedAt: derefTime(user.CreatedAt),
+		},
+		Tokens: newTokenPair(tokens),
+	}, nil
+}
+
+// Login validates credentials and issues a token pair.
+func (s *AuthService) Login(req *LoginRequest) (*AuthResponse, error) {
+	var u authUser
+	err := s.db.DB.Get(&u,
+		"SELECT id, name, email, password, is_active, created_at FROM users WHERE email = $1",
+		req.Email)
+	if err != nil {
+		if stderrors.Is(err, sql.ErrNoRows) {
+			return nil, errors.Unauthorized("Invalid email or password")
+		}
+		return nil, errors.DatabaseError("Failed to fetch user", err)
+	}
+	if !u.IsActive {
+		return nil, errors.Forbidden("Account is deactivated")
+	}
+	if u.Password == nil || bcrypt.CompareHashAndPassword([]byte(*u.Password), []byte(req.Password)) != nil {
+		return nil, errors.Unauthorized("Invalid email or password")
+	}
+
+	tokens, err := s.jwtService.GenerateTokenPair(u.ID, u.Email)
+	if err != nil {
+		return nil, errors.InternalError("Failed to generate tokens", err)
+	}
+
+	return &AuthResponse{
+		User: UserPayload{
+			ID:        u.ID,
+			Name:      u.Name,
+			Email:     u.Email,
+			CreatedAt: derefTime(u.CreatedAt),
+		},
+		Tokens: newTokenPair(tokens),
+	}, nil
+}
+
+// RefreshToken exchanges a refresh token for a new pair.
+func (s *AuthService) RefreshToken(refreshToken string) (*TokenPair, error) {
+	tokens, err := s.jwtService.RefreshAccessToken(refreshToken)
+	if err != nil {
+		return nil, err
+	}
+	return newTokenPair(tokens), nil
+}
+
+type googleUserInfo struct {
+	Sub           string `json:"sub"`
+	Email         string `json:"email"`
+	EmailVerified any    `json:"email_verified"`
+	Name          string `json:"name"`
+	Picture       string `json:"picture"`
+}
+
+func (s *AuthService) verifyGoogleAuth(req *OAuthLoginRequest) (*googleUserInfo, error) {
+	client := &http.Client{Timeout: 10 * time.Second}
+
+	// 1. Authorization Code flow (from initCodeClient popup dialog)
+	if req.Code != "" {
+		if s.cfg != nil && s.cfg.OAuth.GoogleClientID != "" && s.cfg.OAuth.GoogleClientSecret != "" {
+			form := url.Values{}
+			form.Set("code", req.Code)
+			form.Set("client_id", s.cfg.OAuth.GoogleClientID)
+			form.Set("client_secret", s.cfg.OAuth.GoogleClientSecret)
+			redirectURI := s.cfg.OAuth.GoogleRedirectURI
+			if redirectURI == "" {
+				redirectURI = "postmessage"
+			}
+			form.Set("redirect_uri", redirectURI)
+			form.Set("grant_type", "authorization_code")
+
+			resp, err := client.PostForm("https://oauth2.googleapis.com/token", form)
+			if err != nil {
+				return nil, errors.BadRequest("Failed to communicate with Google token endpoint: " + err.Error())
+			}
+			defer resp.Body.Close()
+			body, _ := io.ReadAll(resp.Body)
+
+			if resp.StatusCode != http.StatusOK {
+				return nil, errors.BadRequest("Google authorization code exchange failed: " + string(body))
+			}
+
+			var tokenRes struct {
+				AccessToken string `json:"access_token"`
+				IDToken     string `json:"id_token"`
+			}
+			if err := json.Unmarshal(body, &tokenRes); err != nil {
+				return nil, errors.BadRequest("Failed to parse Google token response")
+			}
+
+			// Fetch verified user profile using the fresh access token
+			reqUser, _ := http.NewRequest("GET", "https://www.googleapis.com/oauth2/v3/userinfo", nil)
+			reqUser.Header.Set("Authorization", "Bearer "+tokenRes.AccessToken)
+			userResp, err := client.Do(reqUser)
+			if err != nil {
+				return nil, errors.BadRequest("Failed to fetch Google user profile: " + err.Error())
+			}
+			defer userResp.Body.Close()
+			userBody, _ := io.ReadAll(userResp.Body)
+
+			var info googleUserInfo
+			if err := json.Unmarshal(userBody, &info); err != nil {
+				return nil, errors.BadRequest("Failed to decode Google user profile")
+			}
+			if info.Email == "" {
+				return nil, errors.BadRequest("Google account did not return a verified email")
+			}
+			return &info, nil
+		}
+
+		// Fallback for development if credentials are not yet configured in .env
+		if req.Email != "" {
+			return &googleUserInfo{
+				Sub:     "dev-" + req.Email,
+				Email:   req.Email,
+				Name:    req.Name,
+				Picture: req.AvatarURL,
+			}, nil
+		}
+		return nil, errors.BadRequest("Google OAuth is not configured on the backend. Please set GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET in backend/.env")
+	}
+
+	// 2. ID Token flow (from Google One Tap 1-click credential)
+	if req.IDToken != "" {
+		tokeninfoURL := "https://oauth2.googleapis.com/tokeninfo?id_token=" + url.QueryEscape(req.IDToken)
+		resp, err := client.Get(tokeninfoURL)
+		if err != nil {
+			return nil, errors.BadRequest("Failed to verify Google ID token: " + err.Error())
+		}
+		defer resp.Body.Close()
+		body, _ := io.ReadAll(resp.Body)
+
+		if resp.StatusCode != http.StatusOK {
+			return nil, errors.BadRequest("Google ID token validation failed: " + string(body))
+		}
+
+		var info googleUserInfo
+		if err := json.Unmarshal(body, &info); err != nil {
+			return nil, errors.BadRequest("Failed to decode Google tokeninfo")
+		}
+		if info.Email == "" {
+			return nil, errors.BadRequest("Google ID token does not contain an email address")
+		}
+		return &info, nil
+	}
+
+	// 3. Fallback if email is provided directly in development mode
+	if req.Email != "" {
+		return &googleUserInfo{
+			Sub:     "dev-" + req.Email,
+			Email:   req.Email,
+			Name:    req.Name,
+			Picture: req.AvatarURL,
+		}, nil
+	}
+
+	return nil, errors.BadRequest("Missing Google authorization code or ID token")
+}
+
+// OAuthLogin authenticates or provisions a user using Google or Apple sign-in.
+func (s *AuthService) OAuthLogin(req *OAuthLoginRequest) (*AuthResponse, error) {
+	var email string
+	var name string
+	var avatarURL string
+	var providerID string
+	provider := strings.ToLower(req.Provider)
+	if provider == "" {
+		provider = "google"
+	}
+
+	if provider == "google" {
+		gInfo, err := s.verifyGoogleAuth(req)
+		if err != nil {
+			return nil, err
+		}
+		email = gInfo.Email
+		name = gInfo.Name
+		avatarURL = gInfo.Picture
+		providerID = gInfo.Sub
+	} else if provider == "apple" {
+		if req.Email == "" {
+			return nil, errors.BadRequest("Email is required for Apple sign-in")
+		}
+		email = req.Email
+		name = req.Name
+		avatarURL = req.AvatarURL
+		providerID = req.IDToken
+		if providerID == "" {
+			providerID = req.Code
+		}
+	} else {
+		return nil, errors.BadRequest("Unsupported OAuth provider: " + provider)
+	}
+
+	if email == "" {
+		return nil, errors.BadRequest("Email is required for OAuth login")
+	}
+
+	if name == "" {
+		parts := strings.Split(email, "@")
+		name = parts[0]
+	}
+
+	var user authUser
+	err := s.db.DB.Get(&user, "SELECT id, name, email, avatar_url, auth_provider, is_active, created_at FROM users WHERE email = $1", email)
+	if err != nil {
+		if stderrors.Is(err, sql.ErrNoRows) {
+			uid := uuid.New().String()
+			err = s.db.DB.QueryRowx(
+				`INSERT INTO users (id, name, email, avatar_url, auth_provider, provider_id, is_active, created_at, updated_at)
+				 VALUES ($1, $2, $3, $4, $5, $6, TRUE, NOW(), NOW())
+				 RETURNING id, name, email, avatar_url, auth_provider, created_at`,
+				uid, name, email, avatarURL, provider, providerID,
+			).StructScan(&user)
+			if err != nil {
+				return nil, errors.DatabaseError("Failed to create user account", err)
+			}
+		} else {
+			return nil, errors.DatabaseError("Database error during OAuth lookup", err)
+		}
+	} else {
+		if avatarURL != "" || providerID != "" {
+			_, _ = s.db.DB.Exec("UPDATE users SET avatar_url = COALESCE(NULLIF($1, ''), avatar_url), auth_provider = $2, provider_id = COALESCE(NULLIF($3, ''), provider_id), updated_at = NOW() WHERE id = $4", avatarURL, provider, providerID, user.ID)
+			if avatarURL != "" {
+				user.AvatarURL = &avatarURL
+			}
+		}
+	}
+
+	tokens, err := s.jwtService.GenerateTokenPair(user.ID, user.Email)
+	if err != nil {
+		return nil, errors.InternalError("Failed to generate tokens", err)
+	}
+
+	return &AuthResponse{
+		User: UserPayload{
+			ID:        user.ID,
+			Name:      user.Name,
+			Email:     user.Email,
+			AvatarURL: derefString(user.AvatarURL),
+			Provider:  derefString(user.AuthProvider),
+			CreatedAt: derefTime(user.CreatedAt),
+		},
+		Tokens: newTokenPair(tokens),
+	}, nil
+}
+
+// DevLogin logs in or creates a development test user.
+func (s *AuthService) DevLogin(req *DevLoginRequest) (*AuthResponse, error) {
+	name := req.Name
+	if name == "" {
+		name = "Demo User"
+	}
+	avatar := "https://api.dicebear.com/7.x/bottts/svg?seed=" + req.Email
+	return s.OAuthLogin(&OAuthLoginRequest{
+		Provider:  "google",
+		Email:     req.Email,
+		Name:      name,
+		AvatarURL: avatar,
+	})
+}
+
+// GetCurrentUser fetches the authenticated user profile.
+func (s *AuthService) GetCurrentUser(userID string) (*UserPayload, error) {
+	var u authUser
+	err := s.db.DB.Get(&u, "SELECT id, name, email, avatar_url, auth_provider, created_at FROM users WHERE id = $1", userID)
+	if err != nil {
+		if stderrors.Is(err, sql.ErrNoRows) {
+			return nil, errors.NotFound("User not found")
+		}
+		return nil, errors.DatabaseError("Failed to fetch user", err)
+	}
+
+	return &UserPayload{
+		ID:        u.ID,
+		Name:      u.Name,
+		Email:     u.Email,
+		AvatarURL: derefString(u.AvatarURL),
+		Provider:  derefString(u.AuthProvider),
+		CreatedAt: derefTime(u.CreatedAt),
+	}, nil
+}
+
+// UpdateProfile validates and updates the current user's profile.
+type UpdateProfileRequest struct {
+	Name string `json:"name" validate:"omitempty,min=3,max=100"`
+}
+
+func (s *AuthService) UpdateProfile(userID string, req *UpdateProfileRequest) (*UserPayload, error) {
+	_, err := s.db.DB.Exec("UPDATE users SET name = $1, updated_at = NOW() WHERE id = $2", req.Name, userID)
+	if err != nil {
+		return nil, errors.DatabaseError("Failed to update profile", err)
+	}
+	return s.GetCurrentUser(userID)
+}
+
+// ChangePasswordRequest payload.
+type ChangePasswordRequest struct {
+	CurrentPassword string `json:"current_password" validate:"required"`
+	NewPassword     string `json:"new_password" validate:"required,min=8,max=100"`
+}
+
+func (s *AuthService) ChangePassword(userID string, req *ChangePasswordRequest) error {
+	var hash string
+	err := s.db.DB.Get(&hash, "SELECT password FROM users WHERE id = $1", userID)
+	if err != nil {
+		return errors.DatabaseError("Failed to fetch user", err)
+	}
+
+	if err := bcrypt.CompareHashAndPassword([]byte(hash), []byte(req.CurrentPassword)); err != nil {
+		return errors.Unauthorized("Current password is incorrect")
+	}
+
+	hashed, err := bcrypt.GenerateFromPassword([]byte(req.NewPassword), bcrypt.DefaultCost)
+	if err != nil {
+		return errors.InternalError("Failed to hash password", err)
+	}
+
+	if _, err := s.db.DB.Exec("UPDATE users SET password = $1, updated_at = NOW() WHERE id = $2",
+		string(hashed), userID); err != nil {
+		return errors.DatabaseError("Failed to update password", err)
+	}
+
+	// Force re-login everywhere.
+	if err := s.jwtService.RevokeAllUserTokens(userID); err != nil {
+		logging.Warn("failed to revoke tokens after password change",
+			slog.String("user_id", userID), logging.Err(err))
+	}
+
+	return nil
+}
+
+// newTokenPair converts the underlying token pair.
+func newTokenPair(t *auth.TokenPair) *TokenPair {
+	if t == nil {
+		return nil
+	}
+	return &TokenPair{
+		AccessToken:  t.AccessToken,
+		RefreshToken: t.RefreshToken,
+		ExpiresAt:    t.ExpiresAt,
+		TokenType:    t.TokenType,
+	}
+}
+
+func derefTime(t *time.Time) time.Time {
+	if t == nil {
+		return time.Time{}
+	}
+	return *t
+}
+
+func derefString(s *string) string {
+	if s == nil {
+		return ""
+	}
+	return *s
+}

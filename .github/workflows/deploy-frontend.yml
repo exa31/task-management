@@ -1,0 +1,75 @@
+name: Deploy Frontend
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'frontend/**'
+      - '.github/workflows/deploy-frontend.yml'
+  pull_request:
+    branches:
+      - main
+    paths:
+      - 'frontend/**'
+      - '.github/workflows/deploy-frontend.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  packages: write
+  issues: write
+  pull-requests: write
+
+jobs:
+  # ==========================================
+  # 1. CI Quality Gate: Lint & TypeScript Build
+  # ==========================================
+  test:
+    name: Test & Build Frontend (React Vite)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install Dependencies
+        run: npm ci
+
+      - name: Typecheck & Build
+        run: npm run build
+
+  # ==========================================
+  # 2. CD Deployment: Reusable Workflow from exa31/github-workflows
+  # ==========================================
+  deploy:
+    name: Build & Deploy Frontend
+    needs: test
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    uses: exa31/github-workflows/.github/workflows/frontend.yml@main
+    with:
+      app_name: task-hub-frontend
+      namespace: dev-coffe
+      image_name: ghcr.io/exa31/task-hub-frontend
+      docker_context: ./frontend
+      dockerfile: ./frontend/Dockerfile
+      node_version: "22"
+      ssh_port: 31080
+      kubeconfig: /home/deploy/.kube/config
+      rollout_timeout: 300s
+      build_args: |
+        VITE_APP_VERSION=${{ github.sha }}
+      push_latest: true
+    secrets:
+      GHCR_TOKEN: ${{ secrets.GHCR_TOKEN }}
+      SSH_KEY: ${{ secrets.SSH_KEY }}
+      VPS_HOST: ${{ secrets.VPS_HOST }}

@@ -1,0 +1,9 @@
+DROP TABLE IF EXISTS api_tokens;
+DROP TABLE IF EXISTS subtasks;
+DROP TABLE IF EXISTS tasks;
+DROP TABLE IF EXISTS notes;
+
+DROP INDEX IF EXISTS idx_users_provider;
+ALTER TABLE users DROP COLUMN IF EXISTS provider_id;
+ALTER TABLE users DROP COLUMN IF EXISTS auth_provider;
+ALTER TABLE users DROP COLUMN IF EXISTS avatar_url;

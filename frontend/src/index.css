@@ -1,0 +1,437 @@
+@import "tailwindcss";
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+@theme {
+  --color-primary: #6366f1;
+  /* Indigo 500 */
+  --color-primary-dark: #4f46e5;
+  --color-surface-50: #0d1117;
+  --color-surface-900: #090d16;
+}
+
+:root {
+  color-scheme: light;
+}
+
+:root.dark {
+  color-scheme: dark;
+}
+
+@layer base {
+  body {
+    @apply bg-slate-50 text-slate-900 dark:bg-slate-950 dark:text-slate-100 antialiased selection:bg-indigo-500/30 selection:text-indigo-200;
+    font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  }
+}
+
+/* Custom Sleek Scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(148, 163, 184, 0.25);
+  border-radius: 9999px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(148, 163, 184, 0.45);
+}
+
+/* Linear Glass Glows */
+.glass-panel {
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(16px);
+  border: 1px solid rgba(0, 0, 0, 0.08);
+}
+
+.dark .glass-panel {
+  background: rgba(15, 23, 42, 0.75);
+  backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.glass-card {
+  background: rgba(255, 255, 255, 0.7);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(0, 0, 0, 0.06);
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.dark .glass-card {
+  background: rgba(30, 41, 59, 0.5);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.glass-card:hover {
+  border-color: rgba(99, 102, 241, 0.3);
+  transform: translateY(-1px);
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes scaleIn {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.15s ease-out;
+}
+
+.animate-scale-in {
+  animation: scaleIn 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* PrimeReact Dialog & ConfirmDialog styling */
+.p-dialog-mask {
+  background-color: rgba(15, 23, 42, 0.45) !important;
+  backdrop-filter: blur(6px) !important;
+}
+
+.dark .p-dialog-mask {
+  background-color: rgba(2, 6, 23, 0.75) !important;
+  backdrop-filter: blur(8px) !important;
+}
+
+.p-dialog {
+  border-radius: 1rem !important;
+  border: 1px solid rgba(0, 0, 0, 0.08) !important;
+  background: #ffffff !important;
+  color: #0f172a !important;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1) !important;
+  overflow: hidden !important;
+}
+
+.dark .p-dialog {
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+  background: #0f172a !important;
+  color: #f8fafc !important;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.7) !important;
+}
+
+.p-dialog .p-dialog-header {
+  padding: 1.25rem 1.5rem !important;
+  background: #f8fafc !important;
+  color: #0f172a !important;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.06) !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+}
+
+.dark .p-dialog .p-dialog-header {
+  background: #090d16 !important;
+  color: #f8fafc !important;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08) !important;
+}
+
+.p-dialog .p-dialog-title {
+  font-size: 0.875rem !important;
+  font-weight: 600 !important;
+  color: #0f172a !important;
+}
+
+.dark .p-dialog .p-dialog-title {
+  color: #f8fafc !important;
+}
+
+.p-dialog .p-dialog-header-close {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  width: 1.75rem !important;
+  height: 1.75rem !important;
+  border-radius: 0.5rem !important;
+  background: transparent !important;
+  border: none !important;
+  color: #64748b !important;
+  cursor: pointer !important;
+  transition: all 0.15s ease !important;
+}
+
+.p-dialog .p-dialog-header-close:hover {
+  background: #e2e8f0 !important;
+  color: #0f172a !important;
+}
+
+.dark .p-dialog .p-dialog-header-close {
+  color: #94a3b8 !important;
+}
+
+.dark .p-dialog .p-dialog-header-close:hover {
+  background: #1e293b !important;
+  color: #f8fafc !important;
+}
+
+.p-dialog .p-dialog-content {
+  padding: 1.5rem !important;
+  background: #ffffff !important;
+  color: #334155 !important;
+  display: flex !important;
+  align-items: center !important;
+  gap: 1rem !important;
+}
+
+.dark .p-dialog .p-dialog-content {
+  background: #0f172a !important;
+  color: #cbd5e1 !important;
+}
+
+.p-confirm-dialog-icon {
+  font-size: 1.5rem !important;
+  flex-shrink: 0 !important;
+  color: #f43f5e !important;
+}
+
+.p-confirm-dialog-message {
+  font-size: 0.8125rem !important;
+  line-height: 1.5 !important;
+  color: #334155 !important;
+}
+
+.dark .p-confirm-dialog-message {
+  color: #cbd5e1 !important;
+}
+
+.p-dialog .p-dialog-footer {
+  padding: 1rem 1.5rem !important;
+  background: #f8fafc !important;
+  border-top: 1px solid rgba(0, 0, 0, 0.06) !important;
+  display: flex !important;
+  justify-content: flex-end !important;
+  align-items: center !important;
+  gap: 0.625rem !important;
+}
+
+.dark .p-dialog .p-dialog-footer {
+  background: #090d16 !important;
+  border-top: 1px solid rgba(255, 255, 255, 0.08) !important;
+}
+
+/* PrimeReact Dialog Button Styles */
+.p-dialog .p-confirm-dialog-reject {
+  padding: 0.375rem 0.875rem !important;
+  border-radius: 0.5rem !important;
+  border: 1px solid #cbd5e1 !important;
+  background: #ffffff !important;
+  color: #475569 !important;
+  font-size: 0.75rem !important;
+  font-weight: 500 !important;
+  cursor: pointer !important;
+  transition: all 0.15s ease !important;
+}
+
+.p-dialog .p-confirm-dialog-reject:hover {
+  background: #f1f5f9 !important;
+  color: #0f172a !important;
+  border-color: #94a3b8 !important;
+}
+
+.dark .p-dialog .p-confirm-dialog-reject {
+  border: 1px solid #334155 !important;
+  background: #1e293b !important;
+  color: #cbd5e1 !important;
+}
+
+.dark .p-dialog .p-confirm-dialog-reject:hover {
+  background: #334155 !important;
+  color: #f8fafc !important;
+  border-color: #475569 !important;
+}
+
+.p-dialog .p-confirm-dialog-accept {
+  padding: 0.375rem 0.875rem !important;
+  border-radius: 0.5rem !important;
+  border: 1px solid transparent !important;
+  background: #e11d48 !important;
+  color: #ffffff !important;
+  font-size: 0.75rem !important;
+  font-weight: 500 !important;
+  cursor: pointer !important;
+  transition: all 0.15s ease !important;
+  box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05) !important;
+}
+
+.p-dialog .p-confirm-dialog-accept:hover {
+  background: #be123c !important;
+}
+
+/* PrimeReact Toast System Styling */
+.p-toast {
+  position: fixed !important;
+  top: 1.25rem !important;
+  right: 1.25rem !important;
+  z-index: 99999 !important;
+  width: 24rem !important;
+  max-width: calc(100vw - 2.5rem) !important;
+  pointer-events: none !important;
+}
+
+.p-toast * {
+  pointer-events: auto !important;
+}
+
+.p-toast-message {
+  margin-bottom: 0.75rem !important;
+  border-radius: 0.875rem !important;
+  border: 1px solid rgba(0, 0, 0, 0.08) !important;
+  box-shadow: 0 12px 30px -4px rgba(0, 0, 0, 0.12), 0 4px 6px -2px rgba(0, 0, 0, 0.05) !important;
+  backdrop-filter: blur(16px) !important;
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1) !important;
+  overflow: hidden !important;
+}
+
+.dark .p-toast-message {
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+  box-shadow: 0 20px 35px -8px rgba(0, 0, 0, 0.6) !important;
+}
+
+.p-toast-message-content {
+  display: flex !important;
+  align-items: flex-start !important;
+  gap: 0.75rem !important;
+  padding: 0.875rem 1rem !important;
+}
+
+.p-toast-message-icon {
+  font-size: 1.125rem !important;
+  line-height: 1.25 !important;
+  flex-shrink: 0 !important;
+  margin-top: 0.125rem !important;
+}
+
+.p-toast-message-icon svg {
+  width: 1.125rem !important;
+  height: 1.125rem !important;
+}
+
+.p-toast-message-text {
+  flex: 1 1 auto !important;
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 0.25rem !important;
+}
+
+.p-toast-summary {
+  font-size: 0.8125rem !important;
+  font-weight: 600 !important;
+  line-height: 1.25 !important;
+  color: #0f172a !important;
+}
+
+.dark .p-toast-summary {
+  color: #f8fafc !important;
+}
+
+.p-toast-detail {
+  font-size: 0.75rem !important;
+  line-height: 1.35 !important;
+  color: #475569 !important;
+  word-break: break-word !important;
+}
+
+.dark .p-toast-detail {
+  color: #94a3b8 !important;
+}
+
+.p-toast-icon-close {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  width: 1.5rem !important;
+  height: 1.5rem !important;
+  border-radius: 0.375rem !important;
+  background: transparent !important;
+  border: none !important;
+  color: #94a3b8 !important;
+  cursor: pointer !important;
+  transition: all 0.15s ease !important;
+  flex-shrink: 0 !important;
+  padding: 0 !important;
+}
+
+.p-toast-icon-close:hover {
+  background: rgba(0, 0, 0, 0.06) !important;
+  color: #0f172a !important;
+}
+
+.dark .p-toast-icon-close:hover {
+  background: rgba(255, 255, 255, 0.1) !important;
+  color: #f8fafc !important;
+}
+
+/* Severity Variants */
+/* Success */
+.p-toast-message-success {
+  background: rgba(255, 255, 255, 0.95) !important;
+  border-left: 4px solid #10b981 !important;
+}
+.dark .p-toast-message-success {
+  background: rgba(15, 23, 42, 0.92) !important;
+  border-left: 4px solid #10b981 !important;
+}
+.p-toast-message-success .p-toast-message-icon {
+  color: #10b981 !important;
+}
+
+/* Error */
+.p-toast-message-error {
+  background: rgba(255, 255, 255, 0.95) !important;
+  border-left: 4px solid #f43f5e !important;
+}
+.dark .p-toast-message-error {
+  background: rgba(15, 23, 42, 0.92) !important;
+  border-left: 4px solid #f43f5e !important;
+}
+.p-toast-message-error .p-toast-message-icon {
+  color: #f43f5e !important;
+}
+
+/* Warning */
+.p-toast-message-warn {
+  background: rgba(255, 255, 255, 0.95) !important;
+  border-left: 4px solid #f59e0b !important;
+}
+.dark .p-toast-message-warn {
+  background: rgba(15, 23, 42, 0.92) !important;
+  border-left: 4px solid #f59e0b !important;
+}
+.p-toast-message-warn .p-toast-message-icon {
+  color: #f59e0b !important;
+}
+
+/* Info */
+.p-toast-message-info {
+  background: rgba(255, 255, 255, 0.95) !important;
+  border-left: 4px solid #6366f1 !important;
+}
+.dark .p-toast-message-info {
+  background: rgba(15, 23, 42, 0.92) !important;
+  border-left: 4px solid #6366f1 !important;
+}
+.p-toast-message-info .p-toast-message-icon {
+  color: #6366f1 !important;
+}

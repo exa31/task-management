@@ -1,0 +1,33 @@
+export const dashboard = {
+  welcome: 'Welcome back, {name} 👋',
+  subtitle: 'Here is your progress and priority focus for today.',
+  newTask: 'New Task',
+  todaysFocus: "Today's Focus",
+  priorityTasksToday: 'Priority tasks today',
+  inProgress: 'In Progress',
+  activeTasks: 'Active tasks',
+  scratchpadIdeas: 'Scratchpad Ideas',
+  savedInNotes: 'Saved in notes',
+  completedTasks: 'Completed (Done)',
+  tasksFinished: 'Tasks finished',
+  quickIdeaPlaceholder: 'Have a sudden flash of inspiration? Quick-capture it here and press Enter...',
+  captureIdea: 'Capture Idea',
+  activeTasksTitle: 'Active Tasks',
+  recentIdeasTitle: 'Recent Ideas',
+  viewAll: 'View All ({count})',
+  viewScratchpad: 'View Scratchpad ({count})',
+  noActiveTasks: 'No active tasks at the moment.',
+  noIdeasSaved: 'No ideas saved yet. Quick-capture one above!',
+  markCompleted: 'Mark as completed',
+}
+
+export const focus = {
+  title: "Today's Focus Horizon",
+  activeCount: '{count} active focus tasks',
+  subtitle: 'Priority tasks to conquer today',
+  removeFromFocus: 'Remove from focus horizon',
+  pinToFocus: "Pin to Today's Focus",
+  checklistProgress: '{completed}/{total} checklist ({percent}%)',
+  noProgressLog: 'No progress log recorded yet',
+  completeTask: 'Complete this task',
+}

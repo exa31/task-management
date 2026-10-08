@@ -1,0 +1,15 @@
+{
+  "name": "task-management",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Root workspace for task-management",
+  "scripts": {
+    "dev:fe": "cd frontend && npm run dev",
+    "build:fe": "cd frontend && npm run build",
+    "dev:be": "cd backend && go run cmd/server/main.go",
+    "docker:up": "docker compose up -d --build",
+    "docker:down": "docker compose down",
+    "lint:fe": "cd frontend && npm run lint",
+    "test:be": "cd backend && go test ./..."
+  }
+}
