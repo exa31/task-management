@@ -2,20 +2,20 @@ import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 
 import { BrandLogo, OAuthSetupModal } from '@/components'
-import { useGoogleAuth } from '@/hooks'
+import { useAppleAuth, useGoogleAuth } from '@/hooks'
 import { useTranslation } from '@/i18n'
 import { useAuthStore, useUIStore } from '@/stores'
 
 export default function Login() {
   const navigate = useNavigate()
-  const { loginWithOAuth, loginDev, loading } = useAuthStore()
+  const { loginDev, loading } = useAuthStore()
   const { theme, toggleTheme } = useUIStore()
   const { t, locale, toggleLocale } = useTranslation()
   const [authError, setAuthError] = useState<string | null>(null)
   const [setupModalProvider, setSetupModalProvider] = useState<'google' | 'apple' | null>(null)
 
   const {
-    isAuthenticating,
+    isAuthenticating: isGoogleAuthenticating,
     loginWithGooglePopup,
   } = useGoogleAuth({
     onSuccess: () => navigate('/'),
@@ -23,28 +23,16 @@ export default function Login() {
     onMissingConfig: () => setSetupModalProvider('google'),
   })
 
-  const isBusy = loading || isAuthenticating
+  const {
+    isAuthenticating: isAppleAuthenticating,
+    loginWithApplePopup,
+  } = useAppleAuth({
+    onSuccess: () => navigate('/'),
+    onError: (err) => setAuthError(err),
+    onMissingConfig: () => setSetupModalProvider('apple'),
+  })
 
-  const handleAppleLogin = async () => {
-    setAuthError(null)
-    const appleClientId = import.meta.env.VITE_APPLE_CLIENT_ID || ''
-    if (!appleClientId.trim()) {
-      setSetupModalProvider('apple')
-      return
-    }
-
-    try {
-      await loginWithOAuth({
-        provider: 'apple',
-        email: 'user@privaterelay.appleid.com',
-        name: 'Apple User',
-        avatar_url: 'https://api.dicebear.com/7.x/bottts/svg?seed=apple-user',
-      })
-      navigate('/')
-    } catch (err: unknown) {
-      setAuthError((err as Error).message || 'Apple sign-in failed')
-    }
-  }
+  const isBusy = loading || isGoogleAuthenticating || isAppleAuthenticating
 
   const handleDevDemoLogin = async () => {
     setAuthError(null)
@@ -138,11 +126,15 @@ export default function Login() {
 
           {/* Continue with Apple */}
           <button
-            onClick={handleAppleLogin}
+            onClick={loginWithApplePopup}
             disabled={isBusy}
             className="w-full h-11 flex items-center justify-center gap-3 rounded-xl border border-slate-900 dark:border-slate-700 bg-slate-900 dark:bg-black hover:bg-slate-800 dark:hover:bg-slate-900 text-xs font-medium text-white transition-all shadow-xs disabled:opacity-50 cursor-pointer"
           >
-            <i className="pi pi-apple text-base" />
+            {isAppleAuthenticating ? (
+              <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+            ) : (
+              <i className="pi pi-apple text-base" />
+            )}
             <span>{t('login.appleLogin')}</span>
           </button>
         </div>

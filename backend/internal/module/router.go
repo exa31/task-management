@@ -48,6 +48,7 @@ func (r *Router) registerAuth(api fiber.Router) {
 
 	auth := api.Group("/auth")
 	auth.Post("/oauth", handler.OAuthLogin())
+	auth.Post("/apple/webhook", handler.AppleWebhook())
 	auth.Post("/dev-login", handler.DevLogin())
 	auth.Post("/refresh", handler.RefreshToken())
 

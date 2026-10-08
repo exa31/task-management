@@ -120,6 +120,15 @@ Panduan ini menjelaskan langkah demi langkah cara membuat kredensial resmi di **
   APPLE_KEY_ID=YYYYYYYYYY
   ```
 
+### Langkah 4: Konfigurasi Server-to-Server Notification (Apple Webhook)
+Apple mengirimkan event notifikasi penting (seperti saat pengguna mencabut akses aplikasi atau menghapus akun).
+1. Di Apple Developer Console > **Services IDs** > konfigurasi Sign in with Apple.
+2. Masukkan **Server to Server Notification Endpoint**:
+   ```
+   https://api.yourdomain.com/api/v1/auth/apple/webhook
+   ```
+3. Backend TaskHub secara otomatis menangani event `consent-revoked`, `account-delete`, dan mencabut sesi token pengguna yang relevan.
+
 ---
 
 ## 4. Pengujian Cepat Tanpa Menunggu Setup Console

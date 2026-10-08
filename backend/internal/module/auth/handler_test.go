@@ -62,3 +62,39 @@ func TestExtractRefreshTokens(t *testing.T) {
 		}
 	})
 }
+
+func TestVerifyAppleAuth(t *testing.T) {
+	svc := &AuthService{}
+
+	t.Run("verifies apple with direct email and name", func(t *testing.T) {
+		req := &OAuthLoginRequest{
+			Provider: "apple",
+			Email:    "test@privaterelay.appleid.com",
+			Name:     "Apple Tester",
+			Code:     "auth-code-123",
+		}
+		info, err := svc.verifyAppleAuth(req)
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+		if info.Email != req.Email {
+			t.Errorf("expected email %s, got %s", req.Email, info.Email)
+		}
+		if info.Name != req.Name {
+			t.Errorf("expected name %s, got %s", req.Name, info.Name)
+		}
+		if info.Sub != req.Code {
+			t.Errorf("expected sub %s, got %s", req.Code, info.Sub)
+		}
+	})
+
+	t.Run("fails when email and id_token are missing", func(t *testing.T) {
+		req := &OAuthLoginRequest{
+			Provider: "apple",
+		}
+		_, err := svc.verifyAppleAuth(req)
+		if err == nil {
+			t.Fatal("expected error for missing email, got nil")
+		}
+	})
+}

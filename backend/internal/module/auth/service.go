@@ -17,6 +17,7 @@ import (
 	"golang/pkg/errors"
 	"golang/pkg/logging"
 
+	"github.com/golang-jwt/jwt/v5"
 	"github.com/google/uuid"
 	"github.com/jmoiron/sqlx"
 	"golang.org/x/crypto/bcrypt"
@@ -244,6 +245,67 @@ func (s *AuthService) verifyGoogleAuth(req *OAuthLoginRequest) (*googleUserInfo,
 	return nil, errors.BadRequest("Missing Google authorization code or ID token")
 }
 
+type appleUserInfo struct {
+	Sub     string
+	Email   string
+	Name    string
+	Picture string
+}
+
+func (s *AuthService) verifyAppleAuth(req *OAuthLoginRequest) (*appleUserInfo, error) {
+	email := req.Email
+	name := req.Name
+	sub := ""
+
+	// 1. If an IDToken is provided, extract sub & email from JWT claims
+	if req.IDToken != "" {
+		parser := jwt.NewParser()
+		token, _, err := parser.ParseUnverified(req.IDToken, jwt.MapClaims{})
+		if err == nil {
+			if claims, ok := token.Claims.(jwt.MapClaims); ok {
+				if subClaim, ok := claims["sub"].(string); ok && subClaim != "" {
+					sub = subClaim
+				}
+				if emailClaim, ok := claims["email"].(string); ok && emailClaim != "" && email == "" {
+					email = emailClaim
+				}
+				if nameClaim, ok := claims["name"].(string); ok && nameClaim != "" && name == "" {
+					name = nameClaim
+				}
+			}
+		}
+	}
+
+	if sub == "" {
+		if req.Code != "" {
+			sub = req.Code
+		} else if email != "" {
+			sub = "apple-" + email
+		}
+	}
+
+	if email == "" {
+		return nil, errors.BadRequest("Email is required for Apple sign-in")
+	}
+
+	if name == "" {
+		parts := strings.Split(email, "@")
+		name = parts[0]
+	}
+
+	picture := req.AvatarURL
+	if picture == "" {
+		picture = "https://api.dicebear.com/7.x/bottts/svg?seed=" + email
+	}
+
+	return &appleUserInfo{
+		Sub:     sub,
+		Email:   email,
+		Name:    name,
+		Picture: picture,
+	}, nil
+}
+
 // OAuthLogin authenticates or provisions a user using Google or Apple sign-in.
 func (s *AuthService) OAuthLogin(req *OAuthLoginRequest) (*AuthResponse, error) {
 	var email string
@@ -265,16 +327,14 @@ func (s *AuthService) OAuthLogin(req *OAuthLoginRequest) (*AuthResponse, error) 
 		avatarURL = gInfo.Picture
 		providerID = gInfo.Sub
 	} else if provider == "apple" {
-		if req.Email == "" {
-			return nil, errors.BadRequest("Email is required for Apple sign-in")
+		appleInfo, err := s.verifyAppleAuth(req)
+		if err != nil {
+			return nil, err
 		}
-		email = req.Email
-		name = req.Name
-		avatarURL = req.AvatarURL
-		providerID = req.IDToken
-		if providerID == "" {
-			providerID = req.Code
-		}
+		email = appleInfo.Email
+		name = appleInfo.Name
+		avatarURL = appleInfo.Picture
+		providerID = appleInfo.Sub
 	} else {
 		return nil, errors.BadRequest("Unsupported OAuth provider: " + provider)
 	}
@@ -443,3 +503,78 @@ func derefString(s *string) string {
 	}
 	return *s
 }
+
+// ProcessAppleWebhook handles Server-to-Server notification events from Apple.
+func (s *AuthService) ProcessAppleWebhook(payload string) error {
+	if payload == "" {
+		return errors.BadRequest("Missing Apple webhook payload")
+	}
+
+	parser := jwt.NewParser()
+	token, _, err := parser.ParseUnverified(payload, jwt.MapClaims{})
+	if err != nil {
+		logging.Warn("failed to parse Apple webhook JWT", logging.Err(err))
+		return errors.BadRequest("Invalid Apple webhook payload")
+	}
+
+	claims, ok := token.Claims.(jwt.MapClaims)
+	if !ok {
+		return errors.BadRequest("Invalid Apple webhook claims")
+	}
+
+	eventsRaw, ok := claims["events"].(string)
+	if !ok {
+		if eventsMap, ok := claims["events"].(map[string]interface{}); ok {
+			return s.handleAppleEventMap(eventsMap)
+		}
+		logging.Info("Apple webhook received without events", slog.Any("claims", claims))
+		return nil
+	}
+
+	var eventObj struct {
+		Type      string `json:"type"`
+		Sub       string `json:"sub"`
+		EventTime int64  `json:"event_time"`
+	}
+	if err := json.Unmarshal([]byte(eventsRaw), &eventObj); err != nil {
+		logging.Warn("failed to parse Apple webhook event JSON", logging.Err(err))
+		return nil
+	}
+
+	logging.Info("Apple Server-to-Server event received",
+		slog.String("event_type", eventObj.Type),
+		slog.String("sub", eventObj.Sub),
+	)
+
+	// Revoke active sessions when consent is revoked or account is deleted
+	if eventObj.Type == "consent-revoked" || eventObj.Type == "account-delete" {
+		var userID string
+		err := s.db.DB.Get(&userID, "SELECT id FROM users WHERE auth_provider = 'apple' AND (provider_id = $1 OR id = $1)", eventObj.Sub)
+		if err == nil && userID != "" {
+			_ = s.jwtService.RevokeAllUserTokens(userID)
+			logging.Info("Revoked all active sessions for Apple user", slog.String("user_id", userID))
+		}
+	}
+
+	return nil
+}
+
+func (s *AuthService) handleAppleEventMap(eventsMap map[string]interface{}) error {
+	eventType, _ := eventsMap["type"].(string)
+	sub, _ := eventsMap["sub"].(string)
+	logging.Info("Apple Server-to-Server event received",
+		slog.String("event_type", eventType),
+		slog.String("sub", sub),
+	)
+
+	if (eventType == "consent-revoked" || eventType == "account-delete") && sub != "" {
+		var userID string
+		err := s.db.DB.Get(&userID, "SELECT id FROM users WHERE auth_provider = 'apple' AND (provider_id = $1 OR id = $1)", sub)
+		if err == nil && userID != "" {
+			_ = s.jwtService.RevokeAllUserTokens(userID)
+			logging.Info("Revoked all active sessions for Apple user", slog.String("user_id", userID))
+		}
+	}
+	return nil
+}
+

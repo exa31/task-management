@@ -42,6 +42,31 @@ func (h *AuthHandler) OAuthLogin() fiber.Handler {
 	}
 }
 
+// AppleWebhook handles POST /api/v1/auth/apple/webhook (Apple Server-to-Server notification events).
+func (h *AuthHandler) AppleWebhook() fiber.Handler {
+	return func(c *fiber.Ctx) error {
+		var req AppleWebhookRequest
+		// Apple can send application/json or application/x-www-form-urlencoded
+		if err := c.BodyParser(&req); err != nil {
+			return errors.BadRequest("Failed to parse Apple webhook payload")
+		}
+
+		if req.Payload == "" {
+			req.Payload = c.FormValue("payload")
+			if req.Payload == "" {
+				req.Payload = string(c.Body())
+			}
+		}
+
+		if err := h.service.ProcessAppleWebhook(req.Payload); err != nil {
+			return err
+		}
+
+		logging.LoggerFromFiber(c).Info("apple server-to-server webhook processed")
+		return response.SuccessMessageResponse(c, "Apple event processed successfully")
+	}
+}
+
 // DevLogin handles POST /api/v1/auth/dev-login.
 func (h *AuthHandler) DevLogin() fiber.Handler {
 	return func(c *fiber.Ctx) error {

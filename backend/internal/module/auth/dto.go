@@ -59,3 +59,8 @@ type AuthResponse struct {
 	User   UserPayload `json:"user"`
 	Tokens *TokenPair  `json:"tokens"`
 }
+
+// AppleWebhookRequest is the payload sent by Apple Server-to-Server notifications.
+type AppleWebhookRequest struct {
+	Payload string `json:"payload" form:"payload"`
+}
