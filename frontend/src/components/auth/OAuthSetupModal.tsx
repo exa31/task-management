@@ -34,9 +34,7 @@ GOOGLE_REDIRECT_URI=postmessage`
 VITE_APPLE_CLIENT_ID=com.yourbrand.app.service
 
 # backend/.env
-APPLE_CLIENT_ID=com.yourbrand.app.service
-APPLE_TEAM_ID=YOUR_TEAM_ID
-APPLE_KEY_ID=YOUR_KEY_ID`
+APPLE_CLIENT_ID=com.yourbrand.app.service`
 
   const handleCopy = () => {
     navigator.clipboard.writeText(envSnippet)

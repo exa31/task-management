@@ -1,14 +1,19 @@
 package authmodule
 
 import (
+	"crypto/rsa"
 	"database/sql"
+	"encoding/base64"
 	"encoding/json"
 	stderrors "errors"
+	"fmt"
 	"io"
 	"log/slog"
+	"math/big"
 	"net/http"
 	"net/url"
 	"strings"
+	"sync"
 	"time"
 
 	"golang/config"
@@ -245,6 +250,83 @@ func (s *AuthService) verifyGoogleAuth(req *OAuthLoginRequest) (*googleUserInfo,
 	return nil, errors.BadRequest("Missing Google authorization code or ID token")
 }
 
+type appleJWK struct {
+	Kty string `json:"kty"`
+	Kid string `json:"kid"`
+	Use string `json:"use"`
+	Alg string `json:"alg"`
+	N   string `json:"n"`
+	E   string `json:"e"`
+}
+
+type appleJWKS struct {
+	Keys []appleJWK `json:"keys"`
+}
+
+var (
+	appleKeysCache     *appleJWKS
+	appleKeysCacheTime time.Time
+	appleKeysMu        sync.RWMutex
+)
+
+func parseRSAPublicKey(nStr, eStr string) (*rsa.PublicKey, error) {
+	nBytes, err := base64.RawURLEncoding.DecodeString(nStr)
+	if err != nil {
+		nBytes, err = base64.URLEncoding.DecodeString(nStr)
+		if err != nil {
+			return nil, fmt.Errorf("failed to decode modulus: %w", err)
+		}
+	}
+
+	eBytes, err := base64.RawURLEncoding.DecodeString(eStr)
+	if err != nil {
+		eBytes, err = base64.URLEncoding.DecodeString(eStr)
+		if err != nil {
+			return nil, fmt.Errorf("failed to decode exponent: %w", err)
+		}
+	}
+
+	eInt := int(new(big.Int).SetBytes(eBytes).Int64())
+
+	return &rsa.PublicKey{
+		N: new(big.Int).SetBytes(nBytes),
+		E: eInt,
+	}, nil
+}
+
+func (s *AuthService) fetchAppleJWKS() (*appleJWKS, error) {
+	appleKeysMu.RLock()
+	if appleKeysCache != nil && time.Since(appleKeysCacheTime) < 1*time.Hour {
+		cached := appleKeysCache
+		appleKeysMu.RUnlock()
+		return cached, nil
+	}
+	appleKeysMu.RUnlock()
+
+	client := &http.Client{Timeout: 10 * time.Second}
+	resp, err := client.Get("https://appleid.apple.com/auth/keys")
+	if err != nil {
+		return nil, fmt.Errorf("failed to fetch Apple public keys: %w", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("Apple JWKS endpoint returned status %d", resp.StatusCode)
+	}
+
+	var jwks appleJWKS
+	if err := json.NewDecoder(resp.Body).Decode(&jwks); err != nil {
+		return nil, fmt.Errorf("failed to decode Apple JWKS: %w", err)
+	}
+
+	appleKeysMu.Lock()
+	appleKeysCache = &jwks
+	appleKeysCacheTime = time.Now()
+	appleKeysMu.Unlock()
+
+	return &jwks, nil
+}
+
 type appleUserInfo struct {
 	Sub     string
 	Email   string
@@ -253,29 +335,91 @@ type appleUserInfo struct {
 }
 
 func (s *AuthService) verifyAppleAuth(req *OAuthLoginRequest) (*appleUserInfo, error) {
-	email := req.Email
-	name := req.Name
-	sub := ""
+	var email string
+	var name string
+	var sub string
 
-	// 1. If an IDToken is provided, extract sub & email from JWT claims
+	// 1. If an IDToken is provided, perform cryptographic verification using Apple's public JWKS keys
 	if req.IDToken != "" {
-		parser := jwt.NewParser()
-		token, _, err := parser.ParseUnverified(req.IDToken, jwt.MapClaims{})
-		if err == nil {
-			if claims, ok := token.Claims.(jwt.MapClaims); ok {
-				if subClaim, ok := claims["sub"].(string); ok && subClaim != "" {
-					sub = subClaim
+		jwks, err := s.fetchAppleJWKS()
+		if err == nil && jwks != nil {
+			token, parseErr := jwt.Parse(req.IDToken, func(token *jwt.Token) (interface{}, error) {
+				if _, ok := token.Method.(*jwt.SigningMethodRSA); !ok {
+					return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
 				}
-				if emailClaim, ok := claims["email"].(string); ok && emailClaim != "" && email == "" {
-					email = emailClaim
+				kid, _ := token.Header["kid"].(string)
+				for _, key := range jwks.Keys {
+					if key.Kid == kid {
+						return parseRSAPublicKey(key.N, key.E)
+					}
 				}
-				if nameClaim, ok := claims["name"].(string); ok && nameClaim != "" && name == "" {
-					name = nameClaim
+				return nil, fmt.Errorf("key with kid '%s' not found in Apple JWKS", kid)
+			})
+
+			if parseErr == nil && token.Valid {
+				if claims, ok := token.Claims.(jwt.MapClaims); ok {
+					// Validate Issuer (must be https://appleid.apple.com)
+					if iss, ok := claims["iss"].(string); !ok || iss != "https://appleid.apple.com" {
+						return nil, errors.Unauthorized("Invalid Apple token issuer")
+					}
+
+					// Validate Audience against configured AppleClientID
+					if s.cfg != nil && s.cfg.OAuth.AppleClientID != "" {
+						aud, ok := claims["aud"].(string)
+						if !ok || aud != s.cfg.OAuth.AppleClientID {
+							return nil, errors.Unauthorized(fmt.Sprintf("Apple token audience '%s' does not match configured Apple Client ID '%s'", aud, s.cfg.OAuth.AppleClientID))
+						}
+					}
+
+					if subClaim, ok := claims["sub"].(string); ok {
+						sub = subClaim
+					}
+					if emailClaim, ok := claims["email"].(string); ok && emailClaim != "" {
+						email = emailClaim
+					}
+				}
+			} else {
+				logging.Warn("Apple token cryptographic verification failed", logging.Err(parseErr))
+				// In production, reject invalid signatures. In development, allow fallback if testing offline.
+				if s.cfg != nil && s.cfg.App.Environment == "production" {
+					return nil, errors.Unauthorized("Invalid or expired Apple ID token")
+				}
+			}
+		}
+
+		// Fallback for development/testing if token couldn't be fetched or verified online
+		if sub == "" || email == "" {
+			parser := jwt.NewParser()
+			token, _, err := parser.ParseUnverified(req.IDToken, jwt.MapClaims{})
+			if err == nil {
+				if claims, ok := token.Claims.(jwt.MapClaims); ok {
+					if sub == "" {
+						if subClaim, ok := claims["sub"].(string); ok {
+							sub = subClaim
+						}
+					}
+					if email == "" {
+						if emailClaim, ok := claims["email"].(string); ok {
+							email = emailClaim
+						}
+					}
+					if name == "" {
+						if nameClaim, ok := claims["name"].(string); ok {
+							name = nameClaim
+						}
+					}
 				}
 			}
 		}
 	}
 
+	// 2. Extract values from request payload if not in token
+	if email == "" && req.Email != "" {
+		email = req.Email
+	}
+	if name == "" && req.Name != "" {
+		name = req.Name
+	}
 	if sub == "" {
 		if req.Code != "" {
 			sub = req.Code

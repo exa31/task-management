@@ -99,16 +99,11 @@ Panduan ini menjelaskan langkah demi langkah cara membuat kredensial resmi di **
    - Masukkan **Return URLs**: `https://yourdomain.com/auth/callback` (atau tunnel https untuk development seperti ngrok).
    - Klik **Save** dan **Continue**.
 
-### Langkah 2: Buat Private Key (.p8)
-1. Buka menu **Keys** > klik **+** untuk membuat Key baru.
-2. Beri nama (misal: `TaskHub Apple Auth Key`).
-3. Centang **Sign in with Apple** > klik **Configure** > pilih Primary App ID.
-4. Klik **Register** lalu unduh berkas `.p8` (simpan dengan aman karena hanya bisa diunduh sekali).
-5. Catat:
-   - **Key ID** (10 karakter, tertera di halaman Key).
-   - **Team ID** (10 karakter, tertera di pojok kanan atas akun Apple Developer).
+### Langkah 2: Masukkan Kredensial Apple ke `.env`
+Untuk alur **Sign in with Apple (Web)**, Anda **hanya membutuhkan Client ID (Services ID)**. Backend akan memvalidasi tanda tangan kriptografi `id_token` langsung ke server publik Apple JWKS (`https://appleid.apple.com/auth/keys`) dan memverifikasi `aud` terhadap `APPLE_CLIENT_ID`.
 
-### Langkah 3: Masukkan Kredensial Apple ke `.env`
+> 💡 *Anda TIDAK memerlukan Private Key (.p8), Team ID, ataupun Key ID untuk validasi token Web.*
+
 - Di `frontend/.env`:
   ```env
   VITE_APPLE_CLIENT_ID=com.taskhub.web.auth
@@ -116,11 +111,9 @@ Panduan ini menjelaskan langkah demi langkah cara membuat kredensial resmi di **
 - Di `backend/.env`:
   ```env
   APPLE_CLIENT_ID=com.taskhub.web.auth
-  APPLE_TEAM_ID=XXXXXXXXXX
-  APPLE_KEY_ID=YYYYYYYYYY
   ```
 
-### Langkah 4: Konfigurasi Server-to-Server Notification (Apple Webhook)
+### Langkah 3: Konfigurasi Server-to-Server Notification (Apple Webhook)
 Apple mengirimkan event notifikasi penting (seperti saat pengguna mencabut akses aplikasi atau menghapus akun).
 1. Di Apple Developer Console > **Services IDs** > konfigurasi Sign in with Apple.
 2. Masukkan **Server to Server Notification Endpoint**:
