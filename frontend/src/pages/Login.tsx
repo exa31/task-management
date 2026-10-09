@@ -1,5 +1,5 @@
-import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useEffect, useState } from 'react'
+import { useLocation, useNavigate } from 'react-router-dom'
 
 import { BrandLogo, OAuthSetupModal } from '@/components'
 import { useAppleAuth, useGoogleAuth } from '@/hooks'
@@ -8,17 +8,28 @@ import { useAuthStore, useUIStore } from '@/stores'
 
 export default function Login() {
   const navigate = useNavigate()
-  const { loginDev, loading } = useAuthStore()
+  const location = useLocation()
+  const { loginDev, loading, isAuthenticated } = useAuthStore()
   const { theme, toggleTheme } = useUIStore()
   const { t, locale, toggleLocale } = useTranslation()
   const [authError, setAuthError] = useState<string | null>(null)
   const [setupModalProvider, setSetupModalProvider] = useState<'google' | 'apple' | null>(null)
 
+  const targetDestination =
+    (location.state as { from?: { pathname?: string } })?.from?.pathname || '/dashboard'
+
+  // If already authenticated, redirect to workspace
+  useEffect(() => {
+    if (isAuthenticated) {
+      navigate(targetDestination, { replace: true })
+    }
+  }, [isAuthenticated, navigate, targetDestination])
+
   const {
     isAuthenticating: isGoogleAuthenticating,
     loginWithGooglePopup,
   } = useGoogleAuth({
-    onSuccess: () => navigate('/'),
+    onSuccess: () => navigate(targetDestination, { replace: true }),
     onError: (err) => setAuthError(err),
     onMissingConfig: () => setSetupModalProvider('google'),
   })
@@ -27,7 +38,7 @@ export default function Login() {
     isAuthenticating: isAppleAuthenticating,
     loginWithApplePopup,
   } = useAppleAuth({
-    onSuccess: () => navigate('/'),
+    onSuccess: () => navigate(targetDestination, { replace: true }),
     onError: (err) => setAuthError(err),
     onMissingConfig: () => setSetupModalProvider('apple'),
   })
@@ -41,7 +52,7 @@ export default function Login() {
         email: 'creator@taskhub.dev',
         name: 'Creator Demo',
       })
-      navigate('/')
+      navigate(targetDestination, { replace: true })
     } catch (err: unknown) {
       setAuthError((err as Error).message || 'Demo sign-in failed')
     }

@@ -17,6 +17,8 @@ function App() {
     const path = location.pathname
 
     if (path === '/') {
+      pageTitle = ''
+    } else if (path === '/dashboard') {
       pageTitle = t('nav.dashboard')
     } else if (path.startsWith('/tasks')) {
       pageTitle = t('nav.tasks')
@@ -24,7 +26,7 @@ function App() {
       pageTitle = t('nav.notes')
     } else if (path.startsWith('/mcp-settings')) {
       pageTitle = t('nav.mcp')
-    } else if (path.startsWith('/auth/login')) {
+    } else if (path.startsWith('/auth/login') || path === '/login') {
       pageTitle = t('nav.signIn')
     }
 

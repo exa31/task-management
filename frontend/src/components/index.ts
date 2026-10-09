@@ -1,4 +1,5 @@
 export * from './auth/OAuthSetupModal'
+export * from './auth/ProtectedRoute'
 export * from './brand/BrandLogo'
 export * from './ConfirmDialog'
 export * from './ErrorBoundary'
