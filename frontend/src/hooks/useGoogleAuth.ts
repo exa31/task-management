@@ -37,6 +37,11 @@ declare global {
               error?: string
               error_description?: string
             }) => void
+            // eslint-disable-next-line @typescript-eslint/naming-convention
+            error_callback?: (error: {
+              type: string
+              message?: string
+            }) => void
           }) => {
             requestCode: () => void
           }
@@ -49,6 +54,7 @@ declare global {
 interface UseGoogleAuthOptions {
   onSuccess?: () => void
   onError?: (error: string) => void
+  onCancel?: () => void
   onMissingConfig?: () => void
 }
 
@@ -84,6 +90,62 @@ export function useGoogleAuth(options: UseGoogleAuthOptions = {}) {
       clearTimeout(timeout)
     }
   }, [])
+
+  // Factory to create GIS code client with complete callback and cancellation error_callback
+  const createCodeClient = useCallback(() => {
+    if (!window.google?.accounts?.oauth2?.initCodeClient) return null
+
+    return window.google.accounts.oauth2.initCodeClient({
+      client_id: googleClientId,
+      scope: 'openid email profile',
+      ux_mode: 'popup',
+      callback: async (response) => {
+        if (response.error) {
+          setIsAuthenticating(false)
+          if (
+            response.error === 'popup_closed_by_user' ||
+            response.error === 'access_denied' ||
+            response.error === 'user_cancelled'
+          ) {
+            options.onCancel?.()
+          } else {
+            options.onError?.(response.error_description || response.error)
+          }
+          return
+        }
+
+        if (response.code) {
+          setIsAuthenticating(true)
+          try {
+            await loginWithOAuth({
+              provider: 'google',
+              code: response.code,
+            })
+            localStorage.setItem('has_logged_in_before', 'true')
+            sessionStorage.removeItem('just_logged_out')
+            options.onSuccess?.()
+          } catch (err) {
+            const message = err instanceof Error ? err.message : 'Google sign-in failed'
+            options.onError?.(message)
+          } finally {
+            setIsAuthenticating(false)
+          }
+        }
+      },
+      // eslint-disable-next-line @typescript-eslint/naming-convention
+      error_callback: (nonOAuthError) => {
+        setIsAuthenticating(false)
+        if (nonOAuthError?.type === 'popup_closed') {
+          // Handled on user clicking the popup 'X' button or closing the window
+          options.onCancel?.()
+        } else if (nonOAuthError?.type === 'popup_failed_to_open') {
+          options.onError?.('Popup was blocked by your browser. Please allow popups for this site and try again.')
+        } else if (nonOAuthError?.message) {
+          options.onError?.(nonOAuthError.message)
+        }
+      },
+    })
+  }, [googleClientId, loginWithOAuth, options])
 
   // Initialize One Tap prompt only if user has logged in before and didn't just log out
   useEffect(() => {
@@ -123,6 +185,9 @@ export function useGoogleAuth(options: UseGoogleAuthOptions = {}) {
         window.google.accounts.id.prompt((notification) => {
           if (notification.isNotDisplayed()) {
             // Silently suppressed by Google browser cool-down or no Google session
+          } else if (notification.isDismissedMoment() || notification.isSkippedMoment()) {
+            setIsAuthenticating(false)
+            options.onCancel?.()
           }
         })
       } catch (err) {
@@ -135,45 +200,12 @@ export function useGoogleAuth(options: UseGoogleAuthOptions = {}) {
   useEffect(() => {
     if (!isConfigured || !isScriptReady || typeof window === 'undefined') return
 
-    if (window.google?.accounts?.oauth2?.initCodeClient) {
-      try {
-        codeClientRef.current = window.google.accounts.oauth2.initCodeClient({
-          client_id: googleClientId,
-          scope: 'openid email profile',
-          ux_mode: 'popup',
-          callback: async (response) => {
-            if (response.error) {
-              if (response.error !== 'popup_closed_by_user') {
-                options.onError?.(response.error_description || response.error)
-              }
-              setIsAuthenticating(false)
-              return
-            }
-
-            if (response.code) {
-              setIsAuthenticating(true)
-              try {
-                await loginWithOAuth({
-                  provider: 'google',
-                  code: response.code,
-                })
-                localStorage.setItem('has_logged_in_before', 'true')
-                sessionStorage.removeItem('just_logged_out')
-                options.onSuccess?.()
-              } catch (err) {
-                const message = err instanceof Error ? err.message : 'Google sign-in failed'
-                options.onError?.(message)
-              } finally {
-                setIsAuthenticating(false)
-              }
-            }
-          },
-        })
-      } catch (err) {
-        logger.warn('Google initCodeClient error:', err)
-      }
+    try {
+      codeClientRef.current = createCodeClient()
+    } catch (err) {
+      logger.warn('Google initCodeClient error:', err)
     }
-  }, [isConfigured, isScriptReady, googleClientId, loginWithOAuth, options])
+  }, [isConfigured, isScriptReady, createCodeClient])
 
   // Triggered when user clicks the "Continue with Google" button
   const loginWithGooglePopup = useCallback(() => {
@@ -183,33 +215,8 @@ export function useGoogleAuth(options: UseGoogleAuthOptions = {}) {
     }
 
     if (!codeClientRef.current) {
-      // If code client isn't ready yet, try re-initializing if SDK is present
-      if (window.google?.accounts?.oauth2?.initCodeClient) {
-        codeClientRef.current = window.google.accounts.oauth2.initCodeClient({
-          client_id: googleClientId,
-          scope: 'openid email profile',
-          ux_mode: 'popup',
-          callback: async (response) => {
-            if (response.code) {
-              setIsAuthenticating(true)
-              try {
-                await loginWithOAuth({
-                  provider: 'google',
-                  code: response.code,
-                })
-                localStorage.setItem('has_logged_in_before', 'true')
-                sessionStorage.removeItem('just_logged_out')
-                options.onSuccess?.()
-              } catch (err) {
-                const message = err instanceof Error ? err.message : 'Google sign-in failed'
-                options.onError?.(message)
-              } finally {
-                setIsAuthenticating(false)
-              }
-            }
-          },
-        })
-      } else {
+      codeClientRef.current = createCodeClient()
+      if (!codeClientRef.current) {
         options.onError?.('Google SDK is still loading. Please check your internet connection or try again.')
         return
       }
@@ -222,7 +229,7 @@ export function useGoogleAuth(options: UseGoogleAuthOptions = {}) {
       setIsAuthenticating(false)
       options.onError?.(err instanceof Error ? err.message : 'Failed to launch Google sign-in dialog')
     }
-  }, [isConfigured, googleClientId, loginWithOAuth, options])
+  }, [isConfigured, createCodeClient, options])
 
   return {
     isConfigured,

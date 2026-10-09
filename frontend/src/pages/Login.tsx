@@ -33,6 +33,7 @@ export default function Login() {
   } = useGoogleAuth({
     onSuccess: () => navigate(targetDestination, { replace: true }),
     onError: (err) => setAuthError(err),
+    onCancel: () => setAuthError(null),
     onMissingConfig: () => setSetupModalProvider('google'),
   })
 
@@ -42,6 +43,7 @@ export default function Login() {
   } = useAppleAuth({
     onSuccess: () => navigate(targetDestination, { replace: true }),
     onError: (err) => setAuthError(err),
+    onCancel: () => setAuthError(null),
     onMissingConfig: () => setSetupModalProvider('apple'),
   })
 

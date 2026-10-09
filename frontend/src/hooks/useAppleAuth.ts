@@ -54,6 +54,7 @@ declare global {
 interface UseAppleAuthOptions {
   onSuccess?: () => void
   onError?: (error: string) => void
+  onCancel?: () => void
   onMissingConfig?: () => void
 }
 
@@ -203,7 +204,9 @@ export function useAppleAuth(options: UseAppleAuthOptions = {}) {
     const handleFailureEvent = (event: Event) => {
       const customEvent = event as CustomEvent<AppleSignInFailureEventDetail>
       const error = customEvent.detail?.error
-      if (error && error !== 'popup_closed_by_user') {
+      if (error === 'popup_closed_by_user' || error === 'user_cancelled') {
+        options.onCancel?.()
+      } else if (error) {
         options.onError?.(error)
       }
       setIsAuthenticating(false)
@@ -257,7 +260,9 @@ export function useAppleAuth(options: UseAppleAuthOptions = {}) {
     } catch (err: unknown) {
       const errObj = err as { error?: string }
       const errorMsg = errObj?.error || (err instanceof Error ? err.message : '')
-      if (errorMsg && errorMsg !== 'popup_closed_by_user') {
+      if (errorMsg === 'popup_closed_by_user' || errorMsg === 'user_cancelled') {
+        options.onCancel?.()
+      } else if (errorMsg) {
         options.onError?.(errorMsg || 'Apple sign-in was cancelled or failed')
       }
       setIsAuthenticating(false)
