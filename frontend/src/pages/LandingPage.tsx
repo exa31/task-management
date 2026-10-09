@@ -1,7 +1,8 @@
-import React, { useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 
 import { BrandLogo, useAppToast } from '@/components'
+import InteractiveHeroScene from '@/components/3d/InteractiveHeroScene'
 import { useTranslation } from '@/i18n'
 import { useAuthStore, useUIStore } from '@/stores'
 
@@ -11,16 +12,54 @@ export const LandingPage: React.FC = () => {
   const { theme, toggleTheme } = useUIStore()
   const { t, locale, toggleLocale } = useTranslation()
   const toast = useAppToast()
+
   const [copiedMcp, setCopiedMcp] = useState(false)
   const [isDemoLoading, setIsDemoLoading] = useState(false)
+  const [isScrolled, setIsScrolled] = useState(false)
+  const [activeSection, setActiveSection] = useState<string>('')
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
 
-  // If user is already authenticated, redirect straight to workspace dashboard
-  React.useEffect(() => {
-    const params = new URLSearchParams(window.location.search)
-    if (isAuthenticated && !params.get('preview')) {
-      navigate('/dashboard', { replace: true })
+
+  // Track scroll position for dynamic floating navbar & scrollspy
+  useEffect(() => {
+    const handleScroll = () => {
+      setIsScrolled(window.scrollY > 25)
+
+      const sections = ['features', 'kanban', 'mcp', 'comparison']
+      const scrollPosition = window.scrollY + 140
+
+      for (const sectionId of sections) {
+        const el = document.getElementById(sectionId)
+        if (el) {
+          const top = el.offsetTop
+          const height = el.offsetHeight
+          if (scrollPosition >= top && scrollPosition < top + height) {
+            setActiveSection(sectionId)
+            return
+          }
+        }
+      }
+      if (window.scrollY < 300) {
+        setActiveSection('')
+      }
     }
-  }, [isAuthenticated, navigate])
+
+    window.addEventListener('scroll', handleScroll, { passive: true })
+    handleScroll()
+    return () => window.removeEventListener('scroll', handleScroll)
+  }, [])
+
+  // Smooth programmatic scroll with offset compensation for the floating navbar
+  const scrollToSection = (e: React.MouseEvent, sectionId: string) => {
+    e.preventDefault()
+    setIsMobileMenuOpen(false)
+    const el = document.getElementById(sectionId)
+    if (el) {
+      const yOffset = -90
+      const y = el.getBoundingClientRect().top + window.pageYOffset + yOffset
+      window.scrollTo({ top: y, behavior: 'smooth' })
+    }
+  }
 
   const handleDemoLogin = async () => {
     setIsDemoLoading(true)
@@ -64,163 +103,325 @@ export const LandingPage: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 transition-colors selection:bg-indigo-500/30 selection:text-indigo-300 relative overflow-x-hidden">
-      {/* Ambient background glows */}
-      <div className="pointer-events-none absolute top-0 left-1/2 -translate-x-1/2 w-full max-w-7xl h-[600px] overflow-hidden opacity-40 dark:opacity-20 z-0">
-        <div className="absolute -top-32 left-1/4 w-96 h-96 bg-indigo-500 rounded-full blur-3xl animate-pulse" />
-        <div className="absolute top-10 right-1/4 w-96 h-96 bg-purple-600 rounded-full blur-3xl" />
-        <div className="absolute top-60 left-1/3 w-80 h-80 bg-sky-500 rounded-full blur-3xl" />
+      {/* Ambient glowing background mesh */}
+      <div className="pointer-events-none fixed inset-0 overflow-hidden opacity-40 dark:opacity-25 z-0">
+        <div className="absolute -top-32 left-1/4 w-[500px] h-[500px] bg-indigo-500/30 rounded-full blur-[120px] animate-pulse" />
+        <div className="absolute top-40 right-1/4 w-[450px] h-[450px] bg-purple-600/30 rounded-full blur-[120px]" />
+        <div className="absolute top-96 left-1/3 w-[400px] h-[400px] bg-sky-500/20 rounded-full blur-[100px]" />
       </div>
 
       {/* =========================================================================
-          1. NAVIGATION BAR
+          1. DYNAMIC FLOATING GLASS NAVBAR (Non-Static, Reacts on Scroll)
           ========================================================================= */}
-      <header className="sticky top-0 z-50 backdrop-blur-xl bg-white/70 dark:bg-slate-950/70 border-b border-slate-200/80 dark:border-slate-800/80 transition-colors">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
-          {/* Logo & Brand */}
-          <Link to="/" className="flex items-center gap-2.5 group">
-            <BrandLogo size={32} className="transition-transform group-hover:scale-105" />
-            <span className="font-extrabold text-base tracking-tight text-slate-900 dark:text-slate-100">
-              Task<span className="text-indigo-600 dark:text-indigo-400">Hub</span>
-            </span>
-          </Link>
-
-          {/* Center Navigation Links (Hidden on mobile) */}
-          <nav className="hidden md:flex items-center gap-6 text-xs font-medium text-slate-600 dark:text-slate-300">
-            <a href="#features" className="hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors">
-              {t('landing.features.sectionTitle')}
-            </a>
-            <a href="#kanban" className="hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors">
-              {t('landing.features.kanbanTitle')}
-            </a>
-            <a href="#mcp" className="hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors">
-              {t('landing.features.mcpTitle')}
-            </a>
-            <a href="#comparison" className="hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors">
-              {t('landing.comparison.title')}
-            </a>
-          </nav>
-
-          {/* Right Controls: Language, Theme, & Action Buttons */}
-          <div className="flex items-center gap-2 sm:gap-3">
-            {/* Language toggle */}
-            <button
-              onClick={toggleLocale}
-              className="px-2.5 py-1.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white/80 dark:bg-slate-900/80 text-xs font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors shadow-xs flex items-center gap-1.5 cursor-pointer"
-              title={t('nav.switchLanguage')}
+      <header
+        className={`fixed top-0 inset-x-0 z-50 transition-all duration-300 ease-out flex justify-center ${isScrolled ? 'pt-2 sm:pt-3 px-3 sm:px-6' : 'pt-0 px-0'
+          }`}
+      >
+        <div
+          className={`w-full transition-all duration-300 ${isScrolled
+              ? 'max-w-6xl rounded-2xl sm:rounded-full bg-white/85 dark:bg-slate-900/85 backdrop-blur-2xl border border-slate-200/80 dark:border-slate-800/80 shadow-xl shadow-slate-950/5 dark:shadow-black/40 px-4 sm:px-6 py-2.5'
+              : 'max-w-7xl mx-auto px-4 sm:px-6 py-4 bg-transparent border-b border-transparent'
+            }`}
+        >
+          <div className="flex items-center justify-between">
+            {/* Logo & Brand */}
+            <Link
+              to="/"
+              onClick={(e) => {
+                if (window.scrollY > 0) {
+                  e.preventDefault()
+                  window.scrollTo({ top: 0, behavior: 'smooth' })
+                }
+              }}
+              className="flex items-center gap-2.5 group cursor-pointer"
             >
-              <i className="pi pi-globe text-xs text-indigo-500" />
-              <span>{locale.toUpperCase()}</span>
-            </button>
+              <BrandLogo size={32} className="transition-transform group-hover:scale-105 duration-200" />
+              <span className="font-extrabold text-base tracking-tight text-slate-900 dark:text-slate-100">
+                Task<span className="text-indigo-600 dark:text-indigo-400">Hub</span>
+              </span>
+            </Link>
 
-            {/* Theme toggle */}
-            <button
-              onClick={toggleTheme}
-              className="p-2 rounded-xl border border-slate-200 dark:border-slate-800 bg-white/80 dark:bg-slate-900/80 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors shadow-xs cursor-pointer"
-              title={theme === 'dark' ? t('nav.lightMode') : t('nav.darkMode')}
-            >
-              <i className={`pi ${theme === 'dark' ? 'pi-sun text-amber-400' : 'pi-moon text-indigo-500'} text-xs`} />
-            </button>
+            {/* Center Dynamic Navigation Links (Active Pill Highlight) */}
+            <nav className="hidden md:flex items-center gap-1.5 px-3 py-1 rounded-full bg-slate-100/60 dark:bg-slate-800/40 border border-slate-200/50 dark:border-slate-700/50 text-xs font-medium backdrop-blur-md">
+              <a
+                href="#features"
+                onClick={(e) => scrollToSection(e, 'features')}
+                className={`px-3 py-1.5 rounded-full transition-all duration-200 ${activeSection === 'features'
+                    ? 'bg-indigo-600 text-white font-semibold shadow-xs'
+                    : 'text-slate-600 dark:text-slate-300 hover:text-indigo-600 dark:hover:text-indigo-300'
+                  }`}
+              >
+                {t('landing.features.sectionTitle')}
+              </a>
+              <a
+                href="#kanban"
+                onClick={(e) => scrollToSection(e, 'kanban')}
+                className={`px-3 py-1.5 rounded-full transition-all duration-200 ${activeSection === 'kanban'
+                    ? 'bg-indigo-600 text-white font-semibold shadow-xs'
+                    : 'text-slate-600 dark:text-slate-300 hover:text-indigo-600 dark:hover:text-indigo-300'
+                  }`}
+              >
+                {t('landing.features.kanbanTitle')}
+              </a>
+              <a
+                href="#mcp"
+                onClick={(e) => scrollToSection(e, 'mcp')}
+                className={`px-3 py-1.5 rounded-full transition-all duration-200 ${activeSection === 'mcp'
+                    ? 'bg-indigo-600 text-white font-semibold shadow-xs'
+                    : 'text-slate-600 dark:text-slate-300 hover:text-indigo-600 dark:hover:text-indigo-300'
+                  }`}
+              >
+                {t('landing.features.mcpTitle')}
+              </a>
+              <a
+                href="#comparison"
+                onClick={(e) => scrollToSection(e, 'comparison')}
+                className={`px-3 py-1.5 rounded-full transition-all duration-200 ${activeSection === 'comparison'
+                    ? 'bg-indigo-600 text-white font-semibold shadow-xs'
+                    : 'text-slate-600 dark:text-slate-300 hover:text-indigo-600 dark:hover:text-indigo-300'
+                  }`}
+              >
+                {t('landing.comparison.title')}
+              </a>
+            </nav>
 
-            {/* Auth Buttons */}
-            {isAuthenticated ? (
-              <div className="flex items-center gap-2">
-                <span className="hidden sm:inline text-xs text-slate-600 dark:text-slate-300">
-                  {t('landing.welcomeBack', { name: user?.name?.split(' ')[0] || 'User' })}
-                </span>
-                <Link
-                  to="/dashboard"
-                  className="px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold shadow-md shadow-indigo-500/20 transition-all flex items-center gap-2 cursor-pointer"
-                >
-                  <span>{t('landing.ctaOpenWorkspace')}</span>
-                  <i className="pi pi-arrow-right text-[10px]" />
-                </Link>
-              </div>
-            ) : (
-              <div className="flex items-center gap-2">
-                <Link
-                  to="/auth/login"
-                  className="px-3 py-1.5 rounded-xl text-xs font-semibold text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
-                >
-                  {t('nav.signIn')}
-                </Link>
-                <Link
-                  to="/auth/login"
-                  className="px-3.5 py-1.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold shadow-md shadow-indigo-500/20 transition-all flex items-center gap-1.5 cursor-pointer"
-                >
-                  <span>{t('landing.ctaGetStarted')}</span>
-                  <i className="pi pi-sparkles text-[10px]" />
-                </Link>
-              </div>
-            )}
+            {/* Right Controls: Language, Theme & Actions */}
+            <div className="flex items-center gap-2 sm:gap-3">
+              {/* Language toggle */}
+              <button
+                onClick={toggleLocale}
+                className="px-2.5 py-1.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white/80 dark:bg-slate-900/80 text-xs font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors shadow-xs flex items-center gap-1.5 cursor-pointer"
+                title={t('nav.switchLanguage')}
+              >
+                <i className="pi pi-globe text-xs text-indigo-500" />
+                <span>{locale.toUpperCase()}</span>
+              </button>
+
+              {/* Theme toggle */}
+              <button
+                onClick={toggleTheme}
+                className="p-2 rounded-xl border border-slate-200 dark:border-slate-800 bg-white/80 dark:bg-slate-900/80 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors shadow-xs cursor-pointer"
+                title={theme === 'dark' ? t('nav.lightMode') : t('nav.darkMode')}
+              >
+                <i className={`pi ${theme === 'dark' ? 'pi-sun text-amber-400' : 'pi-moon text-indigo-500'} text-xs`} />
+              </button>
+
+              {/* Desktop Auth CTA */}
+              {isAuthenticated ? (
+                <div className="hidden sm:flex items-center gap-2">
+                  <span className="hidden lg:inline text-xs text-slate-600 dark:text-slate-300">
+                    {t('landing.welcomeBack', { name: user?.name?.split(' ')[0] || 'User' })}
+                  </span>
+                  <Link
+                    to="/dashboard"
+                    className="px-4 py-2 rounded-full bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold shadow-md shadow-indigo-500/20 transition-all flex items-center gap-1.5 cursor-pointer group"
+                  >
+                    <span>{t('landing.ctaOpenWorkspace')}</span>
+                    <i className="pi pi-arrow-right text-[10px] group-hover:translate-x-0.5 transition-transform" />
+                  </Link>
+                </div>
+              ) : (
+                <div className="hidden sm:flex items-center gap-2">
+                  <Link
+                    to="/auth/login"
+                    className="px-3.5 py-1.5 rounded-full text-xs font-semibold text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+                  >
+                    {t('nav.signIn')}
+                  </Link>
+                  <Link
+                    to="/auth/login"
+                    className="px-4 py-1.5 rounded-full bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold shadow-md shadow-indigo-500/20 transition-all flex items-center gap-1.5 cursor-pointer group"
+                  >
+                    <span>{t('landing.ctaGetStarted')}</span>
+                    <i className="pi pi-sparkles text-[10px] group-hover:rotate-12 transition-transform" />
+                  </Link>
+                </div>
+              )}
+
+              {/* Mobile Menu Hamburger */}
+              <button
+                onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+                className="md:hidden p-2 rounded-xl text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+                aria-label="Toggle menu"
+              >
+                <i className={`pi ${isMobileMenuOpen ? 'pi-times' : 'pi-bars'} text-sm`} />
+              </button>
+            </div>
           </div>
+
+          {/* Mobile Dropdown Menu */}
+          {isMobileMenuOpen && (
+            <div className="md:hidden pt-4 pb-2 border-t border-slate-200/80 dark:border-slate-800/80 mt-3 space-y-2 animate-fade-in">
+              <a
+                href="#features"
+                onClick={(e) => scrollToSection(e, 'features')}
+                className="block px-3 py-2 rounded-xl text-xs font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800"
+              >
+                {t('landing.features.sectionTitle')}
+              </a>
+              <a
+                href="#kanban"
+                onClick={(e) => scrollToSection(e, 'kanban')}
+                className="block px-3 py-2 rounded-xl text-xs font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800"
+              >
+                {t('landing.features.kanbanTitle')}
+              </a>
+              <a
+                href="#mcp"
+                onClick={(e) => scrollToSection(e, 'mcp')}
+                className="block px-3 py-2 rounded-xl text-xs font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800"
+              >
+                {t('landing.features.mcpTitle')}
+              </a>
+              <a
+                href="#comparison"
+                onClick={(e) => scrollToSection(e, 'comparison')}
+                className="block px-3 py-2 rounded-xl text-xs font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800"
+              >
+                {t('landing.comparison.title')}
+              </a>
+              <div className="pt-2 flex flex-col gap-2">
+                {isAuthenticated ? (
+                  <Link
+                    to="/dashboard"
+                    className="w-full py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold text-center flex items-center justify-center gap-1.5 shadow-md shadow-indigo-600/20 cursor-pointer"
+                  >
+                    <span>{t('landing.ctaOpenWorkspace')}</span>
+                    <i className="pi pi-arrow-right text-[10px]" />
+                  </Link>
+                ) : (
+                  <>
+                    <Link
+                      to="/auth/login"
+                      className="w-full py-2.5 rounded-xl bg-indigo-600 text-white text-xs font-semibold text-center"
+                    >
+                      {t('landing.ctaGetStarted')}
+                    </Link>
+                    <button
+                      onClick={handleDemoLogin}
+                      disabled={isDemoLoading}
+                      className="w-full py-2 rounded-xl border border-slate-200 dark:border-slate-800 text-xs font-semibold text-center"
+                    >
+                      {t('landing.ctaInstantDemo')}
+                    </button>
+                  </>
+                )}
+              </div>
+            </div>
+          )}
         </div>
       </header>
 
+      {/* Spacer for fixed navbar */}
+      <div className="h-16 sm:h-20" />
+
       {/* =========================================================================
-          2. HERO SECTION
+          2. HERO SECTION WITH 3D INTERACTIVE OBJECT & WORKSPACE PREVIEW
           ========================================================================= */}
-      <section className="relative z-10 pt-16 sm:pt-24 pb-16 px-4 sm:px-6 max-w-7xl mx-auto text-center">
-        {/* Eyebrow Pill */}
-        <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full border border-indigo-200 dark:border-indigo-500/30 bg-indigo-50/70 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400 text-xs font-medium mb-6 shadow-xs backdrop-blur-md">
-          <span className="w-2 h-2 rounded-full bg-emerald-500 animate-ping" />
-          <span>{t('landing.badge')}</span>
-        </div>
+      <section className="relative z-10 pt-8 sm:pt-14 pb-16 px-4 sm:px-6 max-w-7xl mx-auto">
+        {/* Dual-Column Hero Split: Headline & Interactive 3D Hologram */}
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-center mb-16">
+          {/* Left Column: Text & Hero CTAs */}
+          <div className="lg:col-span-7 text-left space-y-6">
+            {/* Eyebrow Pill */}
+            <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full border border-indigo-200 dark:border-indigo-500/30 bg-indigo-50/70 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400 text-xs font-medium shadow-xs backdrop-blur-md">
+              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-ping" />
+              <span>{t('landing.badge')}</span>
+            </div>
 
-        {/* Hero Title */}
-        <h1 className="text-4xl sm:text-6xl lg:text-7xl font-extrabold tracking-tight max-w-4xl mx-auto leading-tight sm:leading-none mb-6">
-          {t('landing.heroTitle1')}{' '}
-          <span className="bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 bg-clip-text text-transparent">
-            {t('landing.heroTitle2')}
-          </span>
-        </h1>
+            {/* Main Headline */}
+            <h1 className="text-4xl sm:text-6xl font-extrabold tracking-tight leading-tight sm:leading-none text-slate-900 dark:text-slate-100">
+              {t('landing.heroTitle1')}{' '}
+              <span className="bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 bg-clip-text text-transparent">
+                {t('landing.heroTitle2')}
+              </span>
+            </h1>
 
-        {/* Hero Subtitle */}
-        <p className="text-base sm:text-lg text-slate-600 dark:text-slate-300 max-w-2xl mx-auto mb-10 leading-relaxed">
-          {t('landing.heroSubtitle')}
-        </p>
+            {/* Subtitle */}
+            <p className="text-base sm:text-lg text-slate-600 dark:text-slate-300 max-w-xl leading-relaxed">
+              {t('landing.heroSubtitle')}
+            </p>
 
-        {/* Hero CTA Button Row */}
-        <div className="flex flex-wrap items-center justify-center gap-3 sm:gap-4 mb-16">
-          {isAuthenticated ? (
-            <Link
-              to="/dashboard"
-              className="px-6 py-3.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-semibold text-sm shadow-xl shadow-indigo-500/25 transition-all flex items-center gap-2.5 cursor-pointer group"
-            >
-              <span>{t('landing.ctaOpenWorkspace')}</span>
-              <i className="pi pi-arrow-right text-xs group-hover:translate-x-0.5 transition-transform" />
-            </Link>
-          ) : (
-            <Link
-              to="/auth/login"
-              className="px-6 py-3.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-semibold text-sm shadow-xl shadow-indigo-500/25 transition-all flex items-center gap-2.5 cursor-pointer group"
-            >
-              <span>{t('landing.ctaGetStarted')}</span>
-              <i className="pi pi-sparkles text-xs group-hover:rotate-12 transition-transform" />
-            </Link>
-          )}
+            {/* Action Buttons */}
+            <div className="flex flex-wrap items-center gap-3 sm:gap-4 pt-2">
+              {isAuthenticated ? (
+                <>
+                  <Link
+                    to="/dashboard"
+                    className="px-6 py-3.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-semibold text-sm shadow-xl shadow-indigo-500/25 transition-all flex items-center gap-2.5 cursor-pointer group"
+                  >
+                    <span>{t('landing.ctaOpenWorkspace')}</span>
+                    <i className="pi pi-arrow-right text-xs group-hover:translate-x-0.5 transition-transform" />
+                  </Link>
+                  <Link
+                    to="/tasks"
+                    className="px-5 py-3.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white/80 dark:bg-slate-900/80 hover:bg-slate-100 dark:hover:bg-slate-800/90 text-slate-800 dark:text-slate-200 font-semibold text-sm shadow-sm transition-all flex items-center gap-2 cursor-pointer"
+                  >
+                    <i className="pi pi-th-large text-xs text-indigo-500" />
+                    <span>{t('landing.ctaOpenKanban')}</span>
+                  </Link>
+                </>
+              ) : (
+                <>
+                  <Link
+                    to="/auth/login"
+                    className="px-6 py-3.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-semibold text-sm shadow-xl shadow-indigo-500/25 transition-all flex items-center gap-2.5 cursor-pointer group"
+                  >
+                    <span>{t('landing.ctaGetStarted')}</span>
+                    <i className="pi pi-sparkles text-xs group-hover:rotate-12 transition-transform" />
+                  </Link>
+                  <button
+                    onClick={handleDemoLogin}
+                    disabled={isDemoLoading}
+                    className="px-5 py-3.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white/80 dark:bg-slate-900/80 hover:bg-slate-100 dark:hover:bg-slate-800/90 text-slate-800 dark:text-slate-200 font-semibold text-sm shadow-sm transition-all flex items-center gap-2 cursor-pointer disabled:opacity-50"
+                  >
+                    {isDemoLoading ? (
+                      <i className="pi pi-spin pi-spinner text-xs text-indigo-500" />
+                    ) : (
+                      <i className="pi pi-play text-xs text-emerald-500" />
+                    )}
+                    <span>{t('landing.ctaInstantDemo')}</span>
+                  </button>
+                </>
+              )}
 
-          {/* Instant Sandbox Button */}
-          <button
-            onClick={handleDemoLogin}
-            disabled={isDemoLoading}
-            className="px-5 py-3.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white/80 dark:bg-slate-900/80 hover:bg-slate-100 dark:hover:bg-slate-800/90 text-slate-800 dark:text-slate-200 font-semibold text-sm shadow-sm transition-all flex items-center gap-2 cursor-pointer disabled:opacity-50"
-          >
-            {isDemoLoading ? (
-              <i className="pi pi-spin pi-spinner text-xs text-indigo-500" />
-            ) : (
-              <i className="pi pi-play text-xs text-emerald-500" />
-            )}
-            <span>{t('landing.ctaInstantDemo')}</span>
-          </button>
+              {/* Scroll to features */}
+              <a
+                href="#features"
+                onClick={(e) => scrollToSection(e, 'features')}
+                className="px-4 py-3.5 rounded-xl text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 text-sm font-medium transition-colors flex items-center gap-1.5 cursor-pointer"
+              >
+                <span>{t('landing.ctaDocs')}</span>
+                <i className="pi pi-chevron-down text-xs" />
+              </a>
+            </div>
 
-          {/* Scroll to features */}
-          <a
-            href="#features"
-            className="px-5 py-3.5 rounded-xl text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 text-sm font-medium transition-colors flex items-center gap-1.5"
-          >
-            <span>{t('landing.ctaDocs')}</span>
-            <i className="pi pi-chevron-down text-xs" />
-          </a>
+            {/* Feature quick bullets */}
+            <div className="pt-2 flex flex-wrap items-center gap-4 text-xs text-slate-500 dark:text-slate-400">
+              <span className="flex items-center gap-1.5">
+                <i className="pi pi-check text-[10px] text-emerald-500 font-bold" />
+                No Credit Card Required
+              </span>
+              <span className="flex items-center gap-1.5">
+                <i className="pi pi-check text-[10px] text-emerald-500 font-bold" />
+                Cursor & Antigravity MCP Native
+              </span>
+              <span className="flex items-center gap-1.5">
+                <i className="pi pi-check text-[10px] text-emerald-500 font-bold" />
+                Instant 1-Click Sandbox
+              </span>
+            </div>
+          </div>
+
+          {/* Right Column: Interactive 3D Canvas Scene */}
+          <div className="lg:col-span-5 relative flex items-center justify-center">
+            {/* Ambient circular backdrop glow */}
+            <div className="absolute inset-0 bg-gradient-to-tr from-indigo-500/20 via-purple-500/20 to-sky-500/10 rounded-full blur-3xl pointer-events-none" />
+
+            <div className="w-full max-w-md sm:max-w-lg rounded-3xl border border-slate-200/80 dark:border-slate-800/80 bg-white/40 dark:bg-slate-900/40 backdrop-blur-xl p-3 shadow-2xl relative overflow-hidden group">
+              <InteractiveHeroScene isDarkMode={theme === 'dark'} />
+            </div>
+          </div>
         </div>
 
         {/* =====================================================================
@@ -433,7 +634,7 @@ export const LandingPage: React.FC = () => {
       {/* =========================================================================
           4. BENTO GRID FEATURES SECTION
           ========================================================================= */}
-      <section id="features" className="py-20 px-4 sm:px-6 max-w-7xl mx-auto">
+      <section id="features" className="scroll-mt-28 py-20 px-4 sm:px-6 max-w-7xl mx-auto">
         <div className="text-center max-w-3xl mx-auto mb-16">
           <div className="text-xs font-mono uppercase tracking-wider text-indigo-500 font-bold mb-2">
             Features
@@ -450,7 +651,7 @@ export const LandingPage: React.FC = () => {
           {/* Card 1: Kanban (Large Bento) */}
           <div
             id="kanban"
-            className="md:col-span-2 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/60 p-6 sm:p-8 shadow-sm hover:border-indigo-400/50 transition-all space-y-4"
+            className="scroll-mt-28 md:col-span-2 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/60 p-6 sm:p-8 shadow-sm hover:border-indigo-400/50 transition-all space-y-4"
           >
             <div className="w-10 h-10 rounded-xl bg-indigo-50 dark:bg-indigo-950/50 border border-indigo-200 dark:border-indigo-500/30 flex items-center justify-center text-indigo-600 dark:text-indigo-400 text-lg">
               <i className="pi pi-th-large" />
@@ -536,7 +737,7 @@ export const LandingPage: React.FC = () => {
       {/* =========================================================================
           5. MCP SHOWCASE SECTION
           ========================================================================= */}
-      <section id="mcp" className="py-16 px-4 sm:px-6 max-w-7xl mx-auto">
+      <section id="mcp" className="scroll-mt-28 py-16 px-4 sm:px-6 max-w-7xl mx-auto">
         <div className="rounded-3xl border border-indigo-200 dark:border-indigo-500/30 bg-gradient-to-b from-indigo-50/50 to-white dark:from-slate-900/90 dark:to-slate-950 p-6 sm:p-12 shadow-xl relative overflow-hidden">
           <div className="max-w-3xl mb-8 space-y-3">
             <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-indigo-100 dark:bg-indigo-950/80 text-indigo-600 dark:text-indigo-400 text-xs font-mono font-bold">
@@ -578,7 +779,7 @@ export const LandingPage: React.FC = () => {
       {/* =========================================================================
           6. COMPARISON SECTION
           ========================================================================= */}
-      <section id="comparison" className="py-20 px-4 sm:px-6 max-w-7xl mx-auto">
+      <section id="comparison" className="scroll-mt-28 py-20 px-4 sm:px-6 max-w-7xl mx-auto">
         <div className="text-center max-w-3xl mx-auto mb-16">
           <h2 className="text-3xl sm:text-4xl font-extrabold tracking-tight text-slate-900 dark:text-slate-100 mb-4">
             {t('landing.comparison.title')}
@@ -666,21 +867,33 @@ export const LandingPage: React.FC = () => {
               {t('landing.ctaBanner.subtitle')}
             </p>
             <div className="pt-4 flex flex-wrap items-center justify-center gap-3">
-              <Link
-                to="/auth/login"
-                className="px-6 py-3.5 rounded-xl bg-white hover:bg-slate-100 text-indigo-700 font-bold text-xs sm:text-sm shadow-lg transition-all flex items-center gap-2 cursor-pointer"
-              >
-                <span>{t('landing.ctaBanner.button')}</span>
-                <i className="pi pi-arrow-right text-xs" />
-              </Link>
-              <button
-                onClick={handleDemoLogin}
-                disabled={isDemoLoading}
-                className="px-6 py-3.5 rounded-xl border border-white/30 hover:bg-white/10 text-white font-semibold text-xs sm:text-sm transition-all flex items-center gap-2 cursor-pointer"
-              >
-                <i className="pi pi-play text-xs text-amber-300" />
-                <span>{t('landing.ctaBanner.demoButton')}</span>
-              </button>
+              {isAuthenticated ? (
+                <Link
+                  to="/dashboard"
+                  className="px-6 py-3.5 rounded-xl bg-white hover:bg-slate-100 text-indigo-700 font-bold text-xs sm:text-sm shadow-lg transition-all flex items-center gap-2 cursor-pointer"
+                >
+                  <span>{t('landing.ctaOpenWorkspace')}</span>
+                  <i className="pi pi-arrow-right text-xs" />
+                </Link>
+              ) : (
+                <>
+                  <Link
+                    to="/auth/login"
+                    className="px-6 py-3.5 rounded-xl bg-white hover:bg-slate-100 text-indigo-700 font-bold text-xs sm:text-sm shadow-lg transition-all flex items-center gap-2 cursor-pointer"
+                  >
+                    <span>{t('landing.ctaBanner.button')}</span>
+                    <i className="pi pi-arrow-right text-xs" />
+                  </Link>
+                  <button
+                    onClick={handleDemoLogin}
+                    disabled={isDemoLoading}
+                    className="px-6 py-3.5 rounded-xl border border-white/30 hover:bg-white/10 text-white font-semibold text-xs sm:text-sm transition-all flex items-center gap-2 cursor-pointer"
+                  >
+                    <i className="pi pi-play text-xs text-amber-300" />
+                    <span>{t('landing.ctaBanner.demoButton')}</span>
+                  </button>
+                </>
+              )}
             </div>
           </div>
         </div>

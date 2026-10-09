@@ -152,27 +152,52 @@ export default function Dashboard() {
       <TaskFocusHorizon />
 
       {/* Quick Idea Capture Scratchpad Input */}
-      <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-gradient-to-r dark:from-slate-900 dark:to-indigo-950/20 p-4 shadow-xs">
-        <form onSubmit={handleQuickIdeaSubmit} className="flex items-center gap-2.5">
-          <i className="pi pi-bolt text-indigo-500 dark:text-indigo-400 text-sm pl-1" />
-          <input
-            type="text"
-            value={quickIdea}
-            onChange={(e) => setQuickIdea(e.target.value)}
-            placeholder={t('dashboard.quickIdeaPlaceholder')}
-            className="flex-1 bg-transparent text-xs text-slate-900 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none"
-          />
+      <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/90 p-4 sm:p-5 shadow-xs backdrop-blur-xl space-y-3">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <div className="w-6 h-6 rounded-lg bg-indigo-50 dark:bg-indigo-500/20 border border-indigo-200 dark:border-indigo-500/30 flex items-center justify-center text-indigo-600 dark:text-indigo-400">
+              <i className="pi pi-bolt text-xs" />
+            </div>
+            <span className="text-xs font-bold uppercase tracking-wider text-slate-800 dark:text-slate-200">
+              {t('dashboard.scratchpadIdeas')}
+            </span>
+          </div>
+          <span className="text-[11px] font-mono text-slate-500 dark:text-slate-400 hidden sm:inline-flex items-center gap-1.5">
+            <span>Press</span>
+            <kbd className="px-1.5 py-0.5 rounded bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-[10px] text-slate-700 dark:text-slate-200 font-semibold shadow-2xs">
+              Enter ↵
+            </kbd>
+            <span>to save</span>
+          </span>
+        </div>
+
+        <form onSubmit={handleQuickIdeaSubmit} className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5">
+          <div className="relative flex-1 flex items-center rounded-xl border border-slate-200 dark:border-slate-700/80 bg-slate-50 dark:bg-slate-950/80 px-3.5 py-2.5 focus-within:border-indigo-500 focus-within:ring-2 focus-within:ring-indigo-500/20 transition-all">
+            <i className="pi pi-pencil text-slate-400 dark:text-slate-400 text-xs mr-2.5 shrink-0" />
+            <input
+              type="text"
+              value={quickIdea}
+              onChange={(e) => setQuickIdea(e.target.value)}
+              placeholder={t('dashboard.quickIdeaPlaceholder')}
+              className="w-full bg-transparent text-sm font-medium text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-400 focus:outline-none"
+            />
+          </div>
+
           <button
             type="submit"
             disabled={createNoteMutation.isPending || !quickIdea.trim()}
-            className="px-3 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-500 disabled:opacity-40 text-xs font-medium text-white transition-colors flex items-center gap-1.5 shrink-0"
+            className={`h-11 px-5 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-2 shrink-0 ${
+              quickIdea.trim() && !createNoteMutation.isPending
+                ? 'bg-indigo-600 hover:bg-indigo-500 text-white shadow-md shadow-indigo-600/20 cursor-pointer'
+                : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700/60 cursor-not-allowed'
+            }`}
           >
             {createNoteMutation.isPending ? (
               <i className="pi pi-spin pi-spinner text-xs" />
             ) : (
-              <i className="pi pi-plus text-xs" />
+              <i className={`pi pi-plus text-xs ${quickIdea.trim() ? 'text-white' : 'text-slate-500 dark:text-slate-400'}`} />
             )}
-            {t('dashboard.captureIdea')}
+            <span className="font-bold tracking-tight">{t('dashboard.captureIdea')}</span>
           </button>
         </form>
       </div>

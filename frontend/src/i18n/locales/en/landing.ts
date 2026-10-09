@@ -6,6 +6,7 @@ export const landing = {
     'Engineered for developers who hate bloated project managers. Kanban boards, instant markdown scratchpad, and Model Context Protocol (MCP) server for Cursor & Antigravity AI agents.',
   ctaGetStarted: 'Get Started Free',
   ctaOpenWorkspace: 'Open Workspace',
+  ctaOpenKanban: 'Open Kanban Board',
   ctaInstantDemo: 'Try Instant Demo',
   ctaDocs: 'Explore Features',
   welcomeBack: 'Welcome back, {name}!',

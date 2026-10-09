@@ -8,6 +8,7 @@ export const landing: typeof EnLanding = {
     'Didesain khusus untuk developer yang bosan dengan project manager lambat. Kanban board interaktif, Markdown scratchpad instan, dan Model Context Protocol (MCP) server untuk AI agent di Cursor & Antigravity.',
   ctaGetStarted: 'Mulai Gratis',
   ctaOpenWorkspace: 'Buka Workspace',
+  ctaOpenKanban: 'Buka Kanban Board',
   ctaInstantDemo: 'Coba Demo Instan',
   ctaDocs: 'Jelajahi Fitur',
   welcomeBack: 'Selamat datang kembali, {name}!',
