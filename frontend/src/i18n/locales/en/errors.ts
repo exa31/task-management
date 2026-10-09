@@ -26,4 +26,14 @@ export const errors = {
   INVALID_CREDENTIALS: 'Invalid email or password.',
   TOKEN_EXPIRED: 'Your session has expired. Please sign in again.',
   TOKEN_INVALID: 'Invalid authentication token.',
+
+  // Error Page & Boundary
+  pageTitle: 'Unexpected Application Error',
+  pageSubtitle: 'An unexpected runtime issue occurred while loading this view.',
+  reloadPage: 'Reload Page',
+  backHome: 'Back to Dashboard',
+  clearCacheReload: 'Clear Cache & Reload',
+  technicalDetails: 'Technical Details',
+  copyError: 'Copy Error Info',
+  errorCopied: 'Error details copied to clipboard',
 }

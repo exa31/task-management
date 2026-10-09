@@ -1,6 +1,7 @@
 export * from './auth/OAuthSetupModal'
 export * from './brand/BrandLogo'
 export * from './ConfirmDialog'
+export * from './ErrorBoundary'
 export * from './layout'
 export * from './toast/ToastManager'
 export * from './toast/toastService'

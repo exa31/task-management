@@ -2,7 +2,7 @@ import { ConfirmDialog } from 'primereact/confirmdialog'
 import { useEffect } from 'react'
 import { Outlet, useLocation } from 'react-router-dom'
 
-import { AppToastContainer } from '@/components'
+import { AppToastContainer, ErrorBoundary } from '@/components'
 import { useTranslation } from '@/i18n'
 
 function App() {
@@ -39,7 +39,9 @@ function App() {
     <>
       <AppToastContainer />
       <ConfirmDialog />
-      <Outlet />
+      <ErrorBoundary>
+        <Outlet />
+      </ErrorBoundary>
     </>
   )
 }

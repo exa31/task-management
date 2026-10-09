@@ -53,9 +53,7 @@ export const TaskListView: React.FC = () => {
     fetchNextPage,
   } = useInfiniteTasks(filterParams)
 
-  const tasks = useMemo(() => {
-    return data?.pages.flatMap((page) => page.items) || []
-  }, [data])
+  const tasks = useMemo(() => data?.pages.flatMap((page) => (Array.isArray(page?.items) ? page.items : [])) || [], [data])
 
   const sentinelRef = useRef<HTMLDivElement | null>(null)
 

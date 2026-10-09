@@ -1,8 +1,8 @@
 /**
  * Hooks Barrel Export
  */
-export { useDarkMode } from './useDarkMode'
 export * from './useAppleAuth'
+export { useDarkMode } from './useDarkMode'
 export * from './useGoogleAuth'
 export * from './useMcpQuery'
 export * from './useNotesQuery'

@@ -55,8 +55,10 @@ export const removeCookie = (name: string): void => {
   document.cookie = `${name}=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT; SameSite=Lax`
 }
 
+export const apiBaseUrl = (import.meta.env.VITE_API_URL || import.meta.env.VITE_APP_API_URL || '').replace(/\/+$/, '')
+
 export const axiosInstance: AxiosInstance = axios.create({
-  baseURL: '',
+  baseURL: apiBaseUrl,
   withCredentials: true,
   headers: {
     'Content-Type': 'application/json',
@@ -114,7 +116,7 @@ axiosInstance.interceptors.response.use(
       try {
         // Refresh token is strictly handled by the browser via HttpOnly cookie
         const refreshResponse = await axios.post(
-          '/api/v1/auth/refresh',
+          `${apiBaseUrl}/api/v1/auth/refresh`,
           {},
           { withCredentials: true }
         )
@@ -160,14 +162,13 @@ export const apiClient = {
   get: async <T>(url: string, config?: AxiosRequestConfig): Promise<{ data: T }> => {
     try {
       const res = await axiosInstance.get(url, config)
+      const trimmed = typeof res.data === 'string' ? res.data.trim().toLowerCase() : ''
+      if (trimmed.startsWith('<!doctype') || trimmed.startsWith('<html')) {
+        throw new Error('Received HTML response instead of JSON. Check your backend URL or proxy configuration.')
+      }
       const unwrapped = res.data?.data !== undefined ? res.data.data : res.data
       return { data: unwrapped as T }
     } catch (err) {
-      // Local cache fallback for offline resilience
-      const cached = localStorage.getItem(`cache_${url}`)
-      if (cached) {
-        return { data: JSON.parse(cached) as T }
-      }
       throw parseApiError(err)
     }
   },

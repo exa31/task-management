@@ -26,4 +26,14 @@ export const errors = {
   INVALID_CREDENTIALS: 'Email atau kata sandi tidak sesuai.',
   TOKEN_EXPIRED: 'Sesi login Anda telah kedaluwarsa. Silakan masuk kembali.',
   TOKEN_INVALID: 'Token autentikasi tidak valid.',
+
+  // Error Page & Boundary
+  pageTitle: 'Terjadi Kendala pada Aplikasi',
+  pageSubtitle: 'Terjadi kesalahan sistem yang tidak terduga saat memuat halaman ini.',
+  reloadPage: 'Muat Ulang Halaman',
+  backHome: 'Kembali ke Dashboard',
+  clearCacheReload: 'Bersihkan Cache & Muat Ulang',
+  technicalDetails: 'Detail Teknis Error',
+  copyError: 'Salin Detail Error',
+  errorCopied: 'Detail error berhasil disalin ke clipboard',
 }

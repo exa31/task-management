@@ -2,7 +2,6 @@ import { create } from 'zustand'
 
 import { authApi } from '@/api'
 import { getCookie, removeCookie, setCookie } from '@/api/client'
-import { appConfig } from '@/config'
 import type { DevLoginPayload, OAuthLoginPayload, User } from '@/types'
 import { logger } from '@/utils'
 
@@ -68,31 +67,9 @@ export const useAuthStore = create<AuthState>((set) => ({
         loading: false,
       })
     } catch (err: unknown) {
-      if (!appConfig.enableMocks) {
-        const errorMsg = err instanceof Error ? err.message : 'Login failed'
-        set({ loading: false, error: errorMsg })
-        throw err
-      }
-      // Local demo fallback if backend is offline and mocks are explicitly enabled
-      const fallbackEmail = payload.email || 'user@example.com'
-      const mockUser: User = {
-        id: `user-demo-${Date.now()}`,
-        name: payload.name || fallbackEmail.split('@')[0],
-        email: fallbackEmail,
-        avatar_url: payload.avatar_url || `https://api.dicebear.com/7.x/bottts/svg?seed=${fallbackEmail}`,
-        provider: payload.provider,
-        created_at: new Date().toISOString(),
-      }
-      const demoToken = `demo_token_${Date.now()}`
-      setCookie('access_token', demoToken)
-      localStorage.setItem(STORAGE_KEY_TOKEN, demoToken)
-      localStorage.setItem(STORAGE_KEY_USER, JSON.stringify(mockUser))
-      set({
-        user: mockUser,
-        token: demoToken,
-        isAuthenticated: true,
-        loading: false,
-      })
+      const errorMsg = err instanceof Error ? err.message : 'Login failed'
+      set({ loading: false, error: errorMsg })
+      throw err
     }
   },
 
@@ -115,30 +92,9 @@ export const useAuthStore = create<AuthState>((set) => ({
         loading: false,
       })
     } catch (err: unknown) {
-      if (!appConfig.enableMocks) {
-        const errorMsg = err instanceof Error ? err.message : 'Dev login failed'
-        set({ loading: false, error: errorMsg })
-        throw err
-      }
-      // Fallback demo user if mocks are explicitly enabled
-      const demoUser: User = {
-        id: 'demo-user-local',
-        name: payload.name || 'Demo Creator',
-        email: payload.email,
-        avatar_url: `https://api.dicebear.com/7.x/bottts/svg?seed=${payload.email}`,
-        provider: 'google',
-        created_at: new Date().toISOString(),
-      }
-      const demoToken = 'demo_token_local'
-      setCookie('access_token', demoToken)
-      localStorage.setItem(STORAGE_KEY_TOKEN, demoToken)
-      localStorage.setItem(STORAGE_KEY_USER, JSON.stringify(demoUser))
-      set({
-        user: demoUser,
-        token: demoToken,
-        isAuthenticated: true,
-        loading: false,
-      })
+      const errorMsg = err instanceof Error ? err.message : 'Dev login failed'
+      set({ loading: false, error: errorMsg })
+      throw err
     }
   },
 

@@ -11,6 +11,7 @@ import App from './App.tsx'
 import AuthLayout from './layouts/AuthLayout.tsx'
 import DashboardLayout from './layouts/DashboardLayout.tsx'
 import Dashboard from './pages/Dashboard.tsx'
+import ErrorPage from './pages/ErrorPage.tsx'
 import Login from './pages/Login.tsx'
 import McpSettingsPage from './pages/McpSettingsPage.tsx'
 import NotesPage from './pages/NotesPage.tsx'
@@ -22,10 +23,12 @@ const router = createBrowserRouter([
   {
     path: '/',
     element: <App />,
+    errorElement: <ErrorPage />,
     children: [
       {
         path: '/',
         element: <DashboardLayout />,
+        errorElement: <ErrorPage />,
         children: [
           { index: true, element: <Dashboard /> },
           { path: 'tasks', element: <TasksPage /> },
@@ -36,6 +39,7 @@ const router = createBrowserRouter([
       {
         path: 'auth',
         element: <AuthLayout />,
+        errorElement: <ErrorPage />,
         children: [
           { path: 'login', element: <Login /> },
         ],

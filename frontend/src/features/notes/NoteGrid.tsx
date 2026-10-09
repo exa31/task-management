@@ -17,8 +17,10 @@ import { NoteModal } from './NoteModal'
 
 export const NoteGrid: React.FC = () => {
   const [activeTag, setActiveTag] = useState('')
-  const { data: allNotes = [] } = useNotes()
-  const { data: notes = [], isLoading, isError, error, refetch } = useNotes(activeTag ? { tag: activeTag } : undefined)
+  const { data: rawAllNotes } = useNotes()
+  const { data: rawNotes, isLoading, isError, error, refetch } = useNotes(activeTag ? { tag: activeTag } : undefined)
+  const allNotes = Array.isArray(rawAllNotes) ? rawAllNotes : []
+  const notes = Array.isArray(rawNotes) ? rawNotes : []
   const { t } = useTranslation()
 
   const createNoteMutation = useCreateNote()

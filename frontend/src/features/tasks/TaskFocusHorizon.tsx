@@ -6,13 +6,14 @@ import { useTaskStore } from '@/stores'
 
 export const TaskFocusHorizon: React.FC = () => {
   const { openDrawer } = useTaskStore()
-  const { data: tasks = [] } = useTasks()
+  const { data: rawTasks } = useTasks()
+  const tasks = Array.isArray(rawTasks) ? rawTasks : []
   const { t } = useTranslation()
   const updateTaskMutation = useUpdateTask()
   const toggleFocusMutation = useToggleFocus()
 
   // Pinned to focus and not done
-  const focusTasks = tasks.filter((t) => t.is_focus && t.status !== 'done')
+  const focusTasks = tasks.filter((t) => t && t.is_focus && t.status !== 'done')
 
   if (focusTasks.length === 0) return null
 

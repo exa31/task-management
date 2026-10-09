@@ -6,7 +6,8 @@ import { useNotes } from '@/hooks'
 import { useTranslation } from '@/i18n'
 
 export const NotesPage: React.FC = () => {
-  const { data: notes = [] } = useNotes()
+  const { data: rawNotes } = useNotes()
+  const notes = Array.isArray(rawNotes) ? rawNotes : []
   const { t } = useTranslation()
 
   return (

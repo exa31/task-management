@@ -68,9 +68,9 @@ jobs:
       kubeconfig: /home/deploy/.kube/config
       rollout_timeout: 300s
       build_args: |
-        VITE_API_URL=${{ vars.VITE_APP_API_URL || vars.VITE_API_URL || '' }}
-        VITE_APP_API_URL=${{ vars.VITE_APP_API_URL || vars.VITE_API_URL || '' }}
-        VITE_WS_URL=${{ vars.VITE_WS_URL || '' }}
+        VITE_API_URL=${{ vars.VITE_APP_API_URL || vars.VITE_API_URL || 'https://be-task-hub.eka-dev.cloud' }}
+        VITE_APP_API_URL=${{ vars.VITE_APP_API_URL || vars.VITE_API_URL || 'https://be-task-hub.eka-dev.cloud' }}
+        VITE_WS_URL=${{ vars.VITE_WS_URL || 'wss://be-task-hub.eka-dev.cloud' }}
         VITE_GOOGLE_CLIENT_ID=${{ vars.VITE_GOOGLE_CLIENT_ID || '' }}
         VITE_APPLE_CLIENT_ID=${{ vars.VITE_APPLE_CLIENT_ID || '' }}
         VITE_ENABLE_MOCKS=${{ vars.VITE_ENABLE_MOCKS || 'false' }}

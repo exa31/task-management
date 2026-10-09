@@ -35,7 +35,8 @@ export const TaskBoardView: React.FC = () => {
     [filterPriority, filterTag, filterFocusOnly, searchQuery]
   )
 
-  const { data: tasks = [], isLoading, isError, error, refetch } = useTasks(filterParams)
+  const { data: rawTasks, isLoading, isError, error, refetch } = useTasks(filterParams)
+  const tasks = Array.isArray(rawTasks) ? rawTasks : []
   const updateTaskMutation = useUpdateTask()
   const toggleFocusMutation = useToggleFocus()
 

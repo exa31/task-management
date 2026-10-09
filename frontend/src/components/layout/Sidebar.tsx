@@ -12,13 +12,15 @@ interface SidebarProps {
 export default function Sidebar({ isSidebarOpen }: SidebarProps) {
   const location = useLocation()
   const { t } = useTranslation()
-  const { data: tasks = [] } = useTasks()
-  const { data: notes = [] } = useNotes()
+  const { data: rawTasks } = useTasks()
+  const { data: rawNotes } = useNotes()
+  const tasks = Array.isArray(rawTasks) ? rawTasks : []
+  const notes = Array.isArray(rawNotes) ? rawNotes : []
   const { openCommandPalette } = useUIStore()
 
   const isActive = (path: string) => location.pathname === path
 
-  const inProgressCount = tasks.filter((t) => t.status === 'in_progress').length
+  const inProgressCount = tasks.filter((t) => t?.status === 'in_progress').length
 
   return (
     <aside

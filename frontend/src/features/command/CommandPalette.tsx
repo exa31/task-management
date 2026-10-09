@@ -16,8 +16,10 @@ export const CommandPalette: React.FC = () => {
     toggleTheme,
   } = useUIStore()
   const { openDrawer, setActiveView } = useTaskStore()
-  const { data: tasks = [] } = useTasks()
-  const { data: notes = [] } = useNotes()
+  const { data: rawTasks } = useTasks()
+  const { data: rawNotes } = useNotes()
+  const tasks = Array.isArray(rawTasks) ? rawTasks : []
+  const notes = Array.isArray(rawNotes) ? rawNotes : []
   const { t, locale, toggleLocale } = useTranslation()
   const navigate = useNavigate()
 

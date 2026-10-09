@@ -30,6 +30,7 @@ export interface AppleSignInFailureEventDetail {
 
 declare global {
   interface Window {
+    // eslint-disable-next-line @typescript-eslint/naming-convention
     AppleID?: {
       auth: {
         init: (config: {
@@ -71,7 +72,7 @@ function parseAppleJwt(token: string): { email?: string; sub?: string } | null {
       window
         .atob(base64)
         .split('')
-        .map((c) => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2))
+        .map((c) => `%${  (`00${  c.charCodeAt(0).toString(16)}`).slice(-2)}`)
         .join('')
     )
     return JSON.parse(jsonPayload)
@@ -155,7 +156,8 @@ export function useAppleAuth(options: UseAppleAuthOptions = {}) {
         if (!email && authorization.id_token) {
           const decoded = parseAppleJwt(authorization.id_token)
           if (decoded?.email) {
-            email = decoded.email
+            const { email: jwtEmail } = decoded
+            email = jwtEmail
           }
         }
 

@@ -12,7 +12,8 @@ import { useTaskStore } from '@/stores'
 
 export const TasksPage: React.FC = () => {
   const { activeView } = useTaskStore()
-  const { data: tasks = [] } = useTasks()
+  const { data: rawTasks } = useTasks()
+  const tasks = Array.isArray(rawTasks) ? rawTasks : []
   const { t } = useTranslation()
 
   return (

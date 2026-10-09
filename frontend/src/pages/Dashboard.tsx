@@ -19,7 +19,7 @@ import {
 } from '@/hooks'
 import { useTranslation } from '@/i18n'
 import { useAuthStore, useTaskStore, useUIStore } from '@/stores'
-import type { ConvertToTaskPayload, CreateNotePayload, Note, UpdateNotePayload } from '@/types'
+import type { ConvertToTaskPayload, CreateNotePayload, Note, Task, UpdateNotePayload } from '@/types'
 
 export default function Dashboard() {
   const { user } = useAuthStore()
@@ -28,8 +28,10 @@ export default function Dashboard() {
   const { t, locale } = useTranslation()
 
   // TanStack Query server data
-  const { data: tasks = [] } = useTasks()
-  const { data: notes = [] } = useNotes()
+  const { data: rawTasks } = useTasks()
+  const { data: rawNotes } = useNotes()
+  const tasks: Task[] = Array.isArray(rawTasks) ? rawTasks : []
+  const notes: Note[] = Array.isArray(rawNotes) ? rawNotes : []
 
   // Mutations
   const createNoteMutation = useCreateNote()
@@ -68,9 +70,9 @@ export default function Dashboard() {
   }
 
   // Stats
-  const inProgressCount = tasks.filter((t) => t.status === 'in_progress').length
-  const focusCount = tasks.filter((t) => t.is_focus && t.status !== 'done').length
-  const completedCount = tasks.filter((t) => t.status === 'done').length
+  const inProgressCount = tasks.filter((t) => t?.status === 'in_progress').length
+  const focusCount = tasks.filter((t) => t?.is_focus && t?.status !== 'done').length
+  const completedCount = tasks.filter((t) => t?.status === 'done').length
 
   const todayStr = new Date().toLocaleDateString(locale === 'id' ? 'id-ID' : 'en-US', {
     weekday: 'long',
@@ -194,7 +196,7 @@ export default function Dashboard() {
 
           <div className="divide-y divide-slate-100 dark:divide-slate-800/60">
             {tasks
-              .filter((t) => t.status !== 'done')
+              .filter((t) => t && t.status !== 'done')
               .slice(0, 5)
               .map((task) => (
                 <div
@@ -234,7 +236,7 @@ export default function Dashboard() {
                   </div>
                 </div>
               ))}
-            {tasks.filter((t) => t.status !== 'done').length === 0 && (
+            {tasks.filter((t) => t && t.status !== 'done').length === 0 && (
               <p className="py-6 text-center text-xs text-slate-500">
                 {t('dashboard.noActiveTasks')}
               </p>

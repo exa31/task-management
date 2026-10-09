@@ -16,7 +16,8 @@ export const TaskFilterBar: React.FC = () => {
     setSearchQuery,
   } = useTaskStore()
 
-  const { data: allTasks = [] } = useTasks()
+  const { data: rawAllTasks } = useTasks()
+  const allTasks = Array.isArray(rawAllTasks) ? rawAllTasks : []
   const { openCreateTaskModal } = useUIStore()
   const { t } = useTranslation()
 
@@ -29,7 +30,7 @@ export const TaskFilterBar: React.FC = () => {
     { id: 'done', label: t('tasks.status.done') },
   ]
 
-  const focusCount = allTasks.filter((t) => t.is_focus).length
+  const focusCount = allTasks.filter((t) => t?.is_focus).length
 
   return (
     <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 pb-3 border-b border-slate-200 dark:border-slate-800">
