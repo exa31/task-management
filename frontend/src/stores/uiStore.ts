@@ -62,13 +62,14 @@ const initialLocale = getInitialLocale()
 interface UIState {
   isCommandPaletteOpen: boolean
   isCreateTaskModalOpen: boolean
+  createTaskInitialProjectId: number | null
   isCreateNoteModalOpen: boolean
   theme: 'dark' | 'light'
   locale: 'en' | 'id'
   openCommandPalette: () => void
   closeCommandPalette: () => void
   toggleCommandPalette: () => void
-  openCreateTaskModal: () => void
+  openCreateTaskModal: (initialProjectId?: number | null | unknown) => void
   closeCreateTaskModal: () => void
   openCreateNoteModal: () => void
   closeCreateNoteModal: () => void
@@ -81,6 +82,7 @@ interface UIState {
 export const useUIStore = create<UIState>((set) => ({
   isCommandPaletteOpen: false,
   isCreateTaskModalOpen: false,
+  createTaskInitialProjectId: null,
   isCreateNoteModalOpen: false,
   theme: initialTheme,
   locale: initialLocale,
@@ -89,8 +91,12 @@ export const useUIStore = create<UIState>((set) => ({
   closeCommandPalette: () => set({ isCommandPaletteOpen: false }),
   toggleCommandPalette: () => set((state) => ({ isCommandPaletteOpen: !state.isCommandPaletteOpen })),
 
-  openCreateTaskModal: () => set({ isCreateTaskModalOpen: true }),
-  closeCreateTaskModal: () => set({ isCreateTaskModalOpen: false }),
+  openCreateTaskModal: (initialProjectId?: number | null | unknown) =>
+    set({
+      isCreateTaskModalOpen: true,
+      createTaskInitialProjectId: typeof initialProjectId === 'number' ? initialProjectId : null,
+    }),
+  closeCreateTaskModal: () => set({ isCreateTaskModalOpen: false, createTaskInitialProjectId: null }),
 
   openCreateNoteModal: () => set({ isCreateNoteModalOpen: true }),
   closeCreateNoteModal: () => set({ isCreateNoteModalOpen: false }),

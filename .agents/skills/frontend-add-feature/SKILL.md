@@ -187,6 +187,31 @@ export const <Feature>Page: React.FC = () => {
 };
 ```
 
+### Step 7: Add i18n Locales
+Create locale entries for the new feature in both English and Indonesian:
+1. `src/i18n/locales/en/<feature>.ts`:
+   ```typescript
+   export const <feature> = {
+     title: '<Feature> Management',
+     subtitle: 'Manage and view all <feature> instances.',
+     // ...
+   }
+   ```
+2. `src/i18n/locales/id/<feature>.ts`:
+   ```typescript
+   export const <feature> = {
+     title: 'Manajemen <Feature>',
+     subtitle: 'Kelola dan lihat semua instance <feature>.',
+     // ...
+   }
+   ```
+3. Register in both `src/i18n/locales/en/index.ts` and `src/i18n/locales/id/index.ts`.
+4. Use `useTranslation()` in components and pages:
+   ```tsx
+   const { t } = useTranslation()
+   <h1>{t('<feature>.title')}</h1>
+   ```
+
 ---
 
 ## Quality Gate Checklist
@@ -196,3 +221,5 @@ Before finishing:
 2. `npm run build` (`tsc -b && vite build`) compiles with 0 errors.
 3. Path aliases strictly use `@/` (no `../../`).
 4. All barrel export `index.ts` files are updated.
+5. All UI text, buttons, modals, and toasts use `useTranslation()` (no hardcoded text; see `.agents/rules/frontend-i18n.md`).
+6. Both `en` and `id` locale files are synchronized.

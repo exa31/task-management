@@ -124,6 +124,10 @@ func (s *service) ConvertToTask(ctx context.Context, userID string, id int64, re
 			return errors.NoteNotFound()
 		}
 
+		if entity.Type == "knowledge" {
+			return errors.NoteNotActionable()
+		}
+
 		if s.taskCreator == nil {
 			return errors.InternalError("Task integration not configured", nil)
 		}

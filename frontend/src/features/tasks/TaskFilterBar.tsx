@@ -1,6 +1,6 @@
 import React from 'react'
 
-import { useTasks } from '@/hooks'
+import { useProjects, useTasks } from '@/hooks'
 import { useTranslation } from '@/i18n'
 import { useTaskStore, useUIStore } from '@/stores'
 
@@ -10,6 +10,8 @@ export const TaskFilterBar: React.FC = () => {
     setActiveView,
     filterStatus,
     setFilterStatus,
+    filterProject,
+    setFilterProject,
     filterFocusOnly,
     setFilterFocusOnly,
     searchQuery,
@@ -17,6 +19,7 @@ export const TaskFilterBar: React.FC = () => {
   } = useTaskStore()
 
   const { data: rawAllTasks } = useTasks()
+  const { data: projects = [] } = useProjects()
   const allTasks = Array.isArray(rawAllTasks) ? rawAllTasks : []
   const { openCreateTaskModal } = useUIStore()
   const { t } = useTranslation()
@@ -63,6 +66,29 @@ export const TaskFilterBar: React.FC = () => {
             <span>{t('tasks.boardView')}</span>
           </button>
         </div>
+
+        {/* Project Module Filter Dropdown */}
+        {projects.length > 0 && (
+          <div className="relative">
+            <select
+              value={filterProject === null ? '' : String(filterProject)}
+              onChange={(e) => {
+                const val = e.target.value
+                setFilterProject(val ? parseInt(val, 10) : null)
+              }}
+              className="appearance-none rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 pl-7 pr-8 py-1 text-xs font-medium text-slate-700 dark:text-slate-200 focus:outline-none focus:border-indigo-500 cursor-pointer shadow-xs"
+            >
+              <option value="">{t('tasks.allProjects')}</option>
+              {projects.map((p) => (
+                <option key={p.id} value={String(p.id)}>
+                  📁 {p.name}
+                </option>
+              ))}
+            </select>
+            <i className="pi pi-folder absolute left-2.5 top-1/2 -translate-y-1/2 text-[10px] text-indigo-500 pointer-events-none" />
+            <i className="pi pi-chevron-down absolute right-2.5 top-1/2 -translate-y-1/2 text-[9px] text-slate-400 pointer-events-none" />
+          </div>
+        )}
 
         {/* Status Filter Pills (Only shown in list view; hidden in board view since columns represent statuses) */}
         <div className="flex items-center gap-1 overflow-x-auto scrollbar-none py-1">

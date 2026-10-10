@@ -82,14 +82,13 @@ export const CommandPalette: React.FC = () => {
       },
     },
     {
-      id: 'switch-list',
-      title: t('commandPalette.switchListView'),
-      icon: 'pi pi-list text-indigo-500 dark:text-indigo-400',
-      badge: t('commandPalette.badgeView'),
+      id: 'open-projects',
+      title: t('projects.title'),
+      icon: 'pi pi-folder text-indigo-500 dark:text-indigo-400',
+      badge: t('commandPalette.navigation'),
       run: () => {
         closeCommandPalette()
-        setActiveView('list')
-        navigate('/tasks')
+        navigate('/projects')
       },
     },
     {

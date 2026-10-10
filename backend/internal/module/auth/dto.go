@@ -38,12 +38,15 @@ type RefreshTokenRequest struct {
 
 // UserPayload is a user summary for auth responses.
 type UserPayload struct {
-	ID        string    `json:"id"`
-	Name      string    `json:"name"`
-	Email     string    `json:"email"`
-	AvatarURL string    `json:"avatar_url"`
-	Provider  string    `json:"provider"`
-	CreatedAt time.Time `json:"created_at"`
+	ID          string    `json:"id"`
+	Name        string    `json:"name"`
+	Email       string    `json:"email"`
+	AvatarURL   string    `json:"avatar_url"`
+	Provider    string    `json:"provider"`
+	GoogleBound bool      `json:"google_bound"`
+	AppleBound  bool      `json:"apple_bound"`
+	HasPassword bool      `json:"has_password"`
+	CreatedAt   time.Time `json:"created_at"`
 }
 
 // TokenPair mirrors the underlying token pair.
@@ -58,6 +61,25 @@ type TokenPair struct {
 type AuthResponse struct {
 	User   UserPayload `json:"user"`
 	Tokens *TokenPair  `json:"tokens"`
+}
+
+// BindOAuthRequest handles binding Google or Apple account to an authenticated user.
+type BindOAuthRequest struct {
+	Provider string `json:"provider" validate:"required,oneof=google apple"`
+	IDToken  string `json:"id_token"`
+	Code     string `json:"code"`
+	Email    string `json:"email"`
+	Name     string `json:"name"`
+}
+
+// UnbindOAuthRequest handles unbinding an OAuth provider.
+type UnbindOAuthRequest struct {
+	Provider string `json:"provider" validate:"required,oneof=google apple"`
+}
+
+// DeleteAccountRequest handles permanent deletion confirmation.
+type DeleteAccountRequest struct {
+	Confirmation string `json:"confirmation" validate:"required"`
 }
 
 // AppleWebhookRequest is the payload sent by Apple Server-to-Server notifications.

@@ -18,6 +18,7 @@ export const TaskBoardView: React.FC = () => {
     openDrawer,
     filterPriority,
     filterTag,
+    filterProject,
     filterFocusOnly,
     searchQuery,
   } = useTaskStore()
@@ -29,10 +30,11 @@ export const TaskBoardView: React.FC = () => {
       status: undefined,
       priority: filterPriority || undefined,
       tag: filterTag || undefined,
+      project_id: filterProject || undefined,
       is_focus: filterFocusOnly ? true : undefined,
       search: searchQuery || undefined,
     }),
-    [filterPriority, filterTag, filterFocusOnly, searchQuery]
+    [filterPriority, filterTag, filterProject, filterFocusOnly, searchQuery]
   )
 
   const { data: rawTasks, isLoading, isError, error, refetch } = useTasks(filterParams)
@@ -86,7 +88,7 @@ export const TaskBoardView: React.FC = () => {
   }
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-3.5 items-start overflow-x-auto pb-4">
+    <div className="h-full flex gap-3.5 items-stretch overflow-x-auto pb-2 scrollbar-thin">
       {COLUMNS.map((col) => {
         const columnTasks = tasks.filter((t) => t.status === col.id)
         const colTitle = t(`tasks.status.${col.id}`)
@@ -96,10 +98,10 @@ export const TaskBoardView: React.FC = () => {
             key={col.id}
             onDragOver={handleDragOver}
             onDrop={(e) => handleDrop(e, col.id)}
-            className="flex flex-col rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-100/70 dark:bg-slate-900/50 p-2.5 min-h-[500px]"
+            className="flex flex-col rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-100/70 dark:bg-slate-900/50 p-2.5 flex-1 min-w-[280px] h-full"
           >
             {/* Column Header */}
-            <div className="flex items-center justify-between pb-2 mb-2 border-b border-slate-200 dark:border-slate-800/80 px-1">
+            <div className="flex items-center justify-between pb-2 mb-2 border-b border-slate-200 dark:border-slate-800/80 px-1 shrink-0">
               <span className="text-xs font-semibold text-slate-700 dark:text-slate-300 flex items-center gap-2">
                 <span
                   className={`h-2 w-2 rounded-full ${
@@ -118,7 +120,7 @@ export const TaskBoardView: React.FC = () => {
             </div>
 
             {/* Task Cards in Column */}
-            <div className="space-y-2 flex-1 overflow-y-auto max-h-[calc(100vh-270px)] pr-1 scrollbar-thin">
+            <div className="space-y-2 flex-1 min-h-0 overflow-y-auto pr-1 scrollbar-thin">
               {columnTasks.map((task) => (
                 <div
                   key={task.id}
@@ -172,9 +174,23 @@ export const TaskBoardView: React.FC = () => {
 
                   {/* Card Footer */}
                   <div className="flex items-center justify-between text-[10px] text-slate-500 pt-1 border-t border-slate-100 dark:border-slate-800/50">
-                    <span className="uppercase font-mono tracking-wider font-semibold">
-                      {t(`tasks.priority.${task.priority}`)}
-                    </span>
+                    <div className="flex items-center gap-1.5">
+                      {task.project_name && (
+                        <span
+                          className="inline-flex items-center gap-0.5 px-1 py-0.2 rounded text-[9px] font-semibold border shadow-2xs"
+                          style={{
+                            backgroundColor: `${task.project_color || '#6366f1'  }15`,
+                            borderColor: `${task.project_color || '#6366f1'  }35`,
+                            color: task.project_color || '#6366f1',
+                          }}
+                        >
+                          📁 {task.project_name}
+                        </span>
+                      )}
+                      <span className="uppercase font-mono tracking-wider font-semibold">
+                        {t(`tasks.priority.${task.priority}`)}
+                      </span>
+                    </div>
                     {task.due_date && (
                       <span>
                         {new Date(task.due_date).toLocaleDateString(locale === 'id' ? 'id-ID' : 'en-US', {

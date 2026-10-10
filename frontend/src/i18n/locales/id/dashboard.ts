@@ -19,7 +19,13 @@ export const dashboard = {
   noActiveTasks: 'Belum ada tugas aktif saat ini.',
   noIdeasSaved: 'Belum ada ide tersimpan. Catat ide kilat di atas!',
   markCompleted: 'Tandai selesai',
+  projectModules: 'Modul Project',
+  activeProjects: 'Modul project aktif',
+  projectsOverviewTitle: 'Modul Project',
+  viewAllProjects: 'Lihat Project ({count})',
+  noProjectsYet: 'Belum ada modul project yang dibuat.',
 }
+
 
 export const focus = {
   title: 'Horizon Fokus Hari Ini',

@@ -4,6 +4,7 @@ import (
 	"strings"
 
 	"golang/pkg/auth"
+	"golang/pkg/constants"
 	customErrors "golang/pkg/errors"
 
 	"github.com/gofiber/fiber/v2"
@@ -24,7 +25,7 @@ func AuthMiddleware(jwtService *auth.JWTService) fiber.Handler {
 			if len(parts) == 2 && parts[0] == bearerScheme {
 				tokenString = parts[1]
 			} else {
-				return customErrors.Unauthorized("Invalid authorization header format")
+				return customErrors.UnauthorizedWithCode("Invalid authorization header format", constants.CodeUnauthorized)
 			}
 		}
 
@@ -34,7 +35,7 @@ func AuthMiddleware(jwtService *auth.JWTService) fiber.Handler {
 		}
 
 		if tokenString == "" {
-			return customErrors.Unauthorized("Authorization token is required")
+			return customErrors.UnauthorizedWithCode("Authorization token is required", constants.CodeUnauthorized)
 		}
 
 		// Validate access token
@@ -45,7 +46,7 @@ func AuthMiddleware(jwtService *auth.JWTService) fiber.Handler {
 
 		// Check if user tokens are revoked
 		if jwtService.IsUserRevoked(claims.UserID) {
-			return customErrors.Unauthorized("Token has been revoked")
+			return customErrors.UnauthorizedWithCode("Token has been revoked", constants.CodeTokenInvalid)
 		}
 
 		// Store claims in context
@@ -107,7 +108,7 @@ func RefreshTokenMiddleware(jwtService *auth.JWTService) fiber.Handler {
 			if len(parts) == 2 && parts[0] == bearerScheme {
 				tokenString = parts[1]
 			} else {
-				return customErrors.Unauthorized("Invalid authorization header format")
+				return customErrors.UnauthorizedWithCode("Invalid authorization header format", constants.CodeUnauthorized)
 			}
 		}
 
@@ -116,7 +117,7 @@ func RefreshTokenMiddleware(jwtService *auth.JWTService) fiber.Handler {
 		}
 
 		if tokenString == "" {
-			return customErrors.Unauthorized("Refresh token is required")
+			return customErrors.UnauthorizedWithCode("Refresh token is required", constants.CodeRefreshTokenInvalid)
 		}
 
 		// Validate refresh token
@@ -126,7 +127,7 @@ func RefreshTokenMiddleware(jwtService *auth.JWTService) fiber.Handler {
 		}
 
 		if jwtService.IsUserRevoked(claims.UserID) {
-			return customErrors.Unauthorized("Token has been revoked")
+			return customErrors.UnauthorizedWithCode("Token has been revoked", constants.CodeRefreshTokenRevoked)
 		}
 
 		c.Locals("user_id", claims.UserID)
@@ -143,7 +144,7 @@ func RefreshTokenMiddleware(jwtService *auth.JWTService) fiber.Handler {
 func GetUserID(c *fiber.Ctx) (string, error) {
 	userID, ok := c.Locals("user_id").(string)
 	if !ok || userID == "" {
-		return "", customErrors.Unauthorized("User not authenticated")
+		return "", customErrors.UnauthorizedWithCode("User not authenticated", constants.CodeUnauthorized)
 	}
 	return userID, nil
 }

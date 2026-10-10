@@ -1,6 +1,9 @@
 package task
 
-import "time"
+import (
+	"encoding/json"
+	"time"
+)
 
 // SubtaskResponse represents a checklist item in a task.
 type SubtaskResponse struct {
@@ -22,6 +25,7 @@ type CreateTaskRequest struct {
 	DueDate      *time.Time `json:"due_date"`
 	IsFocus      bool       `json:"is_focus"`
 	Tags         []string   `json:"tags"`
+	ProjectID    *int64     `json:"project_id"`
 	SourceNoteID *int64     `json:"source_note_id"`
 	Subtasks     []string   `json:"subtasks"`
 }
@@ -35,8 +39,31 @@ type UpdateTaskRequest struct {
 	DueDate          *time.Time `json:"due_date"`
 	IsFocus          *bool      `json:"is_focus"`
 	Tags             *[]string  `json:"tags"`
+	ProjectID        *int64     `json:"project_id"`
+	HasProjectID     bool       `json:"-"`
 	LastProgressNote *string    `json:"last_progress_note"`
 }
+
+// UnmarshalJSON detects if project_id was explicitly provided in JSON (including null).
+func (u *UpdateTaskRequest) UnmarshalJSON(data []byte) error {
+	type Alias UpdateTaskRequest
+	aux := &struct {
+		*Alias
+	}{
+		Alias: (*Alias)(u),
+	}
+	if err := json.Unmarshal(data, &aux); err != nil {
+		return err
+	}
+	var raw map[string]interface{}
+	if err := json.Unmarshal(data, &raw); err == nil {
+		if _, exists := raw["project_id"]; exists {
+			u.HasProjectID = true
+		}
+	}
+	return nil
+}
+
 
 // LogProgressRequest payload for updating context ("inget-inget udah sampe mana").
 type LogProgressRequest struct {
@@ -58,15 +85,16 @@ type UpdateSubtaskRequest struct {
 
 // TaskFilter parameters for querying tasks.
 type TaskFilter struct {
-	Status   string `query:"status"`
-	Priority string `query:"priority"`
-	IsFocus  *bool  `query:"is_focus"`
-	Tag      string `query:"tag"`
-	Search   string `query:"search"`
-	Limit    int    `query:"limit" validate:"omitempty,min=1,max=100"`
-	Offset   int    `query:"offset" validate:"omitempty,min=0"`
-	Cursor   *int64 `query:"cursor"`
-	Paginate string `query:"paginate"`
+	Status    string `query:"status"`
+	Priority  string `query:"priority"`
+	IsFocus   *bool  `query:"is_focus"`
+	Tag       string `query:"tag"`
+	Search    string `query:"search"`
+	ProjectID *int64 `query:"project_id"`
+	Limit     int    `query:"limit" validate:"omitempty,min=1,max=100"`
+	Offset    int    `query:"offset" validate:"omitempty,min=0"`
+	Cursor    *int64 `query:"cursor"`
+	Paginate  string `query:"paginate"`
 }
 
 // TaskCursorResponse represents a paginated task list response using cursor.
@@ -87,6 +115,9 @@ type TaskResponse struct {
 	DueDate           *time.Time        `json:"due_date" db:"due_date"`
 	IsFocus           bool              `json:"is_focus" db:"is_focus"`
 	Tags              []string          `json:"tags"`
+	ProjectID         *int64            `json:"project_id" db:"project_id"`
+	ProjectName       *string           `json:"project_name" db:"project_name"`
+	ProjectColor      *string           `json:"project_color" db:"project_color"`
 	LastProgressNote  string            `json:"last_progress_note" db:"last_progress_note"`
 	LastProgressAt    *time.Time        `json:"last_progress_at" db:"last_progress_at"`
 	SourceNoteID      *int64            `json:"source_note_id" db:"source_note_id"`

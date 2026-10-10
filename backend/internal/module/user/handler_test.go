@@ -105,8 +105,8 @@ func TestHandlerGetUserNotFound(t *testing.T) {
 		t.Fatalf("status = %d, want 404", resp.StatusCode)
 	}
 	payload := decodeResp(t, resp)
-	if code, _ := payload["code"].(string); code != "NOT_FOUND" {
-		t.Errorf("expected NOT_FOUND code, got %#v", payload)
+	if code, _ := payload["code"].(string); code != "USER_NOT_FOUND" {
+		t.Errorf("expected USER_NOT_FOUND code, got %#v", payload)
 	}
 }
 

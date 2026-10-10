@@ -5,6 +5,7 @@ import (
 	"errors"
 	"time"
 
+	"golang/pkg/constants"
 	appErrors "golang/pkg/errors"
 
 	"github.com/google/uuid"
@@ -45,7 +46,7 @@ func (s *userService) GetAll() ([]UserResponse, error) {
 
 func (s *userService) GetByID(id string) (*UserResponse, error) {
 	if _, err := uuid.Parse(id); err != nil {
-		return nil, appErrors.BadRequest("Invalid user ID format")
+		return nil, appErrors.BadRequestWithCode("Invalid user ID format", constants.CodeValidationError)
 	}
 
 	user, err := s.repo.GetByID(id)
@@ -53,7 +54,7 @@ func (s *userService) GetByID(id string) (*UserResponse, error) {
 		return nil, appErrors.DatabaseError("Failed to fetch user", err)
 	}
 	if user == nil {
-		return nil, appErrors.NotFound("User not found")
+		return nil, appErrors.UserNotFound()
 	}
 
 	u := user.toResponse()
@@ -66,7 +67,7 @@ func (s *userService) Create(req *CreateUserRequest) (*UserResponse, error) {
 		return nil, appErrors.DatabaseError("Failed to check email existence", err)
 	}
 	if exists {
-		return nil, appErrors.Conflict("Email already exists")
+		return nil, appErrors.ConflictWithCode("Email already exists", constants.CodeDuplicateEntry)
 	}
 
 	now := time.Now()
@@ -90,7 +91,7 @@ func (s *userService) Create(req *CreateUserRequest) (*UserResponse, error) {
 
 func (s *userService) Update(id string, req *UpdateUserRequest) (*UserResponse, error) {
 	if _, err := uuid.Parse(id); err != nil {
-		return nil, appErrors.BadRequest("Invalid user ID format")
+		return nil, appErrors.BadRequestWithCode("Invalid user ID format", constants.CodeValidationError)
 	}
 
 	exists, err := s.repo.ExistsByID(id)
@@ -98,7 +99,7 @@ func (s *userService) Update(id string, req *UpdateUserRequest) (*UserResponse, 
 		return nil, appErrors.DatabaseError("Failed to check user existence", err)
 	}
 	if !exists {
-		return nil, appErrors.NotFound("User not found")
+		return nil, appErrors.UserNotFound()
 	}
 
 	if req.Email != "" {
@@ -107,7 +108,7 @@ func (s *userService) Update(id string, req *UpdateUserRequest) (*UserResponse, 
 			return nil, appErrors.DatabaseError("Failed to check email existence", err)
 		}
 		if existing != nil && existing.ID != id {
-			return nil, appErrors.Conflict("Email already exists")
+			return nil, appErrors.ConflictWithCode("Email already exists", constants.CodeDuplicateEntry)
 		}
 	}
 
@@ -133,13 +134,13 @@ func (s *userService) Update(id string, req *UpdateUserRequest) (*UserResponse, 
 
 func (s *userService) Delete(id string) error {
 	if _, err := uuid.Parse(id); err != nil {
-		return appErrors.BadRequest("Invalid user ID format")
+		return appErrors.BadRequestWithCode("Invalid user ID format", constants.CodeValidationError)
 	}
 
 	err := s.repo.Delete(id)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
-			return appErrors.NotFound("User not found")
+			return appErrors.UserNotFound()
 		}
 		return appErrors.ParseDatabaseError(err)
 	}
@@ -148,13 +149,13 @@ func (s *userService) Delete(id string) error {
 
 func (s *userService) HardDelete(id string) error {
 	if _, err := uuid.Parse(id); err != nil {
-		return appErrors.BadRequest("Invalid user ID format")
+		return appErrors.BadRequestWithCode("Invalid user ID format", constants.CodeValidationError)
 	}
 
 	err := s.repo.HardDelete(id)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
-			return appErrors.NotFound("User not found")
+			return appErrors.UserNotFound()
 		}
 		return appErrors.ParseDatabaseError(err)
 	}

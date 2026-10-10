@@ -15,6 +15,8 @@ interface AuthState {
   loginDev: (payload: DevLoginPayload) => Promise<void>
   logout: () => void
   checkAuth: () => void
+  updateUser: (user: User) => void
+  fetchProfile: () => Promise<void>
 }
 
 const STORAGE_KEY_TOKEN = 'auth_token'
@@ -122,5 +124,22 @@ export const useAuthStore = create<AuthState>((set) => ({
 
     authApi.logout().catch(() => { })
     set({ user: null, token: null, isAuthenticated: false })
+  },
+
+  updateUser: (user: User) => {
+    localStorage.setItem(STORAGE_KEY_USER, JSON.stringify(user))
+    set({ user })
+  },
+
+  fetchProfile: async () => {
+    try {
+      const res = await authApi.getProfile()
+      if (res.data) {
+        localStorage.setItem(STORAGE_KEY_USER, JSON.stringify(res.data))
+        set({ user: res.data })
+      }
+    } catch (err) {
+      logger.warn('Failed to fetch user profile:', err)
+    }
   },
 }))

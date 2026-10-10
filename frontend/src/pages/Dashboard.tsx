@@ -13,6 +13,7 @@ import {
   useCreateNote,
   useDeleteNote,
   useNotes,
+  useProjects,
   useTasks,
   useUpdateNote,
   useUpdateTask,
@@ -30,8 +31,10 @@ export default function Dashboard() {
   // TanStack Query server data
   const { data: rawTasks } = useTasks()
   const { data: rawNotes } = useNotes()
+  const { data: rawProjects } = useProjects()
   const tasks: Task[] = Array.isArray(rawTasks) ? rawTasks : []
   const notes: Note[] = Array.isArray(rawNotes) ? rawNotes : []
+  const projects = Array.isArray(rawProjects) ? rawProjects : []
 
   // Mutations
   const createNoteMutation = useCreateNote()
@@ -110,7 +113,7 @@ export default function Dashboard() {
       </div>
 
       {/* KPI Stats Grid */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
         <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/60 p-4 shadow-xs">
           <div className="flex items-center justify-between text-slate-500 dark:text-slate-400 text-xs mb-2">
             <span>{t('dashboard.todaysFocus')}</span>
@@ -131,20 +134,29 @@ export default function Dashboard() {
 
         <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/60 p-4 shadow-xs">
           <div className="flex items-center justify-between text-slate-500 dark:text-slate-400 text-xs mb-2">
-            <span>{t('dashboard.scratchpadIdeas')}</span>
-            <i className="pi pi-lightbulb text-purple-500 dark:text-purple-400 text-xs" />
-          </div>
-          <p className="text-2xl font-bold text-slate-900 dark:text-slate-100 font-mono">{notes.length}</p>
-          <span className="text-[10px] text-slate-500">{t('dashboard.savedInNotes')}</span>
-        </div>
-
-        <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/60 p-4 shadow-xs">
-          <div className="flex items-center justify-between text-slate-500 dark:text-slate-400 text-xs mb-2">
             <span>{t('dashboard.completedTasks')}</span>
             <i className="pi pi-check-circle text-emerald-500 dark:text-emerald-400 text-xs" />
           </div>
           <p className="text-2xl font-bold text-slate-900 dark:text-slate-100 font-mono">{completedCount}</p>
           <span className="text-[10px] text-slate-500">{t('dashboard.tasksFinished')}</span>
+        </div>
+
+        <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/60 p-4 shadow-xs">
+          <div className="flex items-center justify-between text-slate-500 dark:text-slate-400 text-xs mb-2">
+            <span>{t('dashboard.projectModules')}</span>
+            <i className="pi pi-folder text-indigo-500 dark:text-indigo-400 text-xs" />
+          </div>
+          <p className="text-2xl font-bold text-slate-900 dark:text-slate-100 font-mono">{projects.length}</p>
+          <span className="text-[10px] text-slate-500">{t('dashboard.activeProjects')}</span>
+        </div>
+
+        <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/60 p-4 shadow-xs col-span-2 sm:col-span-1">
+          <div className="flex items-center justify-between text-slate-500 dark:text-slate-400 text-xs mb-2">
+            <span>{t('dashboard.scratchpadIdeas')}</span>
+            <i className="pi pi-lightbulb text-purple-500 dark:text-purple-400 text-xs" />
+          </div>
+          <p className="text-2xl font-bold text-slate-900 dark:text-slate-100 font-mono">{notes.length}</p>
+          <span className="text-[10px] text-slate-500">{t('dashboard.savedInNotes')}</span>
         </div>
       </div>
 
@@ -202,8 +214,8 @@ export default function Dashboard() {
         </form>
       </div>
 
-      {/* Main Two-Column Hub: Active Tasks & Recent Ideas */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+      {/* Main Three-Column Hub: Active Tasks, Recent Ideas & Project Modules */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-5">
         {/* Active Tasks Panel */}
         <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/50 p-4 shadow-xs">
           <div className="flex items-center justify-between mb-3 pb-2 border-b border-slate-100 dark:border-slate-800/80">
@@ -303,6 +315,85 @@ export default function Dashboard() {
             {notes.length === 0 && (
               <div className="col-span-2 py-6 text-center text-xs text-slate-500">
                 {t('dashboard.noIdeasSaved')}
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Project Modules Overview Panel */}
+        <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/50 p-4 shadow-xs flex flex-col col-span-1 lg:col-span-2 xl:col-span-1">
+          <div className="flex items-center justify-between mb-3 pb-2 border-b border-slate-100 dark:border-slate-800/80">
+            <h2 className="text-xs font-semibold uppercase tracking-wider text-slate-700 dark:text-slate-300 flex items-center gap-1.5">
+              <i className="pi pi-folder text-indigo-500 dark:text-indigo-400" />
+              {t('dashboard.projectsOverviewTitle')}
+            </h2>
+            <Link
+              to="/projects"
+              className="text-xs text-indigo-600 dark:text-indigo-400 hover:text-indigo-500 dark:hover:text-indigo-300 font-medium flex items-center gap-1"
+            >
+              {t('dashboard.viewAllProjects', { count: projects.length })}{' '}
+              <i className="pi pi-arrow-right text-[10px]" />
+            </Link>
+          </div>
+
+          <div className="space-y-2.5 flex-1">
+            {projects.slice(0, 5).map((project) => {
+              const projectTasks = tasks.filter((t) => t.project_id === project.id)
+              const doneTasks = projectTasks.filter((t) => t.status === 'done').length
+              const pct =
+                projectTasks.length > 0
+                  ? Math.round((doneTasks / projectTasks.length) * 100)
+                  : 0
+
+              return (
+                <Link
+                  key={project.id}
+                  to="/projects"
+                  className="group block p-2.5 rounded-xl border border-slate-200 dark:border-slate-800/80 bg-slate-50/50 dark:bg-slate-950/40 hover:border-indigo-400 dark:hover:border-indigo-500/50 hover:bg-white dark:hover:bg-slate-900 transition-all"
+                >
+                  <div className="flex items-center justify-between gap-2 mb-1.5">
+                    <div className="flex items-center gap-2 min-w-0">
+                      <span
+                        className="w-2.5 h-2.5 rounded-full shrink-0"
+                        style={{ backgroundColor: project.color || '#6366f1' }}
+                      />
+                      <span className="text-xs font-semibold text-slate-800 dark:text-slate-200 truncate group-hover:text-indigo-600 dark:group-hover:text-indigo-400">
+                        {project.name}
+                      </span>
+                    </div>
+                    <span className="text-[10px] font-mono text-slate-500 shrink-0">
+                      {doneTasks}/{projectTasks.length} ({pct}%)
+                    </span>
+                  </div>
+
+                  {project.description && (
+                    <p className="text-[11px] text-slate-500 dark:text-slate-400 truncate mb-1.5 pl-4.5">
+                      {project.description}
+                    </p>
+                  )}
+
+                  <div className="w-full h-1 rounded-full bg-slate-200 dark:bg-slate-800 overflow-hidden">
+                    <div
+                      className="h-full rounded-full transition-all duration-300"
+                      style={{
+                        width: `${pct}%`,
+                        backgroundColor: project.color || '#6366f1',
+                      }}
+                    />
+                  </div>
+                </Link>
+              )
+            })}
+            {projects.length === 0 && (
+              <div className="py-8 text-center text-xs text-slate-500">
+                <i className="pi pi-folder-open text-2xl text-slate-300 dark:text-slate-600 mb-2 block" />
+                <p>{t('dashboard.noProjectsYet')}</p>
+                <Link
+                  to="/projects"
+                  className="mt-2 inline-flex items-center gap-1 text-xs text-indigo-600 dark:text-indigo-400 hover:underline font-medium"
+                >
+                  <i className="pi pi-plus text-[10px]" /> {t('projects.addProject')}
+                </Link>
               </div>
             )}
           </div>

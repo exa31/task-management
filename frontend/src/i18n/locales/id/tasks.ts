@@ -32,6 +32,8 @@ export const tasks = {
   deletedSuccess: 'Tugas berhasil dihapus',
   progressLoggedSuccess: 'Catatan progres berhasil disimpan',
   focusToggledSuccess: 'Status fokus tugas berhasil diperbarui',
+  allProjects: 'Semua Modul Project',
+  allTasksLoaded: '✓ Semua tugas telah dimuat',
 }
 
 export const taskModal = {
@@ -47,6 +49,10 @@ export const taskModal = {
   tagsLabel: 'Label / Kategori',
   tagsPlaceholder: 'backend, database, kritis (pisahkan dengan koma)',
   pinToFocusLabel: 'Langsung sematkan ke Horizon Fokus Hari Ini',
+  projectLabel: 'Modul / Project Task',
+  noProjectOption: 'Tanpa Modul Project',
+  checklistPlaceholder: 'Langkah 1: Setup skema database\nLangkah 2: Hubungkan API controller',
+  createNewProject: '+ Project Baru',
   cancel: 'Batal',
   submit: 'Buat Tugas',
   titleRequired: 'Judul tugas wajib diisi',
@@ -59,6 +65,8 @@ export const taskDrawer = {
   titleLabel: 'Judul Tugas',
   titleRequired: 'Judul tugas wajib diisi',
   descriptionPlaceholder: 'Tambahkan deskripsi atau catatan tambahan...',
+  projectLabel: 'Modul / Project Task',
+  noProjectOption: 'Tanpa Modul Project',
   lastProgressNote: 'Catatan Progres Terakhir',
   lastWorkedOn: 'Terakhir dikerjakan:',
   noLogYet: 'Belum ada log. Catat progres Anda di sini agar ingat bagian terakhir yang dikerjakan!',

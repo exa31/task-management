@@ -39,6 +39,7 @@ type noteEntity struct {
 	UserID          string         `db:"user_id"`
 	Title           string         `db:"title"`
 	Content         string         `db:"content"`
+	Type            string         `db:"type"`
 	Tags            pq.StringArray `db:"tags"`
 	Color           string         `db:"color"`
 	IsPinned        bool           `db:"is_pinned"`
@@ -56,11 +57,16 @@ func (e *noteEntity) toResponse() NoteResponse {
 	if color == "" {
 		color = "default"
 	}
+	noteType := e.Type
+	if noteType == "" {
+		noteType = "actionable"
+	}
 	return NoteResponse{
 		ID:              e.ID,
 		UserID:          e.UserID,
 		Title:           e.Title,
 		Content:         e.Content,
+		Type:            noteType,
 		Tags:            tags,
 		Color:           color,
 		IsPinned:        e.IsPinned,
@@ -72,13 +78,18 @@ func (e *noteEntity) toResponse() NoteResponse {
 
 func (r *repository) Create(ctx context.Context, userID string, req CreateNoteRequest) (*NoteResponse, error) {
 	query := `
-		INSERT INTO notes (user_id, title, content, tags, color, is_pinned, created_at, updated_at)
-		VALUES ($1, $2, $3, $4, $5, $6, NOW(), NOW())
-		RETURNING id, user_id, title, content, tags, color, is_pinned, converted_task_id, created_at, updated_at
+		INSERT INTO notes (user_id, title, content, type, tags, color, is_pinned, created_at, updated_at)
+		VALUES ($1, $2, $3, $4, $5, $6, $7, NOW(), NOW())
+		RETURNING id, user_id, title, content, type, tags, color, is_pinned, converted_task_id, created_at, updated_at
 	`
 	color := req.Color
 	if color == "" {
 		color = "default"
+	}
+
+	noteType := req.Type
+	if noteType == "" {
+		noteType = "actionable"
 	}
 
 	tags := req.Tags
@@ -87,7 +98,7 @@ func (r *repository) Create(ctx context.Context, userID string, req CreateNoteRe
 	}
 
 	var entity noteEntity
-	err := r.exec(ctx).QueryRowxContext(ctx, query, userID, req.Title, req.Content, pq.Array(tags), color, req.IsPinned).StructScan(&entity)
+	err := r.exec(ctx).QueryRowxContext(ctx, query, userID, req.Title, req.Content, noteType, pq.Array(tags), color, req.IsPinned).StructScan(&entity)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create note: %w", err)
 	}
@@ -98,7 +109,7 @@ func (r *repository) Create(ctx context.Context, userID string, req CreateNoteRe
 
 func (r *repository) FindByID(ctx context.Context, userID string, id int64) (*NoteResponse, error) {
 	query := `
-		SELECT id, user_id, title, content, tags, color, is_pinned, converted_task_id, created_at, updated_at
+		SELECT id, user_id, title, content, type, tags, color, is_pinned, converted_task_id, created_at, updated_at
 		FROM notes
 		WHERE id = $1 AND user_id = $2
 	`
@@ -117,12 +128,18 @@ func (r *repository) FindByID(ctx context.Context, userID string, id int64) (*No
 
 func (r *repository) FindAll(ctx context.Context, userID string, filter NoteFilter) ([]NoteResponse, error) {
 	query := `
-		SELECT id, user_id, title, content, tags, color, is_pinned, converted_task_id, created_at, updated_at
+		SELECT id, user_id, title, content, type, tags, color, is_pinned, converted_task_id, created_at, updated_at
 		FROM notes
 		WHERE user_id = $1
 	`
 	args := []interface{}{userID}
 	argIdx := 2
+
+	if filter.Type != "" {
+		query += fmt.Sprintf(" AND type = $%d", argIdx)
+		args = append(args, filter.Type)
+		argIdx++
+	}
 
 	if filter.Search != "" {
 		query += fmt.Sprintf(" AND (title ILIKE $%d OR content ILIKE $%d)", argIdx, argIdx)
@@ -180,6 +197,11 @@ func (r *repository) Update(ctx context.Context, userID string, id int64, req Up
 		content = *req.Content
 	}
 
+	noteType := existing.Type
+	if req.Type != nil {
+		noteType = *req.Type
+	}
+
 	tags := existing.Tags
 	if req.Tags != nil {
 		tags = *req.Tags
@@ -202,12 +224,12 @@ func (r *repository) Update(ctx context.Context, userID string, id int64, req Up
 
 	query := `
 		UPDATE notes
-		SET title = $1, content = $2, tags = $3, color = $4, is_pinned = $5, converted_task_id = $6, updated_at = NOW()
-		WHERE id = $7 AND user_id = $8
-		RETURNING id, user_id, title, content, tags, color, is_pinned, converted_task_id, created_at, updated_at
+		SET title = $1, content = $2, type = $3, tags = $4, color = $5, is_pinned = $6, converted_task_id = $7, updated_at = NOW()
+		WHERE id = $8 AND user_id = $9
+		RETURNING id, user_id, title, content, type, tags, color, is_pinned, converted_task_id, created_at, updated_at
 	`
 	var entity noteEntity
-	err = r.exec(ctx).QueryRowxContext(ctx, query, title, content, pq.Array(tags), color, isPinned, convertedTaskID, id, userID).StructScan(&entity)
+	err = r.exec(ctx).QueryRowxContext(ctx, query, title, content, noteType, pq.Array(tags), color, isPinned, convertedTaskID, id, userID).StructScan(&entity)
 	if err != nil {
 		return nil, fmt.Errorf("failed to update note: %w", err)
 	}

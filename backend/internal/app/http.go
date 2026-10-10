@@ -59,7 +59,7 @@ func NewHTTP(c *Container) *fiber.App {
 
 	// Feature modules own their routes.
 	api := app.Group("/api/v1")
-	r := module.NewRouter(c.DB, c.JWTService, c.Hub, c.Config)
+	r := module.NewRouter(c.DB, c.JWTService, c.Hub, c.Config, c.Storage)
 	r.Register(api)
 
 	// 404 handler.

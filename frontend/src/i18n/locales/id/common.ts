@@ -13,4 +13,5 @@ export const common = {
   yes: 'Ya',
   no: 'Tidak',
   success: 'Berhasil',
+  search: 'Cari',
 }

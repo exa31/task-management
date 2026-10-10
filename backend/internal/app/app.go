@@ -14,6 +14,7 @@ import (
 	"golang/pkg/logging"
 	queuepkg "golang/pkg/queue"
 	"golang/pkg/realtime"
+	"golang/pkg/storage"
 	"golang/pkg/telemetry"
 )
 
@@ -30,6 +31,7 @@ type Container struct {
 	Hub    *realtime.Hub     // nil when Realtime feature is disabled
 
 	JWTService *auth.JWTService
+	Storage    storage.Storage
 	Logger     *slog.Logger
 }
 
@@ -130,6 +132,9 @@ func Boot() (*Container, func() error) {
 		container.Cache,
 	)
 	container.JWTService = jwtService
+
+	// Initialize Object Storage (MinIO with local fallback)
+	container.Storage = storage.NewMinIOStorage(cfg.MinIO)
 
 	// Realtime (WebSocket and/or SSE). SSE and WS are activated through their
 	// own flags; the hub fans out across instances using the configured

@@ -25,6 +25,7 @@ const cleanParams = (params?: TaskFilterParams): TaskFilterParams | undefined =>
   if (params.status) cleaned.status = params.status
   if (params.priority) cleaned.priority = params.priority
   if (params.tag) cleaned.tag = params.tag
+  if (params.project_id !== undefined && params.project_id !== null) cleaned.project_id = params.project_id
   if (params.is_focus !== undefined) cleaned.is_focus = params.is_focus
   if (params.search) cleaned.search = params.search
   if (params.limit !== undefined) cleaned.limit = params.limit
@@ -110,6 +111,7 @@ export const useCreateTask = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: taskKeys.all })
+      queryClient.invalidateQueries({ queryKey: ['projects'] })
       toast.success(t('tasks.createdSuccess'))
     },
     onError: (err) => {
@@ -130,6 +132,7 @@ export const useUpdateTask = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: taskKeys.all })
+      queryClient.invalidateQueries({ queryKey: ['projects'] })
       toast.success(t('tasks.updatedSuccess'))
     },
     onError: (err) => {
@@ -149,6 +152,7 @@ export const useDeleteTask = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: taskKeys.all })
+      queryClient.invalidateQueries({ queryKey: ['projects'] })
       toast.success(t('tasks.deletedSuccess'))
     },
     onError: (err) => {

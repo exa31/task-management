@@ -7,6 +7,9 @@ export interface User {
   role?: string
   status?: string
   provider?: string
+  google_bound?: boolean
+  apple_bound?: boolean
+  has_password?: boolean
   created_at?: string
 }
 
@@ -31,7 +34,24 @@ export interface OAuthLoginPayload {
   avatar_url?: string
 }
 
+export interface BindOAuthPayload {
+  provider: 'google' | 'apple'
+  id_token?: string
+  code?: string
+  email?: string
+  name?: string
+}
+
+export interface UnbindOAuthPayload {
+  provider: 'google' | 'apple'
+}
+
+export interface DeleteAccountPayload {
+  confirmation: string
+}
+
 export interface DevLoginPayload {
   email: string
   name?: string
 }
+

@@ -27,6 +27,7 @@ type Config struct {
 	RabbitMQ RabbitMQConfig
 	JWT      JWTConfig
 	OAuth    OAuthConfig
+	MinIO    MinIOConfig
 }
 
 // AppConfig holds generic application metadata.
@@ -121,6 +122,16 @@ type OAuthConfig struct {
 	AppleKeyID         string
 }
 
+type MinIOConfig struct {
+	Endpoint    string
+	AccessKey   string
+	SecretKey   string
+	UseSSL      bool
+	Bucket      string
+	ProjectName string
+	PublicURL   string
+}
+
 func Load() *Config {
 	viper.SetConfigFile(".env")
 	viper.AutomaticEnv()
@@ -183,6 +194,15 @@ func Load() *Config {
 			AppleClientID:      getEnv("APPLE_CLIENT_ID", ""),
 			AppleTeamID:        getEnv("APPLE_TEAM_ID", ""),
 			AppleKeyID:         getEnv("APPLE_KEY_ID", ""),
+		},
+		MinIO: MinIOConfig{
+			Endpoint:    getEnv("MINIO_ENDPOINT", "localhost:9000"),
+			AccessKey:   getEnv("MINIO_ACCESS_KEY", "minioadmin"),
+			SecretKey:   getEnv("MINIO_SECRET_KEY", "minioadmin"),
+			UseSSL:      getEnvAsBool("MINIO_USE_SSL", false),
+			Bucket:      getEnv("MINIO_BUCKET", "project"),
+			ProjectName: getEnv("MINIO_PROJECT_NAME", "task-management"),
+			PublicURL:   getEnv("MINIO_PUBLIC_URL", "https://storage.eka-dev.cloud/project"),
 		},
 	}
 

@@ -20,4 +20,7 @@ export const nav = {
   viaProvider: 'melalui {provider}',
   switchToIndonesian: 'Ganti ke Bahasa Indonesia',
   switchToEnglish: 'Ganti ke English',
+  settings: 'Pengaturan',
+  profileSettings: 'Pengaturan Profil',
+  projects: 'Modul Project',
 }

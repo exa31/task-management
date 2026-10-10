@@ -96,7 +96,7 @@ export const ConvertToTaskModal: React.FC<ConvertToTaskModalProps> = ({
               rows={4}
               value={subtasksInput}
               onChange={(e) => setSubtasksInput(e.target.value)}
-              placeholder="Example:&#10;Step 1: Research documentation&#10;Step 2: Build prototype&#10;Step 3: Review and ship"
+              placeholder={t('convertModal.checklistPlaceholder')}
               className="w-full rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 px-3 py-2 text-xs text-slate-900 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500 focus:border-indigo-500 focus:outline-none resize-none transition-colors"
             />
           </div>

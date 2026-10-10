@@ -21,6 +21,9 @@ export interface Task {
   due_date?: string | null
   is_focus: boolean
   tags: string[]
+  project_id?: number | null
+  project_name?: string | null
+  project_color?: string | null
   last_progress_note: string
   last_progress_at?: string | null
   source_note_id?: number | null
@@ -40,6 +43,7 @@ export interface CreateTaskPayload {
   due_date?: string
   is_focus?: boolean
   tags?: string[]
+  project_id?: number | null
   source_note_id?: number
   subtasks?: string[]
 }
@@ -52,6 +56,7 @@ export interface UpdateTaskPayload {
   due_date?: string | null
   is_focus?: boolean
   tags?: string[]
+  project_id?: number | null
   last_progress_note?: string
 }
 
@@ -67,6 +72,7 @@ export interface TaskFilterParams {
   is_focus?: boolean
   tag?: string
   search?: string
+  project_id?: number | null
   limit?: number
   offset?: number
   cursor?: number

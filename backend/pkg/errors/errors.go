@@ -49,6 +49,15 @@ func BadRequest(message string) *AppError {
 	}
 }
 
+// BadRequestWithCode creates a 400 error with a custom code
+func BadRequestWithCode(message string, code string) *AppError {
+	return &AppError{
+		Message:    message,
+		Code:       code,
+		StatusCode: 400,
+	}
+}
+
 // Unauthorized creates a 401 error
 func Unauthorized(message string) *AppError {
 	return &AppError{
@@ -58,11 +67,29 @@ func Unauthorized(message string) *AppError {
 	}
 }
 
+// UnauthorizedWithCode creates a 401 error with a custom code
+func UnauthorizedWithCode(message string, code string) *AppError {
+	return &AppError{
+		Message:    message,
+		Code:       code,
+		StatusCode: 401,
+	}
+}
+
 // Forbidden creates a 403 error
 func Forbidden(message string) *AppError {
 	return &AppError{
 		Message:    message,
 		Code:       constants.CodeForbidden,
+		StatusCode: 403,
+	}
+}
+
+// ForbiddenWithCode creates a 403 error with a custom code
+func ForbiddenWithCode(message string, code string) *AppError {
+	return &AppError{
+		Message:    message,
+		Code:       code,
 		StatusCode: 403,
 	}
 }
@@ -94,6 +121,51 @@ func NoteNotFound() *AppError {
 	}
 }
 
+// NoteNotActionable creates a 400 error when converting a non-actionable note
+func NoteNotActionable() *AppError {
+	return &AppError{
+		Message:    "Notes of type 'knowledge' (storage/how-to) cannot be converted into a task",
+		Code:       constants.CodeNoteNotActionable,
+		StatusCode: 400,
+	}
+}
+
+// ProjectNotFound creates a 404 error specifically for projects
+func ProjectNotFound() *AppError {
+	return &AppError{
+		Message:    "Project not found",
+		Code:       constants.CodeProjectNotFound,
+		StatusCode: 404,
+	}
+}
+
+// UserNotFound creates a 404 error specifically for users
+func UserNotFound() *AppError {
+	return &AppError{
+		Message:    "User not found",
+		Code:       constants.CodeUserNotFound,
+		StatusCode: 404,
+	}
+}
+
+// InvalidCredentials creates a 401 error for incorrect credentials
+func InvalidCredentials() *AppError {
+	return &AppError{
+		Message:    "Invalid email or password",
+		Code:       constants.CodeInvalidCredentials,
+		StatusCode: 401,
+	}
+}
+
+// AccountDeactivated creates a 403 error for deactivated accounts
+func AccountDeactivated() *AppError {
+	return &AppError{
+		Message:    "Account is deactivated",
+		Code:       constants.CodeAccountDeactivated,
+		StatusCode: 403,
+	}
+}
+
 // TaskNotFound creates a 404 error specifically for tasks
 func TaskNotFound() *AppError {
 	return &AppError{
@@ -121,11 +193,30 @@ func Conflict(message string) *AppError {
 	}
 }
 
+// ConflictWithCode creates a 409 error with a custom code
+func ConflictWithCode(message string, code string) *AppError {
+	return &AppError{
+		Message:    message,
+		Code:       code,
+		StatusCode: 409,
+	}
+}
+
 // InternalError creates a 500 error
 func InternalError(message string, err error) *AppError {
 	return &AppError{
 		Message:    message,
 		Code:       constants.CodeInternalError,
+		StatusCode: 500,
+		Err:        err,
+	}
+}
+
+// InternalErrorWithCode creates a 500 error with a custom code
+func InternalErrorWithCode(message string, code string, err error) *AppError {
+	return &AppError{
+		Message:    message,
+		Code:       code,
 		StatusCode: 500,
 		Err:        err,
 	}

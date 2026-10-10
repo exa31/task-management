@@ -18,7 +18,7 @@ export const TaskFocusHorizon: React.FC = () => {
   if (focusTasks.length === 0) return null
 
   return (
-    <div className="rounded-xl border border-indigo-200 dark:border-indigo-500/30 bg-indigo-50/70 dark:bg-gradient-to-r dark:from-indigo-950/40 dark:via-slate-900 dark:to-indigo-950/20 p-3.5 shadow-sm dark:shadow-lg backdrop-blur-md mb-5">
+    <div className="rounded-xl border border-indigo-200 dark:border-indigo-500/30 bg-indigo-50/70 dark:bg-gradient-to-r dark:from-indigo-950/40 dark:via-slate-900 dark:to-indigo-950/20 p-3.5 shadow-sm dark:shadow-lg backdrop-blur-md">
       <div className="flex items-center justify-between mb-2.5">
         <div className="flex items-center gap-2">
           <span className="flex h-2 w-2 rounded-full bg-indigo-500 dark:bg-indigo-400 animate-pulse" />

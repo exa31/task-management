@@ -17,9 +17,9 @@ export const TasksPage: React.FC = () => {
   const { t } = useTranslation()
 
   return (
-    <div className="space-y-5 pb-12 animate-fade-in">
+    <div className="h-full flex flex-col space-y-3.5 animate-fade-in min-h-0">
       {/* Page Title */}
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between shrink-0">
         <div>
           <h1 className="text-xl font-bold tracking-tight text-slate-900 dark:text-slate-100 flex items-center gap-2">
             <i className="pi pi-check-square text-indigo-500 dark:text-indigo-400" />
@@ -32,13 +32,19 @@ export const TasksPage: React.FC = () => {
       </div>
 
       {/* Today's Focus Horizon */}
-      <TaskFocusHorizon />
+      <div className="shrink-0">
+        <TaskFocusHorizon />
+      </div>
 
       {/* Filter and View Bar */}
-      <TaskFilterBar />
+      <div className="shrink-0">
+        <TaskFilterBar />
+      </div>
 
       {/* Dual View Renderer */}
-      {activeView === 'list' ? <TaskListView /> : <TaskBoardView />}
+      <div className="flex-1 min-h-0">
+        {activeView === 'list' ? <TaskListView /> : <TaskBoardView />}
+      </div>
 
       {/* Quick Slide-Over Drawer & Create Modal */}
       <TaskDrawer />

@@ -37,13 +37,26 @@ export const NoteCard: React.FC<NoteCardProps> = ({
     >
       <div>
         {/* Header with Title and Pin */}
-        <div className="flex items-start justify-between gap-2 mb-2">
-          <h3
-            onClick={() => onEdit(note)}
-            className="font-medium text-slate-800 dark:text-slate-100 text-sm leading-snug cursor-pointer group-hover:text-indigo-600 dark:group-hover:text-indigo-300 transition-colors line-clamp-2"
-          >
-            {note.title}
-          </h3>
+        <div className="flex items-start justify-between gap-2 mb-1.5">
+          <div className="flex-1">
+            <div className="flex items-center gap-1.5 mb-1">
+              {note.type === 'knowledge' ? (
+                <span className="inline-flex items-center gap-1 px-1.5 py-0.2 rounded text-[10px] font-semibold bg-amber-500/10 text-amber-700 dark:text-amber-400 border border-amber-500/20">
+                  <i className="pi pi-book text-[9px]" /> {t('notes.typeKnowledge')}
+                </span>
+              ) : (
+                <span className="inline-flex items-center gap-1 px-1.5 py-0.2 rounded text-[10px] font-semibold bg-indigo-500/10 text-indigo-700 dark:text-indigo-400 border border-indigo-500/20">
+                  <i className="pi pi-bolt text-[9px]" /> {t('notes.typeActionable')}
+                </span>
+              )}
+            </div>
+            <h3
+              onClick={() => onEdit(note)}
+              className="font-medium text-slate-800 dark:text-slate-100 text-sm leading-snug cursor-pointer group-hover:text-indigo-600 dark:group-hover:text-indigo-300 transition-colors line-clamp-2"
+            >
+              {note.title}
+            </h3>
+          </div>
           <button
             onClick={() => onTogglePin(note)}
             title={note.is_pinned ? t('notes.unpin') : t('notes.pin')}
@@ -86,6 +99,10 @@ export const NoteCard: React.FC<NoteCardProps> = ({
           {note.converted_task_id ? (
             <span className="inline-flex items-center gap-1 text-[11px] text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/40 px-2 py-0.5 rounded-full border border-emerald-200 dark:border-emerald-800/50">
               <i className="pi pi-check text-[9px]" /> {t('notes.converted', { id: note.converted_task_id })}
+            </span>
+          ) : note.type === 'knowledge' ? (
+            <span className="inline-flex items-center gap-1 text-[11px] text-slate-400 dark:text-slate-500 italic">
+              <i className="pi pi-lock text-[9px]" /> {t('notes.howToStorage')}
             </span>
           ) : (
             <button

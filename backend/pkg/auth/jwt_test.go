@@ -51,8 +51,8 @@ func TestValidateTokenRejectsWrongType(t *testing.T) {
 	if err == nil {
 		t.Fatal("expected error when validating refresh token as access")
 	}
-	if appErr, ok := err.(*customErrors.AppError); !ok || appErr.Code != "UNAUTHORIZED" {
-		t.Errorf("expected UNAUTHORIZED AppError, got %#v", err)
+	if appErr, ok := err.(*customErrors.AppError); !ok || appErr.Code != "TOKEN_INVALID" {
+		t.Errorf("expected TOKEN_INVALID AppError, got %#v", err)
 	}
 }
 

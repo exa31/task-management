@@ -19,7 +19,13 @@ export const dashboard = {
   noActiveTasks: 'No active tasks at the moment.',
   noIdeasSaved: 'No ideas saved yet. Quick-capture one above!',
   markCompleted: 'Mark as completed',
+  projectModules: 'Project Modules',
+  activeProjects: 'Active project modules',
+  projectsOverviewTitle: 'Project Modules',
+  viewAllProjects: 'View Projects ({count})',
+  noProjectsYet: 'No project modules created yet.',
 }
+
 
 export const focus = {
   title: "Today's Focus Horizon",

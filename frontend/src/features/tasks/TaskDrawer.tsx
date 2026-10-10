@@ -7,6 +7,7 @@ import {
   useDeleteSubtask,
   useDeleteTask,
   useLogProgress,
+  useProjects,
   useTask,
   useToggleFocus,
   useToggleSubtask,
@@ -22,6 +23,7 @@ export const TaskDrawer: React.FC = () => {
 
   // Fetch live fresh task data for the selected task
   const { data: queriedTask } = useTask(selectedTask?.id)
+  const { data: projects = [] } = useProjects()
   const task = queriedTask || selectedTask
 
   const updateTaskMutation = useUpdateTask()
@@ -241,6 +243,32 @@ export const TaskDrawer: React.FC = () => {
                   <option value="urgent" className="bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100">{t('tasks.priority.urgent')}</option>
                 </select>
               </div>
+
+              {/* Project Module */}
+              {projects.length > 0 && (
+                <div className="col-span-2">
+                  <label className="block text-[11px] font-medium text-slate-600 dark:text-slate-400 mb-1">
+                    {t('taskDrawer.projectLabel')}
+                  </label>
+                  <select
+                    value={task.project_id || ''}
+                    onChange={(e) => {
+                      const next = e.target.value ? parseInt(e.target.value, 10) : null
+                      updateTaskMutation.mutate({ id: task.id, payload: { project_id: next } })
+                    }}
+                    className="w-full rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-2.5 py-1.5 text-xs text-slate-800 dark:text-slate-200 focus:border-indigo-500 focus:outline-none"
+                  >
+                    <option value="" className="bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100">
+                      {t('taskDrawer.noProjectOption')}
+                    </option>
+                    {projects.map((p) => (
+                      <option key={p.id} value={String(p.id)} className="bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100">
+                        📁 {p.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              )}
             </div>
 
             {/* Title & Description */}

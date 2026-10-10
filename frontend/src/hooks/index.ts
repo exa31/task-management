@@ -6,6 +6,7 @@ export { useDarkMode } from './useDarkMode'
 export * from './useGoogleAuth'
 export * from './useMcpQuery'
 export * from './useNotesQuery'
+export * from './useProjectsQuery'
 export * from './useTasksQuery'
 export { useWindowSize } from './useWindowSize'
 

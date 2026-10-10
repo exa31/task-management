@@ -20,13 +20,25 @@ func TestConstructorsSetCodesAndStatus(t *testing.T) {
 		status int
 	}{
 		{"BadRequest", func() *AppError { return BadRequest("bad") }, constants.CodeBadRequest, http.StatusBadRequest},
+		{"BadRequestWithCode", func() *AppError { return BadRequestWithCode("bad", constants.CodeOAuthIdentifierMissing) }, constants.CodeOAuthIdentifierMissing, http.StatusBadRequest},
 		{"Unauthorized", func() *AppError { return Unauthorized("no") }, constants.CodeUnauthorized, http.StatusUnauthorized},
+		{"UnauthorizedWithCode", func() *AppError { return UnauthorizedWithCode("no", constants.CodeTokenInvalid) }, constants.CodeTokenInvalid, http.StatusUnauthorized},
 		{"Forbidden", func() *AppError { return Forbidden("nope") }, constants.CodeForbidden, http.StatusForbidden},
+		{"ForbiddenWithCode", func() *AppError { return ForbiddenWithCode("nope", constants.CodeAccountDeactivated) }, constants.CodeAccountDeactivated, http.StatusForbidden},
 		{"NotFound", func() *AppError { return NotFound("gone") }, constants.CodeNotFound, http.StatusNotFound},
 		{"Conflict", func() *AppError { return Conflict("taken") }, constants.CodeConflict, http.StatusConflict},
+		{"ConflictWithCode", func() *AppError { return ConflictWithCode("taken", constants.CodeOAuthAccountAlreadyLinked) }, constants.CodeOAuthAccountAlreadyLinked, http.StatusConflict},
 		{"InternalError", func() *AppError { return InternalError("boom", errors.New("x")) }, constants.CodeInternalError, http.StatusInternalServerError},
+		{"InternalErrorWithCode", func() *AppError {
+			return InternalErrorWithCode("boom", constants.CodeStorageNotConfigured, errors.New("x"))
+		}, constants.CodeStorageNotConfigured, http.StatusInternalServerError},
 		{"DatabaseError", func() *AppError { return DatabaseError("db", errors.New("x")) }, constants.CodeDatabaseError, http.StatusInternalServerError},
 		{"ValidationError", func() *AppError { return ValidationError("bad input") }, constants.CodeValidationError, http.StatusUnprocessableEntity},
+		{"ProjectNotFound", func() *AppError { return ProjectNotFound() }, constants.CodeProjectNotFound, http.StatusNotFound},
+		{"UserNotFound", func() *AppError { return UserNotFound() }, constants.CodeUserNotFound, http.StatusNotFound},
+		{"NoteNotActionable", func() *AppError { return NoteNotActionable() }, constants.CodeNoteNotActionable, http.StatusBadRequest},
+		{"InvalidCredentials", func() *AppError { return InvalidCredentials() }, constants.CodeInvalidCredentials, http.StatusUnauthorized},
+		{"AccountDeactivated", func() *AppError { return AccountDeactivated() }, constants.CodeAccountDeactivated, http.StatusForbidden},
 	}
 
 	for _, tt := range tests {

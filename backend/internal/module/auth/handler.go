@@ -4,6 +4,7 @@ import (
 	"strings"
 	"time"
 
+	"golang/pkg/constants"
 	"golang/pkg/errors"
 	"golang/pkg/logging"
 	"golang/pkg/response"
@@ -48,7 +49,7 @@ func (h *AuthHandler) AppleWebhook() fiber.Handler {
 		var req AppleWebhookRequest
 		// Apple can send application/json or application/x-www-form-urlencoded
 		if err := c.BodyParser(&req); err != nil {
-			return errors.BadRequest("Failed to parse Apple webhook payload")
+			return errors.BadRequestWithCode("Failed to parse Apple webhook payload", constants.CodeBadRequest)
 		}
 
 		if req.Payload == "" {
@@ -141,7 +142,7 @@ func (h *AuthHandler) RefreshToken() fiber.Handler {
 		}
 
 		if len(candidates) == 0 {
-			return errors.Unauthorized("Refresh token is required")
+			return errors.UnauthorizedWithCode("Refresh token is required", constants.CodeRefreshTokenInvalid)
 		}
 
 		var (
@@ -162,7 +163,7 @@ func (h *AuthHandler) RefreshToken() fiber.Handler {
 			if lastErr != nil {
 				return lastErr
 			}
-			return errors.Unauthorized("Invalid token")
+			return errors.UnauthorizedWithCode("Invalid token", constants.CodeTokenInvalid)
 		}
 
 		setAuthCookies(c, tokens)
@@ -221,7 +222,7 @@ func (h *AuthHandler) Logout() fiber.Handler {
 	return func(c *fiber.Ctx) error {
 		userID, ok := c.Locals("user_id").(string)
 		if !ok || userID == "" {
-			return errors.Unauthorized("User not authenticated")
+			return errors.UnauthorizedWithCode("User not authenticated", constants.CodeUnauthorized)
 		}
 
 		token := extractBearer(c)
@@ -229,6 +230,17 @@ func (h *AuthHandler) Logout() fiber.Handler {
 			if err := h.service.jwtService.RevokeToken(token, "access"); err != nil {
 				logging.LoggerFromFiber(c).Warn("failed to revoke token on logout", logging.Err(err))
 			}
+		}
+
+		var logoutReq struct {
+			RefreshToken string `json:"refresh_token"`
+		}
+		_ = c.BodyParser(&logoutReq)
+
+		// Delete the current active refresh token only (single-device session logout)
+		candidates := extractRefreshTokens(c, logoutReq.RefreshToken)
+		for _, rf := range candidates {
+			h.service.RevokeCurrentToken(rf)
 		}
 
 		clearAuthCookies(c)
@@ -242,8 +254,10 @@ func (h *AuthHandler) LogoutAll() fiber.Handler {
 	return func(c *fiber.Ctx) error {
 		userID, ok := c.Locals("user_id").(string)
 		if !ok || userID == "" {
-			return errors.Unauthorized("User not authenticated")
+			return errors.UnauthorizedWithCode("User not authenticated", constants.CodeUnauthorized)
 		}
+
+		_, _ = h.service.db.DB.Exec("UPDATE refresh_tokens SET is_revoked = true, updated_at = NOW() WHERE user_id = $1", userID)
 
 		if err := h.service.jwtService.RevokeAllUserTokens(userID); err != nil {
 			return err
@@ -260,7 +274,7 @@ func (h *AuthHandler) GetProfile() fiber.Handler {
 	return func(c *fiber.Ctx) error {
 		userID, ok := c.Locals("user_id").(string)
 		if !ok || userID == "" {
-			return errors.Unauthorized("User not authenticated")
+			return errors.UnauthorizedWithCode("User not authenticated", constants.CodeUnauthorized)
 		}
 
 		user, err := h.service.GetCurrentUser(userID)
@@ -277,7 +291,7 @@ func (h *AuthHandler) UpdateProfile() fiber.Handler {
 	return func(c *fiber.Ctx) error {
 		userID, ok := c.Locals("user_id").(string)
 		if !ok || userID == "" {
-			return errors.Unauthorized("User not authenticated")
+			return errors.UnauthorizedWithCode("User not authenticated", constants.CodeUnauthorized)
 		}
 
 		var req UpdateProfileRequest
@@ -299,7 +313,7 @@ func (h *AuthHandler) ChangePassword() fiber.Handler {
 	return func(c *fiber.Ctx) error {
 		userID, ok := c.Locals("user_id").(string)
 		if !ok || userID == "" {
-			return errors.Unauthorized("User not authenticated")
+			return errors.UnauthorizedWithCode("User not authenticated", constants.CodeUnauthorized)
 		}
 
 		var req ChangePasswordRequest
@@ -312,6 +326,115 @@ func (h *AuthHandler) ChangePassword() fiber.Handler {
 		}
 
 		return response.SuccessResponse(c, fiber.Map{}, "Password changed successfully. Please login again.")
+	}
+}
+
+// BindOAuth handles POST /api/v1/auth/bind-oauth.
+func (h *AuthHandler) BindOAuth() fiber.Handler {
+	return func(c *fiber.Ctx) error {
+		userID, ok := c.Locals("user_id").(string)
+		if !ok || userID == "" {
+			return errors.UnauthorizedWithCode("User not authenticated", constants.CodeUnauthorized)
+		}
+
+		var req BindOAuthRequest
+		if err := validation.Default.BindAndValidate(c, &req); err != nil {
+			return err
+		}
+
+		res, err := h.service.BindOAuth(userID, &req)
+		if err != nil {
+			return err
+		}
+
+		return response.SuccessResponse(c, res, "OAuth account linked successfully")
+	}
+}
+
+// UnbindOAuth handles POST /api/v1/auth/unbind-oauth.
+func (h *AuthHandler) UnbindOAuth() fiber.Handler {
+	return func(c *fiber.Ctx) error {
+		userID, ok := c.Locals("user_id").(string)
+		if !ok || userID == "" {
+			return errors.UnauthorizedWithCode("User not authenticated", constants.CodeUnauthorized)
+		}
+
+		var req UnbindOAuthRequest
+		if err := validation.Default.BindAndValidate(c, &req); err != nil {
+			return err
+		}
+
+		res, err := h.service.UnbindOAuth(userID, &req)
+		if err != nil {
+			return err
+		}
+
+		return response.SuccessResponse(c, res, "OAuth account unlinked successfully")
+	}
+}
+
+// UploadAvatar handles POST /api/v1/auth/avatar.
+func (h *AuthHandler) UploadAvatar() fiber.Handler {
+	return func(c *fiber.Ctx) error {
+		userID, ok := c.Locals("user_id").(string)
+		if !ok || userID == "" {
+			return errors.UnauthorizedWithCode("User not authenticated", constants.CodeUnauthorized)
+		}
+
+		fileHeader, err := c.FormFile("avatar")
+		if err != nil {
+			// Fallback check field name 'file'
+			fileHeader, err = c.FormFile("file")
+			if err != nil {
+				return errors.BadRequestWithCode("Avatar file is required (form-data: avatar)", constants.CodeAvatarFileRequired)
+			}
+		}
+
+		// Max 5MB
+		if fileHeader.Size > 5*1024*1024 {
+			return errors.BadRequestWithCode("Avatar file size exceeds 5MB limit", constants.CodeAvatarFileTooLarge)
+		}
+
+		file, err := fileHeader.Open()
+		if err != nil {
+			return errors.InternalError("Failed to read avatar file", err)
+		}
+		defer file.Close()
+
+		contentType := fileHeader.Header.Get("Content-Type")
+		if contentType == "" {
+			contentType = "image/webp"
+		}
+
+		res, err := h.service.UploadAvatar(userID, file, fileHeader.Size, contentType)
+		if err != nil {
+			return err
+		}
+
+		return response.SuccessResponse(c, res, "Profile avatar updated successfully")
+	}
+}
+
+// DeleteAccount handles DELETE /api/v1/auth/account.
+func (h *AuthHandler) DeleteAccount() fiber.Handler {
+	return func(c *fiber.Ctx) error {
+		userID, ok := c.Locals("user_id").(string)
+		if !ok || userID == "" {
+			return errors.UnauthorizedWithCode("User not authenticated", constants.CodeUnauthorized)
+		}
+
+		var req DeleteAccountRequest
+		if err := validation.Default.BindAndValidate(c, &req); err != nil {
+			return err
+		}
+
+		if err := h.service.DeleteAccount(userID, &req); err != nil {
+			return err
+		}
+
+		clearAuthCookies(c)
+
+		return response.SuccessMessageResponse(c, "Account deleted permanently")
 	}
 }
 

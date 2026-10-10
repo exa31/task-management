@@ -1,9 +1,12 @@
 package authmodule
 
 import (
+	"context"
 	"crypto/rsa"
+	"crypto/sha256"
 	"database/sql"
 	"encoding/base64"
+	"encoding/hex"
 	"encoding/json"
 	stderrors "errors"
 	"fmt"
@@ -19,8 +22,10 @@ import (
 	"golang/config"
 	"golang/database"
 	"golang/pkg/auth"
+	"golang/pkg/constants"
 	"golang/pkg/errors"
 	"golang/pkg/logging"
+	"golang/pkg/storage"
 
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/google/uuid"
@@ -33,11 +38,12 @@ type AuthService struct {
 	db         *database.PostgresDB
 	jwtService *auth.JWTService
 	cfg        *config.Config
+	storage    storage.Storage
 }
 
 // NewAuthService builds the auth service.
-func NewAuthService(db *database.PostgresDB, jwtService *auth.JWTService, cfg *config.Config) *AuthService {
-	return &AuthService{db: db, jwtService: jwtService, cfg: cfg}
+func NewAuthService(db *database.PostgresDB, jwtService *auth.JWTService, cfg *config.Config, stor storage.Storage) *AuthService {
+	return &AuthService{db: db, jwtService: jwtService, cfg: cfg, storage: stor}
 }
 
 type authUser struct {
@@ -48,8 +54,25 @@ type authUser struct {
 	AvatarURL    *string    `db:"avatar_url"`
 	AuthProvider *string    `db:"auth_provider"`
 	ProviderID   *string    `db:"provider_id"`
+	GoogleID     *string    `db:"google_id"`
+	AppleID      *string    `db:"apple_id"`
 	IsActive     bool       `db:"is_active"`
 	CreatedAt    *time.Time `db:"created_at"`
+}
+
+func hashToken(token string) string {
+	sum := sha256.Sum256([]byte(token))
+	return hex.EncodeToString(sum[:])
+}
+
+func (s *AuthService) saveRefreshToken(userID, refreshToken string, expiresAt time.Time) error {
+	tokenHash := hashToken(refreshToken)
+	_, err := s.db.DB.Exec(
+		`INSERT INTO refresh_tokens (user_id, token_hash, expires_at, is_revoked, created_at, updated_at)
+		 VALUES ($1, $2, $3, false, NOW(), NOW())`,
+		userID, tokenHash, expiresAt,
+	)
+	return err
 }
 
 // Register creates a user and returns the auth response.
@@ -82,12 +105,19 @@ func (s *AuthService) Register(req *RegisterRequest) (*AuthResponse, error) {
 		return nil, errors.InternalError("Failed to generate tokens", err)
 	}
 
+	refreshDuration := 168
+	if s.cfg != nil && s.cfg.JWT.RefreshTokenDuration > 0 {
+		refreshDuration = s.cfg.JWT.RefreshTokenDuration
+	}
+	_ = s.saveRefreshToken(user.ID, tokens.RefreshToken, time.Now().Add(time.Duration(refreshDuration)*time.Hour))
+
 	return &AuthResponse{
 		User: UserPayload{
-			ID:        user.ID,
-			Name:      user.Name,
-			Email:     user.Email,
-			CreatedAt: derefTime(user.CreatedAt),
+			ID:          user.ID,
+			Name:        user.Name,
+			Email:       user.Email,
+			HasPassword: true,
+			CreatedAt:   derefTime(user.CreatedAt),
 		},
 		Tokens: newTokenPair(tokens),
 	}, nil
@@ -97,19 +127,19 @@ func (s *AuthService) Register(req *RegisterRequest) (*AuthResponse, error) {
 func (s *AuthService) Login(req *LoginRequest) (*AuthResponse, error) {
 	var u authUser
 	err := s.db.DB.Get(&u,
-		"SELECT id, name, email, password, is_active, created_at FROM users WHERE email = $1",
+		"SELECT id, name, email, password, avatar_url, auth_provider, google_id, apple_id, is_active, created_at FROM users WHERE email = $1",
 		req.Email)
 	if err != nil {
 		if stderrors.Is(err, sql.ErrNoRows) {
-			return nil, errors.Unauthorized("Invalid email or password")
+			return nil, errors.UnauthorizedWithCode("Invalid email or password", constants.CodeInvalidCredentials)
 		}
 		return nil, errors.DatabaseError("Failed to fetch user", err)
 	}
 	if !u.IsActive {
-		return nil, errors.Forbidden("Account is deactivated")
+		return nil, errors.ForbiddenWithCode("Account is deactivated", constants.CodeAccountDeactivated)
 	}
 	if u.Password == nil || bcrypt.CompareHashAndPassword([]byte(*u.Password), []byte(req.Password)) != nil {
-		return nil, errors.Unauthorized("Invalid email or password")
+		return nil, errors.UnauthorizedWithCode("Invalid email or password", constants.CodeInvalidCredentials)
 	}
 
 	tokens, err := s.jwtService.GenerateTokenPair(u.ID, u.Email)
@@ -117,24 +147,105 @@ func (s *AuthService) Login(req *LoginRequest) (*AuthResponse, error) {
 		return nil, errors.InternalError("Failed to generate tokens", err)
 	}
 
+	refreshDuration := 168
+	if s.cfg != nil && s.cfg.JWT.RefreshTokenDuration > 0 {
+		refreshDuration = s.cfg.JWT.RefreshTokenDuration
+	}
+	_ = s.saveRefreshToken(u.ID, tokens.RefreshToken, time.Now().Add(time.Duration(refreshDuration)*time.Hour))
+
+	googleBound := (u.GoogleID != nil && *u.GoogleID != "") || (derefString(u.AuthProvider) == "google")
+	appleBound := (u.AppleID != nil && *u.AppleID != "") || (derefString(u.AuthProvider) == "apple")
+
 	return &AuthResponse{
 		User: UserPayload{
-			ID:        u.ID,
-			Name:      u.Name,
-			Email:     u.Email,
-			CreatedAt: derefTime(u.CreatedAt),
+			ID:          u.ID,
+			Name:        u.Name,
+			Email:       u.Email,
+			AvatarURL:   derefString(u.AvatarURL),
+			Provider:    derefString(u.AuthProvider),
+			GoogleBound: googleBound,
+			AppleBound:  appleBound,
+			HasPassword: true,
+			CreatedAt:   derefTime(u.CreatedAt),
 		},
 		Tokens: newTokenPair(tokens),
 	}, nil
 }
 
-// RefreshToken exchanges a refresh token for a new pair.
+// RefreshToken exchanges a refresh token for a new pair or rotates if <= 48 hours remaining.
 func (s *AuthService) RefreshToken(refreshToken string) (*TokenPair, error) {
-	tokens, err := s.jwtService.RefreshAccessToken(refreshToken)
+	claims, err := s.jwtService.ValidateToken(refreshToken, auth.RefreshToken)
 	if err != nil {
 		return nil, err
 	}
-	return newTokenPair(tokens), nil
+
+	tokenHash := hashToken(refreshToken)
+	var record struct {
+		ID        int64     `db:"id"`
+		UserID    string    `db:"user_id"`
+		ExpiresAt time.Time `db:"expires_at"`
+		IsRevoked bool      `db:"is_revoked"`
+	}
+	err = s.db.DB.Get(&record, "SELECT id, user_id, expires_at, is_revoked FROM refresh_tokens WHERE token_hash = $1", tokenHash)
+	if err != nil {
+		if stderrors.Is(err, sql.ErrNoRows) {
+			return nil, errors.UnauthorizedWithCode("Refresh token has expired or is invalid", constants.CodeRefreshTokenInvalid)
+		}
+		return nil, errors.DatabaseError("Database error during token lookup", err)
+	}
+
+	if record.IsRevoked {
+		return nil, errors.UnauthorizedWithCode("Refresh token has been revoked", constants.CodeRefreshTokenRevoked)
+	}
+
+	if record.ExpiresAt.Before(time.Now()) {
+		return nil, errors.UnauthorizedWithCode("Refresh token has expired", constants.CodeRefreshTokenExpired)
+	}
+
+	remaining := time.Until(record.ExpiresAt)
+	// If remaining <= 48 hours (2 days), rotate refresh token!
+	if remaining <= 48*time.Hour {
+		// Mark old token revoked in DB and Redis
+		_, _ = s.db.DB.Exec("UPDATE refresh_tokens SET is_revoked = true, updated_at = NOW() WHERE id = $1", record.ID)
+		_ = s.jwtService.RevokeToken(refreshToken, auth.RefreshToken)
+
+		// Generate fresh token pair
+		newPair, err := s.jwtService.GenerateTokenPair(claims.UserID, claims.Email)
+		if err != nil {
+			return nil, errors.InternalError("Failed to rotate tokens", err)
+		}
+
+		refreshDuration := 168
+		if s.cfg != nil && s.cfg.JWT.RefreshTokenDuration > 0 {
+			refreshDuration = s.cfg.JWT.RefreshTokenDuration
+		}
+		_ = s.saveRefreshToken(claims.UserID, newPair.RefreshToken, time.Now().Add(time.Duration(refreshDuration)*time.Hour))
+
+		return newTokenPair(newPair), nil
+	}
+
+	// If remaining > 48 hours: keep the current refresh token and only issue a new access token
+	accessTok, accessExp, err := s.jwtService.GenerateAccessToken(claims.UserID, claims.Email)
+	if err != nil {
+		return nil, errors.InternalError("Failed to generate access token", err)
+	}
+
+	return &TokenPair{
+		AccessToken:  accessTok,
+		RefreshToken: refreshToken,
+		ExpiresAt:    accessExp,
+		TokenType:    "Bearer",
+	}, nil
+}
+
+// RevokeCurrentToken permanently deletes the specific refresh token during single-device logout.
+func (s *AuthService) RevokeCurrentToken(refreshToken string) {
+	if refreshToken == "" {
+		return
+	}
+	tokenHash := hashToken(refreshToken)
+	_, _ = s.db.DB.Exec("DELETE FROM refresh_tokens WHERE token_hash = $1", tokenHash)
+	_ = s.jwtService.RevokeToken(refreshToken, auth.RefreshToken)
 }
 
 type googleUserInfo struct {
@@ -164,13 +275,13 @@ func (s *AuthService) verifyGoogleAuth(req *OAuthLoginRequest) (*googleUserInfo,
 
 			resp, err := client.PostForm("https://oauth2.googleapis.com/token", form)
 			if err != nil {
-				return nil, errors.BadRequest("Failed to communicate with Google token endpoint: " + err.Error())
+				return nil, errors.BadRequestWithCode("Failed to communicate with Google token endpoint: "+err.Error(), constants.CodeOAuthNotConfigured)
 			}
 			defer resp.Body.Close()
 			body, _ := io.ReadAll(resp.Body)
 
 			if resp.StatusCode != http.StatusOK {
-				return nil, errors.BadRequest("Google authorization code exchange failed: " + string(body))
+				return nil, errors.BadRequestWithCode("Google authorization code exchange failed: "+string(body), constants.CodeOAuthProviderInvalid)
 			}
 
 			var tokenRes struct {
@@ -178,7 +289,7 @@ func (s *AuthService) verifyGoogleAuth(req *OAuthLoginRequest) (*googleUserInfo,
 				IDToken     string `json:"id_token"`
 			}
 			if err := json.Unmarshal(body, &tokenRes); err != nil {
-				return nil, errors.BadRequest("Failed to parse Google token response")
+				return nil, errors.BadRequestWithCode("Failed to parse Google token response", constants.CodeOAuthProviderInvalid)
 			}
 
 			// Fetch verified user profile using the fresh access token
@@ -186,17 +297,17 @@ func (s *AuthService) verifyGoogleAuth(req *OAuthLoginRequest) (*googleUserInfo,
 			reqUser.Header.Set("Authorization", "Bearer "+tokenRes.AccessToken)
 			userResp, err := client.Do(reqUser)
 			if err != nil {
-				return nil, errors.BadRequest("Failed to fetch Google user profile: " + err.Error())
+				return nil, errors.BadRequestWithCode("Failed to fetch Google user profile: "+err.Error(), constants.CodeOAuthProviderInvalid)
 			}
 			defer userResp.Body.Close()
 			userBody, _ := io.ReadAll(userResp.Body)
 
 			var info googleUserInfo
 			if err := json.Unmarshal(userBody, &info); err != nil {
-				return nil, errors.BadRequest("Failed to decode Google user profile")
+				return nil, errors.BadRequestWithCode("Failed to decode Google user profile", constants.CodeOAuthProviderInvalid)
 			}
 			if info.Email == "" {
-				return nil, errors.BadRequest("Google account did not return a verified email")
+				return nil, errors.BadRequestWithCode("Google account did not return a verified email", constants.CodeOAuthEmailRequired)
 			}
 			return &info, nil
 		}
@@ -210,7 +321,7 @@ func (s *AuthService) verifyGoogleAuth(req *OAuthLoginRequest) (*googleUserInfo,
 				Picture: req.AvatarURL,
 			}, nil
 		}
-		return nil, errors.BadRequest("Google OAuth is not configured on the backend. Please set GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET in backend/.env")
+		return nil, errors.BadRequestWithCode("Google OAuth is not configured on the backend. Please set GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET in backend/.env", constants.CodeOAuthNotConfigured)
 	}
 
 	// 2. ID Token flow (from Google One Tap 1-click credential)
@@ -218,21 +329,21 @@ func (s *AuthService) verifyGoogleAuth(req *OAuthLoginRequest) (*googleUserInfo,
 		tokeninfoURL := "https://oauth2.googleapis.com/tokeninfo?id_token=" + url.QueryEscape(req.IDToken)
 		resp, err := client.Get(tokeninfoURL)
 		if err != nil {
-			return nil, errors.BadRequest("Failed to verify Google ID token: " + err.Error())
+			return nil, errors.BadRequestWithCode("Failed to verify Google ID token: "+err.Error(), constants.CodeOAuthProviderInvalid)
 		}
 		defer resp.Body.Close()
 		body, _ := io.ReadAll(resp.Body)
 
 		if resp.StatusCode != http.StatusOK {
-			return nil, errors.BadRequest("Google ID token validation failed: " + string(body))
+			return nil, errors.BadRequestWithCode("Google ID token validation failed: "+string(body), constants.CodeOAuthProviderInvalid)
 		}
 
 		var info googleUserInfo
 		if err := json.Unmarshal(body, &info); err != nil {
-			return nil, errors.BadRequest("Failed to decode Google tokeninfo")
+			return nil, errors.BadRequestWithCode("Failed to decode Google tokeninfo", constants.CodeOAuthProviderInvalid)
 		}
 		if info.Email == "" {
-			return nil, errors.BadRequest("Google ID token does not contain an email address")
+			return nil, errors.BadRequestWithCode("Google ID token does not contain an email address", constants.CodeOAuthEmailRequired)
 		}
 		return &info, nil
 	}
@@ -247,7 +358,7 @@ func (s *AuthService) verifyGoogleAuth(req *OAuthLoginRequest) (*googleUserInfo,
 		}, nil
 	}
 
-	return nil, errors.BadRequest("Missing Google authorization code or ID token")
+	return nil, errors.BadRequestWithCode("Missing Google authorization code or ID token", constants.CodeOAuthIdentifierMissing)
 }
 
 type appleJWK struct {
@@ -360,14 +471,14 @@ func (s *AuthService) verifyAppleAuth(req *OAuthLoginRequest) (*appleUserInfo, e
 				if claims, ok := token.Claims.(jwt.MapClaims); ok {
 					// Validate Issuer (must be https://appleid.apple.com)
 					if iss, ok := claims["iss"].(string); !ok || iss != "https://appleid.apple.com" {
-						return nil, errors.Unauthorized("Invalid Apple token issuer")
+						return nil, errors.UnauthorizedWithCode("Invalid Apple token issuer", constants.CodeAppleTokenInvalidIssuer)
 					}
 
 					// Validate Audience against configured AppleClientID
 					if s.cfg != nil && s.cfg.OAuth.AppleClientID != "" {
 						aud, ok := claims["aud"].(string)
 						if !ok || aud != s.cfg.OAuth.AppleClientID {
-							return nil, errors.Unauthorized(fmt.Sprintf("Apple token audience '%s' does not match configured Apple Client ID '%s'", aud, s.cfg.OAuth.AppleClientID))
+							return nil, errors.UnauthorizedWithCode(fmt.Sprintf("Apple token audience '%s' does not match configured Apple Client ID '%s'", aud, s.cfg.OAuth.AppleClientID), constants.CodeAppleTokenAudienceMismatch)
 						}
 					}
 
@@ -382,7 +493,7 @@ func (s *AuthService) verifyAppleAuth(req *OAuthLoginRequest) (*appleUserInfo, e
 				logging.Warn("Apple token cryptographic verification failed", logging.Err(parseErr))
 				// In production, reject invalid signatures. In development, allow fallback if testing offline.
 				if s.cfg != nil && s.cfg.App.Environment == "production" {
-					return nil, errors.Unauthorized("Invalid or expired Apple ID token")
+					return nil, errors.UnauthorizedWithCode("Invalid or expired Apple ID token", constants.CodeAppleTokenInvalid)
 				}
 			}
 		}
@@ -429,7 +540,7 @@ func (s *AuthService) verifyAppleAuth(req *OAuthLoginRequest) (*appleUserInfo, e
 	}
 
 	if email == "" {
-		return nil, errors.BadRequest("Email is required for Apple sign-in")
+		return nil, errors.BadRequestWithCode("Email is required for Apple sign-in", constants.CodeOAuthEmailRequired)
 	}
 
 	if name == "" {
@@ -480,11 +591,11 @@ func (s *AuthService) OAuthLogin(req *OAuthLoginRequest) (*AuthResponse, error) 
 		avatarURL = appleInfo.Picture
 		providerID = appleInfo.Sub
 	} else {
-		return nil, errors.BadRequest("Unsupported OAuth provider: " + provider)
+		return nil, errors.BadRequestWithCode("Unsupported OAuth provider: "+provider, constants.CodeOAuthProviderInvalid)
 	}
 
 	if email == "" {
-		return nil, errors.BadRequest("Email is required for OAuth login")
+		return nil, errors.BadRequestWithCode("Email is required for OAuth login", constants.CodeOAuthEmailRequired)
 	}
 
 	if name == "" {
@@ -493,15 +604,21 @@ func (s *AuthService) OAuthLogin(req *OAuthLoginRequest) (*AuthResponse, error) 
 	}
 
 	var user authUser
-	err := s.db.DB.Get(&user, "SELECT id, name, email, avatar_url, auth_provider, is_active, created_at FROM users WHERE email = $1", email)
+	err := s.db.DB.Get(&user, "SELECT id, name, email, password, avatar_url, auth_provider, google_id, apple_id, is_active, created_at FROM users WHERE email = $1", email)
 	if err != nil {
 		if stderrors.Is(err, sql.ErrNoRows) {
 			uid := uuid.New().String()
+			googleID := &providerID
+			var appleID *string
+			if provider == "apple" {
+				googleID = nil
+				appleID = &providerID
+			}
 			err = s.db.DB.QueryRowx(
-				`INSERT INTO users (id, name, email, avatar_url, auth_provider, provider_id, is_active, created_at, updated_at)
-				 VALUES ($1, $2, $3, $4, $5, $6, TRUE, NOW(), NOW())
-				 RETURNING id, name, email, avatar_url, auth_provider, created_at`,
-				uid, name, email, avatarURL, provider, providerID,
+				`INSERT INTO users (id, name, email, avatar_url, auth_provider, provider_id, google_id, apple_id, is_active, created_at, updated_at)
+				 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, TRUE, NOW(), NOW())
+				 RETURNING id, name, email, avatar_url, auth_provider, google_id, apple_id, created_at`,
+				uid, name, email, avatarURL, provider, providerID, googleID, appleID,
 			).StructScan(&user)
 			if err != nil {
 				return nil, errors.DatabaseError("Failed to create user account", err)
@@ -510,11 +627,14 @@ func (s *AuthService) OAuthLogin(req *OAuthLoginRequest) (*AuthResponse, error) 
 			return nil, errors.DatabaseError("Database error during OAuth lookup", err)
 		}
 	} else {
-		if avatarURL != "" || providerID != "" {
-			_, _ = s.db.DB.Exec("UPDATE users SET avatar_url = COALESCE(NULLIF($1, ''), avatar_url), auth_provider = $2, provider_id = COALESCE(NULLIF($3, ''), provider_id), updated_at = NOW() WHERE id = $4", avatarURL, provider, providerID, user.ID)
-			if avatarURL != "" {
-				user.AvatarURL = &avatarURL
-			}
+		bindCol := "google_id"
+		if provider == "apple" {
+			bindCol = "apple_id"
+		}
+		updateQuery := fmt.Sprintf("UPDATE users SET avatar_url = COALESCE(NULLIF($1, ''), avatar_url), auth_provider = $2, provider_id = COALESCE(NULLIF($3, ''), provider_id), %s = COALESCE($3, %s), updated_at = NOW() WHERE id = $4", bindCol, bindCol)
+		_, _ = s.db.DB.Exec(updateQuery, avatarURL, provider, providerID, user.ID)
+		if avatarURL != "" {
+			user.AvatarURL = &avatarURL
 		}
 	}
 
@@ -523,14 +643,26 @@ func (s *AuthService) OAuthLogin(req *OAuthLoginRequest) (*AuthResponse, error) 
 		return nil, errors.InternalError("Failed to generate tokens", err)
 	}
 
+	refreshDuration := 168
+	if s.cfg != nil && s.cfg.JWT.RefreshTokenDuration > 0 {
+		refreshDuration = s.cfg.JWT.RefreshTokenDuration
+	}
+	_ = s.saveRefreshToken(user.ID, tokens.RefreshToken, time.Now().Add(time.Duration(refreshDuration)*time.Hour))
+
+	googleBound := (user.GoogleID != nil && *user.GoogleID != "") || (derefString(user.AuthProvider) == "google")
+	appleBound := (user.AppleID != nil && *user.AppleID != "") || (derefString(user.AuthProvider) == "apple")
+
 	return &AuthResponse{
 		User: UserPayload{
-			ID:        user.ID,
-			Name:      user.Name,
-			Email:     user.Email,
-			AvatarURL: derefString(user.AvatarURL),
-			Provider:  derefString(user.AuthProvider),
-			CreatedAt: derefTime(user.CreatedAt),
+			ID:          user.ID,
+			Name:        user.Name,
+			Email:       user.Email,
+			AvatarURL:   derefString(user.AvatarURL),
+			Provider:    derefString(user.AuthProvider),
+			GoogleBound: googleBound,
+			AppleBound:  appleBound,
+			HasPassword: user.Password != nil && *user.Password != "",
+			CreatedAt:   derefTime(user.CreatedAt),
 		},
 		Tokens: newTokenPair(tokens),
 	}, nil
@@ -554,22 +686,181 @@ func (s *AuthService) DevLogin(req *DevLoginRequest) (*AuthResponse, error) {
 // GetCurrentUser fetches the authenticated user profile.
 func (s *AuthService) GetCurrentUser(userID string) (*UserPayload, error) {
 	var u authUser
-	err := s.db.DB.Get(&u, "SELECT id, name, email, avatar_url, auth_provider, created_at FROM users WHERE id = $1", userID)
+	err := s.db.DB.Get(&u, "SELECT id, name, email, password, avatar_url, auth_provider, google_id, apple_id, created_at FROM users WHERE id = $1", userID)
 	if err != nil {
 		if stderrors.Is(err, sql.ErrNoRows) {
-			return nil, errors.NotFound("User not found")
+			return nil, errors.NotFoundWithCode("User not found", constants.CodeUserNotFound)
 		}
 		return nil, errors.DatabaseError("Failed to fetch user", err)
 	}
 
+	googleBound := (u.GoogleID != nil && *u.GoogleID != "") || (derefString(u.AuthProvider) == "google")
+	appleBound := (u.AppleID != nil && *u.AppleID != "") || (derefString(u.AuthProvider) == "apple")
+	hasPassword := u.Password != nil && *u.Password != ""
+
 	return &UserPayload{
-		ID:        u.ID,
-		Name:      u.Name,
-		Email:     u.Email,
-		AvatarURL: derefString(u.AvatarURL),
-		Provider:  derefString(u.AuthProvider),
-		CreatedAt: derefTime(u.CreatedAt),
+		ID:          u.ID,
+		Name:        u.Name,
+		Email:       u.Email,
+		AvatarURL:   derefString(u.AvatarURL),
+		Provider:    derefString(u.AuthProvider),
+		GoogleBound: googleBound,
+		AppleBound:  appleBound,
+		HasPassword: hasPassword,
+		CreatedAt:   derefTime(u.CreatedAt),
 	}, nil
+}
+
+// BindOAuth connects Google or Apple credentials to the currently authenticated user.
+func (s *AuthService) BindOAuth(userID string, req *BindOAuthRequest) (*UserPayload, error) {
+	provider := strings.ToLower(req.Provider)
+	var providerID string
+	if provider == "google" {
+		gInfo, err := s.verifyGoogleAuth(&OAuthLoginRequest{
+			Provider: req.Provider,
+			IDToken:  req.IDToken,
+			Code:     req.Code,
+			Email:    req.Email,
+			Name:     req.Name,
+		})
+		if err != nil {
+			return nil, err
+		}
+		providerID = gInfo.Sub
+	} else if provider == "apple" {
+		aInfo, err := s.verifyAppleAuth(&OAuthLoginRequest{
+			Provider: req.Provider,
+			IDToken:  req.IDToken,
+			Code:     req.Code,
+			Email:    req.Email,
+			Name:     req.Name,
+		})
+		if err != nil {
+			return nil, err
+		}
+		providerID = aInfo.Sub
+	} else {
+		return nil, errors.BadRequestWithCode("Unsupported OAuth provider: "+provider, constants.CodeOAuthProviderInvalid)
+	}
+
+	if providerID == "" {
+		return nil, errors.BadRequestWithCode("Failed to obtain provider identifier", constants.CodeOAuthIdentifierMissing)
+	}
+
+	checkCol := "google_id"
+	if provider == "apple" {
+		checkCol = "apple_id"
+	}
+
+	var conflictID string
+	query := fmt.Sprintf("SELECT id FROM users WHERE %s = $1 AND id != $2", checkCol)
+	err := s.db.DB.Get(&conflictID, query, providerID, userID)
+	if err == nil && conflictID != "" {
+		return nil, errors.ConflictWithCode(fmt.Sprintf("This %s account is already linked to another user.", provider), constants.CodeOAuthAccountAlreadyLinked)
+	}
+
+	updateQuery := fmt.Sprintf("UPDATE users SET %s = $1, updated_at = NOW() WHERE id = $2", checkCol)
+	_, err = s.db.DB.Exec(updateQuery, providerID, userID)
+	if err != nil {
+		return nil, errors.DatabaseError("Failed to link "+provider+" account", err)
+	}
+
+	return s.GetCurrentUser(userID)
+}
+
+// UnbindOAuth disconnects Google or Apple credentials from the current user.
+func (s *AuthService) UnbindOAuth(userID string, req *UnbindOAuthRequest) (*UserPayload, error) {
+	provider := strings.ToLower(req.Provider)
+	var u authUser
+	err := s.db.DB.Get(&u, "SELECT id, password, auth_provider, google_id, apple_id FROM users WHERE id = $1", userID)
+	if err != nil {
+		return nil, errors.NotFoundWithCode("User not found", constants.CodeUserNotFound)
+	}
+
+	hasPassword := u.Password != nil && *u.Password != ""
+	hasGoogle := u.GoogleID != nil && *u.GoogleID != ""
+	hasApple := u.AppleID != nil && *u.AppleID != ""
+	mainProvider := derefString(u.AuthProvider)
+
+	methodsCount := 0
+	if hasPassword {
+		methodsCount++
+	}
+	if hasGoogle {
+		methodsCount++
+	}
+	if hasApple {
+		methodsCount++
+	}
+	if mainProvider != "" && mainProvider != "email" && !hasGoogle && !hasApple {
+		methodsCount++
+	}
+
+	if methodsCount <= 1 {
+		return nil, errors.BadRequestWithCode("Cannot unbind account as it is your only remaining login method.", constants.CodeOAuthLastAuthMethod)
+	}
+
+	checkCol := "google_id"
+	if provider == "apple" {
+		checkCol = "apple_id"
+	}
+
+	query := fmt.Sprintf("UPDATE users SET %s = NULL, updated_at = NOW() WHERE id = $1", checkCol)
+	_, err = s.db.DB.Exec(query, userID)
+	if err != nil {
+		return nil, errors.DatabaseError("Failed to unbind "+provider+" account", err)
+	}
+
+	return s.GetCurrentUser(userID)
+}
+
+// UploadAvatar processes and stores an avatar image in MinIO.
+func (s *AuthService) UploadAvatar(userID string, reader io.Reader, size int64, contentType string) (*UserPayload, error) {
+	if s.storage == nil {
+		return nil, errors.InternalErrorWithCode("Storage system is not configured", constants.CodeStorageNotConfigured, nil)
+	}
+
+	objectName := fmt.Sprintf("avatar_%s_%d.webp", userID, time.Now().Unix())
+	publicURL, err := s.storage.Upload(context.Background(), objectName, reader, size, contentType)
+	if err != nil {
+		return nil, errors.InternalError("Failed to store avatar: "+err.Error(), err)
+	}
+
+	_, err = s.db.DB.Exec("UPDATE users SET avatar_url = $1, updated_at = NOW() WHERE id = $2", publicURL, userID)
+	if err != nil {
+		return nil, errors.DatabaseError("Failed to update profile avatar", err)
+	}
+
+	return s.GetCurrentUser(userID)
+}
+
+// DeleteAccount permanently purges the user and all associated resources.
+func (s *AuthService) DeleteAccount(userID string, req *DeleteAccountRequest) error {
+	if strings.ToUpper(strings.TrimSpace(req.Confirmation)) != "DELETE" {
+		return errors.BadRequestWithCode("Invalid confirmation. Please type DELETE to delete your account.", constants.CodeAccountDeleteInvalidConfirmation)
+	}
+
+	var u authUser
+	err := s.db.DB.Get(&u, "SELECT id, avatar_url FROM users WHERE id = $1", userID)
+	if err != nil {
+		return errors.NotFoundWithCode("User not found", constants.CodeUserNotFound)
+	}
+
+	// Purge avatar from storage if exists
+	if u.AvatarURL != nil && *u.AvatarURL != "" && s.storage != nil {
+		_ = s.storage.Delete(context.Background(), *u.AvatarURL)
+	}
+
+	// Database hard deletion (cascades tasks, subtasks, notes, projects, refresh_tokens, api_tokens)
+	_, err = s.db.DB.Exec("DELETE FROM users WHERE id = $1", userID)
+	if err != nil {
+		return errors.DatabaseError("Failed to permanently delete account", err)
+	}
+
+	// Invalidate all tokens in Redis
+	_ = s.jwtService.RevokeAllUserTokens(userID)
+
+	return nil
 }
 
 // UpdateProfile validates and updates the current user's profile.
@@ -599,7 +890,7 @@ func (s *AuthService) ChangePassword(userID string, req *ChangePasswordRequest) 
 	}
 
 	if err := bcrypt.CompareHashAndPassword([]byte(hash), []byte(req.CurrentPassword)); err != nil {
-		return errors.Unauthorized("Current password is incorrect")
+		return errors.UnauthorizedWithCode("Current password is incorrect", constants.CodeInvalidCurrentPassword)
 	}
 
 	hashed, err := bcrypt.GenerateFromPassword([]byte(req.NewPassword), bcrypt.DefaultCost)
@@ -651,19 +942,19 @@ func derefString(s *string) string {
 // ProcessAppleWebhook handles Server-to-Server notification events from Apple.
 func (s *AuthService) ProcessAppleWebhook(payload string) error {
 	if payload == "" {
-		return errors.BadRequest("Missing Apple webhook payload")
+		return errors.BadRequestWithCode("Missing Apple webhook payload", constants.CodeBadRequest)
 	}
 
 	parser := jwt.NewParser()
 	token, _, err := parser.ParseUnverified(payload, jwt.MapClaims{})
 	if err != nil {
 		logging.Warn("failed to parse Apple webhook JWT", logging.Err(err))
-		return errors.BadRequest("Invalid Apple webhook payload")
+		return errors.BadRequestWithCode("Invalid Apple webhook payload", constants.CodeBadRequest)
 	}
 
 	claims, ok := token.Claims.(jwt.MapClaims)
 	if !ok {
-		return errors.BadRequest("Invalid Apple webhook claims")
+		return errors.BadRequestWithCode("Invalid Apple webhook claims", constants.CodeBadRequest)
 	}
 
 	eventsRaw, ok := claims["events"].(string)
@@ -721,4 +1012,3 @@ func (s *AuthService) handleAppleEventMap(eventsMap map[string]interface{}) erro
 	}
 	return nil
 }
-

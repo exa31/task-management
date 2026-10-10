@@ -1,25 +1,35 @@
-import React, { useState } from 'react'
+import React, { useEffect, useState } from 'react'
 
 import { getLocalizedErrorMessage } from '@/api'
-import { useCreateTask } from '@/hooks'
+import { ProjectModal } from '@/features/projects'
+import { useCreateTask, useProjects } from '@/hooks'
 import { useTranslation } from '@/i18n'
 import { useUIStore } from '@/stores'
 import type { TaskPriority, TaskStatus } from '@/types'
 
 export const TaskModal: React.FC = () => {
-  const { isCreateTaskModalOpen, closeCreateTaskModal } = useUIStore()
+  const { isCreateTaskModalOpen, closeCreateTaskModal, createTaskInitialProjectId } = useUIStore()
   const createTaskMutation = useCreateTask()
+  const { data: projects = [] } = useProjects()
   const { t } = useTranslation()
 
   const [title, setTitle] = useState('')
   const [description, setDescription] = useState('')
   const [status, setStatus] = useState<TaskStatus>('todo')
   const [priority, setPriority] = useState<TaskPriority>('medium')
+  const [projectId, setProjectId] = useState<number | null>(null)
+  const [isCreateProjectOpen, setIsCreateProjectOpen] = useState(false)
   const [isFocus, setIsFocus] = useState(false)
   const [tagsInput, setTagsInput] = useState('')
   const [subtasksInput, setSubtasksInput] = useState('')
   const [touched, setTouched] = useState(false)
   const [errorMsg, setErrorMsg] = useState<string | null>(null)
+
+  useEffect(() => {
+    if (isCreateTaskModalOpen) {
+      setProjectId(createTaskInitialProjectId)
+    }
+  }, [isCreateTaskModalOpen, createTaskInitialProjectId])
 
   if (!isCreateTaskModalOpen) return null
 
@@ -47,6 +57,7 @@ export const TaskModal: React.FC = () => {
         description: description.trim(),
         status,
         priority,
+        project_id: projectId,
         is_focus: isFocus,
         tags,
         subtasks,
@@ -56,6 +67,7 @@ export const TaskModal: React.FC = () => {
       setDescription('')
       setStatus('todo')
       setPriority('medium')
+      setProjectId(null)
       setIsFocus(false)
       setTagsInput('')
       setSubtasksInput('')
@@ -175,6 +187,36 @@ export const TaskModal: React.FC = () => {
           </div>
 
           <div>
+            <div className="flex items-center justify-between mb-1">
+              <label className="block text-xs font-medium text-slate-700 dark:text-slate-300">
+                {t('taskModal.projectLabel')}
+              </label>
+              <button
+                type="button"
+                onClick={() => setIsCreateProjectOpen(true)}
+                className="text-[11px] font-medium text-indigo-600 dark:text-indigo-400 hover:text-indigo-500 hover:underline flex items-center gap-1 cursor-pointer"
+              >
+                <i className="pi pi-plus text-[9px]" />
+                {t('taskModal.createNewProject')}
+              </button>
+            </div>
+            <select
+              value={projectId === null ? '' : String(projectId)}
+              onChange={(e) => setProjectId(e.target.value ? parseInt(e.target.value, 10) : null)}
+              className="w-full rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 px-2.5 py-1.5 text-xs text-slate-900 dark:text-slate-200 focus:border-indigo-500 focus:outline-none transition-colors"
+            >
+              <option value="" className="bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100">
+                {t('taskModal.noProjectOption')}
+              </option>
+              {projects.map((p) => (
+                <option key={p.id} value={String(p.id)} className="bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100">
+                  📁 {p.name}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div>
             <label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">
               {t('tasks.checklist')}
             </label>
@@ -182,7 +224,7 @@ export const TaskModal: React.FC = () => {
               rows={3}
               value={subtasksInput}
               onChange={(e) => setSubtasksInput(e.target.value)}
-              placeholder="Step 1: Setup database schema&#10;Step 2: Connect API controller"
+              placeholder={t('taskModal.checklistPlaceholder')}
               className="w-full rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 px-3 py-1.5 text-xs text-slate-900 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500 focus:border-indigo-500 focus:outline-none resize-none transition-colors"
             />
           </div>
@@ -230,6 +272,13 @@ export const TaskModal: React.FC = () => {
           </div>
         </form>
       </div>
+
+      {/* Inline Project Modal */}
+      <ProjectModal
+        isOpen={isCreateProjectOpen}
+        onClose={() => setIsCreateProjectOpen(false)}
+        onSuccess={(created) => setProjectId(created.id)}
+      />
     </div>
   )
 }

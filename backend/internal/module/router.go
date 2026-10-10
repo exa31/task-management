@@ -7,13 +7,16 @@ import (
 	"golang/config"
 	"golang/database"
 	authmodule "golang/internal/module/auth"
+	graphqlmodule "golang/internal/module/graphql"
 	"golang/internal/module/mcp"
 	"golang/internal/module/note"
+	"golang/internal/module/project"
 	"golang/internal/module/task"
 	usermodule "golang/internal/module/user"
 	"golang/pkg/auth"
 	authMiddleware "golang/pkg/middleware/auth"
 	"golang/pkg/realtime"
+	"golang/pkg/storage"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/websocket/v2"
@@ -25,11 +28,12 @@ type Router struct {
 	JWTService *auth.JWTService
 	Hub        *realtime.Hub // nil when the realtime feature is disabled
 	Config     *config.Config
+	Storage    storage.Storage
 }
 
 // NewRouter builds the module router.
-func NewRouter(db *database.PostgresDB, jwtService *auth.JWTService, hub *realtime.Hub, cfg *config.Config) *Router {
-	return &Router{DB: db, JWTService: jwtService, Hub: hub, Config: cfg}
+func NewRouter(db *database.PostgresDB, jwtService *auth.JWTService, hub *realtime.Hub, cfg *config.Config, stor storage.Storage) *Router {
+	return &Router{DB: db, JWTService: jwtService, Hub: hub, Config: cfg, Storage: stor}
 }
 
 // Register mounts every enabled module on the API router.
@@ -44,9 +48,11 @@ func (r *Router) Register(api fiber.Router) {
 }
 
 func (r *Router) registerAuth(api fiber.Router) {
-	handler := authmodule.NewAuthHandler(authmodule.NewAuthService(r.DB, r.JWTService, r.Config))
+	handler := authmodule.NewAuthHandler(authmodule.NewAuthService(r.DB, r.JWTService, r.Config, r.Storage))
 
 	auth := api.Group("/auth")
+	auth.Post("/register", handler.Register())
+	auth.Post("/login", handler.Login())
 	auth.Post("/oauth", handler.OAuthLogin())
 	auth.Post("/apple/webhook", handler.AppleWebhook())
 	auth.Post("/dev-login", handler.DevLogin())
@@ -55,6 +61,10 @@ func (r *Router) registerAuth(api fiber.Router) {
 	auth.Use(authMiddleware.AuthMiddleware(r.JWTService))
 	auth.Get("/profile", handler.GetProfile())
 	auth.Put("/profile", handler.UpdateProfile())
+	auth.Post("/avatar", handler.UploadAvatar())
+	auth.Post("/bind-oauth", handler.BindOAuth())
+	auth.Post("/unbind-oauth", handler.UnbindOAuth())
+	auth.Delete("/account", handler.DeleteAccount())
 	auth.Post("/logout", handler.Logout())
 	auth.Post("/logout-all", handler.LogoutAll())
 }
@@ -119,6 +129,19 @@ func (r *Router) registerNotesAndTasks(api fiber.Router) {
 	tasks.Put("/:id/subtasks/:subtaskId", taskHandler.UpdateSubtask)
 	tasks.Delete("/:id/subtasks/:subtaskId", taskHandler.DeleteSubtask)
 
+	// Projects routes (Per-user isolated)
+	projectRepo := project.NewRepository(db)
+	projectService := project.NewService(projectRepo)
+	projectHandler := project.NewHandler(projectService)
+
+	projects := api.Group("/projects")
+	projects.Use(authMiddleware.AuthMiddleware(r.JWTService))
+	projects.Post("/", projectHandler.Create)
+	projects.Get("/", projectHandler.List)
+	projects.Get("/:id", projectHandler.GetByID)
+	projects.Put("/:id", projectHandler.Update)
+	projects.Delete("/:id", projectHandler.Delete)
+
 	// MCP and API Tokens routes
 	tokens := api.Group("/tokens")
 	tokens.Use(authMiddleware.AuthMiddleware(r.JWTService))
@@ -129,6 +152,19 @@ func (r *Router) registerNotesAndTasks(api fiber.Router) {
 	mcpGroup := api.Group("/mcp")
 	mcpGroup.Get("/", mcpHandler.Discovery)
 	mcpGroup.Post("/", authMiddleware.OptionalAuthMiddleware(r.JWTService), mcpHandler.HandleMCP)
+
+	// GraphQL route (Playground on GET in browser, JSON execution on POST)
+	userRepo := usermodule.NewUserRepository(db)
+	gqlSchema, err := graphqlmodule.BuildSchema(graphqlmodule.SchemaConfig{
+		UserRepo:    userRepo,
+		ProjectRepo: projectRepo,
+		TaskRepo:    taskRepo,
+		NoteRepo:    noteRepo,
+	})
+	if err == nil {
+		gqlHandler := graphqlmodule.NewHandler(gqlSchema, r.JWTService)
+		api.All("/graphql", authMiddleware.OptionalAuthMiddleware(r.JWTService), gqlHandler.Handle)
+	}
 }
 
 func (r *Router) registerProtected(api fiber.Router) {

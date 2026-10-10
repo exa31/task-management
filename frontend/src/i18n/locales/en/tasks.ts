@@ -32,6 +32,8 @@ export const tasks = {
   deletedSuccess: 'Task deleted successfully',
   progressLoggedSuccess: 'Progress note saved',
   focusToggledSuccess: 'Task focus state updated',
+  allProjects: 'All Project Modules',
+  allTasksLoaded: '✓ All tasks loaded',
 }
 
 export const taskModal = {
@@ -47,6 +49,10 @@ export const taskModal = {
   tagsLabel: 'Tags',
   tagsPlaceholder: 'backend, database, critical (comma separated)',
   pinToFocusLabel: "Pin directly to Today's Focus Horizon",
+  projectLabel: 'Task Module / Project',
+  noProjectOption: 'No Project Module',
+  checklistPlaceholder: 'Step 1: Setup database schema\nStep 2: Connect API controller',
+  createNewProject: '+ New Project',
   cancel: 'Cancel',
   submit: 'Create Task',
   titleRequired: 'Task title is required',
@@ -59,6 +65,8 @@ export const taskDrawer = {
   titleLabel: 'Task Title',
   titleRequired: 'Task title is required',
   descriptionPlaceholder: 'Add detailed description or notes...',
+  projectLabel: 'Task Module / Project',
+  noProjectOption: 'No Project Module',
   lastProgressNote: 'Last Progress Log',
   lastWorkedOn: 'Last worked on:',
   noLogYet: 'No logs yet. Save a progress note so you remember where you left off!',

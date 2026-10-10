@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"golang/cache"
+	"golang/pkg/constants"
 	customErrors "golang/pkg/errors"
 	"golang/pkg/logging"
 
@@ -89,6 +90,11 @@ func (j *JWTService) GenerateTokenPair(userID, email string) (*TokenPair, error)
 		ExpiresAt:    accessExp,
 		TokenType:    "Bearer",
 	}, nil
+}
+
+// GenerateAccessToken generates only a new access token
+func (j *JWTService) GenerateAccessToken(userID, email string) (string, time.Time, error) {
+	return j.generateToken(userID, email, AccessToken)
 }
 
 // generateToken generates a JWT token
@@ -174,18 +180,18 @@ func (j *JWTService) ValidateToken(tokenString string, tokenType TokenType) (*JW
 			slog.String("token_type", string(tokenType)),
 			logging.Err(err),
 		)
-		return nil, customErrors.Unauthorized("Invalid token")
+		return nil, customErrors.UnauthorizedWithCode("Invalid token", constants.CodeTokenInvalid)
 	}
 
 	// Extract claims
 	claims, ok := token.Claims.(*JWTClaims)
 	if !ok || !token.Valid {
-		return nil, customErrors.Unauthorized("Invalid token claims")
+		return nil, customErrors.UnauthorizedWithCode("Invalid token claims", constants.CodeTokenInvalid)
 	}
 
 	// Verify token type
 	if claims.TokenType != tokenType {
-		return nil, customErrors.Unauthorized("Invalid token type")
+		return nil, customErrors.UnauthorizedWithCode("Invalid token type", constants.CodeTokenInvalid)
 	}
 
 	// Check if token is revoked
@@ -194,7 +200,7 @@ func (j *JWTService) ValidateToken(tokenString string, tokenType TokenType) (*JW
 		redisKey := fmt.Sprintf("token:%s:%s", tokenType, claims.TokenID)
 		exists, err := j.redis.Exists(ctx, redisKey)
 		if err != nil || exists == 0 {
-			return nil, customErrors.Unauthorized("Token has been revoked")
+			return nil, customErrors.UnauthorizedWithCode("Token has been revoked", constants.CodeTokenInvalid)
 		}
 	}
 

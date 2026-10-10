@@ -8,6 +8,8 @@ import { landing } from './landing'
 import { mcp } from './mcp'
 import { nav } from './nav'
 import { convertModal, noteModal, notes } from './notes'
+import { projects } from './projects'
+import { settings } from './settings'
 import { taskDrawer, taskModal, tasks } from './tasks'
 
 export const id: TranslationSchema = {
@@ -19,12 +21,14 @@ export const id: TranslationSchema = {
   tasks,
   taskModal,
   taskDrawer,
+  projects,
   notes,
   noteModal,
   convertModal,
   mcp,
   commandPalette,
   login,
+  settings,
   errors,
 }
 

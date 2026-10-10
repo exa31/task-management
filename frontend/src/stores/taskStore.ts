@@ -9,6 +9,7 @@ interface TaskUIState {
   filterStatus: string
   filterPriority: string
   filterTag: string
+  filterProject: number | null
   filterFocusOnly: boolean
   searchQuery: string
 
@@ -16,6 +17,7 @@ interface TaskUIState {
   setFilterStatus: (status: string) => void
   setFilterPriority: (priority: string) => void
   setFilterTag: (tag: string) => void
+  setFilterProject: (projectId: number | null) => void
   setFilterFocusOnly: (focus: boolean) => void
   setSearchQuery: (query: string) => void
   openDrawer: (task: Task) => void
@@ -30,6 +32,7 @@ export const useTaskStore = create<TaskUIState>((set) => ({
   filterStatus: '',
   filterPriority: '',
   filterTag: '',
+  filterProject: null,
   filterFocusOnly: false,
   searchQuery: '',
 
@@ -37,6 +40,7 @@ export const useTaskStore = create<TaskUIState>((set) => ({
   setFilterStatus: (status) => set({ filterStatus: status }),
   setFilterPriority: (priority) => set({ filterPriority: priority }),
   setFilterTag: (tag) => set({ filterTag: tag }),
+  setFilterProject: (projectId) => set({ filterProject: projectId }),
   setFilterFocusOnly: (focus) => set({ filterFocusOnly: focus }),
   setSearchQuery: (query) => set({ searchQuery: query }),
   openDrawer: (task) => set({ selectedTask: task, isDrawerOpen: true }),

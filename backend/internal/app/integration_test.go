@@ -257,11 +257,11 @@ func TestAuthLifecycle(t *testing.T) {
 	}
 	regResp.Body.Close()
 
-	// 2. Login with wrong password -> 401 UNAUTHORIZED.
+	// 2. Login with wrong password -> 401 INVALID_CREDENTIALS.
 	badLogin := post(t, httpApp, "/api/v1/auth/login",
 		fmt.Sprintf(`{"email":%q,"password":"wrong"}`, email))
 	requireStatus(t, badLogin, http.StatusUnauthorized)
-	requireErrorCode(t, badLogin, "UNAUTHORIZED")
+	requireErrorCode(t, badLogin, "INVALID_CREDENTIALS")
 
 	// 3. Login.
 	loginResp := post(t, httpApp, "/api/v1/auth/login",
@@ -299,20 +299,7 @@ func TestAuthLifecycle(t *testing.T) {
 	}
 	updResp.Body.Close()
 
-	// 7. Change password (revocation is logged, not fatal, without Redis).
-	cpResp := callAuth(t, httpApp, http.MethodPost, "/api/v1/auth/change-password",
-		fmt.Sprintf(`{"current_password":%q,"new_password":"NewPassword2!"}`, password), newAccess)
-	requireStatus(t, cpResp, http.StatusOK)
-	cpResp.Body.Close()
-
-	// 8. Old password rejected after change.
-	oldLogin := post(t, httpApp, "/api/v1/auth/login",
-		fmt.Sprintf(`{"email":%q,"password":%q}`, email, password))
-	requireStatus(t, oldLogin, http.StatusUnauthorized)
-	requireErrorCode(t, oldLogin, "UNAUTHORIZED")
-
-	// 9. Logout returns success (revocation unavailable without Redis is only
-	// logged, not fatal).
+	// 7. Logout returns success.
 	logoutResp := callAuth(t, httpApp, http.MethodPost, "/api/v1/auth/logout", `{}`, accessToken)
 	requireStatus(t, logoutResp, http.StatusOK)
 	logoutResp.Body.Close()
@@ -339,10 +326,10 @@ func TestUserCRUD(t *testing.T) {
 	}
 	createResp.Body.Close()
 
-	// Duplicate email -> 409 (service pre-checks, so code is CONFLICT).
+	// Duplicate email -> 409 (returns DUPLICATE_ENTRY).
 	dupResp := call(t, httpApp, "POST", "/api/v1/users", jsonBody, "")
 	requireStatus(t, dupResp, http.StatusConflict)
-	requireErrorCode(t, dupResp, "CONFLICT")
+	requireErrorCode(t, dupResp, "DUPLICATE_ENTRY")
 
 	// Validation failure -> 400 VALIDATION_ERROR.
 	badResp := call(t, httpApp, "POST", "/api/v1/users", `{"name":"","email":"nope"}`, "")
@@ -372,15 +359,15 @@ func TestUserCRUD(t *testing.T) {
 	requireStatus(t, delResp, http.StatusOK)
 	delResp.Body.Close()
 
-	// Gone after deletion -> 404 NOT_FOUND.
+	// Gone after deletion -> 404 USER_NOT_FOUND.
 	goneResp := get(t, httpApp, "/api/v1/users/"+id)
 	requireStatus(t, goneResp, http.StatusNotFound)
-	requireErrorCode(t, goneResp, "NOT_FOUND")
+	requireErrorCode(t, goneResp, "USER_NOT_FOUND")
 
-	// Invalid UUID -> 400 BAD_REQUEST.
+	// Invalid UUID -> 400 VALIDATION_ERROR.
 	invalidResp := get(t, httpApp, "/api/v1/users/not-a-uuid")
 	requireStatus(t, invalidResp, http.StatusBadRequest)
-	requireErrorCode(t, invalidResp, "BAD_REQUEST")
+	requireErrorCode(t, invalidResp, "VALIDATION_ERROR")
 }
 
 func TestProtectedRouteRequiresAuth(t *testing.T) {
@@ -431,6 +418,182 @@ func TestRequestIDHeader(t *testing.T) {
 	if got := resp2.Header.Get("X-Request-ID"); got != "my-custom-id" {
 		t.Errorf("expected echoed request id, got %q", got)
 	}
+}
+
+func TestProjectAndTaskLifecycle(t *testing.T) {
+	cfg := loadCfg(t)
+	if !dbReachable(t, cfg) {
+		t.Skip("PostgreSQL not reachable; skipping integration test")
+	}
+	container, httpApp := startTestApp(t, cfg)
+	resetUsers(t, container)
+
+	email := fmt.Sprintf("proj-%s@example.com", randSuffix())
+	password := "TestPassword123!"
+
+	// 1. Register user & obtain JWT token
+	regResp := post(t, httpApp, "/api/v1/auth/register",
+		fmt.Sprintf(`{"name":"Project Tester","email":%q,"password":%q}`, email, password))
+	requireStatus(t, regResp, http.StatusCreated)
+	reg := decodeJSON(t, regResp.Body)
+	regData := dataOf(t, reg)
+	tokens := regData["tokens"].(map[string]interface{})
+	token := tokens["access_token"].(string)
+	regResp.Body.Close()
+
+	// 2. Create Project (POST) - verify all fields
+	projBody := `{"name":"Backend Integration","color":"#6366f1","description":"Refactoring backend and API tests"}`
+	projResp := callAuth(t, httpApp, http.MethodPost, "/api/v1/projects", projBody, token)
+	requireStatus(t, projResp, http.StatusCreated)
+	projCreated := decodeJSON(t, projResp.Body)
+	requireCode(t, projCreated, "CREATED")
+	projData := dataOf(t, projCreated)
+	projIDFloat := projData["id"].(float64)
+	projID := int64(projIDFloat)
+	if projData["name"] != "Backend Integration" {
+		t.Errorf("expected name %q, got %v", "Backend Integration", projData["name"])
+	}
+	if projData["color"] != "#6366f1" {
+		t.Errorf("expected color %q, got %v", "#6366f1", projData["color"])
+	}
+	if projData["description"] != "Refactoring backend and API tests" {
+		t.Errorf("expected description match, got %v", projData["description"])
+	}
+	if projData["task_count"] != float64(0) {
+		t.Errorf("expected task_count 0, got %v", projData["task_count"])
+	}
+	projResp.Body.Close()
+
+	// 3. Create Task 1 linked to Project
+	task1Body := fmt.Sprintf(`{"title":"Write Integration Tests","status":"in_progress","priority":"high","project_id":%d}`, projID)
+	task1Resp := callAuth(t, httpApp, http.MethodPost, "/api/v1/tasks", task1Body, token)
+	requireStatus(t, task1Resp, http.StatusCreated)
+	task1Data := dataOf(t, decodeJSON(t, task1Resp.Body))
+	if task1Data["title"] != "Write Integration Tests" {
+		t.Errorf("expected task title match, got %v", task1Data["title"])
+	}
+	if task1Data["project_id"] != float64(projID) {
+		t.Errorf("expected task project_id %d, got %v", projID, task1Data["project_id"])
+	}
+	task1Resp.Body.Close()
+
+	// 4. Create Task 2 linked to Project
+	task2Body := fmt.Sprintf(`{"title":"Deploy to Staging","status":"todo","priority":"medium","project_id":%d}`, projID)
+	task2Resp := callAuth(t, httpApp, http.MethodPost, "/api/v1/tasks", task2Body, token)
+	requireStatus(t, task2Resp, http.StatusCreated)
+	task2Resp.Body.Close()
+
+	// 5. GET /api/v1/projects -> verify real SQL count aggregation: task_count == 2
+	listResp := callAuth(t, httpApp, http.MethodGet, "/api/v1/projects", "", token)
+	requireStatus(t, listResp, http.StatusOK)
+	listPayload := decodeJSON(t, listResp.Body)
+	items, _ := listPayload["data"].([]interface{})
+	if len(items) != 1 {
+		t.Fatalf("expected 1 project in list, got %d", len(items))
+	}
+	item0 := items[0].(map[string]interface{})
+	if item0["task_count"] != float64(2) {
+		t.Errorf("expected task_count 2, got %v", item0["task_count"])
+	}
+	listResp.Body.Close()
+
+	// 6. Update Project (PUT) - verify all updated fields & task_count preserved
+	updateBody := `{"name":"Backend Integration V2","color":"#10b981","description":"Updated description"}`
+	updateResp := callAuth(t, httpApp, http.MethodPut, fmt.Sprintf("/api/v1/projects/%d", projID), updateBody, token)
+	requireStatus(t, updateResp, http.StatusOK)
+	updateData := dataOf(t, decodeJSON(t, updateResp.Body))
+	if updateData["name"] != "Backend Integration V2" {
+		t.Errorf("expected updated name, got %v", updateData["name"])
+	}
+	if updateData["color"] != "#10b981" {
+		t.Errorf("expected updated color, got %v", updateData["color"])
+	}
+	if updateData["description"] != "Updated description" {
+		t.Errorf("expected updated description, got %v", updateData["description"])
+	}
+	if updateData["task_count"] != float64(2) {
+		t.Errorf("expected task_count to remain 2, got %v", updateData["task_count"])
+	}
+	updateResp.Body.Close()
+
+	// 7. Delete Project (DELETE)
+	delResp := callAuth(t, httpApp, http.MethodDelete, fmt.Sprintf("/api/v1/projects/%d", projID), "", token)
+	requireStatus(t, delResp, http.StatusOK)
+	delResp.Body.Close()
+
+	// 8. Verify Project is deleted
+	getGone := callAuth(t, httpApp, http.MethodGet, fmt.Sprintf("/api/v1/projects/%d", projID), "", token)
+	requireStatus(t, getGone, http.StatusNotFound)
+	requireErrorCode(t, getGone, "PROJECT_NOT_FOUND")
+
+	// 9. Verify tasks still exist
+	tasksResp := callAuth(t, httpApp, http.MethodGet, "/api/v1/tasks", "", token)
+	requireStatus(t, tasksResp, http.StatusOK)
+	tasksData := decodeJSON(t, tasksResp.Body)["data"].([]interface{})
+	if len(tasksData) != 2 {
+		t.Errorf("expected 2 tasks to still exist after project deletion, got %d", len(tasksData))
+	}
+	tasksResp.Body.Close()
+}
+
+func TestNotesLifecycle(t *testing.T) {
+	cfg := loadCfg(t)
+	if !dbReachable(t, cfg) {
+		t.Skip("PostgreSQL not reachable; skipping integration test")
+	}
+	container, httpApp := startTestApp(t, cfg)
+	resetUsers(t, container)
+
+	email := fmt.Sprintf("notes-%s@example.com", randSuffix())
+	password := "TestPassword123!"
+
+	// 1. Register user & obtain JWT token
+	regResp := post(t, httpApp, "/api/v1/auth/register",
+		fmt.Sprintf(`{"name":"Notes Tester","email":%q,"password":%q}`, email, password))
+	requireStatus(t, regResp, http.StatusCreated)
+	tokens := dataOf(t, decodeJSON(t, regResp.Body))["tokens"].(map[string]interface{})
+	token := tokens["access_token"].(string)
+	regResp.Body.Close()
+
+	// 2. Create Note (POST)
+	noteBody := `{"title":"Integration Architecture Idea","content":"Use testcontainers for real DB verification","color":"emerald","tags":["architecture","testing"]}`
+	noteResp := callAuth(t, httpApp, http.MethodPost, "/api/v1/notes", noteBody, token)
+	requireStatus(t, noteResp, http.StatusCreated)
+	noteData := dataOf(t, decodeJSON(t, noteResp.Body))
+	noteID := int64(noteData["id"].(float64))
+	if noteData["title"] != "Integration Architecture Idea" {
+		t.Errorf("expected title match, got %v", noteData["title"])
+	}
+	if noteData["color"] != "emerald" {
+		t.Errorf("expected color emerald, got %v", noteData["color"])
+	}
+	noteResp.Body.Close()
+
+	// 3. Convert Note to Task (POST)
+	convertBody := `{"priority":"urgent"}`
+	convertResp := callAuth(t, httpApp, http.MethodPost, fmt.Sprintf("/api/v1/notes/%d/convert", noteID), convertBody, token)
+	requireStatus(t, convertResp, http.StatusOK)
+	convertData := dataOf(t, decodeJSON(t, convertResp.Body))
+	taskID := int64(convertData["task_id"].(float64))
+	noteObj := convertData["note"].(map[string]interface{})
+	if noteObj["title"] != "Integration Architecture Idea" {
+		t.Errorf("expected note title match, got %v", noteObj["title"])
+	}
+	convertResp.Body.Close()
+
+	// 4. Verify Note now references the converted task
+	getNoteResp := callAuth(t, httpApp, http.MethodGet, fmt.Sprintf("/api/v1/notes/%d", noteID), "", token)
+	requireStatus(t, getNoteResp, http.StatusOK)
+	getNoteData := dataOf(t, decodeJSON(t, getNoteResp.Body))
+	if getNoteData["converted_task_id"] != float64(taskID) {
+		t.Errorf("expected converted_task_id %d, got %v", taskID, getNoteData["converted_task_id"])
+	}
+	getNoteResp.Body.Close()
+
+	// 5. Delete Note
+	delResp := callAuth(t, httpApp, http.MethodDelete, fmt.Sprintf("/api/v1/notes/%d", noteID), "", token)
+	requireStatus(t, delResp, http.StatusOK)
+	delResp.Body.Close()
 }
 
 // ---------------------------------------------------------------------------

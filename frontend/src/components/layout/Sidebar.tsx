@@ -1,7 +1,7 @@
 import { Link, useLocation } from 'react-router-dom'
 
 import { BrandLogo } from '@/components'
-import { useNotes, useTasks } from '@/hooks'
+import { useNotes, useProjects, useTasks } from '@/hooks'
 import { useTranslation } from '@/i18n'
 import { useUIStore } from '@/stores'
 
@@ -14,8 +14,10 @@ export default function Sidebar({ isSidebarOpen }: SidebarProps) {
   const { t } = useTranslation()
   const { data: rawTasks } = useTasks()
   const { data: rawNotes } = useNotes()
+  const { data: rawProjects } = useProjects()
   const tasks = Array.isArray(rawTasks) ? rawTasks : []
   const notes = Array.isArray(rawNotes) ? rawNotes : []
+  const projects = Array.isArray(rawProjects) ? rawProjects : []
   const { openCommandPalette } = useUIStore()
 
   const isActive = (path: string) => location.pathname === path
@@ -84,6 +86,26 @@ export default function Sidebar({ isSidebarOpen }: SidebarProps) {
         </Link>
 
         <Link
+          to="/projects"
+          className={`flex items-center justify-between px-3 py-2 rounded-lg text-xs font-medium transition-colors ${
+            isActive('/projects')
+              ? 'bg-indigo-50 dark:bg-indigo-600/20 text-indigo-600 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-500/30'
+              : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-900'
+          }`}
+          title={t('nav.projects')}
+        >
+          <div className="flex items-center gap-2.5">
+            <i className="pi pi-folder text-sm" />
+            {isSidebarOpen && <span>{t('nav.projects')}</span>}
+          </div>
+          {isSidebarOpen && projects.length > 0 && (
+            <span className="px-1.5 py-0.2 rounded-full text-[10px] font-mono bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400">
+              {projects.length}
+            </span>
+          )}
+        </Link>
+
+        <Link
           to="/notes"
           className={`flex items-center justify-between px-3 py-2 rounded-lg text-xs font-medium transition-colors ${
             isActive('/notes')
@@ -127,6 +149,21 @@ export default function Sidebar({ isSidebarOpen }: SidebarProps) {
               MCP
             </span>
           )}
+        </Link>
+
+        <Link
+          to="/settings"
+          className={`flex items-center justify-between px-3 py-2 rounded-lg text-xs font-medium transition-colors ${
+            isActive('/settings')
+              ? 'bg-indigo-50 dark:bg-indigo-600/20 text-indigo-600 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-500/30'
+              : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-900'
+          }`}
+          title={t('nav.settings')}
+        >
+          <div className="flex items-center gap-2.5">
+            <i className="pi pi-cog text-sm" />
+            {isSidebarOpen && <span>{t('nav.settings')}</span>}
+          </div>
         </Link>
       </div>
 

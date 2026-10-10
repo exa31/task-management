@@ -85,16 +85,29 @@ export default function TopNav({ isSidebarOpen, toggleSidebar }: TopNavProps) {
           <i className={`pi ${theme === 'dark' ? 'pi-sun text-amber-400' : 'pi-moon text-indigo-500'} text-xs`} />
         </button>
 
+        {/* Settings button */}
+        <button
+          onClick={() => navigate('/settings')}
+          className="p-1.5 rounded-lg text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 hover:bg-slate-100 dark:hover:bg-slate-900 transition-colors cursor-pointer"
+          title="Pengaturan"
+        >
+          <i className="pi pi-cog text-xs" />
+        </button>
+
         <div className="h-4 w-px bg-slate-200 dark:bg-slate-800 mx-1" />
 
         {/* User Profile */}
         <div className="flex items-center gap-2">
           {user ? (
-            <div className="flex items-center gap-2">
+            <div
+              onClick={() => navigate('/settings')}
+              className="flex items-center gap-2 cursor-pointer hover:opacity-85 transition-opacity"
+              title={t('nav.profileSettings')}
+            >
               <img
                 src={user.avatar_url || `https://api.dicebear.com/7.x/bottts/svg?seed=${user.email}`}
                 alt={user.name}
-                className="w-7 h-7 rounded-full bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700"
+                className="w-7 h-7 rounded-full bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 object-cover"
               />
               <div className="hidden md:block text-left">
                 <p className="text-xs font-medium text-slate-800 dark:text-slate-200 leading-none">{user.name}</p>
@@ -116,7 +129,7 @@ export default function TopNav({ isSidebarOpen, toggleSidebar }: TopNavProps) {
           {user && (
             <button
               onClick={handleLogout}
-              className="p-1.5 rounded-lg text-slate-400 dark:text-slate-500 hover:text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/30 transition-colors"
+              className="p-1.5 rounded-lg text-slate-400 dark:text-slate-500 hover:text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/30 transition-colors cursor-pointer"
               title={t('nav.signOut')}
             >
               <i className="pi pi-sign-out text-xs" />

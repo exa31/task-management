@@ -1,8 +1,11 @@
+export type NoteType = 'actionable' | 'knowledge'
+
 export interface Note {
   id: number
   user_id: string
   title: string
   content: string
+  type: NoteType
   tags: string[]
   color: string
   is_pinned: boolean
@@ -14,6 +17,7 @@ export interface Note {
 export interface CreateNotePayload {
   title: string
   content?: string
+  type?: NoteType
   tags?: string[]
   color?: string
   is_pinned?: boolean
@@ -22,6 +26,7 @@ export interface CreateNotePayload {
 export interface UpdateNotePayload {
   title?: string
   content?: string
+  type?: NoteType
   tags?: string[]
   color?: string
   is_pinned?: boolean
@@ -35,6 +40,7 @@ export interface ConvertToTaskPayload {
 }
 
 export interface NoteFilterParams {
+  type?: string
   search?: string
   tag?: string
   limit?: number

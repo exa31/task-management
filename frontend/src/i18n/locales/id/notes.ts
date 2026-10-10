@@ -18,7 +18,17 @@ export const notes = {
   updatedSuccess: 'Catatan berhasil diperbarui',
   deletedSuccess: 'Catatan berhasil dihapus',
   convertedSuccess: 'Catatan berhasil diubah menjadi tugas',
+  typeKnowledge: 'Knowledge',
+  typeActionable: 'Actionable',
+  tagsLabel: 'Tag',
+  allTags: 'Semua Tag',
+  howToStorage: 'How-To / Penyimpanan',
+  statsTotal: 'Total Catatan',
+  statsActionable: 'Ide Actionable',
+  statsKnowledge: 'Basis Pengetahuan',
+  statsPinned: 'Disematkan',
 }
+
 
 export const noteModal = {
   createTitle: 'Tulis Catatan Ide Baru',
@@ -32,6 +42,11 @@ export const noteModal = {
   colorTheme: 'Tema Warna Kartu',
   tagsLabel: 'Label',
   tagsPlaceholder: 'riset, v2, desain (pisahkan dengan koma)',
+  typeLabel: 'Tipe Catatan',
+  actionableTitle: 'Actionable Idea',
+  actionableDesc: 'Bisa dikonversi menjadi task / backlog',
+  knowledgeTitle: 'Knowledge / How-To',
+  knowledgeDesc: 'Referensi & tutorial (storage only)',
   pinLabel: 'Sematkan ke bagian paling atas',
   save: 'Simpan Catatan',
   colors: {
@@ -51,6 +66,7 @@ export const convertModal = {
   fromIdea: 'Dari Catatan Ide:',
   priorityLabel: 'Tingkat Prioritas',
   pinLabel: 'Langsung sematkan ke Horizon Fokus Hari Ini',
+  checklistPlaceholder: 'Contoh:\nLangkah 1: Riset dokumentasi\nLangkah 2: Buat purwarupa\nLangkah 3: Review dan rilis',
   cancel: 'Batal',
   submit: 'Konversi & Buat Tugas',
 }

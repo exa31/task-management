@@ -35,6 +35,7 @@ export const NoteModal: React.FC<NoteModalProps> = ({
   const [tagsInput, setTagsInput] = useState('')
   const [color, setColor] = useState('default')
   const [isPinned, setIsPinned] = useState(false)
+  const [noteType, setNoteType] = useState<'actionable' | 'knowledge'>('actionable')
   const [localSubmitting, setLocalSubmitting] = useState(false)
   const [touched, setTouched] = useState(false)
   const [errorMsg, setErrorMsg] = useState<string | null>(null)
@@ -50,6 +51,7 @@ export const NoteModal: React.FC<NoteModalProps> = ({
       setTagsInput((initialNote.tags || []).join(', '))
       setColor(initialNote.color || 'default')
       setIsPinned(initialNote.is_pinned || false)
+      setNoteType(initialNote.type || 'actionable')
       setTouched(false)
     } else {
       setTitle('')
@@ -57,6 +59,7 @@ export const NoteModal: React.FC<NoteModalProps> = ({
       setTagsInput('')
       setColor('default')
       setIsPinned(false)
+      setNoteType('actionable')
       setTouched(false)
     }
   }, [initialNote, isOpen])
@@ -82,6 +85,7 @@ export const NoteModal: React.FC<NoteModalProps> = ({
         tags,
         color,
         is_pinned: isPinned,
+        type: noteType,
       })
       setErrorMsg(null)
       onClose()
@@ -124,6 +128,48 @@ export const NoteModal: React.FC<NoteModalProps> = ({
         )}
 
         <form onSubmit={handleSubmit} className="space-y-4">
+          {/* Note Type Selector */}
+          <div>
+            <label className="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1.5">
+              {t('noteModal.typeLabel')}
+            </label>
+            <div className="grid grid-cols-2 gap-2">
+              <button
+                type="button"
+                onClick={() => setNoteType('actionable')}
+                className={`p-2.5 rounded-xl border text-left transition-all ${
+                  noteType === 'actionable'
+                    ? 'border-indigo-500 bg-indigo-50/70 dark:bg-indigo-950/40 text-indigo-950 dark:text-indigo-200 ring-1 ring-indigo-500'
+                    : 'border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 text-slate-600 dark:text-slate-400 hover:border-slate-300'
+                }`}
+              >
+                <div className="flex items-center gap-1.5 font-semibold text-xs text-indigo-600 dark:text-indigo-400">
+                  <i className="pi pi-bolt text-xs" /> {t('noteModal.actionableTitle')}
+                </div>
+                <p className="text-[10px] text-slate-500 dark:text-slate-400 mt-0.5">
+                  {t('noteModal.actionableDesc')}
+                </p>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setNoteType('knowledge')}
+                className={`p-2.5 rounded-xl border text-left transition-all ${
+                  noteType === 'knowledge'
+                    ? 'border-amber-500 bg-amber-50/70 dark:bg-amber-950/40 text-amber-950 dark:text-amber-200 ring-1 ring-amber-500'
+                    : 'border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 text-slate-600 dark:text-slate-400 hover:border-slate-300'
+                }`}
+              >
+                <div className="flex items-center gap-1.5 font-semibold text-xs text-amber-600 dark:text-amber-400">
+                  <i className="pi pi-book text-xs" /> {t('noteModal.knowledgeTitle')}
+                </div>
+                <p className="text-[10px] text-slate-500 dark:text-slate-400 mt-0.5">
+                  {t('noteModal.knowledgeDesc')}
+                </p>
+              </button>
+            </div>
+          </div>
+
           <div>
             <label className="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1">
               {t('noteModal.titleLabel')} <span className="text-rose-500 font-bold ml-0.5">*</span>

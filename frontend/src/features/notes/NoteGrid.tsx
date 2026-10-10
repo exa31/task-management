@@ -9,7 +9,7 @@ import {
   useUpdateNote,
 } from '@/hooks'
 import { useTranslation } from '@/i18n'
-import type { ConvertToTaskPayload, CreateNotePayload, Note, UpdateNotePayload } from '@/types'
+import type { ConvertToTaskPayload, CreateNotePayload, Note, NoteFilterParams, UpdateNotePayload } from '@/types'
 
 import { ConvertToTaskModal } from './ConvertToTaskModal'
 import { NoteCard } from './NoteCard'
@@ -17,8 +17,16 @@ import { NoteModal } from './NoteModal'
 
 export const NoteGrid: React.FC = () => {
   const [activeTag, setActiveTag] = useState('')
+  const [activeType, setActiveType] = useState<'' | 'actionable' | 'knowledge'>('')
   const { data: rawAllNotes } = useNotes()
-  const { data: rawNotes, isLoading, isError, error, refetch } = useNotes(activeTag ? { tag: activeTag } : undefined)
+
+  const filterParams: NoteFilterParams = {}
+  if (activeTag) filterParams.tag = activeTag
+  if (activeType) filterParams.type = activeType
+
+  const { data: rawNotes, isLoading, isError, error, refetch } = useNotes(
+    Object.keys(filterParams).length > 0 ? filterParams : undefined
+  )
   const allNotes = Array.isArray(rawAllNotes) ? rawAllNotes : []
   const notes = Array.isArray(rawNotes) ? rawNotes : []
   const { t } = useTranslation()
@@ -78,41 +86,83 @@ export const NoteGrid: React.FC = () => {
 
   return (
     <div className="space-y-4">
-      {/* Action Bar & Tags */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-200 dark:border-slate-800">
-        <div className="flex items-center gap-1.5 overflow-x-auto py-1 scrollbar-none">
-          <button
-            onClick={() => setActiveTag('')}
-            className={`px-2.5 py-1 rounded-full text-xs font-medium transition-colors ${
-              activeTag === ''
-                ? 'bg-indigo-600 text-white'
-                : 'bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 border border-slate-200 dark:border-slate-800'
-            }`}
-          >
-            {t('notes.allIdeas', { count: notes.length })}
-          </button>
-          {allTags.map((tag) => (
+      {/* Action Bar & Types / Tags */}
+      <div className="flex flex-col gap-3 pb-3 border-b border-slate-200 dark:border-slate-800">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          {/* Note Type Filter Tabs */}
+          <div className="flex items-center gap-1.5 p-1 rounded-xl bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 self-start">
             <button
-              key={tag}
-              onClick={() => setActiveTag(tag === activeTag ? '' : tag)}
-              className={`px-2.5 py-1 rounded-full text-xs font-medium transition-colors ${
-                activeTag === tag
-                  ? 'bg-indigo-600 text-white'
-                  : 'bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 border border-slate-200 dark:border-slate-800'
+              onClick={() => setActiveType('')}
+              className={`px-3 py-1 rounded-lg text-xs font-semibold transition-all ${
+                activeType === ''
+                  ? 'bg-white dark:bg-slate-800 text-slate-900 dark:text-white shadow-xs'
+                  : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
               }`}
             >
-              #{tag}
+              {t('notes.allIdeas', { count: notes.length })}
             </button>
-          ))}
+            <button
+              onClick={() => setActiveType('actionable')}
+              className={`px-3 py-1 rounded-lg text-xs font-semibold transition-all flex items-center gap-1.5 ${
+                activeType === 'actionable'
+                  ? 'bg-indigo-600 text-white shadow-xs'
+                  : 'text-slate-600 dark:text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400'
+              }`}
+            >
+              <i className="pi pi-bolt text-xs" />
+              {t('notes.typeActionable')}
+            </button>
+            <button
+              onClick={() => setActiveType('knowledge')}
+              className={`px-3 py-1 rounded-lg text-xs font-semibold transition-all flex items-center gap-1.5 ${
+                activeType === 'knowledge'
+                  ? 'bg-amber-600 text-white shadow-xs'
+                  : 'text-slate-600 dark:text-slate-400 hover:text-amber-600 dark:hover:text-amber-400'
+              }`}
+            >
+              <i className="pi pi-book text-xs" />
+              {t('notes.typeKnowledge')}
+            </button>
+          </div>
+
+          <button
+            onClick={handleOpenCreate}
+            className="inline-flex items-center justify-center gap-2 px-3.5 py-1.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-xs font-medium text-white shadow-xs transition-colors shrink-0"
+          >
+            <i className="pi pi-plus text-xs" />
+            {t('notes.writeNewIdea')}
+          </button>
         </div>
 
-        <button
-          onClick={handleOpenCreate}
-          className="inline-flex items-center justify-center gap-2 px-3 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-xs font-medium text-white shadow-xs transition-colors shrink-0"
-        >
-          <i className="pi pi-plus text-xs" />
-          {t('notes.writeNewIdea')}
-        </button>
+        {/* Tag Filters (if any tags exist) */}
+        {allTags.length > 0 && (
+          <div className="flex items-center gap-1.5 overflow-x-auto py-0.5 scrollbar-none text-xs">
+            <span className="text-[11px] text-slate-400 font-medium mr-1">{t('notes.tagsLabel')}:</span>
+            <button
+              onClick={() => setActiveTag('')}
+              className={`px-2 py-0.5 rounded-md text-[11px] font-medium transition-colors ${
+                activeTag === ''
+                  ? 'bg-slate-800 text-white dark:bg-slate-200 dark:text-slate-900'
+                  : 'bg-slate-100 dark:bg-slate-900 text-slate-600 dark:text-slate-400 hover:bg-slate-200'
+              }`}
+            >
+              {t('notes.allTags')}
+            </button>
+            {allTags.map((tag) => (
+              <button
+                key={tag}
+                onClick={() => setActiveTag(tag === activeTag ? '' : tag)}
+                className={`px-2 py-0.5 rounded-md text-[11px] font-medium transition-colors ${
+                  activeTag === tag
+                    ? 'bg-slate-800 text-white dark:bg-slate-200 dark:text-slate-900'
+                    : 'bg-slate-100 dark:bg-slate-900 text-slate-600 dark:text-slate-400 hover:bg-slate-200'
+                }`}
+              >
+                #{tag}
+              </button>
+            ))}
+          </div>
+        )}
       </div>
 
       {/* Grid of Notes */}
@@ -149,7 +199,7 @@ export const NoteGrid: React.FC = () => {
           </button>
         </div>
       ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3.5">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-3.5">
           {notes.map((note) => (
             <NoteCard
               key={note.id}

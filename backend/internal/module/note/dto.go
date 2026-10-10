@@ -6,6 +6,7 @@ import "time"
 type CreateNoteRequest struct {
 	Title    string   `json:"title" validate:"required,min=1,max=255"`
 	Content  string   `json:"content"`
+	Type     string   `json:"type" validate:"omitempty,oneof=actionable knowledge"`
 	Tags     []string `json:"tags"`
 	Color    string   `json:"color"`
 	IsPinned bool     `json:"is_pinned"`
@@ -15,6 +16,7 @@ type CreateNoteRequest struct {
 type UpdateNoteRequest struct {
 	Title           *string   `json:"title" validate:"omitempty,min=1,max=255"`
 	Content         *string   `json:"content"`
+	Type            *string   `json:"type" validate:"omitempty,oneof=actionable knowledge"`
 	Tags            *[]string `json:"tags"`
 	Color           *string   `json:"color"`
 	IsPinned        *bool     `json:"is_pinned"`
@@ -30,6 +32,7 @@ type ConvertToTaskRequest struct {
 
 // NoteFilter parameters for filtering notes.
 type NoteFilter struct {
+	Type   string `query:"type"`
 	Tag    string `query:"tag"`
 	Search string `query:"search"`
 	Limit  int    `query:"limit" validate:"omitempty,min=1,max=100"`
@@ -42,6 +45,7 @@ type NoteResponse struct {
 	UserID          string    `json:"user_id" db:"user_id"`
 	Title           string    `json:"title" db:"title"`
 	Content         string    `json:"content" db:"content"`
+	Type            string    `json:"type" db:"type"`
 	Tags            []string  `json:"tags"`
 	Color           string    `json:"color" db:"color"`
 	IsPinned        bool      `json:"is_pinned" db:"is_pinned"`

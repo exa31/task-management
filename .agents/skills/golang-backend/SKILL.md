@@ -61,10 +61,12 @@ type CreateUserRequest struct {
   * `response.SuccessResponse(c, data)`
   * `response.CreatedResponse(c, data)`
   * `response.PaginatedSuccessResponse(c, items, pagination)`
-* **Errors**: Return error types from `pkg/errors`:
-  * `errors.BadRequest("invalid input", err)`
-  * `errors.NotFound("user not found")`
-  * `errors.Unauthorized("invalid credentials")`
+* **Errors**: Return error types from `pkg/errors` with **explicit semantic error codes** (see `.agents/rules/error-handling.md`):
+  * `errors.BadRequestWithCode("message", constants.Code...)`
+  * `errors.UnauthorizedWithCode("message", constants.Code...)`
+  * `errors.ConflictWithCode("message", constants.Code...)`
+  * Dedicated helpers: `errors.TaskNotFound()`, `errors.NoteNotActionable()`, `errors.ProjectNotFound()`, `errors.UserNotFound()`, `errors.InvalidCredentials()`
+  * *Default backend error messages must be in English; client-side localization (Indonesian, etc.) is handled via matching keys in frontend i18n locales (`id/errors.ts`, `en/errors.ts`).*
 
 ### C. Logging
 * Use `pkg/logging` based on `log/slog`.

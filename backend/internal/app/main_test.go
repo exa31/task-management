@@ -21,6 +21,16 @@ func TestMain(m *testing.M) {
 	os.Setenv("LOG_TO_FILE", "false")
 	os.Setenv("LOG_LEVEL", "error")
 
+	// Auto-detect Docker/Podman socket if not explicitly specified
+	if os.Getenv("DOCKER_HOST") == "" {
+		if _, err := os.Stat("/var/run/docker.sock"); err == nil {
+			os.Setenv("DOCKER_HOST", "unix:///var/run/docker.sock")
+		}
+	}
+	if os.Getenv("TESTCONTAINERS_RYUK_DISABLED") == "" {
+		os.Setenv("TESTCONTAINERS_RYUK_DISABLED", "true")
+	}
+
 	// We only spin up Postgres for the integration tests since the existing tests
 	// mostly rely on PostgreSQL being reachable, and mock Redis/RabbitMQ.
 	fmt.Println("Starting PostgreSQL Testcontainer...")

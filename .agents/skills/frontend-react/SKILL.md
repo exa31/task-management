@@ -91,6 +91,13 @@ export const useAuthStore = create<AuthState>((set) => ({
 }))
 ```
 
+### Internationalization & Locale Usage (Mandatory)
+
+- **NEVER hardcode display strings**: All UI text, form labels, placeholders, toasts, modals, confirm dialogs, and button labels must use `useTranslation()` from `@/i18n` (`t('namespace.key')`).
+- **Synchronized bilingual dictionaries**: Every new translation must be added to both `src/i18n/locales/en/` and `src/i18n/locales/id/`. TypeScript enforces strict schema parity via `TranslationSchema = typeof en`.
+- **Dynamic interpolation**: Use named params `{key}` (e.g., `t('key', { count: 5 })`) instead of raw string concatenation.
+- Refer to detailed rule: `.agents/rules/frontend-i18n.md`.
+
 ---
 
 ## 4. Quality Gate & Mandatory Commands

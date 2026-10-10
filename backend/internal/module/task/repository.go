@@ -49,6 +49,9 @@ type taskEntity struct {
 	DueDate          *time.Time     `db:"due_date"`
 	IsFocus          bool           `db:"is_focus"`
 	Tags             pq.StringArray `db:"tags"`
+	ProjectID        *int64         `db:"project_id"`
+	ProjectName      *string        `db:"project_name"`
+	ProjectColor     *string        `db:"project_color"`
 	LastProgressNote string         `db:"last_progress_note"`
 	LastProgressAt   *time.Time     `db:"last_progress_at"`
 	SourceNoteID     *int64         `db:"source_note_id"`
@@ -87,6 +90,9 @@ func (e *taskEntity) toResponse(subtasks []SubtaskResponse) TaskResponse {
 		DueDate:           e.DueDate,
 		IsFocus:           e.IsFocus,
 		Tags:              tags,
+		ProjectID:         e.ProjectID,
+		ProjectName:       e.ProjectName,
+		ProjectColor:      e.ProjectColor,
 		LastProgressNote:  e.LastProgressNote,
 		LastProgressAt:    e.LastProgressAt,
 		SourceNoteID:      e.SourceNoteID,
@@ -136,11 +142,11 @@ func (r *repository) Create(ctx context.Context, userID string, req CreateTaskRe
 	subtasks := make([]SubtaskResponse, 0, len(req.Subtasks))
 
 	query := `
-		INSERT INTO tasks (user_id, title, description, status, priority, due_date, is_focus, tags, source_note_id, created_at, updated_at)
-		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, NOW(), NOW())
-		RETURNING id, user_id, title, description, status, priority, due_date, is_focus, tags, last_progress_note, last_progress_at, source_note_id, created_at, updated_at
+		INSERT INTO tasks (user_id, title, description, status, priority, due_date, is_focus, tags, project_id, source_note_id, created_at, updated_at)
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, NOW(), NOW())
+		RETURNING id, user_id, title, description, status, priority, due_date, is_focus, tags, project_id, last_progress_note, last_progress_at, source_note_id, created_at, updated_at
 	`
-	err := r.exec(ctx).QueryRowxContext(ctx, query, userID, req.Title, req.Description, status, priority, req.DueDate, req.IsFocus, pq.Array(tags), req.SourceNoteID).StructScan(&entity)
+	err := r.exec(ctx).QueryRowxContext(ctx, query, userID, req.Title, req.Description, status, priority, req.DueDate, req.IsFocus, pq.Array(tags), req.ProjectID, req.SourceNoteID).StructScan(&entity)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create task: %w", err)
 	}
@@ -161,15 +167,24 @@ func (r *repository) Create(ctx context.Context, userID string, req CreateTaskRe
 		subtasks = append(subtasks, st)
 	}
 
+	// Fetch with project name & color if project_id is present
+	if entity.ProjectID != nil {
+		_ = r.exec(ctx).QueryRowxContext(ctx, "SELECT name, color FROM projects WHERE id = $1", *entity.ProjectID).Scan(&entity.ProjectName, &entity.ProjectColor)
+	}
+
 	res := entity.toResponse(subtasks)
 	return &res, nil
 }
 
 func (r *repository) FindByID(ctx context.Context, userID string, id int64) (*TaskResponse, error) {
 	query := `
-		SELECT id, user_id, title, description, status, priority, due_date, is_focus, tags, last_progress_note, last_progress_at, source_note_id, created_at, updated_at
-		FROM tasks
-		WHERE id = $1 AND user_id = $2
+		SELECT 
+			t.id, t.user_id, t.title, t.description, t.status, t.priority, t.due_date, t.is_focus, t.tags,
+			t.project_id, p.name as project_name, p.color as project_color,
+			t.last_progress_note, t.last_progress_at, t.source_note_id, t.created_at, t.updated_at
+		FROM tasks t
+		LEFT JOIN projects p ON p.id = t.project_id
+		WHERE t.id = $1 AND t.user_id = $2
 	`
 	var entity taskEntity
 	err := r.exec(ctx).GetContext(ctx, &entity, query, id, userID)
@@ -191,53 +206,63 @@ func (r *repository) FindByID(ctx context.Context, userID string, id int64) (*Ta
 
 func (r *repository) FindAll(ctx context.Context, userID string, filter TaskFilter) ([]TaskResponse, error) {
 	query := `
-		SELECT id, user_id, title, description, status, priority, due_date, is_focus, tags, last_progress_note, last_progress_at, source_note_id, created_at, updated_at
-		FROM tasks
-		WHERE user_id = $1
+		SELECT 
+			t.id, t.user_id, t.title, t.description, t.status, t.priority, t.due_date, t.is_focus, t.tags,
+			t.project_id, p.name as project_name, p.color as project_color,
+			t.last_progress_note, t.last_progress_at, t.source_note_id, t.created_at, t.updated_at
+		FROM tasks t
+		LEFT JOIN projects p ON p.id = t.project_id
+		WHERE t.user_id = $1
 	`
 	args := []interface{}{userID}
 	argIdx := 2
 
+	if filter.ProjectID != nil {
+		query += fmt.Sprintf(" AND t.project_id = $%d", argIdx)
+		args = append(args, *filter.ProjectID)
+		argIdx++
+	}
+
 	if filter.Status != "" {
-		query += fmt.Sprintf(" AND status = $%d", argIdx)
+		query += fmt.Sprintf(" AND t.status = $%d", argIdx)
 		args = append(args, filter.Status)
 		argIdx++
 	}
 
 	if filter.Priority != "" {
-		query += fmt.Sprintf(" AND priority = $%d", argIdx)
+		query += fmt.Sprintf(" AND t.priority = $%d", argIdx)
 		args = append(args, filter.Priority)
 		argIdx++
 	}
 
 	if filter.IsFocus != nil {
-		query += fmt.Sprintf(" AND is_focus = $%d", argIdx)
+		query += fmt.Sprintf(" AND t.is_focus = $%d", argIdx)
 		args = append(args, *filter.IsFocus)
 		argIdx++
 	}
 
 	if filter.Tag != "" {
-		query += fmt.Sprintf(" AND $%d = ANY(tags)", argIdx)
+		query += fmt.Sprintf(" AND $%d = ANY(t.tags)", argIdx)
 		args = append(args, filter.Tag)
 		argIdx++
 	}
 
 	if filter.Search != "" {
-		query += fmt.Sprintf(" AND (title ILIKE $%d OR description ILIKE $%d)", argIdx, argIdx)
+		query += fmt.Sprintf(" AND (t.title ILIKE $%d OR t.description ILIKE $%d)", argIdx, argIdx)
 		args = append(args, "%"+filter.Search+"%")
 		argIdx++
 	}
 
 	if filter.Cursor != nil && *filter.Cursor > 0 {
-		query += fmt.Sprintf(" AND id < $%d", argIdx)
+		query += fmt.Sprintf(" AND t.id < $%d", argIdx)
 		args = append(args, *filter.Cursor)
 		argIdx++
 	}
 
 	if filter.Paginate == "cursor" || filter.Cursor != nil {
-		query += " ORDER BY id DESC"
+		query += " ORDER BY t.id DESC"
 	} else {
-		query += " ORDER BY is_focus DESC, CASE status WHEN 'in_progress' THEN 1 WHEN 'todo' THEN 2 WHEN 'backlog' THEN 3 WHEN 'review' THEN 4 ELSE 5 END, updated_at DESC, id DESC"
+		query += " ORDER BY t.is_focus DESC, CASE t.status WHEN 'in_progress' THEN 1 WHEN 'todo' THEN 2 WHEN 'backlog' THEN 3 WHEN 'review' THEN 4 ELSE 5 END, t.updated_at DESC, t.id DESC"
 	}
 
 	if filter.Limit > 0 {
@@ -308,6 +333,19 @@ func (r *repository) Update(ctx context.Context, userID string, id int64, req Up
 		tags = *req.Tags
 	}
 
+	projectID := existing.ProjectID
+	if req.HasProjectID {
+		projectID = req.ProjectID
+		if projectID != nil && *projectID <= 0 {
+			projectID = nil
+		}
+	} else if req.ProjectID != nil {
+		projectID = req.ProjectID
+		if *projectID <= 0 {
+			projectID = nil
+		}
+	}
+
 	lastProgressNote := existing.LastProgressNote
 	var lastProgressAt = existing.LastProgressAt
 	if req.LastProgressNote != nil {
@@ -318,14 +356,18 @@ func (r *repository) Update(ctx context.Context, userID string, id int64, req Up
 
 	query := `
 		UPDATE tasks
-		SET title = $1, description = $2, status = $3, priority = $4, due_date = $5, is_focus = $6, tags = $7, last_progress_note = $8, last_progress_at = $9, updated_at = NOW()
-		WHERE id = $10 AND user_id = $11
-		RETURNING id, user_id, title, description, status, priority, due_date, is_focus, tags, last_progress_note, last_progress_at, source_note_id, created_at, updated_at
+		SET title = $1, description = $2, status = $3, priority = $4, due_date = $5, is_focus = $6, tags = $7, project_id = $8, last_progress_note = $9, last_progress_at = $10, updated_at = NOW()
+		WHERE id = $11 AND user_id = $12
+		RETURNING id, user_id, title, description, status, priority, due_date, is_focus, tags, project_id, last_progress_note, last_progress_at, source_note_id, created_at, updated_at
 	`
 	var entity taskEntity
-	err = r.exec(ctx).QueryRowxContext(ctx, query, title, desc, status, priority, dueDate, isFocus, pq.Array(tags), lastProgressNote, lastProgressAt, id, userID).StructScan(&entity)
+	err = r.exec(ctx).QueryRowxContext(ctx, query, title, desc, status, priority, dueDate, isFocus, pq.Array(tags), projectID, lastProgressNote, lastProgressAt, id, userID).StructScan(&entity)
 	if err != nil {
 		return nil, fmt.Errorf("failed to update task: %w", err)
+	}
+
+	if entity.ProjectID != nil {
+		_ = r.exec(ctx).QueryRowxContext(ctx, "SELECT name, color FROM projects WHERE id = $1", *entity.ProjectID).Scan(&entity.ProjectName, &entity.ProjectColor)
 	}
 
 	subtasks, _ := r.fetchSubtasks(ctx, entity.ID)

@@ -152,19 +152,19 @@ func TestServiceGetAll(t *testing.T) {
 func TestServiceGetByIDNotFound(t *testing.T) {
 	svc := NewUserService(newFakeRepo())
 	_, err := svc.GetByID(uuid.New().String())
-	mustBeCode(t, err, "NOT_FOUND")
+	mustBeCode(t, err, "USER_NOT_FOUND")
 }
 
 func TestServiceGetByIDInvalidUUID(t *testing.T) {
 	svc := NewUserService(newFakeRepo())
 	_, err := svc.GetByID("not-a-uuid")
-	mustBeCode(t, err, "BAD_REQUEST")
+	mustBeCode(t, err, "VALIDATION_ERROR")
 }
 
 func TestServiceCreateDuplicateEmail(t *testing.T) {
 	svc := NewUserService(newFakeRepo(seedUser(u1, "dupe@x.com")))
 	_, err := svc.Create(&CreateUserRequest{Name: "X", Email: "dupe@x.com"})
-	mustBeCode(t, err, "CONFLICT")
+	mustBeCode(t, err, "DUPLICATE_ENTRY")
 }
 
 func TestServiceCreateSuccess(t *testing.T) {
@@ -195,13 +195,13 @@ func TestServiceUpdateEmailConflict(t *testing.T) {
 	repo.byEmail["taken@x.com"] = u2
 	svc := NewUserService(repo)
 	_, err := svc.Update(u1, &UpdateUserRequest{Email: "taken@x.com"})
-	mustBeCode(t, err, "CONFLICT")
+	mustBeCode(t, err, "DUPLICATE_ENTRY")
 }
 
 func TestServiceDeleteNotFound(t *testing.T) {
 	svc := NewUserService(newFakeRepo())
 	err := svc.Delete(uuid.New().String())
-	mustBeCode(t, err, "NOT_FOUND")
+	mustBeCode(t, err, "USER_NOT_FOUND")
 }
 
 func TestServiceHardDeleteSuccess(t *testing.T) {

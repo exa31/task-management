@@ -26,6 +26,7 @@ export const TaskListView: React.FC = () => {
     filterStatus,
     filterPriority,
     filterTag,
+    filterProject,
     filterFocusOnly,
     searchQuery,
   } = useTaskStore()
@@ -36,10 +37,11 @@ export const TaskListView: React.FC = () => {
       status: filterStatus || undefined,
       priority: filterPriority || undefined,
       tag: filterTag || undefined,
+      project_id: filterProject || undefined,
       is_focus: filterFocusOnly ? true : undefined,
       search: searchQuery || undefined,
     }),
-    [filterStatus, filterPriority, filterTag, filterFocusOnly, searchQuery]
+    [filterStatus, filterPriority, filterTag, filterProject, filterFocusOnly, searchQuery]
   )
 
   const {
@@ -116,7 +118,7 @@ export const TaskListView: React.FC = () => {
   }
 
   return (
-    <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/60 overflow-hidden divide-y divide-slate-100 dark:divide-slate-800/80 shadow-xs">
+    <div className="h-full flex flex-col min-h-0 overflow-y-auto rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/60 divide-y divide-slate-100 dark:divide-slate-800/80 shadow-xs scrollbar-thin">
       {tasks.map((task) => {
         const statusClass = STATUS_CLASSES[task.status] || STATUS_CLASSES.todo
         const statusLabel = t(`tasks.status.${task.status}`)
@@ -175,6 +177,18 @@ export const TaskListView: React.FC = () => {
                   >
                     {task.title}
                   </span>
+                  {task.project_name && (
+                    <span
+                      className="inline-flex items-center gap-1 px-1.5 py-0.2 rounded text-[10px] font-semibold border shadow-2xs shrink-0"
+                      style={{
+                        backgroundColor: `${task.project_color || '#6366f1'  }15`,
+                        borderColor: `${task.project_color || '#6366f1'  }35`,
+                        color: task.project_color || '#6366f1',
+                      }}
+                    >
+                      📁 {task.project_name}
+                    </span>
+                  )}
                   {task.tags && task.tags.length > 0 && (
                     <span className="hidden md:inline-flex items-center gap-1 text-[10px] font-mono text-slate-500">
                       {task.tags.map((t) => `#${t}`).join(' ')}
@@ -256,7 +270,7 @@ export const TaskListView: React.FC = () => {
           </button>
         ) : tasks.length > 10 ? (
           <span className="text-[11px] text-slate-400 dark:text-slate-600 py-1 font-mono">
-            ✓ All tasks loaded
+            {t('tasks.allTasksLoaded')}
           </span>
         ) : null}
       </div>

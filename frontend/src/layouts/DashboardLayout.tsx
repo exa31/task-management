@@ -28,8 +28,8 @@ export default function DashboardLayout() {
           toggleSidebar={() => setIsSidebarOpen(!isSidebarOpen)}
         />
 
-        <main className="flex-1 overflow-auto p-4 sm:p-6">
-          <div className="max-w-7xl mx-auto h-full">
+        <main className="flex-1 overflow-auto p-4 sm:p-6 flex flex-col">
+          <div className="w-full flex-1 flex flex-col min-h-0">
             <Outlet />
           </div>
         </main>

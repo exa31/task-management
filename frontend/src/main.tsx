@@ -18,6 +18,8 @@ import Login from './pages/Login.tsx'
 import McpSettingsPage from './pages/McpSettingsPage.tsx'
 import NotesPage from './pages/NotesPage.tsx'
 import NotFound from './pages/NotFound.tsx'
+import ProjectsPage from './pages/ProjectsPage.tsx'
+import SettingsPage from './pages/SettingsPage.tsx'
 import TasksPage from './pages/TasksPage.tsx'
 import { queryClient } from './queryClient.ts'
 
@@ -55,7 +57,9 @@ const router = createBrowserRouter([
             children: [
               { path: 'dashboard', element: <Dashboard /> },
               { path: 'tasks', element: <TasksPage /> },
+              { path: 'projects', element: <ProjectsPage /> },
               { path: 'notes', element: <NotesPage /> },
+              { path: 'settings', element: <SettingsPage /> },
               { path: 'mcp-settings', element: <McpSettingsPage /> },
             ],
           },
