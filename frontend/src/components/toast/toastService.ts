@@ -43,7 +43,7 @@ export const appToast = {
   },
   warn: (detail: string, summary: string = 'Warning') => {
     appToast.show({ severity: 'warn', summary, detail, life: 3500 })
-  },
+  }
 }
 
 if (typeof window !== 'undefined') {
@@ -59,9 +59,7 @@ export function useAppToast() {
     },
     error: (errOrDetail: unknown, summary?: string) => {
       const msg =
-        typeof errOrDetail === 'string'
-          ? errOrDetail
-          : getLocalizedErrorMessage(errOrDetail, t)
+        typeof errOrDetail === 'string' ? errOrDetail : getLocalizedErrorMessage(errOrDetail, t)
       appToast.error(msg, summary || t('errors.defaultTitle'))
     },
     info: (detail: string, summary: string = 'Info') => {
@@ -69,6 +67,6 @@ export function useAppToast() {
     },
     warn: (detail: string, summary?: string) => {
       appToast.warn(detail, summary || 'Warning')
-    },
+    }
   }
 }

@@ -27,24 +27,18 @@ export default function Login() {
     }
   }, [isAuthenticated, navigate, targetDestination])
 
-  const {
-    isAuthenticating: isGoogleAuthenticating,
-    loginWithGooglePopup,
-  } = useGoogleAuth({
+  const { isAuthenticating: isGoogleAuthenticating, loginWithGooglePopup } = useGoogleAuth({
     onSuccess: () => navigate(targetDestination, { replace: true }),
     onError: (err) => setAuthError(err),
     onCancel: () => setAuthError(null),
-    onMissingConfig: () => setSetupModalProvider('google'),
+    onMissingConfig: () => setSetupModalProvider('google')
   })
 
-  const {
-    isAuthenticating: isAppleAuthenticating,
-    loginWithApplePopup,
-  } = useAppleAuth({
+  const { isAuthenticating: isAppleAuthenticating, loginWithApplePopup } = useAppleAuth({
     onSuccess: () => navigate(targetDestination, { replace: true }),
     onError: (err) => setAuthError(err),
     onCancel: () => setAuthError(null),
-    onMissingConfig: () => setSetupModalProvider('apple'),
+    onMissingConfig: () => setSetupModalProvider('apple')
   })
 
   const isBusy = loading || isGoogleAuthenticating || isAppleAuthenticating
@@ -54,7 +48,7 @@ export default function Login() {
     try {
       await loginDev({
         email: 'creator@taskhub.dev',
-        name: 'Creator Demo',
+        name: 'Creator Demo'
       })
       toast.success('Signed in as Creator Demo', 'Access Granted')
       navigate(targetDestination, { replace: true })
@@ -85,7 +79,14 @@ export default function Login() {
 
     window.addEventListener('keydown', handleKeyDown)
     return () => window.removeEventListener('keydown', handleKeyDown)
-  }, [isBusy, setupModalProvider, handleDevDemoLogin, loginWithGooglePopup, loginWithApplePopup, navigate])
+  }, [
+    isBusy,
+    setupModalProvider,
+    handleDevDemoLogin,
+    loginWithGooglePopup,
+    loginWithApplePopup,
+    navigate
+  ])
 
   return (
     <div className="min-h-screen w-full flex flex-col lg:flex-row bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 transition-colors selection:bg-indigo-500/30 selection:text-indigo-200 relative overflow-x-hidden">
@@ -103,7 +104,10 @@ export default function Login() {
         {/* Top Header: Brand & Back to Home */}
         <div className="flex items-center justify-between">
           <Link to="/" className="flex items-center gap-3 group cursor-pointer">
-            <BrandLogo size={36} className="transition-transform group-hover:scale-105 duration-200" />
+            <BrandLogo
+              size={36}
+              className="transition-transform group-hover:scale-105 duration-200"
+            />
             <span className="font-extrabold text-lg tracking-tight text-slate-900 dark:text-white">
               Task<span className="text-indigo-600 dark:text-indigo-400">Hub</span>
             </span>
@@ -132,7 +136,8 @@ export default function Login() {
               Manage Tasks & AI Agents at the Speed of Thought
             </h2>
             <p className="text-sm text-slate-600 dark:text-slate-300 leading-relaxed">
-              Designed for developers who value flow state. Native Kanban boards, instant markdown notes, and Model Context Protocol (MCP) server integration.
+              Designed for developers who value flow state. Native Kanban boards, instant markdown
+              notes, and Model Context Protocol (MCP) server integration.
             </p>
           </div>
 
@@ -143,7 +148,9 @@ export default function Login() {
               <div className="flex items-center justify-between pb-2 border-b border-slate-100 dark:border-slate-800">
                 <div className="flex items-center gap-2">
                   <span className="w-2.5 h-2.5 rounded-full bg-sky-500" />
-                  <span className="text-xs font-bold text-slate-800 dark:text-slate-200">In Progress</span>
+                  <span className="text-xs font-bold text-slate-800 dark:text-slate-200">
+                    In Progress
+                  </span>
                   <span className="text-[10px] bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 rounded text-slate-500 font-mono">
                     3
                   </span>
@@ -165,8 +172,12 @@ export default function Login() {
                   Connect Cursor MCP stdio bridge for realtime status sync
                 </h4>
                 <div className="flex items-center gap-2 text-[10px] text-slate-500">
-                  <span className="bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 rounded font-mono">#mcp</span>
-                  <span className="bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 rounded font-mono">#ai</span>
+                  <span className="bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 rounded font-mono">
+                    #mcp
+                  </span>
+                  <span className="bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 rounded font-mono">
+                    #ai
+                  </span>
                   <span className="ml-auto text-emerald-600 dark:text-emerald-400 font-medium flex items-center gap-1">
                     <i className="pi pi-check text-[9px]" /> 3/3 done
                   </span>
@@ -188,8 +199,12 @@ export default function Login() {
                   Implement Apple Sign-In JWKS cryptographic validation
                 </h4>
                 <div className="flex items-center gap-2 text-[10px] text-slate-500">
-                  <span className="bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 rounded font-mono">#security</span>
-                  <span className="ml-auto text-indigo-600 dark:text-indigo-400 font-medium">80%</span>
+                  <span className="bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 rounded font-mono">
+                    #security
+                  </span>
+                  <span className="ml-auto text-indigo-600 dark:text-indigo-400 font-medium">
+                    80%
+                  </span>
                 </div>
                 <div className="w-full bg-slate-200 dark:bg-slate-800 h-1.5 rounded-full overflow-hidden">
                   <div className="bg-indigo-500 h-full w-4/5 rounded-full" />
@@ -238,16 +253,28 @@ export default function Login() {
           {/* Quick Metrics Strip */}
           <div className="grid grid-cols-3 gap-3 pt-2">
             <div className="p-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-white/60 dark:bg-slate-900/40 text-center space-y-0.5 shadow-xs">
-              <div className="text-base font-extrabold text-emerald-600 dark:text-emerald-400 font-mono">&lt; 10ms</div>
-              <div className="text-[11px] text-slate-500 dark:text-slate-400 font-medium">UI Latency</div>
+              <div className="text-base font-extrabold text-emerald-600 dark:text-emerald-400 font-mono">
+                &lt; 10ms
+              </div>
+              <div className="text-[11px] text-slate-500 dark:text-slate-400 font-medium">
+                UI Latency
+              </div>
             </div>
             <div className="p-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-white/60 dark:bg-slate-900/40 text-center space-y-0.5 shadow-xs">
-              <div className="text-base font-extrabold text-indigo-600 dark:text-indigo-400 font-mono">MCP 2.0</div>
-              <div className="text-[11px] text-slate-500 dark:text-slate-400 font-medium">AI Integration</div>
+              <div className="text-base font-extrabold text-indigo-600 dark:text-indigo-400 font-mono">
+                MCP 2.0
+              </div>
+              <div className="text-[11px] text-slate-500 dark:text-slate-400 font-medium">
+                AI Integration
+              </div>
             </div>
             <div className="p-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-white/60 dark:bg-slate-900/40 text-center space-y-0.5 shadow-xs">
-              <div className="text-base font-extrabold text-purple-600 dark:text-purple-400 font-mono">100%</div>
-              <div className="text-[11px] text-slate-500 dark:text-slate-400 font-medium">Isolated Data</div>
+              <div className="text-base font-extrabold text-purple-600 dark:text-purple-400 font-mono">
+                100%
+              </div>
+              <div className="text-[11px] text-slate-500 dark:text-slate-400 font-medium">
+                Isolated Data
+              </div>
             </div>
           </div>
         </div>
@@ -279,7 +306,9 @@ export default function Login() {
             className="p-2 rounded-xl border border-slate-200 dark:border-slate-800 bg-white/80 dark:bg-slate-900/80 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors shadow-xs cursor-pointer"
             title={theme === 'dark' ? t('nav.lightMode') : t('nav.darkMode')}
           >
-            <i className={`pi ${theme === 'dark' ? 'pi-sun text-amber-400' : 'pi-moon text-indigo-500'} text-xs`} />
+            <i
+              className={`pi ${theme === 'dark' ? 'pi-sun text-amber-400' : 'pi-moon text-indigo-500'} text-xs`}
+            />
           </button>
         </div>
 
@@ -290,7 +319,9 @@ export default function Login() {
             <div className="flex items-center gap-2.5 mb-1">
               <BrandLogo size={40} className="drop-shadow-sm" />
               <div className="flex items-center gap-1.5">
-                <span className="font-extrabold text-lg tracking-tight text-slate-900 dark:text-white">TaskHub</span>
+                <span className="font-extrabold text-lg tracking-tight text-slate-900 dark:text-white">
+                  TaskHub
+                </span>
                 <span className="px-2 py-0.5 rounded-full bg-indigo-50 dark:bg-indigo-500/20 text-indigo-600 dark:text-indigo-400 text-[10px] font-mono font-semibold border border-indigo-200 dark:border-indigo-500/30">
                   Workspace
                 </span>
@@ -324,7 +355,8 @@ export default function Login() {
               </kbd>
             </div>
             <p className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed">
-              Jump straight into a live interactive workspace preloaded with sprint tasks and notes. Zero setup required.
+              Jump straight into a live interactive workspace preloaded with sprint tasks and notes.
+              Zero setup required.
             </p>
             <button
               onClick={handleDevDemoLogin}
@@ -346,7 +378,9 @@ export default function Login() {
               <div className="w-full border-t border-slate-200 dark:border-slate-800" />
             </div>
             <div className="relative flex justify-center text-[10px] uppercase font-mono tracking-wider">
-              <span className="bg-white dark:bg-slate-900 px-3 text-slate-500">Or continue with SSO</span>
+              <span className="bg-white dark:bg-slate-900 px-3 text-slate-500">
+                Or continue with SSO
+              </span>
             </div>
           </div>
 

@@ -23,4 +23,5 @@ export const nav = {
   settings: 'Pengaturan',
   profileSettings: 'Pengaturan Profil',
   projects: 'Modul Project',
+  reminders: 'Pengingat'
 }

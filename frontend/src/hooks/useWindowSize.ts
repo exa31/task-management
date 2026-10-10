@@ -2,7 +2,7 @@
  * Example Custom Hook
  * Reusable React hooks.
  */
-import { useEffect,useState } from 'react'
+import { useEffect, useState } from 'react'
 
 export function useWindowSize() {
   const [size, setSize] = useState({

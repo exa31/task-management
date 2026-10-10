@@ -24,9 +24,7 @@ export const NotesPage: React.FC = () => {
           </div>
           {t('notes.title', { count: notes.length })}
         </h1>
-        <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
-          {t('notes.subtitle')}
-        </p>
+        <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">{t('notes.subtitle')}</p>
       </div>
 
       {/* KPI Stats Grid */}
@@ -36,7 +34,9 @@ export const NotesPage: React.FC = () => {
             <span>{t('notes.statsTotal')}</span>
             <i className="pi pi-file text-indigo-500 dark:text-indigo-400 text-xs" />
           </div>
-          <p className="text-2xl font-bold text-slate-900 dark:text-slate-100 font-mono">{notes.length}</p>
+          <p className="text-2xl font-bold text-slate-900 dark:text-slate-100 font-mono">
+            {notes.length}
+          </p>
           <span className="text-[10px] text-slate-500">{t('dashboard.savedInNotes')}</span>
         </div>
 
@@ -45,7 +45,9 @@ export const NotesPage: React.FC = () => {
             <span>{t('notes.statsActionable')}</span>
             <i className="pi pi-bolt text-indigo-500 dark:text-indigo-400 text-xs" />
           </div>
-          <p className="text-2xl font-bold text-slate-900 dark:text-slate-100 font-mono">{actionableCount}</p>
+          <p className="text-2xl font-bold text-slate-900 dark:text-slate-100 font-mono">
+            {actionableCount}
+          </p>
           <span className="text-[10px] text-slate-500">{t('noteModal.actionableTitle')}</span>
         </div>
 
@@ -54,7 +56,9 @@ export const NotesPage: React.FC = () => {
             <span>{t('notes.statsKnowledge')}</span>
             <i className="pi pi-book text-emerald-500 dark:text-emerald-400 text-xs" />
           </div>
-          <p className="text-2xl font-bold text-slate-900 dark:text-slate-100 font-mono">{knowledgeCount}</p>
+          <p className="text-2xl font-bold text-slate-900 dark:text-slate-100 font-mono">
+            {knowledgeCount}
+          </p>
           <span className="text-[10px] text-slate-500">{t('noteModal.knowledgeTitle')}</span>
         </div>
 
@@ -63,7 +67,9 @@ export const NotesPage: React.FC = () => {
             <span>{t('notes.statsPinned')}</span>
             <i className="pi pi-bookmark-fill text-amber-500 dark:text-amber-400 text-xs" />
           </div>
-          <p className="text-2xl font-bold text-slate-900 dark:text-slate-100 font-mono">{pinnedCount}</p>
+          <p className="text-2xl font-bold text-slate-900 dark:text-slate-100 font-mono">
+            {pinnedCount}
+          </p>
           <span className="text-[10px] text-slate-500">{t('notes.pin')}</span>
         </div>
       </div>

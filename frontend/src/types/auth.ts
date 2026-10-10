@@ -54,4 +54,3 @@ export interface DevLoginPayload {
   email: string
   name?: string
 }
-

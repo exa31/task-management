@@ -16,11 +16,17 @@ import {
   useProjects,
   useTasks,
   useUpdateNote,
-  useUpdateTask,
+  useUpdateTask
 } from '@/hooks'
 import { useTranslation } from '@/i18n'
 import { useAuthStore, useTaskStore, useUIStore } from '@/stores'
-import type { ConvertToTaskPayload, CreateNotePayload, Note, Task, UpdateNotePayload } from '@/types'
+import type {
+  ConvertToTaskPayload,
+  CreateNotePayload,
+  Note,
+  Task,
+  UpdateNotePayload
+} from '@/types'
 
 export default function Dashboard() {
   const { user } = useAuthStore()
@@ -54,7 +60,7 @@ export default function Dashboard() {
       rejectLabel: t('common.cancel'),
       accept: async () => {
         await deleteNoteMutation.mutateAsync(id)
-      },
+      }
     })
   }
 
@@ -67,7 +73,7 @@ export default function Dashboard() {
     if (!quickIdea.trim()) return
     await createNoteMutation.mutateAsync({
       title: quickIdea.trim(),
-      color: 'indigo',
+      color: 'indigo'
     })
     setQuickIdea('')
   }
@@ -81,7 +87,7 @@ export default function Dashboard() {
     weekday: 'long',
     day: 'numeric',
     month: 'long',
-    year: 'numeric',
+    year: 'numeric'
   })
 
   return (
@@ -119,7 +125,9 @@ export default function Dashboard() {
             <span>{t('dashboard.todaysFocus')}</span>
             <i className="pi pi-star-fill text-amber-500 dark:text-amber-400 text-xs" />
           </div>
-          <p className="text-2xl font-bold text-slate-900 dark:text-slate-100 font-mono">{focusCount}</p>
+          <p className="text-2xl font-bold text-slate-900 dark:text-slate-100 font-mono">
+            {focusCount}
+          </p>
           <span className="text-[10px] text-slate-500">{t('dashboard.priorityTasksToday')}</span>
         </div>
 
@@ -128,7 +136,9 @@ export default function Dashboard() {
             <span>{t('dashboard.inProgress')}</span>
             <i className="pi pi-bolt text-indigo-500 dark:text-indigo-400 text-xs" />
           </div>
-          <p className="text-2xl font-bold text-slate-900 dark:text-slate-100 font-mono">{inProgressCount}</p>
+          <p className="text-2xl font-bold text-slate-900 dark:text-slate-100 font-mono">
+            {inProgressCount}
+          </p>
           <span className="text-[10px] text-slate-500">{t('dashboard.activeTasks')}</span>
         </div>
 
@@ -137,7 +147,9 @@ export default function Dashboard() {
             <span>{t('dashboard.completedTasks')}</span>
             <i className="pi pi-check-circle text-emerald-500 dark:text-emerald-400 text-xs" />
           </div>
-          <p className="text-2xl font-bold text-slate-900 dark:text-slate-100 font-mono">{completedCount}</p>
+          <p className="text-2xl font-bold text-slate-900 dark:text-slate-100 font-mono">
+            {completedCount}
+          </p>
           <span className="text-[10px] text-slate-500">{t('dashboard.tasksFinished')}</span>
         </div>
 
@@ -146,7 +158,9 @@ export default function Dashboard() {
             <span>{t('dashboard.projectModules')}</span>
             <i className="pi pi-folder text-indigo-500 dark:text-indigo-400 text-xs" />
           </div>
-          <p className="text-2xl font-bold text-slate-900 dark:text-slate-100 font-mono">{projects.length}</p>
+          <p className="text-2xl font-bold text-slate-900 dark:text-slate-100 font-mono">
+            {projects.length}
+          </p>
           <span className="text-[10px] text-slate-500">{t('dashboard.activeProjects')}</span>
         </div>
 
@@ -155,7 +169,9 @@ export default function Dashboard() {
             <span>{t('dashboard.scratchpadIdeas')}</span>
             <i className="pi pi-lightbulb text-purple-500 dark:text-purple-400 text-xs" />
           </div>
-          <p className="text-2xl font-bold text-slate-900 dark:text-slate-100 font-mono">{notes.length}</p>
+          <p className="text-2xl font-bold text-slate-900 dark:text-slate-100 font-mono">
+            {notes.length}
+          </p>
           <span className="text-[10px] text-slate-500">{t('dashboard.savedInNotes')}</span>
         </div>
       </div>
@@ -183,7 +199,10 @@ export default function Dashboard() {
           </span>
         </div>
 
-        <form onSubmit={handleQuickIdeaSubmit} className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5">
+        <form
+          onSubmit={handleQuickIdeaSubmit}
+          className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5"
+        >
           <div className="relative flex-1 flex items-center rounded-xl border border-slate-200 dark:border-slate-700/80 bg-slate-50 dark:bg-slate-950/80 px-3.5 py-2.5 focus-within:border-indigo-500 focus-within:ring-2 focus-within:ring-indigo-500/20 transition-all">
             <i className="pi pi-pencil text-slate-400 dark:text-slate-400 text-xs mr-2.5 shrink-0" />
             <input
@@ -207,7 +226,9 @@ export default function Dashboard() {
             {createNoteMutation.isPending ? (
               <i className="pi pi-spin pi-spinner text-xs" />
             ) : (
-              <i className={`pi pi-plus text-xs ${quickIdea.trim() ? 'text-white' : 'text-slate-500 dark:text-slate-400'}`} />
+              <i
+                className={`pi pi-plus text-xs ${quickIdea.trim() ? 'text-white' : 'text-slate-500 dark:text-slate-400'}`}
+              />
             )}
             <span className="font-bold tracking-tight">{t('dashboard.captureIdea')}</span>
           </button>
@@ -227,7 +248,8 @@ export default function Dashboard() {
               to="/tasks"
               className="text-xs text-indigo-600 dark:text-indigo-400 hover:text-indigo-500 dark:hover:text-indigo-300 font-medium flex items-center gap-1"
             >
-              {t('dashboard.viewAll', { count: tasks.length })} <i className="pi pi-arrow-right text-[10px]" />
+              {t('dashboard.viewAll', { count: tasks.length })}{' '}
+              <i className="pi pi-arrow-right text-[10px]" />
             </Link>
           </div>
 
@@ -247,7 +269,7 @@ export default function Dashboard() {
                         e.stopPropagation()
                         updateTaskMutation.mutate({
                           id: task.id,
-                          payload: { status: 'done' },
+                          payload: { status: 'done' }
                         })
                       }}
                       className="h-3.5 w-3.5 rounded border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 flex items-center justify-center shrink-0 hover:border-indigo-500"
@@ -292,7 +314,8 @@ export default function Dashboard() {
               to="/notes"
               className="text-xs text-indigo-600 dark:text-indigo-400 hover:text-indigo-500 dark:hover:text-indigo-300 font-medium flex items-center gap-1"
             >
-              {t('dashboard.viewScratchpad', { count: notes.length })} <i className="pi pi-arrow-right text-[10px]" />
+              {t('dashboard.viewScratchpad', { count: notes.length })}{' '}
+              <i className="pi pi-arrow-right text-[10px]" />
             </Link>
           </div>
 
@@ -306,7 +329,7 @@ export default function Dashboard() {
                 onTogglePin={(n) =>
                   updateNoteMutation.mutate({
                     id: n.id,
-                    payload: { is_pinned: !n.is_pinned },
+                    payload: { is_pinned: !n.is_pinned }
                   })
                 }
                 onConvertToTask={(n) => setConvertingNote(n)}
@@ -341,9 +364,7 @@ export default function Dashboard() {
               const projectTasks = tasks.filter((t) => t.project_id === project.id)
               const doneTasks = projectTasks.filter((t) => t.status === 'done').length
               const pct =
-                projectTasks.length > 0
-                  ? Math.round((doneTasks / projectTasks.length) * 100)
-                  : 0
+                projectTasks.length > 0 ? Math.round((doneTasks / projectTasks.length) * 100) : 0
 
               return (
                 <Link
@@ -377,7 +398,7 @@ export default function Dashboard() {
                       className="h-full rounded-full transition-all duration-300"
                       style={{
                         width: `${pct}%`,
-                        backgroundColor: project.color || '#6366f1',
+                        backgroundColor: project.color || '#6366f1'
                       }}
                     />
                   </div>
@@ -413,7 +434,7 @@ export default function Dashboard() {
           if (editingNote) {
             await updateNoteMutation.mutateAsync({
               id: editingNote.id,
-              payload,
+              payload
             })
           }
         }}

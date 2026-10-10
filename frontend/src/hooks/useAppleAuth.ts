@@ -73,7 +73,7 @@ function parseAppleJwt(token: string): { email?: string; sub?: string } | null {
       window
         .atob(base64)
         .split('')
-        .map((c) => `%${  (`00${  c.charCodeAt(0).toString(16)}`).slice(-2)}`)
+        .map((c) => `%${`00${c.charCodeAt(0).toString(16)}`.slice(-2)}`)
         .join('')
     )
     return JSON.parse(jsonPayload)
@@ -127,7 +127,7 @@ export function useAppleAuth(options: UseAppleAuthOptions = {}) {
           scope: 'name email',
           redirectURI: window.location.origin,
           state: 'taskhub-apple-auth',
-          usePopup: true,
+          usePopup: true
         })
         isInitializedRef.current = true
       } catch (err) {
@@ -173,7 +173,7 @@ export function useAppleAuth(options: UseAppleAuthOptions = {}) {
           name,
           id_token: authorization.id_token,
           code: authorization.code,
-          avatar_url: `https://api.dicebear.com/7.x/bottts/svg?seed=${email || 'apple-user'}`,
+          avatar_url: `https://api.dicebear.com/7.x/bottts/svg?seed=${email || 'apple-user'}`
         })
 
         localStorage.setItem('has_logged_in_before', 'true')
@@ -230,7 +230,9 @@ export function useAppleAuth(options: UseAppleAuthOptions = {}) {
     }
 
     if (!window.AppleID?.auth) {
-      options.onError?.('Apple Sign In SDK is still loading. Please check your internet connection or try again.')
+      options.onError?.(
+        'Apple Sign In SDK is still loading. Please check your internet connection or try again.'
+      )
       return
     }
 
@@ -242,7 +244,7 @@ export function useAppleAuth(options: UseAppleAuthOptions = {}) {
           scope: 'name email',
           redirectURI: window.location.origin,
           state: 'taskhub-apple-auth',
-          usePopup: true,
+          usePopup: true
         })
         isInitializedRef.current = true
       } catch (err) {
@@ -274,6 +276,6 @@ export function useAppleAuth(options: UseAppleAuthOptions = {}) {
     isConfigured,
     isScriptReady,
     isAuthenticating,
-    loginWithApplePopup,
+    loginWithApplePopup
   }
 }

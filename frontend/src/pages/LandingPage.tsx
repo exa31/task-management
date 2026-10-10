@@ -19,7 +19,6 @@ export const LandingPage: React.FC = () => {
   const [activeSection, setActiveSection] = useState<string>('')
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
 
-
   // Track scroll position for dynamic floating navbar & scrollspy
   useEffect(() => {
     const handleScroll = () => {
@@ -66,7 +65,7 @@ export const LandingPage: React.FC = () => {
     try {
       await loginDev({
         email: 'creator@taskhub.dev',
-        name: 'Creator Demo',
+        name: 'Creator Demo'
       })
       toast.success('Welcome to your TaskHub workspace sandbox!', 'Demo Access Granted')
       navigate('/dashboard')
@@ -82,9 +81,9 @@ export const LandingPage: React.FC = () => {
       mcpServers: {
         taskhub: {
           command: 'npx',
-          args: ['-y', '@taskhub/mcp-server', '--api-url', 'https://be-task-hub.eka-dev.cloud'],
-        },
-      },
+          args: ['-y', '@taskhub/mcp-server', '--api-url', 'https://be-task-hub.eka-dev.cloud']
+        }
+      }
     },
     null,
     2
@@ -94,7 +93,10 @@ export const LandingPage: React.FC = () => {
     try {
       await navigator.clipboard.writeText(mcpConfigCode)
       setCopiedMcp(true)
-      toast.success('Ready to paste into your cursor_settings.json or agy config.', t('landing.mcpShowcase.copied'))
+      toast.success(
+        'Ready to paste into your cursor_settings.json or agy config.',
+        t('landing.mcpShowcase.copied')
+      )
       setTimeout(() => setCopiedMcp(false), 2500)
     } catch {
       // ignore
@@ -114,14 +116,16 @@ export const LandingPage: React.FC = () => {
           1. DYNAMIC FLOATING GLASS NAVBAR (Non-Static, Reacts on Scroll)
           ========================================================================= */}
       <header
-        className={`fixed top-0 inset-x-0 z-50 transition-all duration-300 ease-out flex justify-center ${isScrolled ? 'pt-2 sm:pt-3 px-3 sm:px-6' : 'pt-0 px-0'
-          }`}
+        className={`fixed top-0 inset-x-0 z-50 transition-all duration-300 ease-out flex justify-center ${
+          isScrolled ? 'pt-2 sm:pt-3 px-3 sm:px-6' : 'pt-0 px-0'
+        }`}
       >
         <div
-          className={`w-full transition-all duration-300 ${isScrolled
+          className={`w-full transition-all duration-300 ${
+            isScrolled
               ? 'max-w-6xl rounded-2xl sm:rounded-full bg-white/85 dark:bg-slate-900/85 backdrop-blur-2xl border border-slate-200/80 dark:border-slate-800/80 shadow-xl shadow-slate-950/5 dark:shadow-black/40 px-4 sm:px-6 py-2.5'
               : 'max-w-7xl mx-auto px-4 sm:px-6 py-4 bg-transparent border-b border-transparent'
-            }`}
+          }`}
         >
           <div className="flex items-center justify-between">
             {/* Logo & Brand */}
@@ -135,7 +139,10 @@ export const LandingPage: React.FC = () => {
               }}
               className="flex items-center gap-2.5 group cursor-pointer"
             >
-              <BrandLogo size={32} className="transition-transform group-hover:scale-105 duration-200" />
+              <BrandLogo
+                size={32}
+                className="transition-transform group-hover:scale-105 duration-200"
+              />
               <span className="font-extrabold text-base tracking-tight text-slate-900 dark:text-slate-100">
                 Task<span className="text-indigo-600 dark:text-indigo-400">Hub</span>
               </span>
@@ -146,40 +153,44 @@ export const LandingPage: React.FC = () => {
               <a
                 href="#features"
                 onClick={(e) => scrollToSection(e, 'features')}
-                className={`px-3 py-1.5 rounded-full transition-all duration-200 ${activeSection === 'features'
+                className={`px-3 py-1.5 rounded-full transition-all duration-200 ${
+                  activeSection === 'features'
                     ? 'bg-indigo-600 text-white font-semibold shadow-xs'
                     : 'text-slate-600 dark:text-slate-300 hover:text-indigo-600 dark:hover:text-indigo-300'
-                  }`}
+                }`}
               >
                 {t('landing.features.sectionTitle')}
               </a>
               <a
                 href="#kanban"
                 onClick={(e) => scrollToSection(e, 'kanban')}
-                className={`px-3 py-1.5 rounded-full transition-all duration-200 ${activeSection === 'kanban'
+                className={`px-3 py-1.5 rounded-full transition-all duration-200 ${
+                  activeSection === 'kanban'
                     ? 'bg-indigo-600 text-white font-semibold shadow-xs'
                     : 'text-slate-600 dark:text-slate-300 hover:text-indigo-600 dark:hover:text-indigo-300'
-                  }`}
+                }`}
               >
                 {t('landing.features.kanbanTitle')}
               </a>
               <a
                 href="#mcp"
                 onClick={(e) => scrollToSection(e, 'mcp')}
-                className={`px-3 py-1.5 rounded-full transition-all duration-200 ${activeSection === 'mcp'
+                className={`px-3 py-1.5 rounded-full transition-all duration-200 ${
+                  activeSection === 'mcp'
                     ? 'bg-indigo-600 text-white font-semibold shadow-xs'
                     : 'text-slate-600 dark:text-slate-300 hover:text-indigo-600 dark:hover:text-indigo-300'
-                  }`}
+                }`}
               >
                 {t('landing.features.mcpTitle')}
               </a>
               <a
                 href="#comparison"
                 onClick={(e) => scrollToSection(e, 'comparison')}
-                className={`px-3 py-1.5 rounded-full transition-all duration-200 ${activeSection === 'comparison'
+                className={`px-3 py-1.5 rounded-full transition-all duration-200 ${
+                  activeSection === 'comparison'
                     ? 'bg-indigo-600 text-white font-semibold shadow-xs'
                     : 'text-slate-600 dark:text-slate-300 hover:text-indigo-600 dark:hover:text-indigo-300'
-                  }`}
+                }`}
               >
                 {t('landing.comparison.title')}
               </a>
@@ -203,7 +214,9 @@ export const LandingPage: React.FC = () => {
                 className="p-2 rounded-xl border border-slate-200 dark:border-slate-800 bg-white/80 dark:bg-slate-900/80 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors shadow-xs cursor-pointer"
                 title={theme === 'dark' ? t('nav.lightMode') : t('nav.darkMode')}
               >
-                <i className={`pi ${theme === 'dark' ? 'pi-sun text-amber-400' : 'pi-moon text-indigo-500'} text-xs`} />
+                <i
+                  className={`pi ${theme === 'dark' ? 'pi-sun text-amber-400' : 'pi-moon text-indigo-500'} text-xs`}
+                />
               </button>
 
               {/* Desktop Auth CTA */}
@@ -489,7 +502,9 @@ export const LandingPage: React.FC = () => {
             <div className="col-span-1 md:col-span-6 space-y-3">
               <div className="flex items-center justify-between px-1">
                 <div className="flex items-center gap-2">
-                  <span className="text-xs font-bold text-slate-800 dark:text-slate-200">Active Sprint Tasks</span>
+                  <span className="text-xs font-bold text-slate-800 dark:text-slate-200">
+                    Active Sprint Tasks
+                  </span>
                   <span className="text-[10px] bg-slate-200 dark:bg-slate-800 px-2 py-0.5 rounded-md text-slate-500 font-mono">
                     3 In Progress
                   </span>
@@ -512,8 +527,12 @@ export const LandingPage: React.FC = () => {
                   Connect Cursor MCP stdio bridge for realtime status sync
                 </h4>
                 <div className="flex items-center gap-2 text-[10px] text-slate-500">
-                  <span className="bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded font-mono">#mcp</span>
-                  <span className="bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded font-mono">#ai</span>
+                  <span className="bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded font-mono">
+                    #mcp
+                  </span>
+                  <span className="bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded font-mono">
+                    #ai
+                  </span>
                   <span className="ml-auto text-emerald-500 font-medium flex items-center gap-1">
                     <i className="pi pi-check text-[9px]" /> 3/3 subtasks
                   </span>
@@ -536,8 +555,12 @@ export const LandingPage: React.FC = () => {
                   Implement Apple Sign-In JWKS cryptographic validation
                 </h4>
                 <div className="flex items-center gap-2 text-[10px] text-slate-500">
-                  <span className="bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded font-mono">#auth</span>
-                  <span className="bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded font-mono">#security</span>
+                  <span className="bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded font-mono">
+                    #auth
+                  </span>
+                  <span className="bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded font-mono">
+                    #security
+                  </span>
                   <span className="ml-auto text-indigo-500 font-medium">80%</span>
                 </div>
                 {/* Progress bar */}
@@ -766,7 +789,11 @@ export const LandingPage: React.FC = () => {
                 className="px-3 py-1 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white text-[11px] font-semibold flex items-center gap-1.5 transition-colors cursor-pointer"
               >
                 <i className={`pi ${copiedMcp ? 'pi-check' : 'pi-copy'} text-[10px]`} />
-                <span>{copiedMcp ? t('landing.mcpShowcase.copied') : t('landing.mcpShowcase.copyButton')}</span>
+                <span>
+                  {copiedMcp
+                    ? t('landing.mcpShowcase.copied')
+                    : t('landing.mcpShowcase.copyButton')}
+                </span>
               </button>
             </div>
             <pre className="text-xs sm:text-sm font-mono overflow-x-auto text-emerald-400 leading-relaxed">
@@ -794,8 +821,12 @@ export const LandingPage: React.FC = () => {
             <thead className="bg-slate-100 dark:bg-slate-950/80 border-b border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400 font-semibold uppercase font-mono tracking-wider text-[11px]">
               <tr>
                 <th className="p-4 sm:p-5">{t('landing.comparison.featureCol')}</th>
-                <th className="p-4 sm:p-5 text-slate-400">{t('landing.comparison.traditionalCol')}</th>
-                <th className="p-4 sm:p-5 text-indigo-600 dark:text-indigo-400">{t('landing.comparison.taskhubCol')}</th>
+                <th className="p-4 sm:p-5 text-slate-400">
+                  {t('landing.comparison.traditionalCol')}
+                </th>
+                <th className="p-4 sm:p-5 text-indigo-600 dark:text-indigo-400">
+                  {t('landing.comparison.taskhubCol')}
+                </th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 dark:divide-slate-800/80">
@@ -909,9 +940,7 @@ export const LandingPage: React.FC = () => {
             <span className="font-bold text-sm tracking-tight text-slate-900 dark:text-slate-100">
               Task<span className="text-indigo-600 dark:text-indigo-400">Hub</span>
             </span>
-            <span className="text-xs text-slate-400 ml-2">
-              — {t('landing.footer.tagline')}
-            </span>
+            <span className="text-xs text-slate-400 ml-2">— {t('landing.footer.tagline')}</span>
           </div>
 
           <div className="flex items-center gap-4 text-xs text-slate-500">
@@ -920,7 +949,9 @@ export const LandingPage: React.FC = () => {
               <span>{t('landing.footer.status')}</span>
             </span>
             <span>•</span>
-            <span>{t('landing.footer.copyright', { year: new Date().getFullYear().toString() })}</span>
+            <span>
+              {t('landing.footer.copyright', { year: new Date().getFullYear().toString() })}
+            </span>
           </div>
         </div>
       </footer>

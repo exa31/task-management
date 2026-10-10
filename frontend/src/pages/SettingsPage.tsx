@@ -60,7 +60,7 @@ export const SettingsPage: React.FC = () => {
             try {
               const res = await authApi.bindOAuth({
                 provider: 'google',
-                code: resp.code,
+                code: resp.code
               })
               if (res.data) {
                 updateUser(res.data)
@@ -74,7 +74,7 @@ export const SettingsPage: React.FC = () => {
         // eslint-disable-next-line @typescript-eslint/naming-convention
         error_callback: () => {
           setIsBindingGoogle(false)
-        },
+        }
       })
       client.requestCode()
     } catch (err: unknown) {
@@ -99,7 +99,7 @@ export const SettingsPage: React.FC = () => {
           scope: 'name email',
           redirectURI: window.location.origin,
           state: 'taskhub-apple-bind',
-          usePopup: true,
+          usePopup: true
         })
       }
       const res = await window.AppleID.auth.signIn()
@@ -107,7 +107,7 @@ export const SettingsPage: React.FC = () => {
         const bindRes = await authApi.bindOAuth({
           provider: 'apple',
           id_token: res.authorization.id_token,
-          code: res.authorization.code,
+          code: res.authorization.code
         })
         if (bindRes.data) {
           updateUser(bindRes.data)
@@ -129,7 +129,7 @@ export const SettingsPage: React.FC = () => {
         updateUser(res.data)
         toast.success(
           t('settings.oauth.unbindSuccess', {
-            provider: provider === 'google' ? 'Google' : 'Apple',
+            provider: provider === 'google' ? 'Google' : 'Apple'
           })
         )
       }
@@ -205,7 +205,10 @@ export const SettingsPage: React.FC = () => {
 
             <div className="flex flex-col sm:flex-row items-center sm:items-start gap-6 pb-6 border-b border-slate-200 dark:border-slate-800">
               {/* Avatar with auto-crop launcher */}
-              <div className="relative group cursor-pointer" onClick={() => setIsAvatarModalOpen(true)}>
+              <div
+                className="relative group cursor-pointer"
+                onClick={() => setIsAvatarModalOpen(true)}
+              >
                 <div className="w-24 h-24 rounded-full overflow-hidden border-2 border-indigo-500/20 bg-slate-100 dark:bg-slate-800 flex items-center justify-center shadow-md">
                   {user?.avatar_url ? (
                     <img
@@ -334,7 +337,9 @@ export const SettingsPage: React.FC = () => {
                         }`}
                       />
                       <span className="text-xs text-slate-500 dark:text-slate-400">
-                        {user?.google_bound ? t('settings.oauth.connected') : t('settings.oauth.notLinked')}
+                        {user?.google_bound
+                          ? t('settings.oauth.connected')
+                          : t('settings.oauth.notLinked')}
                       </span>
                     </div>
                   </div>
@@ -371,7 +376,10 @@ export const SettingsPage: React.FC = () => {
               <div className="flex items-center justify-between p-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-950/30">
                 <div className="flex items-center gap-3.5">
                   <div className="w-10 h-10 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 flex items-center justify-center shadow-xs">
-                    <svg className="w-5 h-5 fill-current text-black dark:text-white" viewBox="0 0 170 170">
+                    <svg
+                      className="w-5 h-5 fill-current text-black dark:text-white"
+                      viewBox="0 0 170 170"
+                    >
                       <path d="M150.37 130.25c-2.45 5.66-5.35 10.87-8.71 15.66-4.58 6.53-8.33 11.05-11.22 13.56-4.48 4.12-9.28 6.23-14.42 6.35-3.69 0-8.14-1.05-13.32-3.18-5.19-2.12-9.97-3.17-14.34-3.17-4.58 0-9.49 1.05-14.75 3.17-5.26 2.13-9.5 3.24-12.74 3.35-4.35.13-9.16-1.9-14.42-6.08-3.69-3.04-7.67-7.85-11.96-14.41-6.19-9.5-10.97-20.5-14.33-33.01-3.37-12.51-5.06-24.16-5.06-34.94 0-16.75 4.1-30.43 12.3-41.04 8.2-10.62 18.52-16.03 30.98-16.25 4.8 0 10.21 1.25 16.24 3.76 6.03 2.51 10.13 3.82 12.3 3.93 1.74 0 5.86-1.37 12.37-4.11 6.51-2.73 11.9-4 16.16-3.8 11.75.55 21.09 4.79 28.02 12.72-10.45 6.32-15.56 15.24-15.34 26.77.22 9.04 3.74 16.63 10.57 22.77 6.83 6.13 15.02 9.69 24.58 10.67-2.18 6.42-4.9 12.64-8.16 18.66zM119.22 31.86c0-7.39 2.67-14.46 8.01-21.2 5.34-6.75 11.98-10.66 19.92-11.74.33 1.52.49 3.04.49 4.56 0 7.39-2.77 14.53-8.32 21.41-5.55 6.88-12.24 10.74-20.1 11.58z" />
                     </svg>
                   </div>
@@ -386,7 +394,9 @@ export const SettingsPage: React.FC = () => {
                         }`}
                       />
                       <span className="text-xs text-slate-500 dark:text-slate-400">
-                        {user?.apple_bound ? t('settings.oauth.connected') : t('settings.oauth.notLinked')}
+                        {user?.apple_bound
+                          ? t('settings.oauth.connected')
+                          : t('settings.oauth.notLinked')}
                       </span>
                     </div>
                   </div>
@@ -503,8 +513,6 @@ export const SettingsPage: React.FC = () => {
         }}
       />
 
-
-
       {/* Danger Zone Confirmation Modal */}
       {isDeleteModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur-md animate-fade-in">
@@ -560,7 +568,8 @@ export const SettingsPage: React.FC = () => {
               >
                 {isDeletingAccount ? (
                   <>
-                    <i className="pi pi-spin pi-spinner text-xs" /> {t('settings.dangerZone.deleting')}
+                    <i className="pi pi-spin pi-spinner text-xs" />{' '}
+                    {t('settings.dangerZone.deleting')}
                   </>
                 ) : (
                   t('settings.dangerZone.confirmDeleteBtn')

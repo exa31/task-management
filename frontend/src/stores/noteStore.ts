@@ -1,7 +1,13 @@
 import { create } from 'zustand'
 
 import { noteApi } from '@/api'
-import type { ConvertToTaskPayload, CreateNotePayload, Note, NoteFilterParams, UpdateNotePayload } from '@/types'
+import type {
+  ConvertToTaskPayload,
+  CreateNotePayload,
+  Note,
+  NoteFilterParams,
+  UpdateNotePayload
+} from '@/types'
 
 interface NoteState {
   notes: Note[]
@@ -15,7 +21,10 @@ interface NoteState {
   createNote: (payload: CreateNotePayload) => Promise<Note>
   updateNote: (id: number, payload: UpdateNotePayload) => Promise<Note>
   deleteNote: (id: number) => Promise<void>
-  convertToTask: (id: number, payload: ConvertToTaskPayload) => Promise<{ note: Note; task_id: number }>
+  convertToTask: (
+    id: number,
+    payload: ConvertToTaskPayload
+  ) => Promise<{ note: Note; task_id: number }>
 }
 
 export const useNoteStore = create<NoteState>((set, get) => ({
@@ -34,7 +43,7 @@ export const useNoteStore = create<NoteState>((set, get) => ({
       const p: NoteFilterParams = {
         ...params,
         tag: get().activeTag || undefined,
-        search: get().searchQuery || undefined,
+        search: get().searchQuery || undefined
       }
       const res = await noteApi.getAll(p)
       const raw = res.data
@@ -65,7 +74,7 @@ export const useNoteStore = create<NoteState>((set, get) => ({
     const res = await noteApi.update(id, payload)
     const updated = res.data
     set((state) => ({
-      notes: state.notes.map((n) => (n.id === id ? updated : n)),
+      notes: state.notes.map((n) => (n.id === id ? updated : n))
     }))
     return updated
   },
@@ -73,7 +82,7 @@ export const useNoteStore = create<NoteState>((set, get) => ({
   deleteNote: async (id: number) => {
     await noteApi.delete(id)
     set((state) => ({
-      notes: state.notes.filter((n) => n.id !== id),
+      notes: state.notes.filter((n) => n.id !== id)
     }))
   },
 
@@ -81,8 +90,8 @@ export const useNoteStore = create<NoteState>((set, get) => ({
     const res = await noteApi.convertToTask(id, payload)
     const { data } = res
     set((state) => ({
-      notes: state.notes.map((n) => (n.id === id ? data.note : n)),
+      notes: state.notes.map((n) => (n.id === id ? data.note : n))
     }))
     return data
-  },
+  }
 }))

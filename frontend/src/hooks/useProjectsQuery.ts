@@ -9,7 +9,7 @@ import { taskKeys } from './useTasksQuery'
 export const projectKeys = {
   all: ['projects'] as const,
   list: () => ['projects', 'list'] as const,
-  detail: (id: number) => ['projects', 'detail', id] as const,
+  detail: (id: number) => ['projects', 'detail', id] as const
 }
 
 export const useProjects = () =>
@@ -26,7 +26,7 @@ export const useProjects = () =>
         if (Array.isArray(obj.items)) return obj.items
       }
       return []
-    },
+    }
   })
 
 export const useCreateProject = () => {
@@ -45,7 +45,7 @@ export const useCreateProject = () => {
     },
     onError: (err) => {
       toast.error(err)
-    },
+    }
   })
 }
 
@@ -65,7 +65,7 @@ export const useUpdateProject = () => {
     },
     onError: (err) => {
       toast.error(err)
-    },
+    }
   })
 }
 
@@ -84,6 +84,6 @@ export const useDeleteProject = () => {
     },
     onError: (err) => {
       toast.error(err)
-    },
+    }
   })
 }

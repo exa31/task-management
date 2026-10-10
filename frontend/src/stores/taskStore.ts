@@ -45,5 +45,5 @@ export const useTaskStore = create<TaskUIState>((set) => ({
   setSearchQuery: (query) => set({ searchQuery: query }),
   openDrawer: (task) => set({ selectedTask: task, isDrawerOpen: true }),
   closeDrawer: () => set({ selectedTask: null, isDrawerOpen: false }),
-  setSelectedTask: (task) => set({ selectedTask: task }),
+  setSelectedTask: (task) => set({ selectedTask: task })
 }))

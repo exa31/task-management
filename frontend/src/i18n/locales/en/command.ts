@@ -17,5 +17,5 @@ export const commandPalette = {
   badgeView: 'View',
   badgeSettings: 'Settings',
   badgeTheme: 'Theme',
-  badgeLanguage: 'Locale',
+  badgeLanguage: 'Locale'
 }

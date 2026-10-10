@@ -1,12 +1,7 @@
 import React, { useMemo, useState } from 'react'
 
 import { confirmDialog } from '@/components'
-import {
-  useDeleteProject,
-  useTasks,
-  useToggleFocus,
-  useUpdateTask,
-} from '@/hooks'
+import { useDeleteProject, useTasks, useToggleFocus, useUpdateTask } from '@/hooks'
 import { useTranslation } from '@/i18n'
 import { useTaskStore, useUIStore } from '@/stores'
 import type { Project, Task, TaskPriority, TaskStatus } from '@/types'
@@ -14,18 +9,33 @@ import type { Project, Task, TaskPriority, TaskStatus } from '@/types'
 const STATUS_KEYS: TaskStatus[] = ['backlog', 'todo', 'in_progress', 'review', 'done']
 
 const STATUS_COLORS: Record<TaskStatus, { badge: string; dot: string }> = {
-  backlog: { badge: 'bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300', dot: 'bg-slate-400' },
-  todo: { badge: 'bg-blue-50 text-blue-700 dark:bg-blue-950/40 dark:text-blue-300', dot: 'bg-blue-500' },
-  in_progress: { badge: 'bg-amber-50 text-amber-700 dark:bg-amber-950/40 dark:text-amber-300', dot: 'bg-amber-500' },
-  review: { badge: 'bg-purple-50 text-purple-700 dark:bg-purple-950/40 dark:text-purple-300', dot: 'bg-purple-500' },
-  done: { badge: 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300', dot: 'bg-emerald-500' },
+  backlog: {
+    badge: 'bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300',
+    dot: 'bg-slate-400'
+  },
+  todo: {
+    badge: 'bg-blue-50 text-blue-700 dark:bg-blue-950/40 dark:text-blue-300',
+    dot: 'bg-blue-500'
+  },
+  in_progress: {
+    badge: 'bg-amber-50 text-amber-700 dark:bg-amber-950/40 dark:text-amber-300',
+    dot: 'bg-amber-500'
+  },
+  review: {
+    badge: 'bg-purple-50 text-purple-700 dark:bg-purple-950/40 dark:text-purple-300',
+    dot: 'bg-purple-500'
+  },
+  done: {
+    badge: 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300',
+    dot: 'bg-emerald-500'
+  }
 }
 
 const PRIORITY_ICONS: Record<TaskPriority, { icon: string; class: string }> = {
   urgent: { icon: 'pi-exclamation-triangle', class: 'text-rose-500' },
   high: { icon: 'pi-angle-double-up', class: 'text-amber-600 dark:text-amber-400' },
   medium: { icon: 'pi-minus', class: 'text-blue-600 dark:text-blue-400' },
-  low: { icon: 'pi-angle-down', class: 'text-slate-400' },
+  low: { icon: 'pi-angle-down', class: 'text-slate-400' }
 }
 
 interface ProjectAccordionItemProps {
@@ -39,7 +49,7 @@ export const ProjectAccordionItem: React.FC<ProjectAccordionItemProps> = ({
   project,
   isExpanded,
   onToggleExpand,
-  onEdit,
+  onEdit
 }) => {
   const { t, locale } = useTranslation()
   const { openDrawer } = useTaskStore()
@@ -51,13 +61,10 @@ export const ProjectAccordionItem: React.FC<ProjectAccordionItemProps> = ({
 
   // Fetch tasks belonging specifically to this project (enabled only when expanded or to calculate live stats)
   const { data: rawTasks, isLoading: isLoadingTasks } = useTasks({
-    project_id: project.id,
+    project_id: project.id
   })
   const tasks = useMemo(
-    () =>
-      Array.isArray(rawTasks)
-        ? rawTasks.filter((t) => t && t.project_id === project.id)
-        : [],
+    () => (Array.isArray(rawTasks) ? rawTasks.filter((t) => t && t.project_id === project.id) : []),
     [rawTasks, project.id]
   )
 
@@ -68,7 +75,7 @@ export const ProjectAccordionItem: React.FC<ProjectAccordionItemProps> = ({
       todo: [],
       in_progress: [],
       review: [],
-      done: [],
+      done: []
     }
     for (const task of tasks) {
       if (task.status in map) {
@@ -95,7 +102,7 @@ export const ProjectAccordionItem: React.FC<ProjectAccordionItemProps> = ({
       rejectLabel: t('projects.deleteReject'),
       accept: () => {
         deleteProjectMutation.mutate(project.id)
-      },
+      }
     })
   }
 
@@ -270,127 +277,136 @@ export const ProjectAccordionItem: React.FC<ProjectAccordionItemProps> = ({
           ) : (
             /* Render Grouped by Status or Filtered */
             <div className="space-y-4">
-              {STATUS_KEYS.filter((s) => activeStatusTab === 'all' || activeStatusTab === s).map((status) => {
-                const list = tasksByStatus[status]
-                if (activeStatusTab === 'all' && list.length === 0) return null
+              {STATUS_KEYS.filter((s) => activeStatusTab === 'all' || activeStatusTab === s).map(
+                (status) => {
+                  const list = tasksByStatus[status]
+                  if (activeStatusTab === 'all' && list.length === 0) return null
 
-                return (
-                  <div key={status} className="space-y-2">
-                    <div className="flex items-center gap-2 px-1">
-                      <span className={`w-2 h-2 rounded-full ${STATUS_COLORS[status].dot}`} />
-                      <h4 className="text-xs font-semibold uppercase tracking-wider text-slate-700 dark:text-slate-300">
-                        {t(`tasks.status.${status}`)}
-                      </h4>
-                      <span className="text-[10px] font-mono text-slate-400 font-medium">
-                        ({list.length})
-                      </span>
-                    </div>
+                  return (
+                    <div key={status} className="space-y-2">
+                      <div className="flex items-center gap-2 px-1">
+                        <span className={`w-2 h-2 rounded-full ${STATUS_COLORS[status].dot}`} />
+                        <h4 className="text-xs font-semibold uppercase tracking-wider text-slate-700 dark:text-slate-300">
+                          {t(`tasks.status.${status}`)}
+                        </h4>
+                        <span className="text-[10px] font-mono text-slate-400 font-medium">
+                          ({list.length})
+                        </span>
+                      </div>
 
-                    {list.length === 0 ? (
-                      <p className="text-[11px] text-slate-400 italic px-2 py-1">
-                        {t('projects.noTasksInStatus')}
-                      </p>
-                    ) : (
-                      <div className="divide-y divide-slate-100 dark:divide-slate-800/60 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/40 dark:bg-slate-950/30 overflow-hidden">
-                        {list.map((task) => {
-                          const isDone = task.status === 'done'
-                          const priorityMeta = PRIORITY_ICONS[task.priority] || PRIORITY_ICONS.medium
+                      {list.length === 0 ? (
+                        <p className="text-[11px] text-slate-400 italic px-2 py-1">
+                          {t('projects.noTasksInStatus')}
+                        </p>
+                      ) : (
+                        <div className="divide-y divide-slate-100 dark:divide-slate-800/60 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/40 dark:bg-slate-950/30 overflow-hidden">
+                          {list.map((task) => {
+                            const isDone = task.status === 'done'
+                            const priorityMeta =
+                              PRIORITY_ICONS[task.priority] || PRIORITY_ICONS.medium
 
-                          return (
-                            <div
-                              key={task.id}
-                              onClick={() => openDrawer(task)}
-                              className="group flex items-center justify-between p-3 hover:bg-white dark:hover:bg-slate-800/70 cursor-pointer transition-colors text-xs gap-3"
-                            >
-                              {/* Left: Complete Checkbox, Star Focus, Title */}
-                              <div className="flex items-center gap-3 min-w-0 flex-1">
-                                <button
-                                  type="button"
-                                  onClick={(e) => {
-                                    e.stopPropagation()
-                                    updateTaskMutation.mutate({
-                                      id: task.id,
-                                      payload: { status: isDone ? 'todo' : 'done' },
-                                    })
-                                  }}
-                                  className={`h-4 w-4 rounded border flex items-center justify-center shrink-0 transition-colors ${
-                                    isDone
-                                      ? 'border-emerald-500 bg-emerald-500 text-white'
-                                      : 'border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 hover:border-indigo-500'
-                                  }`}
-                                  title={isDone ? t('tasks.reopenTask') : t('tasks.completeTask')}
-                                >
-                                  {isDone && <i className="pi pi-check text-[9px]" />}
-                                </button>
-
-                                <button
-                                  type="button"
-                                  onClick={(e) => {
-                                    e.stopPropagation()
-                                    toggleFocusMutation.mutate(task.id)
-                                  }}
-                                  className={`p-0.5 rounded transition-colors ${
-                                    task.is_focus
-                                      ? 'text-amber-500 dark:text-amber-400'
-                                      : 'text-slate-400 dark:text-slate-600 opacity-0 group-hover:opacity-100 hover:text-slate-600'
-                                  }`}
-                                  title={task.is_focus ? t('focus.removeFromFocus') : t('focus.pinToFocus')}
-                                >
-                                  <i className={`pi ${task.is_focus ? 'pi-star-fill' : 'pi-star'} text-[11px]`} />
-                                </button>
-
-                                <div className="min-w-0 flex-1">
-                                  <span
-                                    className={`font-medium truncate ${
+                            return (
+                              <div
+                                key={task.id}
+                                onClick={() => openDrawer(task)}
+                                className="group flex items-center justify-between p-3 hover:bg-white dark:hover:bg-slate-800/70 cursor-pointer transition-colors text-xs gap-3"
+                              >
+                                {/* Left: Complete Checkbox, Star Focus, Title */}
+                                <div className="flex items-center gap-3 min-w-0 flex-1">
+                                  <button
+                                    type="button"
+                                    onClick={(e) => {
+                                      e.stopPropagation()
+                                      updateTaskMutation.mutate({
+                                        id: task.id,
+                                        payload: { status: isDone ? 'todo' : 'done' }
+                                      })
+                                    }}
+                                    className={`h-4 w-4 rounded border flex items-center justify-center shrink-0 transition-colors ${
                                       isDone
-                                        ? 'line-through text-slate-400 dark:text-slate-500'
-                                        : 'text-slate-800 dark:text-slate-200 group-hover:text-indigo-600 dark:group-hover:text-indigo-300'
+                                        ? 'border-emerald-500 bg-emerald-500 text-white'
+                                        : 'border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 hover:border-indigo-500'
                                     }`}
+                                    title={isDone ? t('tasks.reopenTask') : t('tasks.completeTask')}
                                   >
-                                    {task.title}
+                                    {isDone && <i className="pi pi-check text-[9px]" />}
+                                  </button>
+
+                                  <button
+                                    type="button"
+                                    onClick={(e) => {
+                                      e.stopPropagation()
+                                      toggleFocusMutation.mutate(task.id)
+                                    }}
+                                    className={`p-0.5 rounded transition-colors ${
+                                      task.is_focus
+                                        ? 'text-amber-500 dark:text-amber-400'
+                                        : 'text-slate-400 dark:text-slate-600 opacity-0 group-hover:opacity-100 hover:text-slate-600'
+                                    }`}
+                                    title={
+                                      task.is_focus
+                                        ? t('focus.removeFromFocus')
+                                        : t('focus.pinToFocus')
+                                    }
+                                  >
+                                    <i
+                                      className={`pi ${task.is_focus ? 'pi-star-fill' : 'pi-star'} text-[11px]`}
+                                    />
+                                  </button>
+
+                                  <div className="min-w-0 flex-1">
+                                    <span
+                                      className={`font-medium truncate ${
+                                        isDone
+                                          ? 'line-through text-slate-400 dark:text-slate-500'
+                                          : 'text-slate-800 dark:text-slate-200 group-hover:text-indigo-600 dark:group-hover:text-indigo-300'
+                                      }`}
+                                    >
+                                      {task.title}
+                                    </span>
+
+                                    {task.last_progress_note && (
+                                      <p className="text-[11px] text-indigo-600 dark:text-indigo-400 truncate mt-0.5 flex items-center gap-1 italic">
+                                        <i className="pi pi-history text-[9px]" />
+                                        <span>{task.last_progress_note}</span>
+                                      </p>
+                                    )}
+                                  </div>
+                                </div>
+
+                                {/* Right: Subtasks, Priority, Due Date */}
+                                <div className="flex items-center gap-3 shrink-0">
+                                  {task.subtasks_count > 0 && (
+                                    <span className="hidden sm:inline-block text-[10px] font-mono text-slate-500">
+                                      ✓ {task.subtasks_completed}/{task.subtasks_count}
+                                    </span>
+                                  )}
+
+                                  <span
+                                    className={`inline-flex items-center gap-1 text-[11px] ${priorityMeta.class}`}
+                                    title={t(`tasks.priority.${task.priority}`)}
+                                  >
+                                    <i className={`pi ${priorityMeta.icon} text-[10px]`} />
                                   </span>
 
-                                  {task.last_progress_note && (
-                                    <p className="text-[11px] text-indigo-600 dark:text-indigo-400 truncate mt-0.5 flex items-center gap-1 italic">
-                                      <i className="pi pi-history text-[9px]" />
-                                      <span>{task.last_progress_note}</span>
-                                    </p>
+                                  {task.due_date && (
+                                    <span className="hidden md:inline-block text-[10px] font-mono text-slate-400">
+                                      {new Date(task.due_date).toLocaleDateString(
+                                        locale === 'id' ? 'id-ID' : 'en-US',
+                                        { day: 'numeric', month: 'short' }
+                                      )}
+                                    </span>
                                   )}
                                 </div>
                               </div>
-
-                              {/* Right: Subtasks, Priority, Due Date */}
-                              <div className="flex items-center gap-3 shrink-0">
-                                {task.subtasks_count > 0 && (
-                                  <span className="hidden sm:inline-block text-[10px] font-mono text-slate-500">
-                                    ✓ {task.subtasks_completed}/{task.subtasks_count}
-                                  </span>
-                                )}
-
-                                <span
-                                  className={`inline-flex items-center gap-1 text-[11px] ${priorityMeta.class}`}
-                                  title={t(`tasks.priority.${task.priority}`)}
-                                >
-                                  <i className={`pi ${priorityMeta.icon} text-[10px]`} />
-                                </span>
-
-                                {task.due_date && (
-                                  <span className="hidden md:inline-block text-[10px] font-mono text-slate-400">
-                                    {new Date(task.due_date).toLocaleDateString(
-                                      locale === 'id' ? 'id-ID' : 'en-US',
-                                      { day: 'numeric', month: 'short' }
-                                    )}
-                                  </span>
-                                )}
-                              </div>
-                            </div>
-                          )
-                        })}
-                      </div>
-                    )}
-                  </div>
-                )
-              })}
+                            )
+                          })}
+                        </div>
+                      )}
+                    </div>
+                  )
+                }
+              )}
             </div>
           )}
         </div>

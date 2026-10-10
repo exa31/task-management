@@ -7,13 +7,13 @@ export const tasks = {
     todo: 'To Do',
     in_progress: 'In Progress',
     review: 'Review',
-    done: 'Done',
+    done: 'Done'
   },
   priority: {
     urgent: 'Urgent',
     high: 'High',
     medium: 'Medium',
-    low: 'Low',
+    low: 'Low'
   },
   focusFilter: 'Focus ({count})',
   searchPlaceholder: 'Search tasks...',
@@ -33,7 +33,7 @@ export const tasks = {
   progressLoggedSuccess: 'Progress note saved',
   focusToggledSuccess: 'Task focus state updated',
   allProjects: 'All Project Modules',
-  allTasksLoaded: '✓ All tasks loaded',
+  allTasksLoaded: '✓ All tasks loaded'
 }
 
 export const taskModal = {
@@ -55,13 +55,14 @@ export const taskModal = {
   createNewProject: '+ New Project',
   cancel: 'Cancel',
   submit: 'Create Task',
-  titleRequired: 'Task title is required',
+  titleRequired: 'Task title is required'
 }
 
 export const taskDrawer = {
   taskIdBadge: 'TASK-{id}',
   status: 'Status',
   priority: 'Priority',
+  dueDate: 'Due Date',
   titleLabel: 'Task Title',
   titleRequired: 'Task title is required',
   descriptionPlaceholder: 'Add detailed description or notes...',
@@ -76,9 +77,10 @@ export const taskDrawer = {
   addSubtaskPlaceholder: '+ Add subtask item...',
   add: 'Add',
   deleteTaskConfirmHeader: 'Delete Task',
-  deleteTaskConfirmMessage: 'Are you sure you want to delete this task? This action cannot be undone.',
+  deleteTaskConfirmMessage:
+    'Are you sure you want to delete this task? This action cannot be undone.',
   deleteSubtaskConfirmHeader: 'Delete Subtask',
   deleteSubtaskConfirmMessage: 'Are you sure you want to delete "{title}"?',
   closeEsc: 'Close (Esc)',
-  deleteTask: 'Delete task',
+  deleteTask: 'Delete task'
 }

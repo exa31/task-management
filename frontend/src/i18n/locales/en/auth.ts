@@ -5,5 +5,5 @@ export const login = {
   appleLogin: 'Continue with Apple',
   devTesting: 'Developer Testing',
   devDemoLogin: 'Quick Sign In as Demo User',
-  isolatedData: 'Data is privately isolated per user account.',
+  isolatedData: 'Data is privately isolated per user account.'
 }

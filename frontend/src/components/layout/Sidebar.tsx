@@ -1,7 +1,7 @@
 import { Link, useLocation } from 'react-router-dom'
 
 import { BrandLogo } from '@/components'
-import { useNotes, useProjects, useTasks } from '@/hooks'
+import { useNotes, useProjects, useReminders, useTasks } from '@/hooks'
 import { useTranslation } from '@/i18n'
 import { useUIStore } from '@/stores'
 
@@ -15,9 +15,11 @@ export default function Sidebar({ isSidebarOpen }: SidebarProps) {
   const { data: rawTasks } = useTasks()
   const { data: rawNotes } = useNotes()
   const { data: rawProjects } = useProjects()
+  const { data: reminderData } = useReminders({ status: 'pending' })
   const tasks = Array.isArray(rawTasks) ? rawTasks : []
   const notes = Array.isArray(rawNotes) ? rawNotes : []
   const projects = Array.isArray(rawProjects) ? rawProjects : []
+  const reminderCount = reminderData?.items?.length || 0
   const { openCommandPalette } = useUIStore()
 
   const isActive = (path: string) => location.pathname === path
@@ -101,6 +103,26 @@ export default function Sidebar({ isSidebarOpen }: SidebarProps) {
           {isSidebarOpen && projects.length > 0 && (
             <span className="px-1.5 py-0.2 rounded-full text-[10px] font-mono bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400">
               {projects.length}
+            </span>
+          )}
+        </Link>
+
+        <Link
+          to="/reminders"
+          className={`flex items-center justify-between px-3 py-2 rounded-lg text-xs font-medium transition-colors ${
+            isActive('/reminders')
+              ? 'bg-indigo-50 dark:bg-indigo-600/20 text-indigo-600 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-500/30'
+              : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-900'
+          }`}
+          title={t('nav.reminders')}
+        >
+          <div className="flex items-center gap-2.5">
+            <i className="pi pi-bell text-sm" />
+            {isSidebarOpen && <span>{t('nav.reminders')}</span>}
+          </div>
+          {isSidebarOpen && reminderCount > 0 && (
+            <span className="px-1.5 py-0.2 rounded-full text-[10px] font-mono bg-amber-500/10 dark:bg-amber-500/20 text-amber-600 dark:text-amber-300 border border-amber-500/20 dark:border-amber-500/30">
+              {reminderCount}
             </span>
           )}
         </Link>

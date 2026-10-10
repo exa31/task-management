@@ -17,5 +17,5 @@ export const commandPalette = {
   badgeView: 'Tampilan',
   badgeSettings: 'Pengaturan',
   badgeTheme: 'Tema',
-  badgeLanguage: 'Bahasa',
+  badgeLanguage: 'Bahasa'
 }

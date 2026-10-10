@@ -19,7 +19,7 @@ export const landing = {
     stat3Value: 'MCP 2.0',
     stat3Label: 'AI Agent Protocols',
     stat4Value: 'OAuth 2.0',
-    stat4Label: 'Google & Apple Ready',
+    stat4Label: 'Google & Apple Ready'
   },
 
   features: {
@@ -42,7 +42,7 @@ export const landing = {
       'Built with React 19, Tailwind CSS v4, Go Fiber, and Redis. Sub-millisecond local latency with seamless cloud synchronization.',
     securityTitle: 'Secure Multi-Tenant Auth',
     securityDesc:
-      'Google GIS One-Tap, Apple Sign-In with private relay, cryptographic token verification, and complete user data isolation.',
+      'Google GIS One-Tap, Apple Sign-In with private relay, cryptographic token verification, and complete user data isolation.'
   },
 
   comparison: {
@@ -65,7 +65,7 @@ export const landing = {
     row4Hub: 'Full Cmd+K Command Palette',
     row5Feature: 'Distraction-Free UI',
     row5Trad: 'Cluttered with forms and enterprise bloat',
-    row5Hub: 'Linear & Raycast dark-mode minimalism',
+    row5Hub: 'Linear & Raycast dark-mode minimalism'
   },
 
   mcpShowcase: {
@@ -73,19 +73,20 @@ export const landing = {
     subtitle:
       'Connect Cursor, Antigravity, or Claude Code to your TaskHub workspace using our native MCP server configuration.',
     copied: 'Copied configuration to clipboard!',
-    copyButton: 'Copy Config',
+    copyButton: 'Copy Config'
   },
 
   ctaBanner: {
     title: 'Ready to Supercharge Your Engineering Flow?',
-    subtitle: 'Sign in now with Google or Apple, or jump right into our instant interactive sandbox.',
+    subtitle:
+      'Sign in now with Google or Apple, or jump right into our instant interactive sandbox.',
     button: 'Start Free with TaskHub',
-    demoButton: 'Launch Demo Workspace',
+    demoButton: 'Launch Demo Workspace'
   },
 
   footer: {
     tagline: 'Developer Task & MCP AI Workspace. Built for high-velocity software engineering.',
     status: 'All Systems Operational',
-    copyright: '© {year} TaskHub. All rights reserved.',
-  },
+    copyright: '© {year} TaskHub. All rights reserved.'
+  }
 }

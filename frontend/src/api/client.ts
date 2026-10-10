@@ -1,7 +1,12 @@
 /**
  * Axios API Client with automated JWT silent-refresh interceptor and offline resilience.
  */
-import type { AxiosError, AxiosInstance, AxiosRequestConfig, InternalAxiosRequestConfig } from 'axios'
+import type {
+  AxiosError,
+  AxiosInstance,
+  AxiosRequestConfig,
+  InternalAxiosRequestConfig
+} from 'axios'
 import axios from 'axios'
 
 import { parseApiError } from './errors'
@@ -55,14 +60,18 @@ export const removeCookie = (name: string): void => {
   document.cookie = `${name}=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT; SameSite=Lax`
 }
 
-export const apiBaseUrl = (import.meta.env.VITE_API_URL || import.meta.env.VITE_APP_API_URL || '').replace(/\/+$/, '')
+export const apiBaseUrl = (
+  import.meta.env.VITE_API_URL ||
+  import.meta.env.VITE_APP_API_URL ||
+  ''
+).replace(/\/+$/, '')
 
 export const axiosInstance: AxiosInstance = axios.create({
   baseURL: apiBaseUrl,
   withCredentials: true,
   headers: {
-    'Content-Type': 'application/json',
-  },
+    'Content-Type': 'application/json'
+  }
 })
 
 // === Request Interceptor ===
@@ -95,7 +104,6 @@ axiosInstance.interceptors.response.use(
 
     // If 401 and not already retried and not an auth route itself
     if (error.response?.status === 401 && !originalRequest._retry && !isAuthRoute) {
-
       // If refresh is already in progress by another request, queue this one
       if (isRefreshing) {
         return new Promise<string>((resolve, reject) => {
@@ -164,7 +172,9 @@ export const apiClient = {
       const res = await axiosInstance.get(url, config)
       const trimmed = typeof res.data === 'string' ? res.data.trim().toLowerCase() : ''
       if (trimmed.startsWith('<!doctype') || trimmed.startsWith('<html')) {
-        throw new Error('Received HTML response instead of JSON. Check your backend URL or proxy configuration.')
+        throw new Error(
+          'Received HTML response instead of JSON. Check your backend URL or proxy configuration.'
+        )
       }
       const unwrapped = res.data?.data !== undefined ? res.data.data : res.data
       return { data: unwrapped as T }
@@ -173,7 +183,11 @@ export const apiClient = {
     }
   },
 
-  post: async <T>(url: string, payload?: unknown, config?: AxiosRequestConfig): Promise<{ data: T }> => {
+  post: async <T>(
+    url: string,
+    payload?: unknown,
+    config?: AxiosRequestConfig
+  ): Promise<{ data: T }> => {
     try {
       const res = await axiosInstance.post(url, payload, config)
       const unwrapped = res.data?.data !== undefined ? res.data.data : res.data
@@ -183,7 +197,11 @@ export const apiClient = {
     }
   },
 
-  put: async <T>(url: string, payload?: unknown, config?: AxiosRequestConfig): Promise<{ data: T }> => {
+  put: async <T>(
+    url: string,
+    payload?: unknown,
+    config?: AxiosRequestConfig
+  ): Promise<{ data: T }> => {
     try {
       const res = await axiosInstance.put(url, payload, config)
       const unwrapped = res.data?.data !== undefined ? res.data.data : res.data
@@ -201,5 +219,5 @@ export const apiClient = {
     } catch (err) {
       throw parseApiError(err)
     }
-  },
+  }
 }

@@ -19,6 +19,7 @@ import McpSettingsPage from './pages/McpSettingsPage.tsx'
 import NotesPage from './pages/NotesPage.tsx'
 import NotFound from './pages/NotFound.tsx'
 import ProjectsPage from './pages/ProjectsPage.tsx'
+import RemindersPage from './pages/RemindersPage.tsx'
 import SettingsPage from './pages/SettingsPage.tsx'
 import TasksPage from './pages/TasksPage.tsx'
 import { queryClient } from './queryClient.ts'
@@ -32,20 +33,18 @@ const router = createBrowserRouter([
       // 1. Public Landing Page
       {
         index: true,
-        element: <LandingPage />,
+        element: <LandingPage />
       },
       // 2. Authentication Pages (Public)
       {
         path: 'auth',
         element: <AuthLayout />,
         errorElement: <ErrorPage />,
-        children: [
-          { path: 'login', element: <Login /> },
-        ],
+        children: [{ path: 'login', element: <Login /> }]
       },
       {
         path: 'login',
-        element: <Login />,
+        element: <Login />
       },
       // 3. Protected Workspace Routes (Authenticate-Only)
       {
@@ -58,19 +57,20 @@ const router = createBrowserRouter([
               { path: 'dashboard', element: <Dashboard /> },
               { path: 'tasks', element: <TasksPage /> },
               { path: 'projects', element: <ProjectsPage /> },
+              { path: 'reminders', element: <RemindersPage /> },
               { path: 'notes', element: <NotesPage /> },
               { path: 'settings', element: <SettingsPage /> },
-              { path: 'mcp-settings', element: <McpSettingsPage /> },
-            ],
-          },
-        ],
+              { path: 'mcp-settings', element: <McpSettingsPage /> }
+            ]
+          }
+        ]
       },
       {
         path: '*',
-        element: <NotFound />,
-      },
-    ],
-  },
+        element: <NotFound />
+      }
+    ]
+  }
 ])
 
 ReactDOM.createRoot(document.getElementById('root')!).render(

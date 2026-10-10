@@ -25,9 +25,7 @@ export const TasksPage: React.FC = () => {
             <i className="pi pi-check-square text-indigo-500 dark:text-indigo-400" />
             {t('tasks.title', { count: tasks.length })}
           </h1>
-          <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-            {t('tasks.subtitle')}
-          </p>
+          <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">{t('tasks.subtitle')}</p>
         </div>
       </div>
 

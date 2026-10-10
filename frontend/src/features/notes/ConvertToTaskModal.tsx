@@ -16,7 +16,7 @@ export const ConvertToTaskModal: React.FC<ConvertToTaskModalProps> = ({
   isOpen,
   isPending = false,
   onClose,
-  onConvert,
+  onConvert
 }) => {
   const { t } = useTranslation()
   const [priority, setPriority] = useState<TaskPriority>('medium')
@@ -39,7 +39,7 @@ export const ConvertToTaskModal: React.FC<ConvertToTaskModalProps> = ({
     try {
       await onConvert(note.id, {
         priority,
-        subtasks,
+        subtasks
       })
       onClose()
     } finally {
@@ -65,26 +65,51 @@ export const ConvertToTaskModal: React.FC<ConvertToTaskModalProps> = ({
         </div>
 
         <div className="mb-4 p-3 rounded-lg bg-slate-50 dark:bg-slate-950/80 border border-slate-200 dark:border-slate-800/80">
-          <p className="text-xs font-medium text-slate-800 dark:text-slate-200 line-clamp-2">{note.title}</p>
+          <p className="text-xs font-semibold text-slate-800 dark:text-slate-200 line-clamp-2">
+            {note.title}
+          </p>
           {note.content && (
-            <p className="text-[11px] text-slate-500 dark:text-slate-400 line-clamp-3 mt-1 leading-relaxed">{note.content}</p>
+            <p className="text-[11px] text-slate-500 dark:text-slate-400 line-clamp-3 mt-1 leading-relaxed">
+              {note.content}
+            </p>
           )}
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
             <label className="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1">
-              {t('convertModal.priorityLabel')} <span className="text-rose-500 font-bold ml-0.5">*</span>
+              {t('convertModal.priorityLabel')}{' '}
+              <span className="text-rose-500 font-bold ml-0.5">*</span>
             </label>
             <select
               value={priority}
               onChange={(e) => setPriority(e.target.value as TaskPriority)}
               className="w-full rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 px-3 py-2 text-xs text-slate-900 dark:text-slate-100 focus:border-indigo-500 focus:outline-none transition-colors"
             >
-              <option value="low" className="bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100">{t('tasks.priority.low')}</option>
-              <option value="medium" className="bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100">{t('tasks.priority.medium')}</option>
-              <option value="high" className="bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100">{t('tasks.priority.high')}</option>
-              <option value="urgent" className="bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100">{t('tasks.priority.urgent')}</option>
+              <option
+                value="low"
+                className="bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100"
+              >
+                {t('tasks.priority.low')}
+              </option>
+              <option
+                value="medium"
+                className="bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100"
+              >
+                {t('tasks.priority.medium')}
+              </option>
+              <option
+                value="high"
+                className="bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100"
+              >
+                {t('tasks.priority.high')}
+              </option>
+              <option
+                value="urgent"
+                className="bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100"
+              >
+                {t('tasks.priority.urgent')}
+              </option>
             </select>
           </div>
 
@@ -105,14 +130,14 @@ export const ConvertToTaskModal: React.FC<ConvertToTaskModalProps> = ({
             <button
               type="button"
               onClick={onClose}
-              className="px-3 py-1.5 text-xs text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+              className="px-3 py-1.5 text-xs text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
             >
               {t('common.cancel')}
             </button>
             <button
               type="submit"
               disabled={isSubmitting}
-              className="px-4 py-1.5 text-xs font-medium text-white bg-indigo-600 hover:bg-indigo-500 rounded-lg disabled:opacity-50 flex items-center gap-1.5 shadow-xs transition-colors"
+              className="px-4 py-1.5 text-xs font-medium text-white bg-indigo-600 hover:bg-indigo-500 rounded-lg disabled:opacity-50 flex items-center gap-1.5 shadow-xs transition-colors cursor-pointer"
             >
               {isSubmitting && <i className="pi pi-spin pi-spinner text-xs" />}
               {t('convertModal.submit')}

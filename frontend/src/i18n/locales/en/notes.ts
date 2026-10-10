@@ -1,12 +1,14 @@
 export const notes = {
   title: 'Idea Scratchpad ({count})',
-  subtitle: 'Capture fleeting thoughts, snippets, or plans. Convert any idea to a task with one click.',
+  subtitle:
+    'Capture fleeting thoughts, snippets, or plans. Convert any idea to a task with one click.',
   allIdeas: 'All Ideas ({count})',
   writeNewIdea: 'Write New Idea',
   loadingIdeas: 'Loading ideas...',
   failedLoad: 'Failed to Load Ideas',
   noIdeasTitle: 'No ideas saved yet',
-  noIdeasSubtitle: 'Use this scratchpad to quickly log sudden thoughts. Convert any note into a full task with 1-click!',
+  noIdeasSubtitle:
+    'Use this scratchpad to quickly log sudden thoughts. Convert any note into a full task with 1-click!',
   captureFirst: 'Capture First Idea',
   convertToTask: 'Convert to Task',
   converted: 'Task #{id}',
@@ -26,9 +28,8 @@ export const notes = {
   statsTotal: 'Total Notes',
   statsActionable: 'Actionable',
   statsKnowledge: 'Knowledge Base',
-  statsPinned: 'Pinned',
+  statsPinned: 'Pinned'
 }
-
 
 export const noteModal = {
   createTitle: 'Write New Idea Note',
@@ -56,8 +57,8 @@ export const noteModal = {
     blue: 'Blue',
     green: 'Emerald',
     amber: 'Amber',
-    rose: 'Rose',
-  },
+    rose: 'Rose'
+  }
 }
 
 export const convertModal = {
@@ -66,7 +67,8 @@ export const convertModal = {
   fromIdea: 'From Idea Note:',
   priorityLabel: 'Priority Level',
   pinLabel: "Pin directly to Today's Focus Horizon",
-  checklistPlaceholder: 'Example:\nStep 1: Research documentation\nStep 2: Build prototype\nStep 3: Review and ship',
+  checklistPlaceholder:
+    'Example:\nStep 1: Research documentation\nStep 2: Build prototype\nStep 3: Review and ship',
   cancel: 'Cancel',
-  submit: 'Convert & Create Task',
+  submit: 'Convert & Create Task'
 }

@@ -32,11 +32,11 @@ type ConvertToTaskRequest struct {
 
 // NoteFilter parameters for filtering notes.
 type NoteFilter struct {
-	Type   string `query:"type"`
-	Tag    string `query:"tag"`
-	Search string `query:"search"`
-	Limit  int    `query:"limit" validate:"omitempty,min=1,max=100"`
-	Offset int    `query:"offset" validate:"omitempty,min=0"`
+	Type   string `json:"type" query:"type"`
+	Tag    string `json:"tag" query:"tag"`
+	Search string `json:"search" query:"search"`
+	Limit  int    `json:"limit" query:"limit" validate:"omitempty,min=1,max=100"`
+	Offset int    `json:"offset" query:"offset" validate:"omitempty,min=0"`
 }
 
 // NoteResponse represents a single note.

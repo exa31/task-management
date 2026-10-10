@@ -35,7 +35,7 @@ export const McpSettingsPage: React.FC = () => {
       rejectLabel: t('common.cancel'),
       accept: async () => {
         await deleteTokenMutation.mutateAsync(id)
-      },
+      }
     })
   }
 
@@ -45,7 +45,9 @@ export const McpSettingsPage: React.FC = () => {
     setTimeout(() => setCopiedKey(null), 2000)
   }
 
-  const activeTokenSecret = generatedToken ? generatedToken.raw_token : '<YOUR_PERSONAL_ACCESS_TOKEN>'
+  const activeTokenSecret = generatedToken
+    ? generatedToken.raw_token
+    : '<YOUR_PERSONAL_ACCESS_TOKEN>'
 
   const antigravitySnippet = `{
   "mcpServers": {
@@ -93,9 +95,7 @@ export const McpSettingsPage: React.FC = () => {
           </div>
           {t('mcp.title')}
         </h1>
-        <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
-          {t('mcp.subtitle')}
-        </p>
+        <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">{t('mcp.subtitle')}</p>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
@@ -111,25 +111,33 @@ export const McpSettingsPage: React.FC = () => {
               <div className="flex items-center gap-2">
                 <i className="pi pi-check text-[10px] text-emerald-500 dark:text-emerald-400" />
                 <span>
-                  <strong className="text-slate-900 dark:text-slate-100">create_idea_note</strong>: {t('mcp.createIdeaNote')}
+                  <strong className="text-slate-900 dark:text-slate-100">create_idea_note</strong>:{' '}
+                  {t('mcp.createIdeaNote')}
                 </span>
               </div>
               <div className="flex items-center gap-2">
                 <i className="pi pi-check text-[10px] text-emerald-500 dark:text-emerald-400" />
                 <span>
-                  <strong className="text-slate-900 dark:text-slate-100">convert_note_to_task</strong>: {t('mcp.convertNoteToTask')}
+                  <strong className="text-slate-900 dark:text-slate-100">
+                    convert_note_to_task
+                  </strong>
+                  : {t('mcp.convertNoteToTask')}
                 </span>
               </div>
               <div className="flex items-center gap-2">
                 <i className="pi pi-check text-[10px] text-emerald-500 dark:text-emerald-400" />
                 <span>
-                  <strong className="text-slate-900 dark:text-slate-100">create_task & list_tasks</strong>: {t('mcp.createTaskAndList')}
+                  <strong className="text-slate-900 dark:text-slate-100">
+                    create_task & list_tasks
+                  </strong>
+                  : {t('mcp.createTaskAndList')}
                 </span>
               </div>
               <div className="flex items-center gap-2">
                 <i className="pi pi-check text-[10px] text-emerald-500 dark:text-emerald-400" />
                 <span>
-                  <strong className="text-slate-900 dark:text-slate-100">log_task_progress</strong>: {t('mcp.logProgress')}
+                  <strong className="text-slate-900 dark:text-slate-100">log_task_progress</strong>:{' '}
+                  {t('mcp.logProgress')}
                 </span>
               </div>
             </div>
@@ -190,7 +198,11 @@ export const McpSettingsPage: React.FC = () => {
                   disabled={createTokenMutation.isPending || !newTokenName.trim()}
                   className="px-4 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-xs font-medium text-white transition-colors flex items-center gap-1.5 shrink-0 shadow-xs cursor-pointer"
                 >
-                  {createTokenMutation.isPending ? <i className="pi pi-spin pi-spinner text-xs" /> : <i className="pi pi-key text-xs" />}
+                  {createTokenMutation.isPending ? (
+                    <i className="pi pi-spin pi-spinner text-xs" />
+                  ) : (
+                    <i className="pi pi-key text-xs" />
+                  )}
                   {t('mcp.generateTokenBtn')}
                 </button>
               </div>
@@ -218,20 +230,32 @@ export const McpSettingsPage: React.FC = () => {
                 </div>
               ) : isError ? (
                 <div className="py-6 text-center rounded-lg border border-rose-200 dark:border-rose-900/40 bg-rose-50 dark:bg-rose-950/20 p-3">
-                  <p className="text-xs text-rose-600 dark:text-rose-300 font-medium">{t('mcp.failedLoadTokens')}</p>
+                  <p className="text-xs text-rose-600 dark:text-rose-300 font-medium">
+                    {t('mcp.failedLoadTokens')}
+                  </p>
                   <p className="text-[10px] text-rose-500 dark:text-rose-400/80 mt-0.5">
-                    {(error as Error)?.message || 'An error occurred while connecting to the API server.'}
+                    {(error as Error)?.message ||
+                      'An error occurred while connecting to the API server.'}
                   </p>
                 </div>
               ) : (
                 <div className="divide-y divide-slate-100 dark:divide-slate-800/60">
                   {tokens.map((tok) => (
-                    <div key={tok.id} className="py-2.5 flex items-center justify-between text-xs gap-3">
+                    <div
+                      key={tok.id}
+                      className="py-2.5 flex items-center justify-between text-xs gap-3"
+                    >
                       <div>
                         <p className="font-medium text-slate-800 dark:text-slate-200">{tok.name}</p>
                         <p className="text-[10px] font-mono text-slate-500 mt-0.5">
-                          {t('mcp.prefix')} <span className="text-indigo-600 dark:text-indigo-400">{tok.token_prefix}...</span> • {t('mcp.createdAt')}{' '}
-                          {new Date(tok.created_at).toLocaleDateString(locale === 'id' ? 'id-ID' : 'en-US')}
+                          {t('mcp.prefix')}{' '}
+                          <span className="text-indigo-600 dark:text-indigo-400">
+                            {tok.token_prefix}...
+                          </span>{' '}
+                          • {t('mcp.createdAt')}{' '}
+                          {new Date(tok.created_at).toLocaleDateString(
+                            locale === 'id' ? 'id-ID' : 'en-US'
+                          )}
                         </p>
                       </div>
                       <button

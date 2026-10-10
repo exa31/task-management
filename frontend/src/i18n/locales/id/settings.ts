@@ -12,13 +12,14 @@ export const settings = {
     saveChanges: 'Simpan Perubahan',
     saving: 'Menyimpan...',
     updateSuccess: 'Profil berhasil diperbarui.',
-    updateError: 'Gagal memperbarui profil.',
+    updateError: 'Gagal memperbarui profil.'
   },
 
   // OAuth Bindings Section
   oauth: {
     title: 'Tautan Akun OAuth',
-    subtitle: 'Tautkan akun Google atau Apple Anda untuk mempermudah login 1-klik di berbagai perangkat.',
+    subtitle:
+      'Tautkan akun Google atau Apple Anda untuk mempermudah login 1-klik di berbagai perangkat.',
     google: 'Google',
     apple: 'Apple ID',
     connected: 'Terhubung',
@@ -36,7 +37,7 @@ export const settings = {
     appleLinkedSuccess: 'Akun Apple berhasil ditautkan.',
     appleLinkError: 'Gagal menautkan Apple.',
     unbindSuccess: 'Tautan akun {provider} berhasil dibatalkan.',
-    unbindError: 'Gagal membatalkan tautan.',
+    unbindError: 'Gagal membatalkan tautan.'
   },
 
   // Project Task Modules Section
@@ -60,14 +61,15 @@ export const settings = {
     deleteHeader: 'Hapus Modul Project',
     deleteMessage: 'Hapus project "{name}"? Task yang terhubung tidak akan dihapus.',
     deleteAccept: 'Hapus',
-    deleteReject: 'Batal',
+    deleteReject: 'Batal'
   },
 
   // MCP AI Link Section
   mcp: {
     title: 'Model Context Protocol (MCP) & AI',
-    subtitle: 'Buat Personal Access Token untuk menghubungkan AI agent (Antigravity, Claude, Cline) langsung dengan task dan catatan Anda.',
-    button: 'Buka Pengaturan MCP',
+    subtitle:
+      'Buat Personal Access Token untuk menghubungkan AI agent (Antigravity, Claude, Cline) langsung dengan task dan catatan Anda.',
+    button: 'Buka Pengaturan MCP'
   },
 
   // Danger Zone Section
@@ -85,7 +87,7 @@ export const settings = {
     confirmDeleteBtn: 'Saya Mengerti, Hapus Total',
     deleting: 'Menghapus total...',
     deletedToast: 'Akun Anda telah dihapus secara permanen.',
-    deleteErrorToast: 'Gagal menghapus akun.',
+    deleteErrorToast: 'Gagal menghapus akun.'
   },
 
   // Avatar Crop Modal
@@ -103,6 +105,6 @@ export const settings = {
     fileTooLarge: 'Ukuran file maksimal 10MB.',
     convertError: 'Gagal mengonversi gambar ke format WebP.',
     uploadError: 'Gagal mengunggah avatar.',
-    uploadSuccess: 'Foto profil berhasil diperbarui.',
-  },
+    uploadSuccess: 'Foto profil berhasil diperbarui.'
+  }
 }

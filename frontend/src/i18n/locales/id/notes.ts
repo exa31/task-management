@@ -1,19 +1,22 @@
 export const notes = {
   title: 'Catatan Ide ({count})',
-  subtitle: 'Catat inspirasi dan pemikiran kilat. Ubah ide apa pun menjadi tugas aktif dengan satu klik.',
+  subtitle:
+    'Catat inspirasi dan pemikiran kilat. Ubah ide apa pun menjadi tugas aktif dengan satu klik.',
   allIdeas: 'Semua Ide ({count})',
   writeNewIdea: 'Tulis Ide Baru',
   loadingIdeas: 'Memuat ide...',
   failedLoad: 'Gagal Memuat Ide',
   noIdeasTitle: 'Belum ada ide tersimpan',
-  noIdeasSubtitle: 'Gunakan papan coretan ini untuk merekam ide kilat. Konversikan ide menjadi tugas dengan satu klik!',
+  noIdeasSubtitle:
+    'Gunakan papan coretan ini untuk merekam ide kilat. Konversikan ide menjadi tugas dengan satu klik!',
   captureFirst: 'Catat Ide Pertama',
   convertToTask: 'Ubah ke Tugas',
   converted: 'Tugas #{id}',
   pin: 'Sematkan ke atas',
   unpin: 'Lepas sematan',
   deleteConfirmHeader: 'Hapus Catatan Ide',
-  deleteConfirmMessage: 'Apakah Anda yakin ingin menghapus catatan ide ini? Tindakan ini tidak dapat dibatalkan.',
+  deleteConfirmMessage:
+    'Apakah Anda yakin ingin menghapus catatan ide ini? Tindakan ini tidak dapat dibatalkan.',
   createdSuccess: 'Catatan berhasil dibuat',
   updatedSuccess: 'Catatan berhasil diperbarui',
   deletedSuccess: 'Catatan berhasil dihapus',
@@ -26,9 +29,8 @@ export const notes = {
   statsTotal: 'Total Catatan',
   statsActionable: 'Ide Actionable',
   statsKnowledge: 'Basis Pengetahuan',
-  statsPinned: 'Disematkan',
+  statsPinned: 'Disematkan'
 }
-
 
 export const noteModal = {
   createTitle: 'Tulis Catatan Ide Baru',
@@ -56,8 +58,8 @@ export const noteModal = {
     blue: 'Biru',
     green: 'Zamrud',
     amber: 'Kuning Jingga',
-    rose: 'Mawar Merah',
-  },
+    rose: 'Mawar Merah'
+  }
 }
 
 export const convertModal = {
@@ -66,7 +68,8 @@ export const convertModal = {
   fromIdea: 'Dari Catatan Ide:',
   priorityLabel: 'Tingkat Prioritas',
   pinLabel: 'Langsung sematkan ke Horizon Fokus Hari Ini',
-  checklistPlaceholder: 'Contoh:\nLangkah 1: Riset dokumentasi\nLangkah 2: Buat purwarupa\nLangkah 3: Review dan rilis',
+  checklistPlaceholder:
+    'Contoh:\nLangkah 1: Riset dokumentasi\nLangkah 2: Buat purwarupa\nLangkah 3: Review dan rilis',
   cancel: 'Batal',
-  submit: 'Konversi & Buat Tugas',
+  submit: 'Konversi & Buat Tugas'
 }

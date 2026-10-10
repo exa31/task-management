@@ -28,6 +28,7 @@ type Config struct {
 	JWT      JWTConfig
 	OAuth    OAuthConfig
 	MinIO    MinIOConfig
+	Reminder ReminderConfig
 }
 
 // AppConfig holds generic application metadata.
@@ -132,6 +133,26 @@ type MinIOConfig struct {
 	PublicURL   string
 }
 
+type ReminderConfig struct {
+	Enabled       bool
+	BaseURL       string
+	WebhookSecret string
+	Resend        ResendConfig
+	FCM           FCMConfig
+}
+
+type ResendConfig struct {
+	APIKey    string
+	FromEmail string
+}
+
+type FCMConfig struct {
+	ProjectID         string
+	CredentialsFile   string
+	CredentialsJSON   string
+	CredentialsBase64 string
+}
+
 func Load() *Config {
 	viper.SetConfigFile(".env")
 	viper.AutomaticEnv()
@@ -203,6 +224,21 @@ func Load() *Config {
 			Bucket:      getEnv("MINIO_BUCKET", "project"),
 			ProjectName: getEnv("MINIO_PROJECT_NAME", "task-management"),
 			PublicURL:   getEnv("MINIO_PUBLIC_URL", "https://storage.eka-dev.cloud/project"),
+		},
+		Reminder: ReminderConfig{
+			Enabled:       getEnvAsBool("REMINDER_ENABLED", true),
+			BaseURL:       getEnv("APP_URL", getEnv("WEBHOOK_BASE_URL", "http://localhost:3000")),
+			WebhookSecret: getEnv("REMINDER_WEBHOOK_SECRET", "task-management-reminder-secret"),
+			Resend: ResendConfig{
+				APIKey:    getEnv("RESEND_API_KEY", ""),
+				FromEmail: getEnv("RESEND_FROM_EMAIL", "onboarding@resend.dev"),
+			},
+			FCM: FCMConfig{
+				ProjectID:         getEnv("FCM_PROJECT_ID", ""),
+				CredentialsFile:   getEnv("FCM_CREDENTIALS_FILE", ""),
+				CredentialsJSON:   getEnv("FCM_SERVICE_ACCOUNT_KEY", ""),
+				CredentialsBase64: getEnv("FCM_CREDENTIALS_BASE64", ""),
+			},
 		},
 	}
 

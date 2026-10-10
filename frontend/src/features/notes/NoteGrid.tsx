@@ -1,15 +1,15 @@
 import React, { useState } from 'react'
 
 import { confirmDialog } from '@/components'
-import {
-  useConvertToTask,
-  useCreateNote,
-  useDeleteNote,
-  useNotes,
-  useUpdateNote,
-} from '@/hooks'
+import { useConvertToTask, useCreateNote, useDeleteNote, useNotes, useUpdateNote } from '@/hooks'
 import { useTranslation } from '@/i18n'
-import type { ConvertToTaskPayload, CreateNotePayload, Note, NoteFilterParams, UpdateNotePayload } from '@/types'
+import type {
+  ConvertToTaskPayload,
+  CreateNotePayload,
+  Note,
+  NoteFilterParams,
+  UpdateNotePayload
+} from '@/types'
 
 import { ConvertToTaskModal } from './ConvertToTaskModal'
 import { NoteCard } from './NoteCard'
@@ -24,9 +24,13 @@ export const NoteGrid: React.FC = () => {
   if (activeTag) filterParams.tag = activeTag
   if (activeType) filterParams.type = activeType
 
-  const { data: rawNotes, isLoading, isError, error, refetch } = useNotes(
-    Object.keys(filterParams).length > 0 ? filterParams : undefined
-  )
+  const {
+    data: rawNotes,
+    isLoading,
+    isError,
+    error,
+    refetch
+  } = useNotes(Object.keys(filterParams).length > 0 ? filterParams : undefined)
   const allNotes = Array.isArray(rawAllNotes) ? rawAllNotes : []
   const notes = Array.isArray(rawNotes) ? rawNotes : []
   const { t } = useTranslation()
@@ -47,7 +51,7 @@ export const NoteGrid: React.FC = () => {
       rejectLabel: t('common.cancel'),
       accept: async () => {
         await deleteNoteMutation.mutateAsync(id)
-      },
+      }
     })
   }
 
@@ -137,7 +141,9 @@ export const NoteGrid: React.FC = () => {
         {/* Tag Filters (if any tags exist) */}
         {allTags.length > 0 && (
           <div className="flex items-center gap-1.5 overflow-x-auto py-0.5 scrollbar-none text-xs">
-            <span className="text-[11px] text-slate-400 font-medium mr-1">{t('notes.tagsLabel')}:</span>
+            <span className="text-[11px] text-slate-400 font-medium mr-1">
+              {t('notes.tagsLabel')}:
+            </span>
             <button
               onClick={() => setActiveTag('')}
               className={`px-2 py-0.5 rounded-md text-[11px] font-medium transition-colors ${
@@ -187,7 +193,9 @@ export const NoteGrid: React.FC = () => {
       ) : notes.length === 0 ? (
         <div className="py-20 text-center rounded-2xl border border-dashed border-slate-300 dark:border-slate-800 bg-white/50 dark:bg-slate-950/40 p-8">
           <i className="pi pi-lightbulb text-4xl text-slate-400 dark:text-slate-600 mb-3" />
-          <h3 className="text-sm font-medium text-slate-700 dark:text-slate-300">{t('notes.noIdeasTitle')}</h3>
+          <h3 className="text-sm font-medium text-slate-700 dark:text-slate-300">
+            {t('notes.noIdeasTitle')}
+          </h3>
           <p className="text-xs text-slate-500 max-w-sm mx-auto mt-1 mb-4">
             {t('notes.noIdeasSubtitle')}
           </p>

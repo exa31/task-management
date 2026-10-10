@@ -42,7 +42,8 @@ export const errors = {
   APPLE_TOKEN_INVALID: 'Invalid or expired Apple ID token.',
   APPLE_TOKEN_INVALID_ISSUER: 'Invalid Apple token issuer.',
   APPLE_TOKEN_AUDIENCE_MISMATCH: 'Apple token audience mismatch.',
-  ACCOUNT_DELETE_INVALID_CONFIRMATION: 'Invalid confirmation. Please type DELETE to delete your account.',
+  ACCOUNT_DELETE_INVALID_CONFIRMATION:
+    'Invalid confirmation. Please type DELETE to delete your account.',
   AVATAR_FILE_REQUIRED: 'Avatar file is required.',
   AVATAR_FILE_TOO_LARGE: 'Avatar file size must be at most 5MB.',
   STORAGE_NOT_CONFIGURED: 'Storage service is not configured on the server.',
@@ -50,10 +51,13 @@ export const errors = {
   // Error Page & Boundary
   pageTitle: 'Unexpected Application Error',
   pageSubtitle: 'An unexpected runtime issue occurred while loading this view.',
+  notFoundTitle: 'Page Not Found',
+  notFoundMessage:
+    "Sorry, we couldn't find the page you're looking for. It might have been moved or deleted.",
   reloadPage: 'Reload Page',
   backHome: 'Back to Dashboard',
   clearCacheReload: 'Clear Cache & Reload',
   technicalDetails: 'Technical Details',
   copyError: 'Copy Error Info',
-  errorCopied: 'Error details copied to clipboard',
+  errorCopied: 'Error details copied to clipboard'
 }

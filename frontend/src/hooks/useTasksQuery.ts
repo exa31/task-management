@@ -9,14 +9,14 @@ import type {
   Task,
   TaskCursorResponse,
   TaskFilterParams,
-  UpdateTaskPayload,
+  UpdateTaskPayload
 } from '@/types'
 
 export const taskKeys = {
   all: ['tasks'] as const,
   list: (params?: TaskFilterParams) => ['tasks', 'list', params || {}] as const,
   infinite: (params?: TaskFilterParams) => ['tasks', 'infinite', params || {}] as const,
-  detail: (id: number) => ['tasks', 'detail', id] as const,
+  detail: (id: number) => ['tasks', 'detail', id] as const
 }
 
 const cleanParams = (params?: TaskFilterParams): TaskFilterParams | undefined => {
@@ -25,7 +25,8 @@ const cleanParams = (params?: TaskFilterParams): TaskFilterParams | undefined =>
   if (params.status) cleaned.status = params.status
   if (params.priority) cleaned.priority = params.priority
   if (params.tag) cleaned.tag = params.tag
-  if (params.project_id !== undefined && params.project_id !== null) cleaned.project_id = params.project_id
+  if (params.project_id !== undefined && params.project_id !== null)
+    cleaned.project_id = params.project_id
   if (params.is_focus !== undefined) cleaned.is_focus = params.is_focus
   if (params.search) cleaned.search = params.search
   if (params.limit !== undefined) cleaned.limit = params.limit
@@ -50,7 +51,7 @@ export const useTasks = (params?: TaskFilterParams) => {
         if (Array.isArray(obj.tasks)) return obj.tasks
       }
       return []
-    },
+    }
   })
 }
 
@@ -64,7 +65,7 @@ export const useInfiniteTasks = (params?: TaskFilterParams) => {
         ...cleaned,
         cursor: pageParam,
         limit: 15,
-        paginate: 'cursor',
+        paginate: 'cursor'
       }
       const res = await taskApi.getAll(queryParams)
       const raw = res.data
@@ -73,7 +74,7 @@ export const useInfiniteTasks = (params?: TaskFilterParams) => {
         return {
           items: Array.isArray(cursorResp.items) ? cursorResp.items : [],
           next_cursor: cursorResp.next_cursor ?? null,
-          has_more: Boolean(cursorResp.has_more),
+          has_more: Boolean(cursorResp.has_more)
         }
       }
       const items = Array.isArray(raw) ? raw : []
@@ -81,10 +82,11 @@ export const useInfiniteTasks = (params?: TaskFilterParams) => {
       return {
         items,
         next_cursor: nextId,
-        has_more: items.length >= 15,
+        has_more: items.length >= 15
       }
     },
-    getNextPageParam: (lastPage) => (lastPage.has_more ? (lastPage.next_cursor ?? undefined) : undefined),
+    getNextPageParam: (lastPage) =>
+      lastPage.has_more ? (lastPage.next_cursor ?? undefined) : undefined
   })
 }
 
@@ -96,7 +98,7 @@ export const useTask = (id?: number) =>
       if (!id) return null
       const res = await taskApi.getById(id)
       return res.data
-    },
+    }
   })
 
 export const useCreateTask = () => {
@@ -116,7 +118,7 @@ export const useCreateTask = () => {
     },
     onError: (err) => {
       toast.error(err)
-    },
+    }
   })
 }
 
@@ -137,7 +139,7 @@ export const useUpdateTask = () => {
     },
     onError: (err) => {
       toast.error(err)
-    },
+    }
   })
 }
 
@@ -157,7 +159,7 @@ export const useDeleteTask = () => {
     },
     onError: (err) => {
       toast.error(err)
-    },
+    }
   })
 }
 
@@ -177,7 +179,7 @@ export const useLogProgress = () => {
     },
     onError: (err) => {
       toast.error(err)
-    },
+    }
   })
 }
 
@@ -197,7 +199,7 @@ export const useToggleFocus = () => {
     },
     onError: (err) => {
       toast.error(err)
-    },
+    }
   })
 }
 
@@ -215,7 +217,7 @@ export const useAddSubtask = () => {
     },
     onError: (err) => {
       toast.error(err)
-    },
+    }
   })
 }
 
@@ -227,7 +229,7 @@ export const useToggleSubtask = () => {
     mutationFn: async ({
       taskId,
       subtaskId,
-      isCompleted,
+      isCompleted
     }: {
       taskId: number
       subtaskId: number
@@ -240,7 +242,7 @@ export const useToggleSubtask = () => {
     },
     onError: (err) => {
       toast.error(err)
-    },
+    }
   })
 }
 
@@ -257,6 +259,6 @@ export const useDeleteSubtask = () => {
     },
     onError: (err) => {
       toast.error(err)
-    },
+    }
   })
 }

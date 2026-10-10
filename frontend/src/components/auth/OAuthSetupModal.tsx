@@ -13,7 +13,7 @@ export const OAuthSetupModal: React.FC<OAuthSetupModalProps> = ({
   isOpen,
   onClose,
   provider,
-  onUseDemoLogin,
+  onUseDemoLogin
 }) => {
   const { t } = useTranslation()
   const [copiedSnippet, setCopiedSnippet] = useState(false)
@@ -56,7 +56,8 @@ APPLE_CLIENT_ID=com.yourbrand.app.service`
                 {isGoogle ? 'Setup Google OAuth Console' : 'Setup Apple Developer Console'}
               </h2>
               <p className="text-[11px] text-slate-500 dark:text-slate-400">
-                Client ID belum terdeteksi di berkas <code className="font-mono text-indigo-600 dark:text-indigo-400">.env</code>
+                Client ID belum terdeteksi di berkas{' '}
+                <code className="font-mono text-indigo-600 dark:text-indigo-400">.env</code>
               </p>
             </div>
           </div>
@@ -89,14 +90,20 @@ APPLE_CLIENT_ID=com.yourbrand.app.service`
                       Google Cloud Console &gt; Credentials
                     </a>
                   </li>
-                  <li>Buat kredensial <strong>OAuth 2.0 Client ID</strong> tipe <strong>Web application</strong>.</li>
+                  <li>
+                    Buat kredensial <strong>OAuth 2.0 Client ID</strong> tipe{' '}
+                    <strong>Web application</strong>.
+                  </li>
                   <li>
                     Di bagian <strong>Authorized JavaScript origins</strong>, tambahkan:{' '}
                     <code className="px-1 py-0.5 rounded bg-slate-100 dark:bg-slate-800 font-mono text-indigo-600 dark:text-indigo-400">
                       http://localhost:5173
                     </code>
                   </li>
-                  <li>Salin Client ID dan Client Secret ke berkas <code className="font-mono">.env</code> berikut:</li>
+                  <li>
+                    Salin Client ID dan Client Secret ke berkas{' '}
+                    <code className="font-mono">.env</code> berikut:
+                  </li>
                 </ol>
               </div>
 
@@ -130,9 +137,14 @@ APPLE_CLIENT_ID=com.yourbrand.app.service`
                       Apple Developer &gt; Services IDs
                     </a>
                   </li>
-                  <li>Buat <strong>Services ID</strong> baru dan aktifkan <strong>Sign in with Apple</strong>.</li>
+                  <li>
+                    Buat <strong>Services ID</strong> baru dan aktifkan{' '}
+                    <strong>Sign in with Apple</strong>.
+                  </li>
                   <li>Daftarkan domain dan redirect URL web Anda.</li>
-                  <li>Salin Services ID ke berkas <code className="font-mono">.env</code> berikut:</li>
+                  <li>
+                    Salin Services ID ke berkas <code className="font-mono">.env</code> berikut:
+                  </li>
                 </ol>
               </div>
 
@@ -163,7 +175,9 @@ APPLE_CLIENT_ID=com.yourbrand.app.service`
               <i className="pi pi-bolt text-xs" />
               Gunakan Login Akun Demo Sementara
             </button>
-          ) : <span />}
+          ) : (
+            <span />
+          )}
 
           <button
             onClick={onClose}

@@ -9,7 +9,7 @@ export type Locale = 'en' | 'id'
 
 export const translations: Record<Locale, TranslationSchema> = {
   en,
-  id,
+  id
 }
 
 // Register Indonesian locale in PrimeReact
@@ -30,16 +30,29 @@ addLocale('id', {
     'September',
     'Oktober',
     'November',
-    'Desember',
+    'Desember'
   ],
-  monthNamesShort: ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des'],
+  monthNamesShort: [
+    'Jan',
+    'Feb',
+    'Mar',
+    'Apr',
+    'Mei',
+    'Jun',
+    'Jul',
+    'Agu',
+    'Sep',
+    'Okt',
+    'Nov',
+    'Des'
+  ],
   today: 'Hari ini',
   clear: 'Hapus',
   accept: 'Ya',
   reject: 'Batal',
   choose: 'Pilih',
   upload: 'Unggah',
-  cancel: 'Batal',
+  cancel: 'Batal'
 })
 
 /**
@@ -84,7 +97,9 @@ export function translate(
 
   if (!params) return template
 
-  return template.replace(/\{(\w+)\}/g, (match, key) => key in params ? String(params[key]) : match)
+  return template.replace(/\{(\w+)\}/g, (match, key) =>
+    key in params ? String(params[key]) : match
+  )
 }
 
 /**
@@ -93,7 +108,8 @@ export function translate(
 export function useTranslation() {
   const { locale, setLocale, toggleLocale } = useUIStore()
 
-  const t = (path: string, params?: Record<string, string | number>) => translate(locale, path, params)
+  const t = (path: string, params?: Record<string, string | number>) =>
+    translate(locale, path, params)
 
   return {
     t,
@@ -106,7 +122,7 @@ export function useTranslation() {
       const next: Locale = locale === 'en' ? 'id' : 'en'
       setPrimeReactLocale(next)
       toggleLocale()
-    },
+    }
   }
 }
 

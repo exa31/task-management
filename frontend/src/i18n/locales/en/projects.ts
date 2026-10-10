@@ -1,6 +1,7 @@
 export const projects = {
   title: 'Task Modules & Projects',
-  subtitle: 'Organize tasks into specific modules (e.g. ftracker, e-commerce) with status breakdown.',
+  subtitle:
+    'Organize tasks into specific modules (e.g. ftracker, e-commerce) with status breakdown.',
   addProject: 'New Project Module',
   addTaskToProject: 'Add Task to this Project',
   loading: 'Loading projects...',
@@ -12,7 +13,8 @@ export const projects = {
   editProject: 'Edit Project',
   deleteProject: 'Delete Project',
   deleteHeader: 'Delete Project Module',
-  deleteMessage: 'Are you sure you want to delete project "{name}"? Tasks associated with this project will remain intact.',
+  deleteMessage:
+    'Are you sure you want to delete project "{name}"? Tasks associated with this project will remain intact.',
   deleteAccept: 'Delete Project',
   deleteReject: 'Cancel',
   editModalTitle: 'Edit Project Module',
@@ -33,13 +35,13 @@ export const projects = {
   expandAll: 'Expand All',
   statusBreakdown: 'Status Breakdown',
   manageInProjects: 'Manage Project Modules in Projects Menu',
-  settingsLinkDesc: 'Project modules can now be managed directly in the dedicated Projects page with task breakdown.',
+  settingsLinkDesc:
+    'Project modules can now be managed directly in the dedicated Projects page with task breakdown.',
   goToProjects: 'Open Projects Page',
   searchPlaceholder: 'Search projects...',
   statsTotalProjects: 'Total Modules',
   statsActiveTasks: 'Connected Tasks',
   statsInProgress: 'In Progress',
   statsCompleted: 'Completed',
-  statsCompletionRate: 'Completion Rate',
+  statsCompletionRate: 'Completion Rate'
 }
-

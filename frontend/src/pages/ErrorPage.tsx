@@ -1,4 +1,3 @@
-import { Button } from 'primereact/button'
 import React, { useState } from 'react'
 import { isRouteErrorResponse, useNavigate, useRouteError } from 'react-router-dom'
 
@@ -88,7 +87,7 @@ export const ErrorPage: React.FC<ErrorPageProps> = ({ error: propError, resetErr
       `Locale: ${locale}`,
       `Status: ${status} (${statusText})`,
       `Message: ${errorMessage}`,
-      errorStack ? `\nStack Trace:\n${errorStack}` : '',
+      errorStack ? `\nStack Trace:\n${errorStack}` : ''
     ]
       .filter(Boolean)
       .join('\n')
@@ -125,7 +124,7 @@ export const ErrorPage: React.FC<ErrorPageProps> = ({ error: propError, resetErr
           className="text-xs text-slate-400 hover:text-slate-200 transition-colors flex items-center gap-1.5 cursor-pointer"
         >
           <i className="pi pi-home text-[11px]" />
-          <span>Dashboard</span>
+          <span>{t('nav.dashboard')}</span>
         </button>
       </header>
 
@@ -136,16 +135,16 @@ export const ErrorPage: React.FC<ErrorPageProps> = ({ error: propError, resetErr
           <div className="flex items-start justify-between gap-4">
             <div className="space-y-2">
               <div className="inline-flex items-center gap-2 px-2.5 py-1 rounded-full text-xs font-medium bg-rose-500/15 text-rose-300 border border-rose-500/30">
-                <i className={`pi ${is404 ? 'pi-compass' : 'pi-exclamation-triangle'} text-[11px]`} />
-                <span>{is404 ? '404 Not Found' : (statusText || 'Unexpected Runtime Error')}</span>
+                <i
+                  className={`pi ${is404 ? 'pi-compass' : 'pi-exclamation-triangle'} text-[11px]`}
+                />
+                <span>{is404 ? '404 Not Found' : statusText || 'Unexpected Runtime Error'}</span>
               </div>
               <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-white">
-                {is404 ? 'Page Not Found' : t('errors.pageTitle')}
+                {is404 ? t('errors.notFoundTitle') : t('errors.pageTitle')}
               </h1>
               <p className="text-xs sm:text-sm text-slate-400 leading-relaxed">
-                {is404
-                  ? "We couldn't find the route you are trying to visit."
-                  : t('errors.pageSubtitle')}
+                {is404 ? t('errors.notFoundMessage') : t('errors.pageSubtitle')}
               </p>
             </div>
 
@@ -169,27 +168,33 @@ export const ErrorPage: React.FC<ErrorPageProps> = ({ error: propError, resetErr
 
           {/* Action Recovery Buttons */}
           <div className="flex flex-wrap items-center gap-2.5 pt-1">
-            <Button
+            <button
               id="btn-error-reload"
-              label={t('errors.reloadPage')}
-              icon="pi pi-refresh"
+              type="button"
               onClick={handleReload}
-              className="bg-indigo-600 hover:bg-indigo-500 text-white border-none text-xs px-4 py-2 rounded-xl font-medium shadow-md shadow-indigo-600/20 cursor-pointer"
-            />
-            <Button
+              className="inline-flex items-center gap-1.5 bg-indigo-600 hover:bg-indigo-500 text-white text-xs px-4 py-2 rounded-xl font-medium shadow-md shadow-indigo-600/20 cursor-pointer transition-all"
+            >
+              <i className="pi pi-refresh text-xs" />
+              <span>{t('errors.reloadPage')}</span>
+            </button>
+            <button
               id="btn-error-home"
-              label={t('errors.backHome')}
-              icon="pi pi-home"
+              type="button"
               onClick={handleGoHome}
-              className="bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700/80 text-xs px-4 py-2 rounded-xl font-medium cursor-pointer"
-            />
-            <Button
+              className="inline-flex items-center gap-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700/80 text-xs px-4 py-2 rounded-xl font-medium cursor-pointer transition-all"
+            >
+              <i className="pi pi-home text-xs" />
+              <span>{t('errors.backHome')}</span>
+            </button>
+            <button
               id="btn-error-clear-cache"
-              label={t('errors.clearCacheReload')}
-              icon="pi pi-trash"
+              type="button"
               onClick={handleClearCacheAndReload}
-              className="bg-rose-950/40 hover:bg-rose-900/50 text-rose-300 border border-rose-800/50 text-xs px-3.5 py-2 rounded-xl font-medium cursor-pointer"
-            />
+              className="inline-flex items-center gap-1.5 bg-rose-950/40 hover:bg-rose-900/50 text-rose-300 border border-rose-800/50 text-xs px-3.5 py-2 rounded-xl font-medium cursor-pointer transition-all"
+            >
+              <i className="pi pi-trash text-xs" />
+              <span>{t('errors.clearCacheReload')}</span>
+            </button>
           </div>
 
           {/* Technical Details Accordion */}
@@ -200,7 +205,9 @@ export const ErrorPage: React.FC<ErrorPageProps> = ({ error: propError, resetErr
                 onClick={() => setShowDetails((prev) => !prev)}
                 className="text-xs text-slate-400 hover:text-slate-200 flex items-center gap-1.5 font-medium transition-colors cursor-pointer"
               >
-                <i className={`pi ${showDetails ? 'pi-chevron-down' : 'pi-chevron-right'} text-[10px]`} />
+                <i
+                  className={`pi ${showDetails ? 'pi-chevron-down' : 'pi-chevron-right'} text-[10px]`}
+                />
                 <span>{t('errors.technicalDetails')}</span>
               </button>
 
@@ -210,7 +217,9 @@ export const ErrorPage: React.FC<ErrorPageProps> = ({ error: propError, resetErr
                   onClick={handleCopyDetails}
                   className="text-xs text-indigo-400 hover:text-indigo-300 flex items-center gap-1 transition-colors cursor-pointer"
                 >
-                  <i className={`pi ${copied ? 'pi-check text-emerald-400' : 'pi-copy'} text-[11px]`} />
+                  <i
+                    className={`pi ${copied ? 'pi-check text-emerald-400' : 'pi-copy'} text-[11px]`}
+                  />
                   <span>{copied ? t('errors.errorCopied') : t('errors.copyError')}</span>
                 </button>
               )}

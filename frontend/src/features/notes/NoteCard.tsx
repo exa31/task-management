@@ -12,13 +12,18 @@ interface NoteCardProps {
 }
 
 const COLOR_CLASSES: Record<string, string> = {
-  default: 'border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/60 hover:border-slate-300 dark:hover:border-slate-700',
-  indigo: 'border-indigo-200 dark:border-indigo-500/30 bg-indigo-50/70 dark:bg-indigo-950/20 hover:border-indigo-300 dark:hover:border-indigo-500/50',
-  purple: 'border-purple-200 dark:border-purple-500/30 bg-purple-50/70 dark:bg-purple-950/20 hover:border-purple-300 dark:hover:border-purple-500/50',
+  default:
+    'border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/60 hover:border-slate-300 dark:hover:border-slate-700',
+  indigo:
+    'border-indigo-200 dark:border-indigo-500/30 bg-indigo-50/70 dark:bg-indigo-950/20 hover:border-indigo-300 dark:hover:border-indigo-500/50',
+  purple:
+    'border-purple-200 dark:border-purple-500/30 bg-purple-50/70 dark:bg-purple-950/20 hover:border-purple-300 dark:hover:border-purple-500/50',
   blue: 'border-blue-200 dark:border-blue-500/30 bg-blue-50/70 dark:bg-blue-950/20 hover:border-blue-300 dark:hover:border-blue-500/50',
-  green: 'border-emerald-200 dark:border-emerald-500/30 bg-emerald-50/70 dark:bg-emerald-950/20 hover:border-emerald-300 dark:hover:border-emerald-500/50',
-  amber: 'border-amber-200 dark:border-amber-500/30 bg-amber-50/70 dark:bg-amber-950/20 hover:border-amber-300 dark:hover:border-amber-500/50',
-  rose: 'border-rose-200 dark:border-rose-500/30 bg-rose-50/70 dark:bg-rose-950/20 hover:border-rose-300 dark:hover:border-rose-500/50',
+  green:
+    'border-emerald-200 dark:border-emerald-500/30 bg-emerald-50/70 dark:bg-emerald-950/20 hover:border-emerald-300 dark:hover:border-emerald-500/50',
+  amber:
+    'border-amber-200 dark:border-amber-500/30 bg-amber-50/70 dark:bg-amber-950/20 hover:border-amber-300 dark:hover:border-amber-500/50',
+  rose: 'border-rose-200 dark:border-rose-500/30 bg-rose-50/70 dark:bg-rose-950/20 hover:border-rose-300 dark:hover:border-rose-500/50'
 }
 
 export const NoteCard: React.FC<NoteCardProps> = ({
@@ -26,7 +31,7 @@ export const NoteCard: React.FC<NoteCardProps> = ({
   onEdit,
   onDelete,
   onTogglePin,
-  onConvertToTask,
+  onConvertToTask
 }) => {
   const { t } = useTranslation()
   const cardColor = COLOR_CLASSES[note.color] || COLOR_CLASSES.default
@@ -61,7 +66,9 @@ export const NoteCard: React.FC<NoteCardProps> = ({
             onClick={() => onTogglePin(note)}
             title={note.is_pinned ? t('notes.unpin') : t('notes.pin')}
             className={`p-1 rounded hover:bg-slate-100 dark:hover:bg-slate-800/80 transition-colors ${
-              note.is_pinned ? 'text-amber-500 dark:text-amber-400' : 'text-slate-400 dark:text-slate-500 opacity-0 group-hover:opacity-100'
+              note.is_pinned
+                ? 'text-amber-500 dark:text-amber-400'
+                : 'text-slate-400 dark:text-slate-500 opacity-0 group-hover:opacity-100'
             }`}
           >
             <i className={`pi ${note.is_pinned ? 'pi-bookmark-fill' : 'pi-bookmark'} text-xs`} />
@@ -98,7 +105,8 @@ export const NoteCard: React.FC<NoteCardProps> = ({
         <div>
           {note.converted_task_id ? (
             <span className="inline-flex items-center gap-1 text-[11px] text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/40 px-2 py-0.5 rounded-full border border-emerald-200 dark:border-emerald-800/50">
-              <i className="pi pi-check text-[9px]" /> {t('notes.converted', { id: note.converted_task_id })}
+              <i className="pi pi-check text-[9px]" />{' '}
+              {t('notes.converted', { id: note.converted_task_id })}
             </span>
           ) : note.type === 'knowledge' ? (
             <span className="inline-flex items-center gap-1 text-[11px] text-slate-400 dark:text-slate-500 italic">

@@ -6,18 +6,21 @@ import { useTaskStore } from '@/stores'
 import type { TaskFilterParams, TaskPriority, TaskStatus } from '@/types'
 
 const STATUS_CLASSES: Record<TaskStatus, string> = {
-  backlog: 'text-slate-600 dark:text-slate-400 bg-slate-100 dark:bg-slate-800/80 border-slate-200 dark:border-slate-700/50',
+  backlog:
+    'text-slate-600 dark:text-slate-400 bg-slate-100 dark:bg-slate-800/80 border-slate-200 dark:border-slate-700/50',
   todo: 'text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-950/40 border-blue-200 dark:border-blue-800/50',
-  in_progress: 'text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/40 border-amber-200 dark:border-amber-800/50',
-  review: 'text-purple-600 dark:text-purple-400 bg-purple-50 dark:bg-purple-950/40 border-purple-200 dark:border-purple-800/50',
-  done: 'text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/40 border-emerald-200 dark:border-emerald-800/50',
+  in_progress:
+    'text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/40 border-amber-200 dark:border-amber-800/50',
+  review:
+    'text-purple-600 dark:text-purple-400 bg-purple-50 dark:bg-purple-950/40 border-purple-200 dark:border-purple-800/50',
+  done: 'text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/40 border-emerald-200 dark:border-emerald-800/50'
 }
 
 const PRIORITY_META: Record<TaskPriority, { icon: string; class: string }> = {
   urgent: { icon: 'pi-exclamation-triangle', class: 'text-rose-500 dark:text-rose-400' },
   high: { icon: 'pi-angle-double-up', class: 'text-amber-600 dark:text-amber-400' },
   medium: { icon: 'pi-minus', class: 'text-blue-600 dark:text-blue-400' },
-  low: { icon: 'pi-angle-down', class: 'text-slate-500' },
+  low: { icon: 'pi-angle-down', class: 'text-slate-500' }
 }
 
 export const TaskListView: React.FC = () => {
@@ -28,7 +31,7 @@ export const TaskListView: React.FC = () => {
     filterTag,
     filterProject,
     filterFocusOnly,
-    searchQuery,
+    searchQuery
   } = useTaskStore()
   const { t, locale } = useTranslation()
 
@@ -39,7 +42,7 @@ export const TaskListView: React.FC = () => {
       tag: filterTag || undefined,
       project_id: filterProject || undefined,
       is_focus: filterFocusOnly ? true : undefined,
-      search: searchQuery || undefined,
+      search: searchQuery || undefined
     }),
     [filterStatus, filterPriority, filterTag, filterProject, filterFocusOnly, searchQuery]
   )
@@ -52,10 +55,13 @@ export const TaskListView: React.FC = () => {
     refetch,
     hasNextPage,
     isFetchingNextPage,
-    fetchNextPage,
+    fetchNextPage
   } = useInfiniteTasks(filterParams)
 
-  const tasks = useMemo(() => data?.pages.flatMap((page) => (Array.isArray(page?.items) ? page.items : [])) || [], [data])
+  const tasks = useMemo(
+    () => data?.pages.flatMap((page) => (Array.isArray(page?.items) ? page.items : [])) || [],
+    [data]
+  )
 
   const sentinelRef = useRef<HTMLDivElement | null>(null)
 
@@ -109,7 +115,9 @@ export const TaskListView: React.FC = () => {
     return (
       <div className="py-20 text-center rounded-2xl border border-dashed border-slate-300 dark:border-slate-800 bg-white/50 dark:bg-slate-950/40 p-8">
         <i className="pi pi-check-circle text-4xl text-slate-400 dark:text-slate-600 mb-3" />
-        <h3 className="text-sm font-medium text-slate-700 dark:text-slate-300">{t('tasks.noTasksFound')}</h3>
+        <h3 className="text-sm font-medium text-slate-700 dark:text-slate-300">
+          {t('tasks.noTasksFound')}
+        </h3>
         <p className="text-xs text-slate-500 max-w-sm mx-auto mt-1 mb-4">
           {t('tasks.noTasksSubtitle')}
         </p>
@@ -140,7 +148,7 @@ export const TaskListView: React.FC = () => {
                   e.stopPropagation()
                   updateTaskMutation.mutate({
                     id: task.id,
-                    payload: { status: isDone ? 'todo' : 'done' },
+                    payload: { status: isDone ? 'todo' : 'done' }
                   })
                 }}
                 className={`h-4 w-4 rounded border flex items-center justify-center shrink-0 transition-colors ${
@@ -160,7 +168,9 @@ export const TaskListView: React.FC = () => {
                   toggleFocusMutation.mutate(task.id)
                 }}
                 className={`p-0.5 rounded transition-colors ${
-                  task.is_focus ? 'text-amber-500 dark:text-amber-400' : 'text-slate-400 dark:text-slate-600 opacity-0 group-hover:opacity-100 hover:text-slate-600 dark:hover:text-slate-400'
+                  task.is_focus
+                    ? 'text-amber-500 dark:text-amber-400'
+                    : 'text-slate-400 dark:text-slate-600 opacity-0 group-hover:opacity-100 hover:text-slate-600 dark:hover:text-slate-400'
                 }`}
                 title={task.is_focus ? t('focus.removeFromFocus') : t('focus.pinToFocus')}
               >
@@ -172,7 +182,9 @@ export const TaskListView: React.FC = () => {
                 <div className="flex items-center gap-2">
                   <span
                     className={`font-medium truncate ${
-                      isDone ? 'line-through text-slate-400 dark:text-slate-500' : 'text-slate-800 dark:text-slate-200 group-hover:text-indigo-600 dark:group-hover:text-indigo-200'
+                      isDone
+                        ? 'line-through text-slate-400 dark:text-slate-500'
+                        : 'text-slate-800 dark:text-slate-200 group-hover:text-indigo-600 dark:group-hover:text-indigo-200'
                     }`}
                   >
                     {task.title}
@@ -181,9 +193,9 @@ export const TaskListView: React.FC = () => {
                     <span
                       className="inline-flex items-center gap-1 px-1.5 py-0.2 rounded text-[10px] font-semibold border shadow-2xs shrink-0"
                       style={{
-                        backgroundColor: `${task.project_color || '#6366f1'  }15`,
-                        borderColor: `${task.project_color || '#6366f1'  }35`,
-                        color: task.project_color || '#6366f1',
+                        backgroundColor: `${task.project_color || '#6366f1'}15`,
+                        borderColor: `${task.project_color || '#6366f1'}35`,
+                        color: task.project_color || '#6366f1'
                       }}
                     >
                       📁 {task.project_name}
@@ -245,7 +257,7 @@ export const TaskListView: React.FC = () => {
                   <i className="pi pi-calendar text-[9px]" />
                   {new Date(task.due_date).toLocaleDateString(locale === 'id' ? 'id-ID' : 'en-US', {
                     day: 'numeric',
-                    month: 'short',
+                    month: 'short'
                   })}
                 </span>
               )}

@@ -36,13 +36,15 @@ export const errors = {
   OAUTH_PROVIDER_INVALID: 'Penyedia login tidak didukung.',
   OAUTH_IDENTIFIER_MISSING: 'Gagal mendapatkan data identifikasi dari penyedia autentikasi.',
   OAUTH_ACCOUNT_ALREADY_LINKED: 'Akun ini sudah ditautkan ke akun pengguna lain.',
-  OAUTH_LAST_AUTH_METHOD: 'Tidak dapat memutuskan tautan karena ini adalah metode login satu-satunya.',
+  OAUTH_LAST_AUTH_METHOD:
+    'Tidak dapat memutuskan tautan karena ini adalah metode login satu-satunya.',
   OAUTH_EMAIL_REQUIRED: 'Email diperlukan untuk login menggunakan penyedia ini.',
   OAUTH_NOT_CONFIGURED: 'Layanan autentikasi belum dikonfigurasi di server.',
   APPLE_TOKEN_INVALID: 'Token autentikasi Apple tidak valid atau kedaluwarsa.',
   APPLE_TOKEN_INVALID_ISSUER: 'Penerbit token Apple tidak valid.',
   APPLE_TOKEN_AUDIENCE_MISMATCH: 'Konfigurasi target token Apple tidak sesuai.',
-  ACCOUNT_DELETE_INVALID_CONFIRMATION: 'Konfirmasi tidak valid. Harap ketik DELETE untuk menghapus akun.',
+  ACCOUNT_DELETE_INVALID_CONFIRMATION:
+    'Konfirmasi tidak valid. Harap ketik DELETE untuk menghapus akun.',
   AVATAR_FILE_REQUIRED: 'File foto profil diperlukan.',
   AVATAR_FILE_TOO_LARGE: 'Ukuran foto profil maksimal 5MB.',
   STORAGE_NOT_CONFIGURED: 'Layanan penyimpanan media belum dikonfigurasi di server.',
@@ -50,10 +52,13 @@ export const errors = {
   // Error Page & Boundary
   pageTitle: 'Terjadi Kendala pada Aplikasi',
   pageSubtitle: 'Terjadi kesalahan sistem yang tidak terduga saat memuat halaman ini.',
+  notFoundTitle: 'Halaman Tidak Ditemukan',
+  notFoundMessage:
+    'Maaf, kami tidak dapat menemukan halaman yang Anda cari. Halaman mungkin telah dipindahkan atau dihapus.',
   reloadPage: 'Muat Ulang Halaman',
   backHome: 'Kembali ke Dashboard',
   clearCacheReload: 'Bersihkan Cache & Muat Ulang',
   technicalDetails: 'Detail Teknis Error',
   copyError: 'Salin Detail Error',
-  errorCopied: 'Detail error berhasil disalin ke clipboard',
+  errorCopied: 'Detail error berhasil disalin ke clipboard'
 }

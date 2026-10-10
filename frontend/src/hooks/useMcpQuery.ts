@@ -6,7 +6,7 @@ import { useTranslation } from '@/i18n'
 import type { APIToken, GenerateTokenResponse } from '@/types'
 
 export const mcpKeys = {
-  all: ['mcp-tokens'] as const,
+  all: ['mcp-tokens'] as const
 }
 
 export const useMcpTokens = () =>
@@ -15,7 +15,7 @@ export const useMcpTokens = () =>
     queryFn: async (): Promise<APIToken[]> => {
       const res = await mcpApi.listTokens()
       return res.data || []
-    },
+    }
   })
 
 export const useCreateMcpToken = () => {
@@ -34,7 +34,7 @@ export const useCreateMcpToken = () => {
     },
     onError: (err) => {
       toast.error(err)
-    },
+    }
   })
 }
 
@@ -53,6 +53,6 @@ export const useDeleteMcpToken = () => {
     },
     onError: (err) => {
       toast.error(err)
-    },
+    }
   })
 }

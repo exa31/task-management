@@ -1,13 +1,15 @@
 export const mcp = {
   title: 'Integrasi Model Context Protocol (MCP)',
-  subtitle: 'Hubungkan asisten AI favorit Anda (Google Antigravity, Cursor, atau Claude) langsung ke Tugas & Catatan Anda.',
+  subtitle:
+    'Hubungkan asisten AI favorit Anda (Google Antigravity, Cursor, atau Claude) langsung ke Tugas & Catatan Anda.',
   capabilitiesTitle: 'Kemampuan AI yang Didukung via Server MCP:',
   createIdeaNote: 'Catat inspirasi saat percakapan AI berlangsung',
   convertNoteToTask: 'Tingkatkan ide mentah menjadi tugas aktif',
   createTaskAndList: 'Buat dan telusuri daftar tugas',
   logProgress: 'Catat riwayat kemajuan secara otomatis',
   newTokenCreated: 'Token Baru Dibuat: "{name}"',
-  copyWarning: 'Salin token ini sekarang. Demi keamanan dan privasi, rahasia token ini tidak akan ditampilkan lagi!',
+  copyWarning:
+    'Salin token ini sekarang. Demi keamanan dan privasi, rahasia token ini tidak akan ditampilkan lagi!',
   copyToken: 'Salin Token',
   generatePatTitle: 'Buat Personal Access Token (PAT)',
   tokenNameLabel: 'Nama Token / Deskripsi Perangkat',
@@ -20,12 +22,13 @@ export const mcp = {
   noTokensYet: 'Belum ada token aktif yang dibuat.',
   failedLoadTokens: 'Gagal memuat token MCP',
   revokeConfirmHeader: 'Cabut Personal Access Token',
-  revokeConfirmMessage: 'Apakah Anda yakin ingin mencabut "{name}"? Klien AI yang menggunakannya akan langsung kehilangan akses.',
+  revokeConfirmMessage:
+    'Apakah Anda yakin ingin mencabut "{name}"? Klien AI yang menggunakannya akan langsung kehilangan akses.',
   tokenCreatedSuccess: 'Personal access token berhasil dibuat',
   tokenRevokedSuccess: 'Personal access token berhasil dicabut',
   snippetsTitle: 'Snippet Konfigurasi Siap Pakai',
   antigravityConfig: '1. Konfigurasi Google Antigravity IDE (mcp_config.json)',
   cursorConfig: '2. Konfigurasi Cursor IDE (.cursor/mcp.json)',
   claudeConfig: '3. Konfigurasi Claude Desktop (claude_desktop_config.json)',
-  copyJson: 'Salin JSON',
+  copyJson: 'Salin JSON'
 }

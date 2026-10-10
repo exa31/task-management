@@ -11,6 +11,7 @@ import (
 	"golang/internal/module/mcp"
 	"golang/internal/module/note"
 	"golang/internal/module/project"
+	"golang/internal/module/reminder"
 	"golang/internal/module/task"
 	usermodule "golang/internal/module/user"
 	"golang/pkg/auth"
@@ -24,16 +25,17 @@ import (
 
 // Router bundles module dependencies and registers routes under a base group.
 type Router struct {
-	DB         *database.PostgresDB
-	JWTService *auth.JWTService
-	Hub        *realtime.Hub // nil when the realtime feature is disabled
-	Config     *config.Config
-	Storage    storage.Storage
+	DB              *database.PostgresDB
+	JWTService      *auth.JWTService
+	Hub             *realtime.Hub // nil when the realtime feature is disabled
+	Config          *config.Config
+	Storage         storage.Storage
+	ReminderService reminder.Service
 }
 
 // NewRouter builds the module router.
-func NewRouter(db *database.PostgresDB, jwtService *auth.JWTService, hub *realtime.Hub, cfg *config.Config, stor storage.Storage) *Router {
-	return &Router{DB: db, JWTService: jwtService, Hub: hub, Config: cfg, Storage: stor}
+func NewRouter(db *database.PostgresDB, jwtService *auth.JWTService, hub *realtime.Hub, cfg *config.Config, stor storage.Storage, reminderSvc reminder.Service) *Router {
+	return &Router{DB: db, JWTService: jwtService, Hub: hub, Config: cfg, Storage: stor, ReminderService: reminderSvc}
 }
 
 // Register mounts every enabled module on the API router.
@@ -41,6 +43,7 @@ func (r *Router) Register(api fiber.Router) {
 	r.registerAuth(api)
 	r.registerUsers(api)
 	r.registerNotesAndTasks(api)
+	r.registerReminders(api)
 	r.registerProtected(api)
 	if r.Hub != nil {
 		r.registerRealtime(api)
@@ -215,3 +218,30 @@ func (r *Router) registerSSERoutes(rt fiber.Router) {
 	sse.Post("/send", authMiddleware.AuthMiddleware(r.JWTService), sseHandler.SendToUser)
 	sse.Get("/stats", authMiddleware.AuthMiddleware(r.JWTService), sseHandler.GetStats)
 }
+
+func (r *Router) registerReminders(api fiber.Router) {
+	if r.ReminderService == nil {
+		return
+	}
+	webhookSecret := ""
+	if r.Config != nil {
+		webhookSecret = r.Config.Reminder.WebhookSecret
+	}
+	handler := reminder.NewHandler(r.ReminderService, webhookSecret)
+	reminders := api.Group("/reminders")
+
+	// External Asynq worker webhook trigger endpoint (Public/Secret-protected)
+	reminders.Post("/trigger", handler.Trigger)
+
+	// User-authenticated endpoints
+	reminders.Use(authMiddleware.AuthMiddleware(r.JWTService))
+	reminders.Post("/", handler.Create)
+	reminders.Get("/", handler.List)
+	reminders.Get("/:id", handler.GetByID)
+	reminders.Put("/:id", handler.Update)
+	reminders.Delete("/:id", handler.Delete)
+	reminders.Post("/:id/snooze", handler.Snooze)
+	reminders.Post("/:id/dismiss", handler.Dismiss)
+	reminders.Post("/device-token", handler.RegisterDeviceToken)
+}
+

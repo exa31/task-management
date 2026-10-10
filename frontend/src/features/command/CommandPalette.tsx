@@ -13,7 +13,7 @@ export const CommandPalette: React.FC = () => {
     openCreateTaskModal,
     openCreateNoteModal,
     theme,
-    toggleTheme,
+    toggleTheme
   } = useUIStore()
   const { openDrawer, setActiveView } = useTaskStore()
   const { data: rawTasks } = useTasks()
@@ -58,7 +58,7 @@ export const CommandPalette: React.FC = () => {
       run: () => {
         closeCommandPalette()
         openCreateTaskModal()
-      },
+      }
     },
     {
       id: 'create-note',
@@ -68,7 +68,7 @@ export const CommandPalette: React.FC = () => {
       run: () => {
         closeCommandPalette()
         openCreateNoteModal()
-      },
+      }
     },
     {
       id: 'switch-board',
@@ -79,7 +79,7 @@ export const CommandPalette: React.FC = () => {
         closeCommandPalette()
         setActiveView('board')
         navigate('/tasks')
-      },
+      }
     },
     {
       id: 'open-projects',
@@ -89,7 +89,7 @@ export const CommandPalette: React.FC = () => {
       run: () => {
         closeCommandPalette()
         navigate('/projects')
-      },
+      }
     },
     {
       id: 'mcp-settings',
@@ -99,7 +99,7 @@ export const CommandPalette: React.FC = () => {
       run: () => {
         closeCommandPalette()
         navigate('/mcp-settings')
-      },
+      }
     },
     {
       id: 'toggle-theme',
@@ -109,7 +109,7 @@ export const CommandPalette: React.FC = () => {
       run: () => {
         toggleTheme()
         closeCommandPalette()
-      },
+      }
     },
     {
       id: 'switch-language',
@@ -119,8 +119,8 @@ export const CommandPalette: React.FC = () => {
       run: () => {
         toggleLocale()
         closeCommandPalette()
-      },
-    },
+      }
+    }
   ]
 
   const trimmedQuery = query.trim().toLowerCase()
@@ -186,9 +186,7 @@ export const CommandPalette: React.FC = () => {
                       <i className={action.icon} />
                       {action.title}
                     </span>
-                    <span className="text-[10px] text-slate-500 font-mono">
-                      {action.badge}
-                    </span>
+                    <span className="text-[10px] text-slate-500 font-mono">{action.badge}</span>
                   </button>
                 ))}
               </div>

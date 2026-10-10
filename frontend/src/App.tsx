@@ -22,6 +22,10 @@ function App() {
       pageTitle = t('nav.dashboard')
     } else if (path.startsWith('/tasks')) {
       pageTitle = t('nav.tasks')
+    } else if (path.startsWith('/projects')) {
+      pageTitle = t('nav.projects')
+    } else if (path.startsWith('/reminders')) {
+      pageTitle = t('nav.reminders')
     } else if (path.startsWith('/notes')) {
       pageTitle = t('nav.notes')
     } else if (path.startsWith('/mcp-settings')) {

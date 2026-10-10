@@ -18,14 +18,14 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
     super(props)
     this.state = {
       hasError: false,
-      error: null,
+      error: null
     }
   }
 
   static getDerivedStateFromError(error: Error): ErrorBoundaryState {
     return {
       hasError: true,
-      error,
+      error
     }
   }
 
@@ -39,7 +39,7 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
   handleReset = () => {
     this.setState({
       hasError: false,
-      error: null,
+      error: null
     })
   }
 
@@ -48,7 +48,7 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
       if (typeof this.props.fallback === 'function') {
         return this.props.fallback({
           error: this.state.error,
-          reset: this.handleReset,
+          reset: this.handleReset
         })
       }
 
@@ -56,12 +56,7 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
         return this.props.fallback
       }
 
-      return (
-        <ErrorPage
-          error={this.state.error}
-          resetErrorBoundary={this.handleReset}
-        />
-      )
+      return <ErrorPage error={this.state.error} resetErrorBoundary={this.handleReset} />
     }
 
     return this.props.children

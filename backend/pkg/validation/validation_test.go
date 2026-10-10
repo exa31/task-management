@@ -271,3 +271,23 @@ func TestBindQueryMultipleValues(t *testing.T) {
 		t.Fatalf("unexpected tags: %+v", dto.Tags)
 	}
 }
+
+func TestBindQueryWithQueryTag(t *testing.T) {
+	app := fiber.New()
+	defer func() { _ = app.Shutdown() }()
+
+	var dto struct {
+		Status string `query:"status" validate:"required,oneof=active inactive"`
+		Limit  int    `query:"limit" validate:"min=1,max=100"`
+	}
+
+	c := newCtxWithQuery(app, "status=active&limit=25")
+	defer app.ReleaseCtx(c)
+
+	if err := Default.BindQueryAndValidate(c, &dto); err != nil {
+		t.Fatalf("expected query tag binding OK, got error: %v", err)
+	}
+	if dto.Status != "active" || dto.Limit != 25 {
+		t.Fatalf("unexpected dto bound with query tags: %+v", dto)
+	}
+}

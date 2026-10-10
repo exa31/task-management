@@ -8,6 +8,7 @@ import { mcp } from './mcp'
 import { nav } from './nav'
 import { convertModal, noteModal, notes } from './notes'
 import { projects } from './projects'
+import { reminders } from './reminders'
 import { settings } from './settings'
 import { taskDrawer, taskModal, tasks } from './tasks'
 
@@ -21,6 +22,7 @@ export const en = {
   taskModal,
   taskDrawer,
   projects,
+  reminders,
   notes,
   noteModal,
   convertModal,
@@ -28,7 +30,7 @@ export const en = {
   commandPalette,
   login,
   settings,
-  errors,
+  errors
 }
 
 export type TranslationSchema = typeof en

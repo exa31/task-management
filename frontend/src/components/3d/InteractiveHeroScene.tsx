@@ -10,7 +10,7 @@ type KanbanViewMode = 'flow' | 'focus' | 'monolith'
 
 export const InteractiveHeroScene: React.FC<InteractiveHeroSceneProps> = ({
   isDarkMode = true,
-  className = '',
+  className = ''
 }) => {
   const containerRef = useRef<HTMLDivElement>(null)
   const [activeMode, setActiveMode] = useState<KanbanViewMode>('flow')
@@ -45,7 +45,7 @@ export const InteractiveHeroScene: React.FC<InteractiveHeroSceneProps> = ({
     const renderer = new THREE.WebGLRenderer({
       alpha: true,
       antialias: true,
-      powerPreference: 'high-performance',
+      powerPreference: 'high-performance'
     })
     renderer.setSize(width, height)
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
@@ -87,7 +87,7 @@ export const InteractiveHeroScene: React.FC<InteractiveHeroSceneProps> = ({
       emissiveIntensity: 0.3,
       roughness: 0.2,
       metalness: 0.8,
-      clearcoat: 0.5,
+      clearcoat: 0.5
     })
     const plinth = new THREE.Mesh(plinthGeo, plinthMat)
     plinth.position.y = -1.6
@@ -96,7 +96,7 @@ export const InteractiveHeroScene: React.FC<InteractiveHeroSceneProps> = ({
     const plinthEdgesGeo = new THREE.EdgesGeometry(plinthGeo)
     const plinthEdgesMat = new THREE.LineBasicMaterial({
       color: isDarkMode ? 0x334155 : 0x94a3b8,
-      linewidth: 1.5,
+      linewidth: 1.5
     })
     const plinthEdges = new THREE.LineSegments(plinthEdgesGeo, plinthEdgesMat)
     plinth.add(plinthEdges)
@@ -106,19 +106,19 @@ export const InteractiveHeroScene: React.FC<InteractiveHeroSceneProps> = ({
     const gridMat = new THREE.LineBasicMaterial({
       color: isDarkMode ? 0x1e293b : 0xcbd5e1,
       transparent: true,
-      opacity: 0.7,
+      opacity: 0.7
     })
     for (let x = -3; x <= 3; x += 1.0) {
       const g = new THREE.BufferGeometry().setFromPoints([
         new THREE.Vector3(x, -1.5, -2.0),
-        new THREE.Vector3(x, -1.5, 2.0),
+        new THREE.Vector3(x, -1.5, 2.0)
       ])
       gridLinesGroup.add(new THREE.Line(g, gridMat))
     }
     for (let z = -2; z <= 2; z += 1.0) {
       const g = new THREE.BufferGeometry().setFromPoints([
         new THREE.Vector3(-3.2, -1.5, z),
-        new THREE.Vector3(3.2, -1.5, z),
+        new THREE.Vector3(3.2, -1.5, z)
       ])
       gridLinesGroup.add(new THREE.Line(g, gridMat))
     }
@@ -135,7 +135,7 @@ export const InteractiveHeroScene: React.FC<InteractiveHeroSceneProps> = ({
         height: 2.8,
         color: isDarkMode ? 0x4338ca : 0x6366f1,
         emissive: isDarkMode ? 0x1e1b4b : 0x312e81,
-        accent: 0x818cf8,
+        accent: 0x818cf8
       },
       {
         id: 'in_progress',
@@ -144,7 +144,7 @@ export const InteractiveHeroScene: React.FC<InteractiveHeroSceneProps> = ({
         height: 3.4,
         color: isDarkMode ? 0x0284c7 : 0x0ea5e9,
         emissive: isDarkMode ? 0x082f49 : 0x0369a1,
-        accent: 0x38bdf8,
+        accent: 0x38bdf8
       },
       {
         id: 'done',
@@ -153,8 +153,8 @@ export const InteractiveHeroScene: React.FC<InteractiveHeroSceneProps> = ({
         height: 3.0,
         color: isDarkMode ? 0x047857 : 0x10b981,
         emissive: isDarkMode ? 0x022c22 : 0x065f46,
-        accent: 0x34d399,
-      },
+        accent: 0x34d399
+      }
     ]
 
     const columnMeshes: THREE.Mesh[] = []
@@ -170,7 +170,7 @@ export const InteractiveHeroScene: React.FC<InteractiveHeroSceneProps> = ({
         transmission: 0.8, // Acrylic glass appearance
         ior: 1.52,
         transparent: true,
-        opacity: 0.88,
+        opacity: 0.88
       })
       const colMesh = new THREE.Mesh(colGeo, colMat)
       colMesh.position.set(cfg.x, -1.5 + cfg.height / 2, 0)
@@ -181,7 +181,7 @@ export const InteractiveHeroScene: React.FC<InteractiveHeroSceneProps> = ({
       const edgesGeo = new THREE.EdgesGeometry(colGeo)
       const edgesMat = new THREE.LineBasicMaterial({
         color: cfg.accent,
-        linewidth: 2,
+        linewidth: 2
       })
       const edges = new THREE.LineSegments(edgesGeo, edgesMat)
       colMesh.add(edges)
@@ -193,7 +193,7 @@ export const InteractiveHeroScene: React.FC<InteractiveHeroSceneProps> = ({
         emissive: cfg.accent,
         emissiveIntensity: 0.9,
         metalness: 0.8,
-        roughness: 0.2,
+        roughness: 0.2
       })
       const topCap = new THREE.Mesh(topCapGeo, topCapMat)
       topCap.position.y = cfg.height / 2 + 0.03
@@ -235,7 +235,7 @@ export const InteractiveHeroScene: React.FC<InteractiveHeroSceneProps> = ({
       { colIdx: 1, x: 0.0, y: 2.8, z: 0.25, color: 0xec4899, accent: 0xf472b6, isFlying: true },
       // Done Cards
       { colIdx: 2, x: 2.15, y: 0.9, z: 0.15, color: 0x10b981, accent: 0x6ee7b7 },
-      { colIdx: 2, x: 2.15, y: 1.7, z: -0.1, color: 0x059669, accent: 0x34d399 },
+      { colIdx: 2, x: 2.15, y: 1.7, z: -0.1, color: 0x059669, accent: 0x34d399 }
     ]
 
     cardDefinitions.forEach((def) => {
@@ -245,7 +245,7 @@ export const InteractiveHeroScene: React.FC<InteractiveHeroSceneProps> = ({
         emissiveIntensity: 0.45,
         metalness: 0.85,
         roughness: 0.15,
-        clearcoat: 1.0,
+        clearcoat: 1.0
       })
       const cardMesh = new THREE.Mesh(cardGeo, cardMat)
       cardMesh.position.set(def.x, def.y, def.z)
@@ -277,7 +277,7 @@ export const InteractiveHeroScene: React.FC<InteractiveHeroSceneProps> = ({
         targetZ: def.z,
         isFlying: def.isFlying || false,
         flightProgress: 0,
-        colIdx: def.colIdx,
+        colIdx: def.colIdx
       })
     })
 
@@ -287,13 +287,13 @@ export const InteractiveHeroScene: React.FC<InteractiveHeroSceneProps> = ({
     const transitBeamGeo = new THREE.BufferGeometry().setFromPoints([
       new THREE.Vector3(-2.15, 2.7, 0),
       new THREE.Vector3(0.0, 3.2, 0),
-      new THREE.Vector3(2.15, 2.9, 0),
+      new THREE.Vector3(2.15, 2.9, 0)
     ])
     const transitBeamMat = new THREE.LineBasicMaterial({
       color: 0x38bdf8,
       transparent: true,
       opacity: 0.85,
-      linewidth: 2,
+      linewidth: 2
     })
     const transitBeam = new THREE.Line(transitBeamGeo, transitBeamMat)
     stageGroup.add(transitBeam)
@@ -313,7 +313,7 @@ export const InteractiveHeroScene: React.FC<InteractiveHeroSceneProps> = ({
       color: 0x6ee7b7,
       size: 0.08,
       transparent: true,
-      opacity: 0.85,
+      opacity: 0.85
     })
     const beacons = new THREE.Points(beaconGeo, beaconMat)
     stageGroup.add(beacons)
@@ -467,7 +467,10 @@ export const InteractiveHeroScene: React.FC<InteractiveHeroSceneProps> = ({
       if (isTransitioningToPreset && !isDragging) {
         baseRotationY += (targetPresetY - baseRotationY) * 0.08
         baseRotationX += (targetPresetX - baseRotationX) * 0.08
-        if (Math.abs(targetPresetY - baseRotationY) < 0.003 && Math.abs(targetPresetX - baseRotationX) < 0.003) {
+        if (
+          Math.abs(targetPresetY - baseRotationY) < 0.003 &&
+          Math.abs(targetPresetX - baseRotationX) < 0.003
+        ) {
           baseRotationY = targetPresetY
           baseRotationX = targetPresetX
           isTransitioningToPreset = false
@@ -477,8 +480,8 @@ export const InteractiveHeroScene: React.FC<InteractiveHeroSceneProps> = ({
       // Smooth inertia when drag is released (stays permanently at user's angle!)
       if (!isDragging && !isTransitioningToPreset) {
         if (Math.abs(dragVelocityX) > 0.0001 || Math.abs(dragVelocityY) > 0.0001) {
-          dragVelocityX *= 0.90
-          dragVelocityY *= 0.90
+          dragVelocityX *= 0.9
+          dragVelocityY *= 0.9
           baseRotationY += dragVelocityY
           baseRotationX = Math.max(-0.45, Math.min(0.65, baseRotationX + dragVelocityX))
         } else {

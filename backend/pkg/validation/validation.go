@@ -33,8 +33,9 @@ var Default = New()
 
 // Validator configures how request bodies are bound and validated.
 type Validator struct {
-	v *validator.Validate
-	d *schema.Decoder
+	v  *validator.Validate
+	d  *schema.Decoder
+	qd *schema.Decoder
 
 	mu sync.Mutex
 }
@@ -49,7 +50,11 @@ func New() *Validator {
 	d.IgnoreUnknownKeys(true)
 	d.SetAliasTag("json")
 
-	return &Validator{v: v, d: d}
+	qd := schema.NewDecoder()
+	qd.IgnoreUnknownKeys(true)
+	qd.SetAliasTag("query")
+
+	return &Validator{v: v, d: d, qd: qd}
 }
 
 // Engine exposes the underlying validator.Validate instance for advanced
@@ -100,8 +105,8 @@ func (v *Validator) BindAndValidate(c *fiber.Ctx, out any) error {
 	return v.Validate(out)
 }
 
-// BindQuery parses the request query string into out using its json tags as
-// the lookup names. Values are converted to their destination type (int,
+// BindQuery parses the request query string into out using its query or json tags
+// as the lookup names. Values are converted to their destination type (int,
 // float, bool, slices, ...) exactly like form binding, and an unparseable
 // value returns a 400 bad request error.
 func (v *Validator) BindQuery(c *fiber.Ctx, out any) error {
@@ -110,7 +115,15 @@ func (v *Validator) BindQuery(c *fiber.Ctx, out any) error {
 		query[string(k)] = append(query[string(k)], string(val))
 	})
 
-	if err := v.decodeForm(out, query); err != nil {
+	v.mu.Lock()
+	defer v.mu.Unlock()
+
+	if v.qd != nil {
+		if err := v.qd.Decode(out, query); err != nil {
+			return customErrors.BadRequest("Unable to parse query string: " + err.Error())
+		}
+	}
+	if err := v.d.Decode(out, query); err != nil {
 		return customErrors.BadRequest("Unable to parse query string: " + err.Error())
 	}
 	return nil

@@ -89,14 +89,16 @@ export const useUIStore = create<UIState>((set) => ({
 
   openCommandPalette: () => set({ isCommandPaletteOpen: true }),
   closeCommandPalette: () => set({ isCommandPaletteOpen: false }),
-  toggleCommandPalette: () => set((state) => ({ isCommandPaletteOpen: !state.isCommandPaletteOpen })),
+  toggleCommandPalette: () =>
+    set((state) => ({ isCommandPaletteOpen: !state.isCommandPaletteOpen })),
 
   openCreateTaskModal: (initialProjectId?: number | null | unknown) =>
     set({
       isCreateTaskModalOpen: true,
-      createTaskInitialProjectId: typeof initialProjectId === 'number' ? initialProjectId : null,
+      createTaskInitialProjectId: typeof initialProjectId === 'number' ? initialProjectId : null
     }),
-  closeCreateTaskModal: () => set({ isCreateTaskModalOpen: false, createTaskInitialProjectId: null }),
+  closeCreateTaskModal: () =>
+    set({ isCreateTaskModalOpen: false, createTaskInitialProjectId: null }),
 
   openCreateNoteModal: () => set({ isCreateNoteModalOpen: true }),
   closeCreateNoteModal: () => set({ isCreateNoteModalOpen: false }),
@@ -123,5 +125,5 @@ export const useUIStore = create<UIState>((set) => ({
       const nextLocale = state.locale === 'en' ? 'id' : 'en'
       saveLocale(nextLocale)
       return { locale: nextLocale }
-    }),
+    })
 }))

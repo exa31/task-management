@@ -18,18 +18,18 @@ const SEVERITY_CONFIG = {
   danger: {
     icon: 'pi-trash',
     iconBg: 'bg-rose-500/10 text-rose-400 border-rose-500/20',
-    confirmBtn: 'bg-rose-600 hover:bg-rose-500 text-white shadow-rose-950/50',
+    confirmBtn: 'bg-rose-600 hover:bg-rose-500 text-white shadow-rose-950/50'
   },
   warning: {
     icon: 'pi-exclamation-triangle',
     iconBg: 'bg-amber-500/10 text-amber-400 border-amber-500/20',
-    confirmBtn: 'bg-amber-600 hover:bg-amber-500 text-white shadow-amber-950/50',
+    confirmBtn: 'bg-amber-600 hover:bg-amber-500 text-white shadow-amber-950/50'
   },
   info: {
     icon: 'pi-info-circle',
     iconBg: 'bg-indigo-500/10 text-indigo-400 border-indigo-500/20',
-    confirmBtn: 'bg-indigo-600 hover:bg-indigo-500 text-white shadow-indigo-950/50',
-  },
+    confirmBtn: 'bg-indigo-600 hover:bg-indigo-500 text-white shadow-indigo-950/50'
+  }
 }
 
 export const ConfirmDialog: React.FC<CustomConfirmDialogProps> = ({
@@ -41,7 +41,7 @@ export const ConfirmDialog: React.FC<CustomConfirmDialogProps> = ({
   severity = 'danger',
   isLoading = false,
   onConfirm,
-  onCancel,
+  onCancel
 }) => {
   useEffect(() => {
     if (!isOpen) return

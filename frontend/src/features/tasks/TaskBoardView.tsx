@@ -10,18 +10,12 @@ const COLUMNS: { id: TaskStatus; color: string }[] = [
   { id: 'todo', color: 'border-blue-900/50' },
   { id: 'in_progress', color: 'border-amber-900/50' },
   { id: 'review', color: 'border-purple-900/50' },
-  { id: 'done', color: 'border-emerald-900/50' },
+  { id: 'done', color: 'border-emerald-900/50' }
 ]
 
 export const TaskBoardView: React.FC = () => {
-  const {
-    openDrawer,
-    filterPriority,
-    filterTag,
-    filterProject,
-    filterFocusOnly,
-    searchQuery,
-  } = useTaskStore()
+  const { openDrawer, filterPriority, filterTag, filterProject, filterFocusOnly, searchQuery } =
+    useTaskStore()
   const { t, locale } = useTranslation()
 
   const filterParams: TaskFilterParams = useMemo(
@@ -32,7 +26,7 @@ export const TaskBoardView: React.FC = () => {
       tag: filterTag || undefined,
       project_id: filterProject || undefined,
       is_focus: filterFocusOnly ? true : undefined,
-      search: searchQuery || undefined,
+      search: searchQuery || undefined
     }),
     [filterPriority, filterTag, filterProject, filterFocusOnly, searchQuery]
   )
@@ -108,8 +102,8 @@ export const TaskBoardView: React.FC = () => {
                     col.id === 'done'
                       ? 'bg-emerald-500'
                       : col.id === 'in_progress'
-                      ? 'bg-amber-500'
-                      : 'bg-slate-400 dark:bg-slate-500'
+                        ? 'bg-amber-500'
+                        : 'bg-slate-400 dark:bg-slate-500'
                   }`}
                 />
                 {colTitle}
@@ -179,9 +173,9 @@ export const TaskBoardView: React.FC = () => {
                         <span
                           className="inline-flex items-center gap-0.5 px-1 py-0.2 rounded text-[9px] font-semibold border shadow-2xs"
                           style={{
-                            backgroundColor: `${task.project_color || '#6366f1'  }15`,
-                            borderColor: `${task.project_color || '#6366f1'  }35`,
-                            color: task.project_color || '#6366f1',
+                            backgroundColor: `${task.project_color || '#6366f1'}15`,
+                            borderColor: `${task.project_color || '#6366f1'}35`,
+                            color: task.project_color || '#6366f1'
                           }}
                         >
                           📁 {task.project_name}
@@ -193,10 +187,13 @@ export const TaskBoardView: React.FC = () => {
                     </div>
                     {task.due_date && (
                       <span>
-                        {new Date(task.due_date).toLocaleDateString(locale === 'id' ? 'id-ID' : 'en-US', {
-                          day: 'numeric',
-                          month: 'short',
-                        })}
+                        {new Date(task.due_date).toLocaleDateString(
+                          locale === 'id' ? 'id-ID' : 'en-US',
+                          {
+                            day: 'numeric',
+                            month: 'short'
+                          }
+                        )}
                       </span>
                     )}
                   </div>

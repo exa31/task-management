@@ -1,5 +1,6 @@
 import { useLocation, useNavigate } from 'react-router-dom'
 
+import { NotificationBell } from '@/features/reminder'
 import { useTranslation } from '@/i18n'
 import { useAuthStore, useUIStore } from '@/stores'
 
@@ -19,6 +20,8 @@ export default function TopNav({ isSidebarOpen, toggleSidebar }: TopNavProps) {
     const path = location.pathname
     if (path === '/') return t('nav.dashboard')
     if (path.startsWith('/tasks')) return t('nav.tasks')
+    if (path.startsWith('/projects')) return t('nav.projects')
+    if (path.startsWith('/reminders')) return t('nav.reminders')
     if (path.startsWith('/notes')) return t('nav.notes')
     if (path.startsWith('/mcp-settings')) return t('nav.mcp')
     if (path.startsWith('/users')) return t('nav.users')
@@ -43,7 +46,9 @@ export default function TopNav({ isSidebarOpen, toggleSidebar }: TopNavProps) {
         </button>
 
         <div className="hidden sm:flex items-center text-xs text-slate-500 dark:text-slate-400">
-          <span className="text-slate-400 dark:text-slate-500 font-mono">{t('nav.workspace').toLowerCase()}</span>
+          <span className="text-slate-400 dark:text-slate-500 font-mono">
+            {t('nav.workspace').toLowerCase()}
+          </span>
           <i className="pi pi-chevron-right text-[9px] mx-2 text-slate-400 dark:text-slate-600" />
           <span className="text-slate-800 dark:text-slate-200 font-medium">{getBreadcrumb()}</span>
         </div>
@@ -64,6 +69,9 @@ export default function TopNav({ isSidebarOpen, toggleSidebar }: TopNavProps) {
           </kbd>
         </button>
 
+        {/* Notification Bell */}
+        <NotificationBell />
+
         {/* Language Switcher */}
         <button
           onClick={toggleLocale}
@@ -82,7 +90,9 @@ export default function TopNav({ isSidebarOpen, toggleSidebar }: TopNavProps) {
           className="p-1.5 rounded-lg text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 hover:bg-slate-100 dark:hover:bg-slate-900 transition-colors cursor-pointer"
           title={theme === 'dark' ? t('nav.lightMode') : t('nav.darkMode')}
         >
-          <i className={`pi ${theme === 'dark' ? 'pi-sun text-amber-400' : 'pi-moon text-indigo-500'} text-xs`} />
+          <i
+            className={`pi ${theme === 'dark' ? 'pi-sun text-amber-400' : 'pi-moon text-indigo-500'} text-xs`}
+          />
         </button>
 
         {/* Settings button */}
@@ -105,12 +115,16 @@ export default function TopNav({ isSidebarOpen, toggleSidebar }: TopNavProps) {
               title={t('nav.profileSettings')}
             >
               <img
-                src={user.avatar_url || `https://api.dicebear.com/7.x/bottts/svg?seed=${user.email}`}
+                src={
+                  user.avatar_url || `https://api.dicebear.com/7.x/bottts/svg?seed=${user.email}`
+                }
                 alt={user.name}
                 className="w-7 h-7 rounded-full bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 object-cover"
               />
               <div className="hidden md:block text-left">
-                <p className="text-xs font-medium text-slate-800 dark:text-slate-200 leading-none">{user.name}</p>
+                <p className="text-xs font-medium text-slate-800 dark:text-slate-200 leading-none">
+                  {user.name}
+                </p>
                 <p className="text-[10px] font-mono text-slate-400 dark:text-slate-500 leading-none mt-0.5">
                   {t('nav.viaProvider', { provider: user.provider || 'OAuth' })}
                 </p>

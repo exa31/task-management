@@ -10,11 +10,7 @@ interface AvatarCropModalProps {
   onSuccess?: (avatarUrl: string) => void
 }
 
-export const AvatarCropModal: React.FC<AvatarCropModalProps> = ({
-  isOpen,
-  onClose,
-  onSuccess,
-}) => {
+export const AvatarCropModal: React.FC<AvatarCropModalProps> = ({ isOpen, onClose, onSuccess }) => {
   const { t } = useTranslation()
   const { updateUser } = useAuthStore()
   const fileInputRef = useRef<HTMLInputElement>(null)
@@ -102,13 +98,7 @@ export const AvatarCropModal: React.FC<AvatarCropModalProps> = ({
     ctx.imageSmoothingEnabled = true
     ctx.imageSmoothingQuality = 'high'
 
-    ctx.drawImage(
-      img,
-      centerX - renderW / 2,
-      centerY - renderH / 2,
-      renderW,
-      renderH
-    )
+    ctx.drawImage(img, centerX - renderW / 2, centerY - renderH / 2, renderW, renderH)
     ctx.restore()
   }, [zoom, position])
 
@@ -139,7 +129,7 @@ export const AvatarCropModal: React.FC<AvatarCropModalProps> = ({
     if (!isDragging) return
     setPosition({
       x: e.clientX - dragStart.x,
-      y: e.clientY - dragStart.y,
+      y: e.clientY - dragStart.y
     })
   }
 
@@ -165,7 +155,7 @@ export const AvatarCropModal: React.FC<AvatarCropModalProps> = ({
       }
 
       const file = new File([blob], `avatar-${Date.now()}.webp`, {
-        type: 'image/webp',
+        type: 'image/webp'
       })
 
       const res = await authApi.uploadAvatar(file)
@@ -196,7 +186,9 @@ export const AvatarCropModal: React.FC<AvatarCropModalProps> = ({
               <i className="pi pi-camera" />
             </div>
             <div>
-              <h2 className="text-base font-semibold leading-none">{t('settings.avatarModal.title')}</h2>
+              <h2 className="text-base font-semibold leading-none">
+                {t('settings.avatarModal.title')}
+              </h2>
               <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
                 {t('settings.avatarModal.subtitle')}
               </p>
@@ -238,7 +230,9 @@ export const AvatarCropModal: React.FC<AvatarCropModalProps> = ({
               <p className="mt-3 text-sm font-medium text-slate-700 dark:text-slate-300">
                 {t('settings.avatarModal.uploadPrompt')}
               </p>
-              <p className="text-xs text-slate-400 mt-1">{t('settings.avatarModal.supportedFormats')}</p>
+              <p className="text-xs text-slate-400 mt-1">
+                {t('settings.avatarModal.supportedFormats')}
+              </p>
             </div>
           ) : (
             <div className="w-full flex flex-col items-center">
@@ -251,10 +245,7 @@ export const AvatarCropModal: React.FC<AvatarCropModalProps> = ({
                 onMouseLeave={handleMouseUp}
               >
                 {/* Offscreen Canvas positioned to show live preview */}
-                <canvas
-                  ref={previewCanvasRef}
-                  className="w-full h-full object-cover"
-                />
+                <canvas ref={previewCanvasRef} className="w-full h-full object-cover" />
 
                 {/* Circular overlay mask guide */}
                 <div className="absolute inset-0 pointer-events-none rounded-full border-2 border-white/80 shadow-[0_0_0_9999px_rgba(0,0,0,0.6)]" />

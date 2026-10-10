@@ -21,7 +21,7 @@ export const landing: typeof EnLanding = {
     stat3Value: 'MCP 2.0',
     stat3Label: 'Protokol AI Agent',
     stat4Value: 'OAuth 2.0',
-    stat4Label: 'Google & Apple Siap',
+    stat4Label: 'Google & Apple Siap'
   },
 
   features: {
@@ -44,7 +44,7 @@ export const landing: typeof EnLanding = {
       'Dibangun dengan React 19, Tailwind CSS v4, Go Fiber, dan Redis. Respon antarmuka secepat kilat dengan sinkronisasi cloud real-time.',
     securityTitle: 'Keamanan Multi-Tenant Terisolasi',
     securityDesc:
-      'Dukungan Google GIS One-Tap, Apple Sign-In dengan private relay email, validasi kriptografis token, serta isolasi penuh antar user.',
+      'Dukungan Google GIS One-Tap, Apple Sign-In dengan private relay email, validasi kriptografis token, serta isolasi penuh antar user.'
   },
 
   comparison: {
@@ -67,7 +67,7 @@ export const landing: typeof EnLanding = {
     row4Hub: 'Full Cmd+K Command Palette cepat',
     row5Feature: 'Desain Minimalis Bebas Distraksi',
     row5Trad: 'Penuh form rumit dan bloat enterprise',
-    row5Hub: 'Gaya dark mode Linear & Raycast yang elegan',
+    row5Hub: 'Gaya dark mode Linear & Raycast yang elegan'
   },
 
   mcpShowcase: {
@@ -75,19 +75,21 @@ export const landing: typeof EnLanding = {
     subtitle:
       'Sambungkan Cursor, Antigravity, atau Claude Code ke workspace TaskHub kamu menggunakan konfigurasi MCP server native.',
     copied: 'Konfigurasi berhasil disalin ke clipboard!',
-    copyButton: 'Salin Konfigurasi',
+    copyButton: 'Salin Konfigurasi'
   },
 
   ctaBanner: {
     title: 'Siap Tingkatkan Kecepatan Engineering Tim Kamu?',
-    subtitle: 'Masuk dengan Google atau Apple, atau coba langsung sandbox demo interaktif tanpa konfigurasi apa pun.',
+    subtitle:
+      'Masuk dengan Google atau Apple, atau coba langsung sandbox demo interaktif tanpa konfigurasi apa pun.',
     button: 'Mulai Gratis Sekarang',
-    demoButton: 'Buka Demo Sandbox',
+    demoButton: 'Buka Demo Sandbox'
   },
 
   footer: {
-    tagline: 'Developer Task & MCP AI Workspace. Dibangun untuk kecepatan software engineering modern.',
+    tagline:
+      'Developer Task & MCP AI Workspace. Dibangun untuk kecepatan software engineering modern.',
     status: 'Semua Sistem Beroperasi Normal',
-    copyright: '© {year} TaskHub. Hak cipta dilindungi.',
-  },
+    copyright: '© {year} TaskHub. Hak cipta dilindungi.'
+  }
 }

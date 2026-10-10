@@ -1,6 +1,7 @@
 export const mcp = {
   title: 'Model Context Protocol (MCP) Integration',
-  subtitle: 'Connect your favorite AI agent (Google Antigravity, Cursor, or Claude) directly to your Tasks & Notes.',
+  subtitle:
+    'Connect your favorite AI agent (Google Antigravity, Cursor, or Claude) directly to your Tasks & Notes.',
   capabilitiesTitle: 'AI Capabilities Supported via MCP Server:',
   createIdeaNote: 'Capture ideas seamlessly during agent conversations',
   convertNoteToTask: 'Promote raw notes to actionable tasks with steps',
@@ -20,12 +21,13 @@ export const mcp = {
   noTokensYet: 'No active personal access tokens found.',
   failedLoadTokens: 'Failed to load MCP tokens',
   revokeConfirmHeader: 'Revoke Personal Access Token',
-  revokeConfirmMessage: 'Are you sure you want to revoke "{name}"? Any AI agent using this token will lose access immediately.',
+  revokeConfirmMessage:
+    'Are you sure you want to revoke "{name}"? Any AI agent using this token will lose access immediately.',
   tokenCreatedSuccess: 'Personal access token generated successfully',
   tokenRevokedSuccess: 'Personal access token revoked successfully',
   snippetsTitle: 'Ready-to-Copy Configuration Snippets',
   antigravityConfig: '1. Google Antigravity IDE Configuration (mcp_config.json)',
   cursorConfig: '2. Cursor IDE Configuration (.cursor/mcp.json)',
   claudeConfig: '3. Claude Desktop Configuration (claude_desktop_config.json)',
-  copyJson: 'Copy JSON',
+  copyJson: 'Copy JSON'
 }

@@ -1,7 +1,9 @@
+import { Calendar } from 'primereact/calendar'
 import React, { useEffect, useState } from 'react'
 
 import { getLocalizedErrorMessage } from '@/api'
 import { confirmDialog } from '@/components'
+import { TaskReminderSection } from '@/features/reminder'
 import {
   useAddSubtask,
   useDeleteSubtask,
@@ -11,7 +13,7 @@ import {
   useTask,
   useToggleFocus,
   useToggleSubtask,
-  useUpdateTask,
+  useUpdateTask
 } from '@/hooks'
 import { useTranslation } from '@/i18n'
 import { useTaskStore } from '@/stores'
@@ -71,8 +73,8 @@ export const TaskDrawer: React.FC = () => {
           title: title.trim(),
           description,
           status,
-          priority,
-        },
+          priority
+        }
       })
     } catch (err) {
       setErrorMsg(getLocalizedErrorMessage(err, t))
@@ -84,7 +86,7 @@ export const TaskDrawer: React.FC = () => {
     if (!newSubtaskTitle.trim()) return
     await addSubtaskMutation.mutateAsync({
       taskId: task.id,
-      title: newSubtaskTitle.trim(),
+      title: newSubtaskTitle.trim()
     })
     setNewSubtaskTitle('')
   }
@@ -96,8 +98,8 @@ export const TaskDrawer: React.FC = () => {
       id: task.id,
       payload: {
         progress_note: newProgressNote.trim(),
-        status,
-      },
+        status
+      }
     })
     setNewProgressNote('')
   }
@@ -114,14 +116,14 @@ export const TaskDrawer: React.FC = () => {
       accept: async () => {
         await deleteTaskMutation.mutateAsync(task.id)
         closeDrawer()
-      },
+      }
     })
   }
 
-  const handleDeleteSubtask = (subtaskId: number, title: string) => {
+  const handleDeleteSubtask = (subtaskId: number, subtaskTitle: string) => {
     confirmDialog({
       header: t('taskDrawer.deleteSubtaskConfirmHeader'),
-      message: t('taskDrawer.deleteSubtaskConfirmMessage', { title }),
+      message: t('taskDrawer.deleteSubtaskConfirmMessage', { title: subtaskTitle }),
       icon: 'pi pi-trash text-rose-500',
       defaultFocus: 'reject',
       acceptClassName: 'p-button-danger',
@@ -130,9 +132,9 @@ export const TaskDrawer: React.FC = () => {
       accept: () => {
         deleteSubtaskMutation.mutate({
           taskId: task.id,
-          subtaskId,
+          subtaskId
         })
-      },
+      }
     })
   }
 
@@ -141,18 +143,18 @@ export const TaskDrawer: React.FC = () => {
       {/* Backdrop */}
       <div
         onClick={closeDrawer}
-        className="fixed inset-0 bg-slate-950/40 dark:bg-slate-950/70 backdrop-blur-sm transition-opacity"
+        className="fixed inset-0 bg-slate-950/40 dark:bg-slate-950/70 backdrop-blur-sm transition-opacity cursor-pointer"
       />
 
       {/* Drawer Panel */}
-      <div className="fixed inset-y-0 right-0 max-w-full flex pl-10">
-        <div className="w-screen max-w-lg bg-white dark:bg-slate-900 border-l border-slate-200 dark:border-slate-800 shadow-2xl flex flex-col text-slate-900 dark:text-slate-100 animate-slide-left">
+      <div className="fixed inset-y-0 right-0 max-w-full flex pl-10 pointer-events-none">
+        <div className="w-screen max-w-lg bg-white dark:bg-slate-900 border-l border-slate-200 dark:border-slate-800 shadow-2xl flex flex-col text-slate-900 dark:text-slate-100 animate-slide-left pointer-events-auto">
           {/* Header */}
           <div className="flex items-center justify-between p-4 border-b border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950/50">
             <div className="flex items-center gap-2">
               <button
                 onClick={() => toggleFocusMutation.mutate(task.id)}
-                className={`p-1.5 rounded-lg border transition-colors ${
+                className={`p-1.5 rounded-lg border transition-colors cursor-pointer ${
                   task.is_focus
                     ? 'border-amber-500/40 bg-amber-500/10 text-amber-500'
                     : 'border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-400 hover:text-amber-500'
@@ -170,14 +172,14 @@ export const TaskDrawer: React.FC = () => {
               <button
                 onClick={handleDelete}
                 disabled={deleteTaskMutation.isPending}
-                className="p-1.5 rounded-lg hover:bg-rose-50 dark:hover:bg-rose-950/50 text-slate-400 hover:text-rose-500 dark:hover:text-rose-400 cursor-pointer"
+                className="p-1.5 rounded-lg hover:bg-rose-50 dark:hover:bg-rose-950/50 text-slate-400 hover:text-rose-500 dark:hover:text-rose-400 cursor-pointer transition-colors"
                 title={t('taskDrawer.deleteTask')}
               >
                 <i className="pi pi-trash text-xs" />
               </button>
               <button
                 onClick={closeDrawer}
-                className="p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 cursor-pointer"
+                className="p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 cursor-pointer transition-colors"
                 title={t('taskDrawer.closeEsc')}
               >
                 <i className="pi pi-times text-xs" />
@@ -194,14 +196,14 @@ export const TaskDrawer: React.FC = () => {
                 <button
                   type="button"
                   onClick={() => setErrorMsg(null)}
-                  className="text-rose-500/70 hover:text-rose-500"
+                  className="text-rose-500/70 hover:text-rose-500 cursor-pointer"
                 >
                   <i className="pi pi-times text-xs" />
                 </button>
               </div>
             )}
 
-            {/* Controls: Status & Priority */}
+            {/* Controls: Status, Priority, Due Date & Project */}
             <div className="grid grid-cols-2 gap-3 p-3 rounded-xl bg-slate-50 dark:bg-slate-950/60 border border-slate-200 dark:border-slate-800">
               <div>
                 <label className="block text-[11px] font-medium text-slate-600 dark:text-slate-400 mb-1">
@@ -214,13 +216,38 @@ export const TaskDrawer: React.FC = () => {
                     setStatus(next)
                     updateTaskMutation.mutate({ id: task.id, payload: { status: next } })
                   }}
-                  className="w-full rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-2.5 py-1.5 text-xs text-slate-800 dark:text-slate-200 focus:border-indigo-500 focus:outline-none"
+                  className="w-full rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-2.5 py-1.5 text-xs text-slate-800 dark:text-slate-200 focus:border-indigo-500 focus:outline-none transition-colors"
                 >
-                  <option value="backlog" className="bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100">{t('tasks.status.backlog')}</option>
-                  <option value="todo" className="bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100">{t('tasks.status.todo')}</option>
-                  <option value="in_progress" className="bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100">{t('tasks.status.in_progress')}</option>
-                  <option value="review" className="bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100">{t('tasks.status.review')}</option>
-                  <option value="done" className="bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100">{t('tasks.status.done')}</option>
+                  <option
+                    value="backlog"
+                    className="bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100"
+                  >
+                    {t('tasks.status.backlog')}
+                  </option>
+                  <option
+                    value="todo"
+                    className="bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100"
+                  >
+                    {t('tasks.status.todo')}
+                  </option>
+                  <option
+                    value="in_progress"
+                    className="bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100"
+                  >
+                    {t('tasks.status.in_progress')}
+                  </option>
+                  <option
+                    value="review"
+                    className="bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100"
+                  >
+                    {t('tasks.status.review')}
+                  </option>
+                  <option
+                    value="done"
+                    className="bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100"
+                  >
+                    {t('tasks.status.done')}
+                  </option>
                 </select>
               </div>
 
@@ -235,46 +262,97 @@ export const TaskDrawer: React.FC = () => {
                     setPriority(next)
                     updateTaskMutation.mutate({ id: task.id, payload: { priority: next } })
                   }}
-                  className="w-full rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-2.5 py-1.5 text-xs text-slate-800 dark:text-slate-200 focus:border-indigo-500 focus:outline-none"
+                  className="w-full rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-2.5 py-1.5 text-xs text-slate-800 dark:text-slate-200 focus:border-indigo-500 focus:outline-none transition-colors"
                 >
-                  <option value="low" className="bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100">{t('tasks.priority.low')}</option>
-                  <option value="medium" className="bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100">{t('tasks.priority.medium')}</option>
-                  <option value="high" className="bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100">{t('tasks.priority.high')}</option>
-                  <option value="urgent" className="bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100">{t('tasks.priority.urgent')}</option>
+                  <option
+                    value="low"
+                    className="bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100"
+                  >
+                    {t('tasks.priority.low')}
+                  </option>
+                  <option
+                    value="medium"
+                    className="bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100"
+                  >
+                    {t('tasks.priority.medium')}
+                  </option>
+                  <option
+                    value="high"
+                    className="bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100"
+                  >
+                    {t('tasks.priority.high')}
+                  </option>
+                  <option
+                    value="urgent"
+                    className="bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100"
+                  >
+                    {t('tasks.priority.urgent')}
+                  </option>
                 </select>
               </div>
 
-              {/* Project Module */}
-              {projects.length > 0 && (
-                <div className="col-span-2">
-                  <label className="block text-[11px] font-medium text-slate-600 dark:text-slate-400 mb-1">
-                    {t('taskDrawer.projectLabel')}
-                  </label>
-                  <select
-                    value={task.project_id || ''}
-                    onChange={(e) => {
-                      const next = e.target.value ? parseInt(e.target.value, 10) : null
-                      updateTaskMutation.mutate({ id: task.id, payload: { project_id: next } })
-                    }}
-                    className="w-full rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-2.5 py-1.5 text-xs text-slate-800 dark:text-slate-200 focus:border-indigo-500 focus:outline-none"
+              <div>
+                <label className="block text-[11px] font-medium text-slate-600 dark:text-slate-400 mb-1">
+                  {t('taskDrawer.dueDate')}
+                </label>
+                <Calendar
+                  value={task.due_date ? new Date(task.due_date) : null}
+                  onChange={(e) => {
+                    const nextDate = e.value as Date | null
+                    updateTaskMutation.mutate({
+                      id: task.id,
+                      payload: { due_date: nextDate ? nextDate.toISOString() : null }
+                    })
+                  }}
+                  showTime
+                  hourFormat="24"
+                  showIcon
+                  dateFormat="dd/mm/yy"
+                  locale={locale}
+                  placeholder={t('taskDrawer.dueDate')}
+                  className="w-full text-xs"
+                  inputClassName="w-full rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-2.5 py-1.5 text-xs text-slate-800 dark:text-slate-200 focus:border-indigo-500 focus:outline-none transition-colors"
+                  touchUI={false}
+                  showButtonBar
+                />
+              </div>
+
+              <div>
+                <label className="block text-[11px] font-medium text-slate-600 dark:text-slate-400 mb-1">
+                  {t('taskDrawer.projectLabel')}
+                </label>
+                <select
+                  value={task.project_id || ''}
+                  onChange={(e) => {
+                    const next = e.target.value ? parseInt(e.target.value, 10) : null
+                    updateTaskMutation.mutate({ id: task.id, payload: { project_id: next } })
+                  }}
+                  className="w-full rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-2.5 py-1.5 text-xs text-slate-800 dark:text-slate-200 focus:border-indigo-500 focus:outline-none transition-colors"
+                >
+                  <option
+                    value=""
+                    className="bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100"
                   >
-                    <option value="" className="bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100">
-                      {t('taskDrawer.noProjectOption')}
+                    {t('taskDrawer.noProjectOption')}
+                  </option>
+                  {projects.map((p) => (
+                    <option
+                      key={p.id}
+                      value={String(p.id)}
+                      className="bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100"
+                    >
+                      📁 {p.name}
                     </option>
-                    {projects.map((p) => (
-                      <option key={p.id} value={String(p.id)} className="bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100">
-                        📁 {p.name}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-              )}
+                  ))}
+                </select>
+              </div>
             </div>
 
             {/* Title & Description */}
             <div>
               <label className="block text-[11px] font-medium text-slate-600 dark:text-slate-400 mb-1">
-                {t('taskDrawer.titleLabel')} <span className="text-rose-500 font-bold ml-0.5">*</span>
+                {t('taskDrawer.titleLabel')}{' '}
+                <span className="text-rose-500 font-bold ml-0.5">*</span>
               </label>
               <input
                 type="text"
@@ -284,9 +362,11 @@ export const TaskDrawer: React.FC = () => {
                   if (e.target.value.trim()) setTitleError(null)
                 }}
                 onBlur={handleSaveMain}
-                placeholder={`${t('taskDrawer.titleLabel')  }...`}
+                placeholder={`${t('taskDrawer.titleLabel')}...`}
                 className={`w-full text-base font-semibold text-slate-900 dark:text-slate-100 bg-transparent border-b ${
-                  titleError ? 'border-rose-500' : 'border-slate-200 dark:border-slate-800 hover:border-slate-400 dark:hover:border-slate-700 focus:border-indigo-500'
+                  titleError
+                    ? 'border-rose-500'
+                    : 'border-slate-200 dark:border-slate-800 hover:border-slate-400 dark:hover:border-slate-700 focus:border-indigo-500'
                 } pb-1 focus:outline-none transition-colors`}
               />
               {titleError && (
@@ -304,7 +384,7 @@ export const TaskDrawer: React.FC = () => {
               />
             </div>
 
-            {/* FEATURE: "Remember where you left off" (Progress Context Log) */}
+            {/* Progress Log */}
             <div className="rounded-xl border border-indigo-200 dark:border-indigo-500/30 bg-indigo-50/70 dark:bg-indigo-950/20 p-4">
               <div className="flex items-center justify-between mb-2">
                 <span className="text-xs font-semibold text-indigo-900 dark:text-indigo-300 flex items-center gap-1.5">
@@ -313,12 +393,15 @@ export const TaskDrawer: React.FC = () => {
                 </span>
                 {task.last_progress_at && (
                   <span className="text-[10px] text-slate-500 dark:text-slate-400">
-                    {new Date(task.last_progress_at).toLocaleTimeString(locale === 'id' ? 'id-ID' : 'en-US', {
-                      hour: '2-digit',
-                      minute: '2-digit',
-                      day: 'numeric',
-                      month: 'short',
-                    })}
+                    {new Date(task.last_progress_at).toLocaleTimeString(
+                      locale === 'id' ? 'id-ID' : 'en-US',
+                      {
+                        hour: '2-digit',
+                        minute: '2-digit',
+                        day: 'numeric',
+                        month: 'short'
+                      }
+                    )}
                   </span>
                 )}
               </div>
@@ -331,9 +414,7 @@ export const TaskDrawer: React.FC = () => {
                   <p className="leading-relaxed">{task.last_progress_note}</p>
                 </div>
               ) : (
-                <p className="text-[11px] text-slate-500 mb-3">
-                  {t('taskDrawer.noLogYet')}
-                </p>
+                <p className="text-[11px] text-slate-500 mb-3">{t('taskDrawer.noLogYet')}</p>
               )}
 
               {/* Quick Update Log Form */}
@@ -348,7 +429,7 @@ export const TaskDrawer: React.FC = () => {
                 <button
                   type="submit"
                   disabled={logProgressMutation.isPending || !newProgressNote.trim()}
-                  className="w-full py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-xs font-medium text-white flex items-center justify-center gap-1.5 transition-colors shadow-xs"
+                  className="w-full py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-xs font-medium text-white flex items-center justify-center gap-1.5 transition-colors shadow-xs cursor-pointer"
                 >
                   {logProgressMutation.isPending && (
                     <i className="pi pi-spin pi-spinner text-[10px]" />
@@ -363,7 +444,10 @@ export const TaskDrawer: React.FC = () => {
               <div className="flex items-center justify-between mb-2">
                 <span className="text-xs font-semibold text-slate-700 dark:text-slate-300 flex items-center gap-1.5">
                   <i className="pi pi-check-square text-xs text-indigo-500 dark:text-indigo-400" />
-                  {t('taskDrawer.subtasksChecklist', { completed: task.subtasks_completed, total: task.subtasks_count })}
+                  {t('taskDrawer.subtasksChecklist', {
+                    completed: task.subtasks_completed,
+                    total: task.subtasks_count
+                  })}
                 </span>
                 <span className="text-xs font-mono text-indigo-600 dark:text-indigo-400 font-semibold">
                   {task.progress_percent}%
@@ -393,14 +477,16 @@ export const TaskDrawer: React.FC = () => {
                           toggleSubtaskMutation.mutate({
                             taskId: task.id,
                             subtaskId: st.id,
-                            isCompleted: e.target.checked,
+                            isCompleted: e.target.checked
                           })
                         }
-                        className="rounded border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-indigo-600 focus:ring-0 shrink-0"
+                        className="rounded border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-indigo-600 focus:ring-0 shrink-0 cursor-pointer"
                       />
                       <span
                         className={`truncate ${
-                          st.is_completed ? 'line-through text-slate-400 dark:text-slate-500' : 'text-slate-800 dark:text-slate-200'
+                          st.is_completed
+                            ? 'line-through text-slate-400 dark:text-slate-500'
+                            : 'text-slate-800 dark:text-slate-200'
                         }`}
                       >
                         {st.title}
@@ -410,7 +496,7 @@ export const TaskDrawer: React.FC = () => {
                     <button
                       type="button"
                       onClick={() => handleDeleteSubtask(st.id, st.title)}
-                      className="p-1 text-slate-400 dark:text-slate-600 hover:text-rose-500 dark:hover:text-rose-400 opacity-0 group-hover:opacity-100 transition-opacity"
+                      className="p-1 text-slate-400 dark:text-slate-600 hover:text-rose-500 dark:hover:text-rose-400 opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer"
                       title={t('taskDrawer.deleteSubtaskConfirmHeader')}
                     >
                       <i className="pi pi-times text-[10px]" />
@@ -431,7 +517,7 @@ export const TaskDrawer: React.FC = () => {
                 <button
                   type="submit"
                   disabled={addSubtaskMutation.isPending || !newSubtaskTitle.trim()}
-                  className="px-3 py-1.5 rounded-lg bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700 disabled:opacity-50 text-xs font-medium text-slate-700 dark:text-slate-200 flex items-center gap-1 transition-colors"
+                  className="px-3 py-1.5 rounded-lg bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700 disabled:opacity-50 text-xs font-medium text-slate-700 dark:text-slate-200 flex items-center gap-1 transition-colors cursor-pointer"
                 >
                   {addSubtaskMutation.isPending && (
                     <i className="pi pi-spin pi-spinner text-[10px]" />
@@ -439,6 +525,15 @@ export const TaskDrawer: React.FC = () => {
                   {t('taskDrawer.add')}
                 </button>
               </form>
+            </div>
+
+            {/* Task Reminders Section */}
+            <div className="pt-3 border-t border-slate-200 dark:border-slate-800/80">
+              <TaskReminderSection
+                taskId={task.id}
+                taskTitle={task.title}
+                dueDate={task.due_date}
+              />
             </div>
           </div>
         </div>

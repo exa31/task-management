@@ -23,9 +23,8 @@ export const dashboard = {
   activeProjects: 'Modul project aktif',
   projectsOverviewTitle: 'Modul Project',
   viewAllProjects: 'Lihat Project ({count})',
-  noProjectsYet: 'Belum ada modul project yang dibuat.',
+  noProjectsYet: 'Belum ada modul project yang dibuat.'
 }
-
 
 export const focus = {
   title: 'Horizon Fokus Hari Ini',
@@ -35,5 +34,5 @@ export const focus = {
   pinToFocus: 'Sematkan ke Fokus Hari Ini',
   checklistProgress: '{completed}/{total} checklist ({percent}%)',
   noProgressLog: 'Belum ada catatan progres',
-  completeTask: 'Selesaikan tugas ini',
+  completeTask: 'Selesaikan tugas ini'
 }

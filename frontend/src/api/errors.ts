@@ -87,7 +87,11 @@ export function parseApiError(err: unknown): ApiError {
       return new ApiError(resData, getFallbackCodeForStatus(status), status)
     }
 
-    return new ApiError(axiosErr.message || 'Request failed', getFallbackCodeForStatus(status), status)
+    return new ApiError(
+      axiosErr.message || 'Request failed',
+      getFallbackCodeForStatus(status),
+      status
+    )
   }
 
   // Network / connection failure
@@ -119,7 +123,10 @@ export function getLocalizedErrorMessage(
   const apiErr = parseApiError(err)
 
   // Log raw technical diagnostics for developers in console
-  logger.warn(`[ApiError ${apiErr.code}] (Status: ${apiErr.statusCode}): ${apiErr.message}`, apiErr.data)
+  logger.warn(
+    `[ApiError ${apiErr.code}] (Status: ${apiErr.statusCode}): ${apiErr.message}`,
+    apiErr.data
+  )
 
   // 1. Exact match in translation dictionary
   const translationKey = `errors.${apiErr.code}`

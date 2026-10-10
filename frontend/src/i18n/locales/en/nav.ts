@@ -23,4 +23,5 @@ export const nav = {
   settings: 'Settings',
   profileSettings: 'Profile Settings',
   projects: 'Projects',
+  reminders: 'Reminders'
 }

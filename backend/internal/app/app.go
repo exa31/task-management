@@ -4,18 +4,23 @@
 package app
 
 import (
+	"context"
 	"log/slog"
 	"time"
 
 	"golang/cache"
 	"golang/config"
 	"golang/database"
+	"golang/internal/module/reminder"
 	"golang/pkg/auth"
 	"golang/pkg/logging"
+	"golang/pkg/notification"
 	queuepkg "golang/pkg/queue"
 	"golang/pkg/realtime"
 	"golang/pkg/storage"
 	"golang/pkg/telemetry"
+
+	"github.com/hibiken/asynq"
 )
 
 // Container holds all initialized dependencies and their optional features:
@@ -30,9 +35,10 @@ type Container struct {
 	Broker queuepkg.Broker   // nil when RabbitMQ feature is disabled
 	Hub    *realtime.Hub     // nil when Realtime feature is disabled
 
-	JWTService *auth.JWTService
-	Storage    storage.Storage
-	Logger     *slog.Logger
+	JWTService      *auth.JWTService
+	Storage         storage.Storage
+	Logger          *slog.Logger
+	ReminderService reminder.Service
 }
 
 // Boot loads the configuration, sets up the logger and every enabled
@@ -154,6 +160,33 @@ func Boot() (*Container, func() error) {
 	} else {
 		logger.Info("realtime feature disabled")
 	}
+
+	// Reminder module & notification services
+	emailSender := notification.NewResendEmailSender(cfg.Reminder.Resend.APIKey, cfg.Reminder.Resend.FromEmail, logger)
+	pushSender := notification.NewFCMPushSender(
+		context.Background(),
+		cfg.Reminder.FCM.ProjectID,
+		cfg.Reminder.FCM.CredentialsFile,
+		cfg.Reminder.FCM.CredentialsJSON,
+		cfg.Reminder.FCM.CredentialsBase64,
+		logger,
+	)
+
+	reminderRepo := reminder.NewRepository(db.GetDB())
+
+	redisOpt := asynq.RedisClientOpt{
+		Addr:     cfg.Redis.Address(),
+		Password: cfg.Redis.Password,
+		DB:       cfg.Redis.DB,
+	}
+	asynqSched := notification.NewAsynqScheduler(redisOpt, cfg.Reminder.BaseURL, cfg.Reminder.WebhookSecret, logger)
+	closers = append(closers, func() error { return asynqSched.Close() })
+
+	reminderSvc := reminder.NewService(reminderRepo, asynqSched, emailSender, pushSender, container.Hub, logger)
+	container.ReminderService = reminderSvc
+	logger.Info("asynq scheduler initialized for enqueuing delayed HTTP reminder tasks",
+		slog.String("base_url", cfg.Reminder.BaseURL),
+	)
 
 	return container, shutdown
 }

@@ -38,10 +38,7 @@ declare global {
               error_description?: string
             }) => void
             // eslint-disable-next-line @typescript-eslint/naming-convention
-            error_callback?: (error: {
-              type: string
-              message?: string
-            }) => void
+            error_callback?: (error: { type: string; message?: string }) => void
           }) => {
             requestCode: () => void
           }
@@ -119,7 +116,7 @@ export function useGoogleAuth(options: UseGoogleAuthOptions = {}) {
           try {
             await loginWithOAuth({
               provider: 'google',
-              code: response.code,
+              code: response.code
             })
             localStorage.setItem('has_logged_in_before', 'true')
             sessionStorage.removeItem('just_logged_out')
@@ -139,11 +136,13 @@ export function useGoogleAuth(options: UseGoogleAuthOptions = {}) {
           // Handled on user clicking the popup 'X' button or closing the window
           options.onCancel?.()
         } else if (nonOAuthError?.type === 'popup_failed_to_open') {
-          options.onError?.('Popup was blocked by your browser. Please allow popups for this site and try again.')
+          options.onError?.(
+            'Popup was blocked by your browser. Please allow popups for this site and try again.'
+          )
         } else if (nonOAuthError?.message) {
           options.onError?.(nonOAuthError.message)
         }
-      },
+      }
     })
   }, [googleClientId, loginWithOAuth, options])
 
@@ -166,7 +165,7 @@ export function useGoogleAuth(options: UseGoogleAuthOptions = {}) {
               try {
                 await loginWithOAuth({
                   provider: 'google',
-                  id_token: response.credential,
+                  id_token: response.credential
                 })
                 localStorage.setItem('has_logged_in_before', 'true')
                 sessionStorage.removeItem('just_logged_out')
@@ -178,7 +177,7 @@ export function useGoogleAuth(options: UseGoogleAuthOptions = {}) {
                 setIsAuthenticating(false)
               }
             }
-          },
+          }
         })
 
         // Trigger Google One Tap floating dialog
@@ -217,7 +216,9 @@ export function useGoogleAuth(options: UseGoogleAuthOptions = {}) {
     if (!codeClientRef.current) {
       codeClientRef.current = createCodeClient()
       if (!codeClientRef.current) {
-        options.onError?.('Google SDK is still loading. Please check your internet connection or try again.')
+        options.onError?.(
+          'Google SDK is still loading. Please check your internet connection or try again.'
+        )
         return
       }
     }
@@ -227,7 +228,9 @@ export function useGoogleAuth(options: UseGoogleAuthOptions = {}) {
       codeClientRef.current.requestCode()
     } catch (err) {
       setIsAuthenticating(false)
-      options.onError?.(err instanceof Error ? err.message : 'Failed to launch Google sign-in dialog')
+      options.onError?.(
+        err instanceof Error ? err.message : 'Failed to launch Google sign-in dialog'
+      )
     }
   }, [isConfigured, createCodeClient, options])
 
@@ -235,6 +238,6 @@ export function useGoogleAuth(options: UseGoogleAuthOptions = {}) {
     isConfigured,
     isScriptReady,
     isAuthenticating,
-    loginWithGooglePopup,
+    loginWithGooglePopup
   }
 }

@@ -13,7 +13,7 @@ const PRESET_COLORS = [
   '#f59e0b', // Amber
   '#10b981', // Emerald
   '#06b6d4', // Cyan
-  '#3b82f6', // Blue
+  '#3b82f6' // Blue
 ]
 
 interface ProjectModalProps {
@@ -27,7 +27,7 @@ export const ProjectModal: React.FC<ProjectModalProps> = ({
   isOpen,
   onClose,
   initialProject,
-  onSuccess,
+  onSuccess
 }) => {
   const { t } = useTranslation()
   const toast = useAppToast()
@@ -65,8 +65,8 @@ export const ProjectModal: React.FC<ProjectModalProps> = ({
           payload: {
             name: name.trim(),
             description: description.trim(),
-            color,
-          },
+            color
+          }
         })
         toast.success(t('projects.updatedSuccess'))
         if (onSuccess && res) onSuccess(res)
@@ -74,7 +74,7 @@ export const ProjectModal: React.FC<ProjectModalProps> = ({
         const res = await createMutation.mutateAsync({
           name: name.trim(),
           description: description.trim(),
-          color,
+          color
         })
         toast.success(t('projects.createdSuccess'))
         if (onSuccess && res) onSuccess(res)

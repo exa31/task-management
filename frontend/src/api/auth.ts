@@ -5,7 +5,7 @@ import type {
   DevLoginPayload,
   OAuthLoginPayload,
   UnbindOAuthPayload,
-  User,
+  User
 } from '@/types'
 
 import { apiClient } from './client'
@@ -17,8 +17,7 @@ export const authApi = {
   devLogin: (payload: DevLoginPayload) =>
     apiClient.post<AuthResponse>('/api/v1/auth/dev-login', payload),
 
-  getProfile: () =>
-    apiClient.get<User>('/api/v1/auth/profile'),
+  getProfile: () => apiClient.get<User>('/api/v1/auth/profile'),
 
   updateProfile: (payload: { name: string }) =>
     apiClient.put<User>('/api/v1/auth/profile', payload),
@@ -28,8 +27,8 @@ export const authApi = {
     formData.append('avatar', file, 'avatar.webp')
     return apiClient.post<User>('/api/v1/auth/avatar', formData, {
       headers: {
-        'Content-Type': 'multipart/form-data',
-      },
+        'Content-Type': 'multipart/form-data'
+      }
     })
   },
 
@@ -42,6 +41,5 @@ export const authApi = {
   deleteAccount: (payload: DeleteAccountPayload) =>
     apiClient.delete('/api/v1/auth/account', { data: payload }),
 
-  logout: () =>
-    apiClient.post('/api/v1/auth/logout'),
+  logout: () => apiClient.post('/api/v1/auth/logout')
 }

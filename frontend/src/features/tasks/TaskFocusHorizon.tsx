@@ -29,7 +29,9 @@ export const TaskFocusHorizon: React.FC = () => {
             {t('focus.activeCount', { count: focusTasks.length })}
           </span>
         </div>
-        <span className="text-[11px] text-slate-500 dark:text-slate-400">{t('focus.subtitle')}</span>
+        <span className="text-[11px] text-slate-500 dark:text-slate-400">
+          {t('focus.subtitle')}
+        </span>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2.5">
@@ -45,7 +47,7 @@ export const TaskFocusHorizon: React.FC = () => {
                   e.stopPropagation()
                   updateTaskMutation.mutate({
                     id: task.id,
-                    payload: { status: 'done' },
+                    payload: { status: 'done' }
                   })
                 }}
                 className="h-4 w-4 rounded border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 hover:border-indigo-500 flex items-center justify-center shrink-0 transition-colors"
@@ -68,7 +70,7 @@ export const TaskFocusHorizon: React.FC = () => {
                       ? t('focus.checklistProgress', {
                           completed: task.subtasks_completed,
                           total: task.subtasks_count,
-                          percent: task.progress_percent,
+                          percent: task.progress_percent
                         })
                       : t('focus.noProgressLog')}
                   </p>

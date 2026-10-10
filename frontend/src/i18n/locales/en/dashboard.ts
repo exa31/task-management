@@ -10,7 +10,8 @@ export const dashboard = {
   savedInNotes: 'Saved in notes',
   completedTasks: 'Completed (Done)',
   tasksFinished: 'Tasks finished',
-  quickIdeaPlaceholder: 'Have a sudden flash of inspiration? Quick-capture it here and press Enter...',
+  quickIdeaPlaceholder:
+    'Have a sudden flash of inspiration? Quick-capture it here and press Enter...',
   captureIdea: 'Capture Idea',
   activeTasksTitle: 'Active Tasks',
   recentIdeasTitle: 'Recent Ideas',
@@ -23,9 +24,8 @@ export const dashboard = {
   activeProjects: 'Active project modules',
   projectsOverviewTitle: 'Project Modules',
   viewAllProjects: 'View Projects ({count})',
-  noProjectsYet: 'No project modules created yet.',
+  noProjectsYet: 'No project modules created yet.'
 }
-
 
 export const focus = {
   title: "Today's Focus Horizon",
@@ -35,5 +35,5 @@ export const focus = {
   pinToFocus: "Pin to Today's Focus",
   checklistProgress: '{completed}/{total} checklist ({percent}%)',
   noProgressLog: 'No progress log recorded yet',
-  completeTask: 'Complete this task',
+  completeTask: 'Complete this task'
 }

@@ -62,8 +62,8 @@ func (h *Handler) List(c *fiber.Ctx) error {
 	}
 
 	var filter NoteFilter
-	if err := c.QueryParser(&filter); err != nil {
-		return fiber.NewError(fiber.StatusBadRequest, "Invalid query parameters")
+	if err := validation.Default.BindQueryAndValidate(c, &filter); err != nil {
+		return err
 	}
 
 	results, err := h.service.FindAll(c.UserContext(), userID, filter)

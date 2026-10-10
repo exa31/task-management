@@ -5,5 +5,5 @@ export const login = {
   appleLogin: 'Lanjutkan dengan Apple',
   devTesting: 'Akses Pengujian Pengembang',
   devDemoLogin: 'Masuk Cepat sebagai Akun Demo',
-  isolatedData: 'Data diisolasi secara privat untuk setiap akun pengguna.',
+  isolatedData: 'Data diisolasi secara privat untuk setiap akun pengguna.'
 }

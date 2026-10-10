@@ -85,16 +85,16 @@ type UpdateSubtaskRequest struct {
 
 // TaskFilter parameters for querying tasks.
 type TaskFilter struct {
-	Status    string `query:"status"`
-	Priority  string `query:"priority"`
-	IsFocus   *bool  `query:"is_focus"`
-	Tag       string `query:"tag"`
-	Search    string `query:"search"`
-	ProjectID *int64 `query:"project_id"`
-	Limit     int    `query:"limit" validate:"omitempty,min=1,max=100"`
-	Offset    int    `query:"offset" validate:"omitempty,min=0"`
-	Cursor    *int64 `query:"cursor"`
-	Paginate  string `query:"paginate"`
+	Status    string `json:"status" query:"status"`
+	Priority  string `json:"priority" query:"priority"`
+	IsFocus   *bool  `json:"is_focus" query:"is_focus"`
+	Tag       string `json:"tag" query:"tag"`
+	Search    string `json:"search" query:"search"`
+	ProjectID *int64 `json:"project_id" query:"project_id"`
+	Limit     int    `json:"limit" query:"limit" validate:"omitempty,min=1,max=100"`
+	Offset    int    `json:"offset" query:"offset" validate:"omitempty,min=0"`
+	Cursor    *int64 `json:"cursor" query:"cursor"`
+	Paginate  string `json:"paginate" query:"paginate"`
 }
 
 // TaskCursorResponse represents a paginated task list response using cursor.

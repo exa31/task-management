@@ -46,7 +46,6 @@ func (h *SSEHandler) Events(c *fiber.Ctx) error {
 		Type:    "sse",
 	}
 	h.hub.Register(client)
-	defer h.hub.Unregister(client)
 
 	c.Set("Content-Type", "text/event-stream")
 	c.Set("Cache-Control", "no-cache")
@@ -55,6 +54,8 @@ func (h *SSEHandler) Events(c *fiber.Ctx) error {
 	c.Set("X-Accel-Buffering", "no")
 
 	c.Context().SetBodyStreamWriter(fasthttp.StreamWriter(func(w *bufio.Writer) {
+		defer h.hub.Unregister(client)
+
 		if err := h.sendEvent(w, "connected", map[string]string{
 			"client_id": clientID,
 			"timestamp": time.Now().Format(time.RFC3339),
@@ -81,12 +82,12 @@ func (h *SSEHandler) Events(c *fiber.Ctx) error {
 					return
 				}
 			case <-ticker.C:
-				fmt.Fprintf(w, ": keep-alive\n\n")
+				if _, err := fmt.Fprintf(w, ": keep-alive\n\n"); err != nil {
+					return
+				}
 				if err := w.Flush(); err != nil {
 					return
 				}
-			case <-c.Context().Done():
-				return
 			}
 		}
 	}))

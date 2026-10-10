@@ -19,7 +19,7 @@ const COLORS = [
   { id: 'blue', bg: 'bg-blue-600' },
   { id: 'green', bg: 'bg-emerald-600' },
   { id: 'amber', bg: 'bg-amber-600' },
-  { id: 'rose', bg: 'bg-rose-600' },
+  { id: 'rose', bg: 'bg-rose-600' }
 ]
 
 export const NoteModal: React.FC<NoteModalProps> = ({
@@ -27,7 +27,7 @@ export const NoteModal: React.FC<NoteModalProps> = ({
   initialNote,
   isPending = false,
   onClose,
-  onSave,
+  onSave
 }) => {
   const { t } = useTranslation()
   const [title, setTitle] = useState('')
@@ -85,7 +85,7 @@ export const NoteModal: React.FC<NoteModalProps> = ({
         tags,
         color,
         is_pinned: isPinned,
-        type: noteType,
+        type: noteType
       })
       setErrorMsg(null)
       onClose()
@@ -193,7 +193,8 @@ export const NoteModal: React.FC<NoteModalProps> = ({
             />
             {isTitleInvalid && (
               <p className="text-[11px] text-rose-500 mt-1 flex items-center gap-1 font-medium">
-                <i className="pi pi-exclamation-circle text-[10px]" /> {t('noteModal.titleRequired')}
+                <i className="pi pi-exclamation-circle text-[10px]" />{' '}
+                {t('noteModal.titleRequired')}
               </p>
             )}
           </div>

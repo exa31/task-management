@@ -27,7 +27,8 @@ export const ProjectsPage: React.FC = () => {
     [projectTasks]
   )
   const completionRate = useMemo(
-    () => (projectTasks.length > 0 ? Math.round((completedProjectTasks / projectTasks.length) * 100) : 0),
+    () =>
+      projectTasks.length > 0 ? Math.round((completedProjectTasks / projectTasks.length) * 100) : 0,
     [projectTasks.length, completedProjectTasks]
   )
 
@@ -108,7 +109,9 @@ export const ProjectsPage: React.FC = () => {
             <span>{t('projects.statsTotalProjects')}</span>
             <i className="pi pi-folder text-indigo-500 dark:text-indigo-400 text-xs" />
           </div>
-          <p className="text-2xl font-bold text-slate-900 dark:text-slate-100 font-mono">{projects.length}</p>
+          <p className="text-2xl font-bold text-slate-900 dark:text-slate-100 font-mono">
+            {projects.length}
+          </p>
           <span className="text-[10px] text-slate-500">{t('dashboard.activeProjects')}</span>
         </div>
 
@@ -117,7 +120,9 @@ export const ProjectsPage: React.FC = () => {
             <span>{t('projects.statsActiveTasks')}</span>
             <i className="pi pi-check-square text-indigo-500 dark:text-indigo-400 text-xs" />
           </div>
-          <p className="text-2xl font-bold text-slate-900 dark:text-slate-100 font-mono">{projectTasks.length}</p>
+          <p className="text-2xl font-bold text-slate-900 dark:text-slate-100 font-mono">
+            {projectTasks.length}
+          </p>
           <span className="text-[10px] text-slate-500">{t('dashboard.activeTasks')}</span>
         </div>
 
@@ -126,7 +131,9 @@ export const ProjectsPage: React.FC = () => {
             <span>{t('projects.statsInProgress')}</span>
             <i className="pi pi-bolt text-amber-500 dark:text-amber-400 text-xs" />
           </div>
-          <p className="text-2xl font-bold text-slate-900 dark:text-slate-100 font-mono">{inProgressProjectTasks}</p>
+          <p className="text-2xl font-bold text-slate-900 dark:text-slate-100 font-mono">
+            {inProgressProjectTasks}
+          </p>
           <span className="text-[10px] text-slate-500">{t('dashboard.inProgress')}</span>
         </div>
 
@@ -135,7 +142,9 @@ export const ProjectsPage: React.FC = () => {
             <span>{t('projects.statsCompleted')}</span>
             <i className="pi pi-check-circle text-emerald-500 dark:text-emerald-400 text-xs" />
           </div>
-          <p className="text-2xl font-bold text-slate-900 dark:text-slate-100 font-mono">{completedProjectTasks}</p>
+          <p className="text-2xl font-bold text-slate-900 dark:text-slate-100 font-mono">
+            {completedProjectTasks}
+          </p>
           <span className="text-[10px] text-slate-500">{t('dashboard.tasksFinished')}</span>
         </div>
 
@@ -144,7 +153,9 @@ export const ProjectsPage: React.FC = () => {
             <span>{t('projects.statsCompletionRate')}</span>
             <i className="pi pi-chart-pie text-purple-500 dark:text-purple-400 text-xs" />
           </div>
-          <p className="text-2xl font-bold text-slate-900 dark:text-slate-100 font-mono">{completionRate}%</p>
+          <p className="text-2xl font-bold text-slate-900 dark:text-slate-100 font-mono">
+            {completionRate}%
+          </p>
           <span className="text-[10px] text-slate-500">{t('projects.title')}</span>
         </div>
       </div>

@@ -29,7 +29,7 @@ export const appConfig = {
         localStorage.setItem('app_enable_mocks', String(enabled))
       }
     }
-  },
+  }
 }
 
 // Expose on window in dev mode for quick toggling in browser DevTools

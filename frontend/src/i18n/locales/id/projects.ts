@@ -1,6 +1,7 @@
 export const projects = {
   title: 'Modul / Project Task',
-  subtitle: 'Kelompokkan task ke dalam modul/project spesifik dengan pemisahan status dan pelacakan progres.',
+  subtitle:
+    'Kelompokkan task ke dalam modul/project spesifik dengan pemisahan status dan pelacakan progres.',
   addProject: 'Tambah Modul Project',
   addTaskToProject: 'Tambah Task ke Project Ini',
   loading: 'Memuat modul project...',
@@ -33,13 +34,13 @@ export const projects = {
   expandAll: 'Buka Semua',
   statusBreakdown: 'Distribusi Status',
   manageInProjects: 'Kelola Modul Project di Menu Projects',
-  settingsLinkDesc: 'Modul project sekarang dikelola langsung di halaman khusus Projects dengan pemisahan status task.',
+  settingsLinkDesc:
+    'Modul project sekarang dikelola langsung di halaman khusus Projects dengan pemisahan status task.',
   goToProjects: 'Buka Halaman Projects',
   searchPlaceholder: 'Cari modul project...',
   statsTotalProjects: 'Total Modul',
   statsActiveTasks: 'Tugas Terhubung',
   statsInProgress: 'Sedang Dikerjakan',
   statsCompleted: 'Selesai',
-  statsCompletionRate: 'Tingkat Selesai',
+  statsCompletionRate: 'Tingkat Selesai'
 }
-

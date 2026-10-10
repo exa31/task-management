@@ -7,13 +7,13 @@ export const tasks = {
     todo: 'Akan Dikerjakan',
     in_progress: 'Sedang Dikerjakan',
     review: 'Ditinjau',
-    done: 'Selesai',
+    done: 'Selesai'
   },
   priority: {
     urgent: 'Mendesak',
     high: 'Tinggi',
     medium: 'Sedang',
-    low: 'Rendah',
+    low: 'Rendah'
   },
   focusFilter: 'Fokus ({count})',
   searchPlaceholder: 'Cari tugas...',
@@ -33,7 +33,7 @@ export const tasks = {
   progressLoggedSuccess: 'Catatan progres berhasil disimpan',
   focusToggledSuccess: 'Status fokus tugas berhasil diperbarui',
   allProjects: 'Semua Modul Project',
-  allTasksLoaded: '✓ Semua tugas telah dimuat',
+  allTasksLoaded: '✓ Semua tugas telah dimuat'
 }
 
 export const taskModal = {
@@ -55,13 +55,14 @@ export const taskModal = {
   createNewProject: '+ Project Baru',
   cancel: 'Batal',
   submit: 'Buat Tugas',
-  titleRequired: 'Judul tugas wajib diisi',
+  titleRequired: 'Judul tugas wajib diisi'
 }
 
 export const taskDrawer = {
   taskIdBadge: 'TUGAS-{id}',
   status: 'Status',
   priority: 'Prioritas',
+  dueDate: 'Tenggat Waktu',
   titleLabel: 'Judul Tugas',
   titleRequired: 'Judul tugas wajib diisi',
   descriptionPlaceholder: 'Tambahkan deskripsi atau catatan tambahan...',
@@ -76,9 +77,10 @@ export const taskDrawer = {
   addSubtaskPlaceholder: '+ Tambah langkah checklist...',
   add: 'Tambah',
   deleteTaskConfirmHeader: 'Hapus Tugas',
-  deleteTaskConfirmMessage: 'Apakah Anda yakin ingin menghapus tugas ini? Tindakan ini tidak dapat dibatalkan.',
+  deleteTaskConfirmMessage:
+    'Apakah Anda yakin ingin menghapus tugas ini? Tindakan ini tidak dapat dibatalkan.',
   deleteSubtaskConfirmHeader: 'Hapus Butir Checklist',
   deleteSubtaskConfirmMessage: 'Apakah Anda yakin ingin menghapus "{title}"?',
   closeEsc: 'Tutup (Esc)',
-  deleteTask: 'Hapus tugas',
+  deleteTask: 'Hapus tugas'
 }

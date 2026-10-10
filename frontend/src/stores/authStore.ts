@@ -66,7 +66,7 @@ export const useAuthStore = create<AuthState>((set) => ({
         user: data.user,
         token: data.tokens.access_token,
         isAuthenticated: true,
-        loading: false,
+        loading: false
       })
     } catch (err: unknown) {
       const errorMsg = err instanceof Error ? err.message : 'Login failed'
@@ -91,7 +91,7 @@ export const useAuthStore = create<AuthState>((set) => ({
         user: data.user,
         token: data.tokens.access_token,
         isAuthenticated: true,
-        loading: false,
+        loading: false
       })
     } catch (err: unknown) {
       const errorMsg = err instanceof Error ? err.message : 'Dev login failed'
@@ -122,7 +122,7 @@ export const useAuthStore = create<AuthState>((set) => ({
       logger.warn('Session storage access error:', err)
     }
 
-    authApi.logout().catch(() => { })
+    authApi.logout().catch(() => {})
     set({ user: null, token: null, isAuthenticated: false })
   },
 
@@ -141,5 +141,5 @@ export const useAuthStore = create<AuthState>((set) => ({
     } catch (err) {
       logger.warn('Failed to fetch user profile:', err)
     }
-  },
+  }
 }))

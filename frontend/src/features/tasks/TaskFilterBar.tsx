@@ -15,7 +15,7 @@ export const TaskFilterBar: React.FC = () => {
     filterFocusOnly,
     setFilterFocusOnly,
     searchQuery,
-    setSearchQuery,
+    setSearchQuery
   } = useTaskStore()
 
   const { data: rawAllTasks } = useTasks()
@@ -30,7 +30,7 @@ export const TaskFilterBar: React.FC = () => {
     { id: 'todo', label: t('tasks.status.todo') },
     { id: 'backlog', label: t('tasks.status.backlog') },
     { id: 'review', label: t('tasks.status.review') },
-    { id: 'done', label: t('tasks.status.done') },
+    { id: 'done', label: t('tasks.status.done') }
   ]
 
   const focusCount = allTasks.filter((t) => t?.is_focus).length
@@ -78,9 +78,18 @@ export const TaskFilterBar: React.FC = () => {
               }}
               className="appearance-none rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 pl-7 pr-8 py-1 text-xs font-medium text-slate-700 dark:text-slate-200 focus:outline-none focus:border-indigo-500 cursor-pointer shadow-xs"
             >
-              <option value="">{t('tasks.allProjects')}</option>
+              <option
+                value=""
+                className="bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100"
+              >
+                {t('tasks.allProjects')}
+              </option>
               {projects.map((p) => (
-                <option key={p.id} value={String(p.id)}>
+                <option
+                  key={p.id}
+                  value={String(p.id)}
+                  className="bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100"
+                >
                   📁 {p.name}
                 </option>
               ))}

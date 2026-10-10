@@ -12,7 +12,7 @@ export const settings = {
     saveChanges: 'Save Changes',
     saving: 'Saving...',
     updateSuccess: 'Profile updated successfully.',
-    updateError: 'Failed to update profile.',
+    updateError: 'Failed to update profile.'
   },
 
   // OAuth Bindings Section
@@ -36,7 +36,7 @@ export const settings = {
     appleLinkedSuccess: 'Apple account linked successfully.',
     appleLinkError: 'Failed to link Apple account.',
     unbindSuccess: '{provider} account unlinked successfully.',
-    unbindError: 'Failed to unlink account.',
+    unbindError: 'Failed to unlink account.'
   },
 
   // Project Task Modules Section
@@ -60,14 +60,15 @@ export const settings = {
     deleteHeader: 'Delete Project Module',
     deleteMessage: 'Delete project "{name}"? Linked tasks will not be deleted.',
     deleteAccept: 'Delete',
-    deleteReject: 'Cancel',
+    deleteReject: 'Cancel'
   },
 
   // MCP AI Link Section
   mcp: {
     title: 'Model Context Protocol (MCP) & AI',
-    subtitle: 'Generate Personal Access Tokens to let AI coding agents (Antigravity, Claude, Cline) interact directly with your workspace tasks and notes.',
-    button: 'Open MCP Settings',
+    subtitle:
+      'Generate Personal Access Tokens to let AI coding agents (Antigravity, Claude, Cline) interact directly with your workspace tasks and notes.',
+    button: 'Open MCP Settings'
   },
 
   // Danger Zone Section
@@ -85,7 +86,7 @@ export const settings = {
     confirmDeleteBtn: 'I understand, permanently delete',
     deleting: 'Deleting account permanently...',
     deletedToast: 'Your account has been permanently deleted.',
-    deleteErrorToast: 'Failed to delete account.',
+    deleteErrorToast: 'Failed to delete account.'
   },
 
   // Avatar Crop Modal
@@ -103,6 +104,6 @@ export const settings = {
     fileTooLarge: 'Maximum file size is 10MB.',
     convertError: 'Failed to convert image to WebP format.',
     uploadError: 'Failed to upload avatar.',
-    uploadSuccess: 'Profile photo updated successfully.',
-  },
+    uploadSuccess: 'Profile photo updated successfully.'
+  }
 }
