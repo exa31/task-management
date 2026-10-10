@@ -1,7 +1,7 @@
 import React, { useEffect } from 'react'
 import { Navigate, Outlet, useLocation } from 'react-router-dom'
 
-import { useRealtimeReminders } from '@/hooks'
+import { useFcm, useRealtimeReminders } from '@/hooks'
 import { useAuthStore } from '@/stores'
 
 export const ProtectedRoute: React.FC = () => {
@@ -9,6 +9,7 @@ export const ProtectedRoute: React.FC = () => {
   const location = useLocation()
 
   useRealtimeReminders()
+  useFcm()
 
   useEffect(() => {
     checkAuth()

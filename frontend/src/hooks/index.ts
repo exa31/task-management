@@ -3,6 +3,7 @@
  */
 export * from './useAppleAuth'
 export { useDarkMode } from './useDarkMode'
+export * from './useFcm'
 export * from './useGoogleAuth'
 export * from './useMcpQuery'
 export * from './useNotesQuery'
