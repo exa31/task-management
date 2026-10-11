@@ -1,5 +1,6 @@
 import { useEffect } from 'react'
 
+import { apiBaseUrl } from '@/api/client'
 import { appToast } from '@/components'
 import { reminderKeys } from '@/hooks/useRemindersQuery'
 import { queryClient } from '@/queryClient'
@@ -52,7 +53,7 @@ export const useRealtimeReminders = () => {
       }
     }
 
-    const sseUrl = `/api/v1/realtime/sse/events?token=${encodeURIComponent(token)}&user_id=${encodeURIComponent(userId)}`
+    const sseUrl = `${apiBaseUrl}/api/v1/realtime/sse/events?token=${encodeURIComponent(token)}&user_id=${encodeURIComponent(userId)}`
     const es = new EventSource(sseUrl)
     activeEventSource = es
 

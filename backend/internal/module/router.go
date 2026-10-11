@@ -251,8 +251,8 @@ func (r *Router) registerWebSocketRoutes(rt fiber.Router) {
 func (r *Router) registerSSERoutes(rt fiber.Router) {
 	sseHandler := NewSSEHandler(r.Hub)
 	sse := rt.Group("/sse")
-	sse.Get("/events", sseHandler.Events)
-	sse.Get("/subscribe", sseHandler.Subscribe)
+	sse.Get("/events", authMiddleware.OptionalAuthMiddleware(r.JWTService), sseHandler.Events)
+	sse.Get("/subscribe", authMiddleware.OptionalAuthMiddleware(r.JWTService), sseHandler.Subscribe)
 	sse.Post("/broadcast", authMiddleware.AuthMiddleware(r.JWTService), sseHandler.BroadcastToChannel)
 	sse.Post("/send", authMiddleware.AuthMiddleware(r.JWTService), sseHandler.SendToUser)
 	sse.Get("/stats", authMiddleware.AuthMiddleware(r.JWTService), sseHandler.GetStats)

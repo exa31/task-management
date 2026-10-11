@@ -8,6 +8,11 @@ import { useTranslation } from '@/i18n'
 import { useUIStore } from '@/stores'
 import type { TaskPriority, TaskStatus } from '@/types'
 
+interface LocalSubtask {
+  id: string
+  title: string
+}
+
 export const TaskModal: React.FC = () => {
   const { isCreateTaskModalOpen, closeCreateTaskModal, createTaskInitialProjectId } = useUIStore()
   const createTaskMutation = useCreateTask()
@@ -23,7 +28,8 @@ export const TaskModal: React.FC = () => {
   const [isCreateProjectOpen, setIsCreateProjectOpen] = useState(false)
   const [isFocus, setIsFocus] = useState(false)
   const [tagsInput, setTagsInput] = useState('')
-  const [subtasksInput, setSubtasksInput] = useState('')
+  const [subtasks, setSubtasks] = useState<LocalSubtask[]>([])
+  const [newSubtaskTitle, setNewSubtaskTitle] = useState('')
   const [touched, setTouched] = useState(false)
   const [errorMsg, setErrorMsg] = useState<string | null>(null)
 
@@ -46,10 +52,24 @@ export const TaskModal: React.FC = () => {
     setProjectId(null)
     setIsFocus(false)
     setTagsInput('')
-    setSubtasksInput('')
+    setSubtasks([])
+    setNewSubtaskTitle('')
     setTouched(false)
     setErrorMsg(null)
     closeCreateTaskModal()
+  }
+
+  const handleAddSubtask = () => {
+    if (!newSubtaskTitle.trim()) return
+    setSubtasks((prev) => [
+      ...prev,
+      { id: `st_${Date.now()}_${prev.length}`, title: newSubtaskTitle.trim() }
+    ])
+    setNewSubtaskTitle('')
+  }
+
+  const handleRemoveSubtask = (idToRemove: string) => {
+    setSubtasks((prev) => prev.filter((item) => item.id !== idToRemove))
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -63,10 +83,10 @@ export const TaskModal: React.FC = () => {
       .map((t) => t.trim().toLowerCase())
       .filter(Boolean)
 
-    const subtasks = subtasksInput
-      .split('\n')
-      .map((s) => s.trim())
-      .filter(Boolean)
+    const finalSubtasks = subtasks.map((item) => item.title)
+    if (newSubtaskTitle.trim()) {
+      finalSubtasks.push(newSubtaskTitle.trim())
+    }
 
     try {
       await createTaskMutation.mutateAsync({
@@ -78,7 +98,7 @@ export const TaskModal: React.FC = () => {
         due_date: dueDate ? dueDate.toISOString() : undefined,
         is_focus: isFocus,
         tags,
-        subtasks
+        subtasks: finalSubtasks
       })
 
       handleClose()
@@ -96,8 +116,9 @@ export const TaskModal: React.FC = () => {
             {t('taskModal.createTitle')}
           </h2>
           <button
+            type="button"
             onClick={handleClose}
-            title={t('common.close')}
+            data-pr-tooltip={t('common.close')}
             className="p-1 rounded text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
           >
             <i className="pi pi-times text-xs" />
@@ -111,6 +132,7 @@ export const TaskModal: React.FC = () => {
             <button
               type="button"
               onClick={() => setErrorMsg(null)}
+              data-pr-tooltip={t('common.close')}
               className="text-rose-500/70 hover:text-rose-500 cursor-pointer"
             >
               <i className="pi pi-times text-xs" />
@@ -270,6 +292,7 @@ export const TaskModal: React.FC = () => {
                 <button
                   type="button"
                   onClick={() => setIsCreateProjectOpen(true)}
+                  data-pr-tooltip={t('taskModal.createNewProject')}
                   className="text-[11px] font-medium text-indigo-600 dark:text-indigo-400 hover:text-indigo-500 hover:underline flex items-center gap-1 cursor-pointer"
                 >
                   <i className="pi pi-plus text-[9px]" />
@@ -302,16 +325,69 @@ export const TaskModal: React.FC = () => {
 
           {/* Checklist Subtasks */}
           <div>
-            <label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">
-              {t('tasks.checklist')}
-            </label>
-            <textarea
-              rows={3}
-              value={subtasksInput}
-              onChange={(e) => setSubtasksInput(e.target.value)}
-              placeholder={t('taskModal.checklistPlaceholder')}
-              className="w-full rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 px-3 py-1.5 text-xs text-slate-900 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500 focus:border-indigo-500 focus:outline-none resize-none transition-colors"
-            />
+            <div className="flex items-center justify-between mb-1.5">
+              <label className="block text-xs font-medium text-slate-600 dark:text-slate-400">
+                {t('tasks.checklist')}
+                {subtasks.length > 0 && (
+                  <span className="ml-1.5 px-1.5 py-0.5 rounded-full text-[10px] font-semibold bg-indigo-50 dark:bg-indigo-950/50 text-indigo-600 dark:text-indigo-400 border border-indigo-200 dark:border-indigo-800/60">
+                    {subtasks.length}
+                  </span>
+                )}
+              </label>
+            </div>
+
+            {/* Subtask Items */}
+            {subtasks.length > 0 && (
+              <div className="space-y-1.5 mb-2 max-h-36 overflow-y-auto pr-0.5">
+                {subtasks.map((st) => (
+                  <div
+                    key={st.id}
+                    className="group flex items-center justify-between p-2 rounded-lg bg-slate-50 dark:bg-slate-950/60 hover:bg-slate-100/80 dark:hover:bg-slate-950 border border-slate-200 dark:border-slate-800 text-xs transition-colors"
+                  >
+                    <div className="flex items-center gap-2 flex-1 min-w-0">
+                      <i className="pi pi-check-square text-xs text-indigo-500 dark:text-indigo-400 shrink-0" />
+                      <span className="truncate text-slate-800 dark:text-slate-200">{st.title}</span>
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={() => handleRemoveSubtask(st.id)}
+                      data-pr-tooltip={t('taskDrawer.deleteSubtaskTooltip')}
+                      className="p-1 text-slate-400 hover:text-rose-500 dark:hover:text-rose-400 opacity-70 group-hover:opacity-100 transition-opacity cursor-pointer"
+                    >
+                      <i className="pi pi-times text-[10px]" />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {/* Add Subtask Input */}
+            <div className="flex gap-2">
+              <input
+                type="text"
+                value={newSubtaskTitle}
+                onChange={(e) => setNewSubtaskTitle(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    e.preventDefault()
+                    handleAddSubtask()
+                  }
+                }}
+                placeholder={t('taskDrawer.addSubtaskPlaceholder')}
+                className="flex-1 rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 px-3 py-1.5 text-xs text-slate-900 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500 focus:border-indigo-500 focus:outline-none transition-colors"
+              />
+              <button
+                type="button"
+                onClick={handleAddSubtask}
+                disabled={!newSubtaskTitle.trim()}
+                data-pr-tooltip={t('taskDrawer.addSubtaskTooltip')}
+                className="px-3 py-1.5 rounded-lg bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700 disabled:opacity-50 text-xs font-medium text-slate-700 dark:text-slate-200 flex items-center gap-1 transition-colors cursor-pointer"
+              >
+                <i className="pi pi-plus text-[10px]" />
+                {t('taskDrawer.add')}
+              </button>
+            </div>
           </div>
 
           {/* Tags & Today's Focus */}
@@ -342,6 +418,7 @@ export const TaskModal: React.FC = () => {
             <button
               type="button"
               onClick={handleClose}
+              data-pr-tooltip={t('common.cancel')}
               className="px-3 py-1.5 text-xs text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
             >
               {t('common.cancel')}
@@ -349,6 +426,7 @@ export const TaskModal: React.FC = () => {
             <button
               type="submit"
               disabled={createTaskMutation.isPending || !title.trim()}
+              data-pr-tooltip={t('taskModal.submit')}
               className="px-4 py-1.5 text-xs font-medium text-white bg-indigo-600 hover:bg-indigo-500 rounded-lg disabled:opacity-50 flex items-center gap-1.5 shadow-xs transition-colors cursor-pointer"
             >
               {createTaskMutation.isPending && <i className="pi pi-spin pi-spinner text-xs" />}

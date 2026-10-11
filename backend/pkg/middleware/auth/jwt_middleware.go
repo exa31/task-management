@@ -34,6 +34,11 @@ func AuthMiddleware(jwtService *auth.JWTService) fiber.Handler {
 			tokenString = c.Cookies("access_token")
 		}
 
+		// 3. Fallback to token query parameter (useful for SSE and WebSocket)
+		if tokenString == "" {
+			tokenString = c.Query("token")
+		}
+
 		if tokenString == "" {
 			return customErrors.UnauthorizedWithCode("Authorization token is required", constants.CodeUnauthorized)
 		}
@@ -75,6 +80,10 @@ func OptionalAuthMiddleware(jwtService *auth.JWTService) fiber.Handler {
 
 		if tokenString == "" {
 			tokenString = c.Cookies("access_token")
+		}
+
+		if tokenString == "" {
+			tokenString = c.Query("token")
 		}
 
 		if tokenString == "" {
