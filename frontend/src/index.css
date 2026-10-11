@@ -701,14 +701,15 @@ textarea {
 /* Custom Global Tooltip Styling */
 .p-tooltip {
   position: fixed !important;
-  display: block;
-  max-width: 280px;
-  pointer-events: none;
   z-index: 999999 !important;
+  pointer-events: none;
   opacity: 0;
-  transition: opacity 0.15s cubic-bezier(0.16, 1, 0.3, 1), transform 0.15s cubic-bezier(0.16, 1, 0.3, 1);
-  white-space: normal;
-  word-break: break-word;
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  width: max-content;
+  max-width: min(320px, calc(100vw - 24px));
+  transition: opacity 0.1s ease-out;
 }
 
 .p-tooltip.p-tooltip-visible {
@@ -716,23 +717,30 @@ textarea {
 }
 
 .p-tooltip .p-tooltip-text {
-  background: #0f172a !important;
+  display: inline-block;
+  width: max-content;
+  max-width: min(320px, calc(100vw - 24px));
+  white-space: nowrap;
+  word-break: normal;
+  overflow-wrap: normal;
+  background: #090d16 !important;
   color: #f8fafc !important;
-  font-size: 0.725rem !important;
-  line-height: 1.15rem !important;
+  font-size: 0.6875rem !important; /* 11px */
+  line-height: 1rem !important;
   font-weight: 500 !important;
-  padding: 0.35rem 0.65rem !important;
-  border-radius: 0.5rem !important;
-  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.4), 0 8px 10px -6px rgba(0, 0, 0, 0.2) !important;
+  padding: 0.25rem 0.55rem !important;
+  border-radius: 0.375rem !important; /* 6px */
+  box-shadow: 0 4px 14px 0 rgba(0, 0, 0, 0.35), 0 1px 3px 0 rgba(0, 0, 0, 0.2) !important;
   border: 1px solid rgba(255, 255, 255, 0.12) !important;
-  letter-spacing: -0.01em;
   text-align: center;
+  letter-spacing: -0.01em;
 }
 
 .dark .p-tooltip .p-tooltip-text {
-  background: #1e293b !important;
+  background: #0f172a !important;
   color: #f1f5f9 !important;
   border: 1px solid rgba(255, 255, 255, 0.15) !important;
+  box-shadow: 0 4px 14px 0 rgba(0, 0, 0, 0.6), 0 1px 3px 0 rgba(0, 0, 0, 0.4) !important;
 }
 
 .p-tooltip-arrow {
@@ -746,43 +754,43 @@ textarea {
   bottom: -4px;
   left: 50%;
   transform: translateX(-50%);
-  border-width: 5px 5px 0 5px;
-  border-color: #0f172a transparent transparent transparent !important;
+  border-width: 4px 4px 0 4px;
+  border-color: #090d16 transparent transparent transparent !important;
 }
 .dark .p-tooltip.p-tooltip-top .p-tooltip-arrow {
-  border-color: #1e293b transparent transparent transparent !important;
+  border-color: #0f172a transparent transparent transparent !important;
 }
 
 .p-tooltip.p-tooltip-bottom .p-tooltip-arrow {
   top: -4px;
   left: 50%;
   transform: translateX(-50%);
-  border-width: 0 5px 5px 5px;
-  border-color: transparent transparent #0f172a transparent !important;
+  border-width: 0 4px 4px 4px;
+  border-color: transparent transparent #090d16 transparent !important;
 }
 .dark .p-tooltip.p-tooltip-bottom .p-tooltip-arrow {
-  border-color: transparent transparent #1e293b transparent !important;
+  border-color: transparent transparent #0f172a transparent !important;
 }
 
 .p-tooltip.p-tooltip-left .p-tooltip-arrow {
   right: -4px;
   top: 50%;
   transform: translateY(-50%);
-  border-width: 5px 0 5px 5px;
-  border-color: transparent transparent transparent #0f172a !important;
+  border-width: 4px 0 4px 4px;
+  border-color: transparent transparent transparent #090d16 !important;
 }
 .dark .p-tooltip.p-tooltip-left .p-tooltip-arrow {
-  border-color: transparent transparent transparent #1e293b !important;
+  border-color: transparent transparent transparent #0f172a !important;
 }
 
 .p-tooltip.p-tooltip-right .p-tooltip-arrow {
   left: -4px;
   top: 50%;
   transform: translateY(-50%);
-  border-width: 5px 5px 5px 0;
-  border-color: transparent #0f172a transparent transparent !important;
+  border-width: 4px 4px 4px 0;
+  border-color: transparent #090d16 transparent transparent !important;
 }
 .dark .p-tooltip.p-tooltip-right .p-tooltip-arrow {
-  border-color: transparent #1e293b transparent transparent !important;
+  border-color: transparent #0f172a transparent transparent !important;
 }
 

@@ -7,17 +7,19 @@ interface TooltipData {
   text: string
   position: TooltipPosition
   rect: DOMRect
+  targetCenterX: number
 }
 
 /**
  * Universal Event-Delegated Tooltip Component.
- * Automatically displays tooltips for ANY static or dynamically mounted DOM element
- * possessing `data-pr-tooltip` or `title` attributes across modals, drawers, and tables.
+ * Automatically displays sleek floating tooltips for ANY static or dynamically mounted DOM element
+ * possessing `data-pr-tooltip` or `title` attributes across modals, drawers, tables, and standalone icons.
  */
 export const GlobalTooltip: React.FC = () => {
   const [data, setData] = useState<TooltipData | null>(null)
   const [coords, setCoords] = useState<{ x: number; y: number }>({ x: 0, y: 0 })
   const [actualPos, setActualPos] = useState<TooltipPosition>('top')
+  const [arrowShift, setArrowShift] = useState(0)
   const tooltipRef = useRef<HTMLDivElement>(null)
   const timerRef = useRef<number | null>(null)
   const currentTargetRef = useRef<HTMLElement | null>(null)
@@ -51,14 +53,48 @@ export const GlobalTooltip: React.FC = () => {
       timerRef.current = window.setTimeout(() => {
         if (!target.isConnected) return
         const rect = target.getBoundingClientRect()
-        const position = (target.getAttribute('data-pr-position') || 'top') as TooltipPosition
+        let pos = (target.getAttribute('data-pr-position') || 'top') as TooltipPosition
 
+        // Auto flip if near viewport edges
+        if (pos === 'top' && rect.top < 40) {
+          pos = 'bottom'
+        } else if (pos === 'bottom' && rect.bottom > window.innerHeight - 40) {
+          pos = 'top'
+        } else if (pos === 'left' && rect.left < 80) {
+          pos = 'right'
+        } else if (pos === 'right' && rect.right > window.innerWidth - 80) {
+          pos = 'left'
+        }
+
+        const targetCenterX = rect.left + rect.width / 2
+
+        let initX = 0
+        let initY = 0
+
+        if (pos === 'top') {
+          initX = targetCenterX
+          initY = rect.top - 6
+        } else if (pos === 'bottom') {
+          initX = targetCenterX
+          initY = rect.bottom + 6
+        } else if (pos === 'left') {
+          initX = rect.left - 6
+          initY = rect.top + rect.height / 2
+        } else if (pos === 'right') {
+          initX = rect.right + 6
+          initY = rect.top + rect.height / 2
+        }
+
+        setActualPos(pos)
+        setCoords({ x: initX, y: initY })
+        setArrowShift(0)
         setData({
           text: text.trim(),
-          position,
-          rect
+          position: pos,
+          rect,
+          targetCenterX
         })
-      }, 120)
+      }, 100)
     }
 
     const handleMouseOut = (e: MouseEvent) => {
@@ -117,55 +153,32 @@ export const GlobalTooltip: React.FC = () => {
   }, [data])
 
   useLayoutEffect(() => {
-    if (!data) return
+    if (!data || !tooltipRef.current) return
 
-    const { rect, position } = data
-    let pos = position
+    const { position, targetCenterX } = data
+    const tooltipRect = tooltipRef.current.getBoundingClientRect()
+    const tooltipWidth = tooltipRect.width
+    const halfWidth = tooltipWidth / 2
 
-    // Flip position if near viewport edge
-    if (pos === 'top' && rect.top < 45) {
-      pos = 'bottom'
-    } else if (pos === 'bottom' && rect.bottom > window.innerHeight - 45) {
-      pos = 'top'
-    } else if (pos === 'left' && rect.left < 70) {
-      pos = 'right'
-    } else if (pos === 'right' && rect.right > window.innerWidth - 70) {
-      pos = 'left'
-    }
+    if (position === 'top' || position === 'bottom') {
+      const minX = 12 + halfWidth
+      const maxX = window.innerWidth - 12 - halfWidth
 
-    setActualPos(pos)
-
-    let x = 0
-    let y = 0
-
-    if (pos === 'top') {
-      x = rect.left + rect.width / 2
-      y = rect.top - 6
-    } else if (pos === 'bottom') {
-      x = rect.left + rect.width / 2
-      y = rect.bottom + 6
-    } else if (pos === 'left') {
-      x = rect.left - 6
-      y = rect.top + rect.height / 2
-    } else if (pos === 'right') {
-      x = rect.right + 6
-      y = rect.top + rect.height / 2
-    }
-
-    // Clamp horizontal position so tooltip doesn't bleed off screen edges
-    if (tooltipRef.current) {
-      const tooltipRect = tooltipRef.current.getBoundingClientRect()
-      const halfWidth = tooltipRect.width / 2
-      if (pos === 'top' || pos === 'bottom') {
-        if (x - halfWidth < 8) {
-          x = 8 + halfWidth
-        } else if (x + halfWidth > window.innerWidth - 8) {
-          x = window.innerWidth - 8 - halfWidth
-        }
+      let finalX = targetCenterX
+      if (finalX < minX) {
+        finalX = minX
+      } else if (finalX > maxX) {
+        finalX = maxX
       }
-    }
 
-    setCoords({ x, y })
+      // Calculate shift for arrow so it stays centered on target
+      let shift = targetCenterX - finalX
+      const maxShift = Math.max(0, halfWidth - 10)
+      shift = Math.max(-maxShift, Math.min(maxShift, shift))
+
+      setCoords((prev) => (prev.x === finalX ? prev : { ...prev, x: finalX }))
+      setArrowShift(shift)
+    }
   }, [data])
 
   if (!data || typeof document === 'undefined') return null
@@ -190,7 +203,10 @@ export const GlobalTooltip: React.FC = () => {
       }}
       role="tooltip"
     >
-      <div className="p-tooltip-arrow" />
+      <div
+        className="p-tooltip-arrow"
+        style={arrowShift ? { transform: `translateX(calc(-50% + ${arrowShift}px))` } : undefined}
+      />
       <div className="p-tooltip-text">{data.text}</div>
     </div>,
     document.body
