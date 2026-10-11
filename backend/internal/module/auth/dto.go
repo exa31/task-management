@@ -38,15 +38,18 @@ type RefreshTokenRequest struct {
 
 // UserPayload is a user summary for auth responses.
 type UserPayload struct {
-	ID          string    `json:"id"`
-	Name        string    `json:"name"`
-	Email       string    `json:"email"`
-	AvatarURL   string    `json:"avatar_url"`
-	Provider    string    `json:"provider"`
-	GoogleBound bool      `json:"google_bound"`
-	AppleBound  bool      `json:"apple_bound"`
-	HasPassword bool      `json:"has_password"`
-	CreatedAt   time.Time `json:"created_at"`
+	ID                        string    `json:"id"`
+	Name                      string    `json:"name"`
+	Email                     string    `json:"email"`
+	AvatarURL                 string    `json:"avatar_url"`
+	Provider                  string    `json:"provider"`
+	GoogleBound               bool      `json:"google_bound"`
+	AppleBound                bool      `json:"apple_bound"`
+	HasPassword               bool      `json:"has_password"`
+	Timezone                  string    `json:"timezone"`
+	DueDateWarningThreshold   int       `json:"due_date_warning_threshold"`
+	EmailNotificationsEnabled bool      `json:"email_notifications_enabled"`
+	CreatedAt                 time.Time `json:"created_at"`
 }
 
 // TokenPair mirrors the underlying token pair.

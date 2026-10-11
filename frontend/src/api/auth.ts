@@ -19,8 +19,12 @@ export const authApi = {
 
   getProfile: () => apiClient.get<User>('/api/v1/auth/profile'),
 
-  updateProfile: (payload: { name: string }) =>
-    apiClient.put<User>('/api/v1/auth/profile', payload),
+  updateProfile: (payload: {
+    name?: string
+    timezone?: string
+    due_date_warning_threshold?: number
+    email_notifications_enabled?: boolean
+  }) => apiClient.put<User>('/api/v1/auth/profile', payload),
 
   uploadAvatar: (file: Blob | File) => {
     const formData = new FormData()

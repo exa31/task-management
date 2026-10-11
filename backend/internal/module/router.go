@@ -15,7 +15,9 @@ import (
 	"golang/internal/module/task"
 	usermodule "golang/internal/module/user"
 	"golang/pkg/auth"
+	"golang/pkg/logging"
 	authMiddleware "golang/pkg/middleware/auth"
+	"golang/pkg/notification"
 	"golang/pkg/realtime"
 	"golang/pkg/storage"
 
@@ -31,11 +33,37 @@ type Router struct {
 	Config          *config.Config
 	Storage         storage.Storage
 	ReminderService reminder.Service
+	AsynqScheduler  *notification.AsynqScheduler
+	EmailSender     notification.EmailSender
+	PushSender      notification.PushSender
+	ReminderRepo    reminder.Repository
 }
 
 // NewRouter builds the module router.
-func NewRouter(db *database.PostgresDB, jwtService *auth.JWTService, hub *realtime.Hub, cfg *config.Config, stor storage.Storage, reminderSvc reminder.Service) *Router {
-	return &Router{DB: db, JWTService: jwtService, Hub: hub, Config: cfg, Storage: stor, ReminderService: reminderSvc}
+func NewRouter(
+	db *database.PostgresDB,
+	jwtService *auth.JWTService,
+	hub *realtime.Hub,
+	cfg *config.Config,
+	stor storage.Storage,
+	reminderSvc reminder.Service,
+	asynqSched *notification.AsynqScheduler,
+	emailSender notification.EmailSender,
+	pushSender notification.PushSender,
+	reminderRepo reminder.Repository,
+) *Router {
+	return &Router{
+		DB:              db,
+		JWTService:      jwtService,
+		Hub:             hub,
+		Config:          cfg,
+		Storage:         stor,
+		ReminderService: reminderSvc,
+		AsynqScheduler:  asynqSched,
+		EmailSender:     emailSender,
+		PushSender:      pushSender,
+		ReminderRepo:    reminderRepo,
+	}
 }
 
 // Register mounts every enabled module on the API router.
@@ -98,6 +126,10 @@ func (r *Router) registerNotesAndTasks(api fiber.Router) {
 
 	taskRepo := task.NewRepository(db)
 	taskService := task.NewService(taskRepo, r.DB)
+	if r.AsynqScheduler != nil {
+		logger := logging.Logger()
+		taskService.SetNotificationDependencies(r.AsynqScheduler, r.EmailSender, r.PushSender, r.ReminderRepo, r.Hub, logger)
+	}
 	taskHandler := task.NewHandler(taskService)
 
 	// Cross-wire note conversion to task
@@ -107,6 +139,13 @@ func (r *Router) registerNotesAndTasks(api fiber.Router) {
 	mcpTokenRepo := mcp.NewTokenRepository(db)
 	mcpService := mcp.NewService(mcpTokenRepo, noteService, taskService, r.DB)
 	mcpHandler := mcp.NewHandler(mcpService)
+
+	webhookSecret := ""
+	if r.Config != nil {
+		webhookSecret = r.Config.Reminder.WebhookSecret
+	}
+	// External Asynq worker webhook trigger endpoint for task due warning (Public/Secret-protected)
+	api.Post("/tasks/due-warning/trigger", taskHandler.TriggerDueWarning(webhookSecret))
 
 	// Notes routes (Per-user isolated)
 	notes := api.Group("/notes")

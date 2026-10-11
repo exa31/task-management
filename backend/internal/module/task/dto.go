@@ -112,19 +112,34 @@ type TaskResponse struct {
 	Description       string            `json:"description" db:"description"`
 	Status            string            `json:"status" db:"status"`
 	Priority          string            `json:"priority" db:"priority"`
-	DueDate           *time.Time        `json:"due_date" db:"due_date"`
-	IsFocus           bool              `json:"is_focus" db:"is_focus"`
-	Tags              []string          `json:"tags"`
-	ProjectID         *int64            `json:"project_id" db:"project_id"`
-	ProjectName       *string           `json:"project_name" db:"project_name"`
-	ProjectColor      *string           `json:"project_color" db:"project_color"`
-	LastProgressNote  string            `json:"last_progress_note" db:"last_progress_note"`
-	LastProgressAt    *time.Time        `json:"last_progress_at" db:"last_progress_at"`
-	SourceNoteID      *int64            `json:"source_note_id" db:"source_note_id"`
-	Subtasks          []SubtaskResponse `json:"subtasks"`
-	SubtasksCount     int               `json:"subtasks_count"`
-	SubtasksCompleted int               `json:"subtasks_completed"`
-	ProgressPercent   int               `json:"progress_percent"`
-	CreatedAt         time.Time         `json:"created_at" db:"created_at"`
-	UpdatedAt         time.Time         `json:"updated_at" db:"updated_at"`
+	DueDate              *time.Time        `json:"due_date" db:"due_date"`
+	DueDateWarningSentAt *time.Time        `json:"due_date_warning_sent_at" db:"due_date_warning_sent_at"`
+	IsFocus              bool              `json:"is_focus" db:"is_focus"`
+	Tags                 []string          `json:"tags"`
+	ProjectID            *int64            `json:"project_id" db:"project_id"`
+	ProjectName          *string           `json:"project_name" db:"project_name"`
+	ProjectColor         *string           `json:"project_color" db:"project_color"`
+	LastProgressNote     string            `json:"last_progress_note" db:"last_progress_note"`
+	LastProgressAt       *time.Time        `json:"last_progress_at" db:"last_progress_at"`
+	SourceNoteID         *int64            `json:"source_note_id" db:"source_note_id"`
+	Subtasks             []SubtaskResponse `json:"subtasks"`
+	SubtasksCount        int               `json:"subtasks_count"`
+	SubtasksCompleted    int               `json:"subtasks_completed"`
+	ProgressPercent      int               `json:"progress_percent"`
+	CreatedAt            time.Time         `json:"created_at" db:"created_at"`
+	UpdatedAt            time.Time         `json:"updated_at" db:"updated_at"`
 }
+
+// TriggerDueWarningRequest payload for external worker HTTP POST trigger.
+type TriggerDueWarningRequest struct {
+	TaskID int64 `json:"task_id" query:"task_id"`
+	ID     int64 `json:"id" query:"id"`
+}
+
+func (r *TriggerDueWarningRequest) TargetID() int64 {
+	if r.TaskID != 0 {
+		return r.TaskID
+	}
+	return r.ID
+}
+

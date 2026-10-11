@@ -79,6 +79,28 @@ export const useRealtimeReminders = () => {
               icon: '/favicon.ico'
             })
           }
+        } else if (parsed.type === 'task:due_warning') {
+          const taskData = (parsed.data || {}) as { task_id?: number; title?: string }
+
+          // Invalidate task queries so UI and warning badges refresh immediately
+          queryClient.invalidateQueries({ queryKey: ['tasks'] })
+
+          const taskTitle = taskData.title || 'Task'
+          const toastMsg = `⚠️ Deadline Mendekati: ${taskTitle}`
+          const bodyMsg = 'Tugas ini mendekati batas tenggat waktu (due date).'
+
+          appToast.warn(toastMsg)
+
+          if (
+            typeof window !== 'undefined' &&
+            'Notification' in window &&
+            Notification.permission === 'granted'
+          ) {
+            new Notification(toastMsg, {
+              body: bodyMsg,
+              icon: '/favicon.ico'
+            })
+          }
         }
       } catch {
         // Non-JSON SSE ping/keep-alive message

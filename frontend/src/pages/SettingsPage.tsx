@@ -17,6 +17,12 @@ export const SettingsPage: React.FC = () => {
   const [isSavingProfile, setIsSavingProfile] = useState(false)
   const [isAvatarModalOpen, setIsAvatarModalOpen] = useState(false)
 
+  // Notification & Due Date Alert State
+  const [timezone, setTimezone] = useState(user?.timezone || 'Asia/Jakarta')
+  const [threshold, setThreshold] = useState<number>(user?.due_date_warning_threshold ?? 1440)
+  const [emailEnabled, setEmailEnabled] = useState<boolean>(user?.email_notifications_enabled ?? true)
+  const [isSavingNotifications, setIsSavingNotifications] = useState(false)
+
   // Danger Zone Delete Modal State
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false)
   const [deleteConfirmation, setDeleteConfirmation] = useState('')
@@ -27,10 +33,13 @@ export const SettingsPage: React.FC = () => {
   const [isBindingApple, setIsBindingApple] = useState(false)
 
   useEffect(() => {
-    if (user?.name) {
-      setName(user.name)
+    if (user) {
+      if (user.name) setName(user.name)
+      if (user.timezone) setTimezone(user.timezone)
+      if (user.due_date_warning_threshold !== undefined) setThreshold(user.due_date_warning_threshold)
+      if (user.email_notifications_enabled !== undefined) setEmailEnabled(user.email_notifications_enabled)
     }
-  }, [user?.name])
+  }, [user])
 
   // Google Bind Handler
   const handleBindGoogle = () => {
@@ -157,6 +166,27 @@ export const SettingsPage: React.FC = () => {
     }
   }
 
+  // Handle Save Notification Preferences
+  const handleSaveNotificationPreferences = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setIsSavingNotifications(true)
+    try {
+      const res = await authApi.updateProfile({
+        timezone,
+        due_date_warning_threshold: threshold,
+        email_notifications_enabled: emailEnabled
+      })
+      if (res.data) {
+        updateUser(res.data)
+        toast.success(t('settings.notifications.savedSuccess'))
+      }
+    } catch (err: unknown) {
+      toast.error(err instanceof Error ? err.message : t('settings.notifications.savedError'))
+    } finally {
+      setIsSavingNotifications(false)
+    }
+  }
+
   // Handle Account Deletion
   const handleDeleteAccount = async () => {
     if (deleteConfirmation.trim().toUpperCase() !== 'DELETE') {
@@ -241,6 +271,7 @@ export const SettingsPage: React.FC = () => {
                   <button
                     type="button"
                     onClick={() => setIsAvatarModalOpen(true)}
+                    data-pr-tooltip={t('settings.profile.uploadCropWebp')}
                     className="px-3 py-1.5 text-xs font-medium rounded-lg border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors flex items-center gap-1.5 cursor-pointer"
                   >
                     <i className="pi pi-upload text-xs" /> {t('settings.profile.uploadCropWebp')}
@@ -279,6 +310,7 @@ export const SettingsPage: React.FC = () => {
               <button
                 type="submit"
                 disabled={isSavingProfile || name.trim() === user?.name}
+                data-pr-tooltip={t('settings.profile.saveChanges')}
                 className="px-4 py-2 text-xs font-medium rounded-xl bg-indigo-600 hover:bg-indigo-500 active:bg-indigo-700 text-white transition-all shadow-sm shadow-indigo-500/20 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 cursor-pointer"
               >
                 {isSavingProfile ? (
@@ -350,6 +382,7 @@ export const SettingsPage: React.FC = () => {
                     <button
                       type="button"
                       onClick={() => handleUnbind('google')}
+                      data-pr-tooltip={t('settings.oauth.disconnect')}
                       className="px-3 py-1.5 text-xs font-medium rounded-lg border border-rose-200 dark:border-rose-900/50 text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/30 transition-colors cursor-pointer"
                     >
                       {t('settings.oauth.disconnect')}
@@ -359,6 +392,7 @@ export const SettingsPage: React.FC = () => {
                       type="button"
                       onClick={handleBindGoogle}
                       disabled={isBindingGoogle}
+                      data-pr-tooltip={t('settings.oauth.linkGoogle')}
                       className="px-3.5 py-1.5 text-xs font-medium rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white transition-colors flex items-center gap-1.5 cursor-pointer"
                     >
                       {isBindingGoogle ? (
@@ -407,6 +441,7 @@ export const SettingsPage: React.FC = () => {
                     <button
                       type="button"
                       onClick={() => handleUnbind('apple')}
+                      data-pr-tooltip={t('settings.oauth.disconnect')}
                       className="px-3 py-1.5 text-xs font-medium rounded-lg border border-rose-200 dark:border-rose-900/50 text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/30 transition-colors cursor-pointer"
                     >
                       {t('settings.oauth.disconnect')}
@@ -416,6 +451,7 @@ export const SettingsPage: React.FC = () => {
                       type="button"
                       onClick={handleBindApple}
                       disabled={isBindingApple}
+                      data-pr-tooltip={t('settings.oauth.linkApple')}
                       className="px-3.5 py-1.5 text-xs font-medium rounded-lg bg-slate-900 dark:bg-white text-white dark:text-slate-900 hover:bg-slate-800 dark:hover:bg-slate-100 transition-colors flex items-center gap-1.5 cursor-pointer"
                     >
                       {isBindingApple ? (
@@ -448,7 +484,8 @@ export const SettingsPage: React.FC = () => {
               </div>
               <Link
                 to="/projects"
-                className="px-4 py-2 text-xs font-semibold rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white transition-all shadow-sm shadow-indigo-500/20 inline-flex items-center gap-2 shrink-0 self-start sm:self-auto"
+                data-pr-tooltip={t('projects.goToProjects')}
+                className="px-4 py-2 text-xs font-semibold rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white transition-all shadow-sm shadow-indigo-500/20 inline-flex items-center gap-2 shrink-0 self-start sm:self-auto cursor-pointer"
               >
                 <i className="pi pi-arrow-up-right text-xs" />
                 {t('projects.goToProjects')}
@@ -470,7 +507,8 @@ export const SettingsPage: React.FC = () => {
               </div>
               <Link
                 to="/mcp-settings"
-                className="px-4 py-2 text-xs font-semibold rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white transition-all shadow-sm shadow-indigo-500/20 inline-flex items-center gap-2 shrink-0 self-start sm:self-auto"
+                data-pr-tooltip={t('settings.mcp.button')}
+                className="px-4 py-2 text-xs font-semibold rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white transition-all shadow-sm shadow-indigo-500/20 inline-flex items-center gap-2 shrink-0 self-start sm:self-auto cursor-pointer"
               >
                 <i className="pi pi-arrow-up-right text-xs" />
                 {t('settings.mcp.button')}
@@ -478,7 +516,112 @@ export const SettingsPage: React.FC = () => {
             </div>
           </section>
 
-          {/* 5. Danger Zone (Permanent Account Deletion) */}
+          {/* 5. Notification & Due Date Warning Preferences */}
+          <section className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-6 shadow-sm">
+            <h2 className="text-base font-semibold text-slate-900 dark:text-white mb-2 flex items-center gap-2">
+              <i className="pi pi-bell text-indigo-500" />
+              {t('settings.notifications.title')}
+            </h2>
+            <p className="text-xs text-slate-500 dark:text-slate-400 mb-6">
+              {t('settings.notifications.subtitle')}
+            </p>
+
+            <form onSubmit={handleSaveNotificationPreferences} className="space-y-4">
+              {/* Display & Reminder Timezone */}
+              <div>
+                <label className="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1">
+                  {t('settings.notifications.timezoneLabel')}
+                </label>
+                <select
+                  value={timezone}
+                  onChange={(e) => setTimezone(e.target.value)}
+                  className="w-full rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 px-3.5 py-2 text-sm text-slate-900 dark:text-slate-100 focus:outline-none focus:border-indigo-500 transition-colors"
+                >
+                  <option value="Asia/Jakarta">Asia/Jakarta (WIB, UTC+7)</option>
+                  <option value="Asia/Makassar">Asia/Makassar (WITA, UTC+8)</option>
+                  <option value="Asia/Jayapura">Asia/Jayapura (WIT, UTC+9)</option>
+                  <option value="Asia/Singapore">Asia/Singapore (SGT, UTC+8)</option>
+                  <option value="Asia/Tokyo">Asia/Tokyo (JST, UTC+9)</option>
+                  <option value="UTC">UTC (UTC+0)</option>
+                  <option value="Europe/London">Europe/London (BST/GMT)</option>
+                  <option value="America/New_York">America/New_York (EDT/EST, UTC-4/5)</option>
+                  <option value="America/Los_Angeles">America/Los_Angeles (PDT/PST, UTC-7/8)</option>
+                </select>
+                <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-1">
+                  {t('settings.notifications.timezoneHint')}
+                </p>
+              </div>
+
+              {/* Due Date Alert Threshold */}
+              <div>
+                <label className="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1">
+                  {t('settings.notifications.thresholdLabel')}
+                </label>
+                <select
+                  value={threshold}
+                  onChange={(e) => setThreshold(Number(e.target.value))}
+                  className="w-full rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 px-3.5 py-2 text-sm text-slate-900 dark:text-slate-100 focus:outline-none focus:border-indigo-500 transition-colors"
+                >
+                  <option value={15}>{t('settings.notifications.threshold15m')}</option>
+                  <option value={60}>{t('settings.notifications.threshold1h')}</option>
+                  <option value={180}>{t('settings.notifications.threshold3h')}</option>
+                  <option value={720}>{t('settings.notifications.threshold12h')}</option>
+                  <option value={1440}>{t('settings.notifications.threshold24h')}</option>
+                  <option value={2880}>{t('settings.notifications.threshold48h')}</option>
+                </select>
+                <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-1">
+                  {t('settings.notifications.thresholdHint')}
+                </p>
+              </div>
+
+              {/* Email Notifications Toggle */}
+              <div className="pt-2 border-t border-slate-200 dark:border-slate-800 flex items-start gap-3">
+                <input
+                  type="checkbox"
+                  id="email_notifications_toggle"
+                  checked={emailEnabled}
+                  onChange={(e) => setEmailEnabled(e.target.checked)}
+                  className="mt-0.5 rounded border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-indigo-600 focus:ring-0 cursor-pointer"
+                />
+                <label
+                  htmlFor="email_notifications_toggle"
+                  className="cursor-pointer select-none space-y-0.5"
+                >
+                  <div className="text-xs font-semibold text-slate-900 dark:text-white">
+                    {t('settings.notifications.emailNotificationsLabel')}
+                  </div>
+                  <div className="text-[11px] text-slate-500 dark:text-slate-400">
+                    {t('settings.notifications.emailNotificationsDesc')}
+                  </div>
+                </label>
+              </div>
+
+              <div className="pt-2">
+                <button
+                  type="submit"
+                  disabled={
+                    isSavingNotifications ||
+                    (timezone === (user?.timezone || 'Asia/Jakarta') &&
+                      threshold === (user?.due_date_warning_threshold ?? 1440) &&
+                      emailEnabled === (user?.email_notifications_enabled ?? true))
+                  }
+                  data-pr-tooltip={t('settings.notifications.savePreferences')}
+                  className="px-4 py-2 text-xs font-medium rounded-xl bg-indigo-600 hover:bg-indigo-500 active:bg-indigo-700 text-white transition-all shadow-sm shadow-indigo-500/20 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 cursor-pointer"
+                >
+                  {isSavingNotifications ? (
+                    <>
+                      <i className="pi pi-spin pi-spinner text-xs" />{' '}
+                      {t('settings.notifications.saving')}
+                    </>
+                  ) : (
+                    t('settings.notifications.savePreferences')
+                  )}
+                </button>
+              </div>
+            </form>
+          </section>
+
+          {/* 6. Danger Zone (Permanent Account Deletion) */}
           <section className="bg-rose-50/40 dark:bg-rose-950/10 rounded-2xl border border-rose-200 dark:border-rose-900/40 p-6">
             <h2 className="text-base font-semibold text-rose-600 dark:text-rose-400 mb-2 flex items-center gap-2">
               <i className="pi pi-exclamation-triangle" />
@@ -495,6 +638,7 @@ export const SettingsPage: React.FC = () => {
                 setDeleteError(null)
                 setIsDeleteModalOpen(true)
               }}
+              data-pr-tooltip={t('settings.dangerZone.deleteAccountBtn')}
               className="px-4 py-2 text-xs font-semibold rounded-xl bg-rose-600 hover:bg-rose-500 active:bg-rose-700 text-white transition-all shadow-sm shadow-rose-500/20 flex items-center gap-1.5 cursor-pointer"
             >
               <i className="pi pi-trash text-xs" />
@@ -556,7 +700,8 @@ export const SettingsPage: React.FC = () => {
                 type="button"
                 onClick={() => setIsDeleteModalOpen(false)}
                 disabled={isDeletingAccount}
-                className="px-4 py-2 text-xs font-medium rounded-xl border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800"
+                data-pr-tooltip={t('settings.dangerZone.cancelBtn')}
+                className="px-4 py-2 text-xs font-medium rounded-xl border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer"
               >
                 {t('settings.dangerZone.cancelBtn')}
               </button>
@@ -564,7 +709,8 @@ export const SettingsPage: React.FC = () => {
                 type="button"
                 onClick={handleDeleteAccount}
                 disabled={deleteConfirmation.trim().toUpperCase() !== 'DELETE' || isDeletingAccount}
-                className="px-4 py-2 text-xs font-bold rounded-xl bg-rose-600 hover:bg-rose-500 text-white disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                data-pr-tooltip={t('settings.dangerZone.confirmDeleteBtn')}
+                className="px-4 py-2 text-xs font-bold rounded-xl bg-rose-600 hover:bg-rose-500 text-white disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 cursor-pointer"
               >
                 {isDeletingAccount ? (
                   <>

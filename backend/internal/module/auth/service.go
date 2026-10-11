@@ -47,17 +47,47 @@ func NewAuthService(db *database.PostgresDB, jwtService *auth.JWTService, cfg *c
 }
 
 type authUser struct {
-	ID           string     `db:"id"`
-	Name         string     `db:"name"`
-	Email        string     `db:"email"`
-	Password     *string    `db:"password"`
-	AvatarURL    *string    `db:"avatar_url"`
-	AuthProvider *string    `db:"auth_provider"`
-	ProviderID   *string    `db:"provider_id"`
-	GoogleID     *string    `db:"google_id"`
-	AppleID      *string    `db:"apple_id"`
-	IsActive     bool       `db:"is_active"`
-	CreatedAt    *time.Time `db:"created_at"`
+	ID                        string     `db:"id"`
+	Name                      string     `db:"name"`
+	Email                     string     `db:"email"`
+	Password                  *string    `db:"password"`
+	AvatarURL                 *string    `db:"avatar_url"`
+	AuthProvider              *string    `db:"auth_provider"`
+	ProviderID                *string    `db:"provider_id"`
+	GoogleID                  *string    `db:"google_id"`
+	AppleID                   *string    `db:"apple_id"`
+	Timezone                  string     `db:"timezone"`
+	DueDateWarningThreshold    int        `db:"due_date_warning_threshold"`
+	EmailNotificationsEnabled bool       `db:"email_notifications_enabled"`
+	IsActive                  bool       `db:"is_active"`
+	CreatedAt                 *time.Time `db:"created_at"`
+}
+
+func (u *authUser) toPayload() UserPayload {
+	tz := u.Timezone
+	if tz == "" {
+		tz = "Asia/Jakarta"
+	}
+	threshold := u.DueDateWarningThreshold
+	if threshold <= 0 {
+		threshold = 1440
+	}
+	googleBound := (u.GoogleID != nil && *u.GoogleID != "") || (derefString(u.AuthProvider) == "google")
+	appleBound := (u.AppleID != nil && *u.AppleID != "") || (derefString(u.AuthProvider) == "apple")
+	return UserPayload{
+		ID:                        u.ID,
+		Name:                      u.Name,
+		Email:                     u.Email,
+		AvatarURL:                 derefString(u.AvatarURL),
+		Provider:                  derefString(u.AuthProvider),
+		GoogleBound:               googleBound,
+		AppleBound:                appleBound,
+		HasPassword:               u.Password != nil && *u.Password != "",
+		Timezone:                  tz,
+		DueDateWarningThreshold:   threshold,
+		EmailNotificationsEnabled: u.EmailNotificationsEnabled,
+		CreatedAt:                 derefTime(u.CreatedAt),
+	}
 }
 
 func hashToken(token string) string {
@@ -113,11 +143,14 @@ func (s *AuthService) Register(req *RegisterRequest) (*AuthResponse, error) {
 
 	return &AuthResponse{
 		User: UserPayload{
-			ID:          user.ID,
-			Name:        user.Name,
-			Email:       user.Email,
-			HasPassword: true,
-			CreatedAt:   derefTime(user.CreatedAt),
+			ID:                        user.ID,
+			Name:                      user.Name,
+			Email:                     user.Email,
+			HasPassword:               true,
+			Timezone:                  "Asia/Jakarta",
+			DueDateWarningThreshold:   1440,
+			EmailNotificationsEnabled: true,
+			CreatedAt:                 derefTime(user.CreatedAt),
 		},
 		Tokens: newTokenPair(tokens),
 	}, nil
@@ -127,7 +160,7 @@ func (s *AuthService) Register(req *RegisterRequest) (*AuthResponse, error) {
 func (s *AuthService) Login(req *LoginRequest) (*AuthResponse, error) {
 	var u authUser
 	err := s.db.DB.Get(&u,
-		"SELECT id, name, email, password, avatar_url, auth_provider, google_id, apple_id, is_active, created_at FROM users WHERE email = $1",
+		"SELECT id, name, email, password, avatar_url, auth_provider, google_id, apple_id, timezone, due_date_warning_threshold, email_notifications_enabled, is_active, created_at FROM users WHERE email = $1",
 		req.Email)
 	if err != nil {
 		if stderrors.Is(err, sql.ErrNoRows) {
@@ -153,21 +186,8 @@ func (s *AuthService) Login(req *LoginRequest) (*AuthResponse, error) {
 	}
 	_ = s.saveRefreshToken(u.ID, tokens.RefreshToken, time.Now().Add(time.Duration(refreshDuration)*time.Hour))
 
-	googleBound := (u.GoogleID != nil && *u.GoogleID != "") || (derefString(u.AuthProvider) == "google")
-	appleBound := (u.AppleID != nil && *u.AppleID != "") || (derefString(u.AuthProvider) == "apple")
-
 	return &AuthResponse{
-		User: UserPayload{
-			ID:          u.ID,
-			Name:        u.Name,
-			Email:       u.Email,
-			AvatarURL:   derefString(u.AvatarURL),
-			Provider:    derefString(u.AuthProvider),
-			GoogleBound: googleBound,
-			AppleBound:  appleBound,
-			HasPassword: true,
-			CreatedAt:   derefTime(u.CreatedAt),
-		},
+		User:   u.toPayload(),
 		Tokens: newTokenPair(tokens),
 	}, nil
 }
@@ -604,7 +624,7 @@ func (s *AuthService) OAuthLogin(req *OAuthLoginRequest) (*AuthResponse, error) 
 	}
 
 	var user authUser
-	err := s.db.DB.Get(&user, "SELECT id, name, email, password, avatar_url, auth_provider, google_id, apple_id, is_active, created_at FROM users WHERE email = $1", email)
+	err := s.db.DB.Get(&user, "SELECT id, name, email, password, avatar_url, auth_provider, google_id, apple_id, timezone, due_date_warning_threshold, email_notifications_enabled, is_active, created_at FROM users WHERE email = $1", email)
 	if err != nil {
 		if stderrors.Is(err, sql.ErrNoRows) {
 			uid := uuid.New().String()
@@ -615,9 +635,9 @@ func (s *AuthService) OAuthLogin(req *OAuthLoginRequest) (*AuthResponse, error) 
 				appleID = &providerID
 			}
 			err = s.db.DB.QueryRowx(
-				`INSERT INTO users (id, name, email, avatar_url, auth_provider, provider_id, google_id, apple_id, is_active, created_at, updated_at)
-				 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, TRUE, NOW(), NOW())
-				 RETURNING id, name, email, avatar_url, auth_provider, google_id, apple_id, created_at`,
+				`INSERT INTO users (id, name, email, avatar_url, auth_provider, provider_id, google_id, apple_id, is_active, timezone, due_date_warning_threshold, email_notifications_enabled, created_at, updated_at)
+				 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, TRUE, 'Asia/Jakarta', 1440, TRUE, NOW(), NOW())
+				 RETURNING id, name, email, avatar_url, auth_provider, google_id, apple_id, timezone, due_date_warning_threshold, email_notifications_enabled, created_at`,
 				uid, name, email, avatarURL, provider, providerID, googleID, appleID,
 			).StructScan(&user)
 			if err != nil {
@@ -649,21 +669,8 @@ func (s *AuthService) OAuthLogin(req *OAuthLoginRequest) (*AuthResponse, error) 
 	}
 	_ = s.saveRefreshToken(user.ID, tokens.RefreshToken, time.Now().Add(time.Duration(refreshDuration)*time.Hour))
 
-	googleBound := (user.GoogleID != nil && *user.GoogleID != "") || (derefString(user.AuthProvider) == "google")
-	appleBound := (user.AppleID != nil && *user.AppleID != "") || (derefString(user.AuthProvider) == "apple")
-
 	return &AuthResponse{
-		User: UserPayload{
-			ID:          user.ID,
-			Name:        user.Name,
-			Email:       user.Email,
-			AvatarURL:   derefString(user.AvatarURL),
-			Provider:    derefString(user.AuthProvider),
-			GoogleBound: googleBound,
-			AppleBound:  appleBound,
-			HasPassword: user.Password != nil && *user.Password != "",
-			CreatedAt:   derefTime(user.CreatedAt),
-		},
+		User:   user.toPayload(),
 		Tokens: newTokenPair(tokens),
 	}, nil
 }
@@ -686,7 +693,7 @@ func (s *AuthService) DevLogin(req *DevLoginRequest) (*AuthResponse, error) {
 // GetCurrentUser fetches the authenticated user profile.
 func (s *AuthService) GetCurrentUser(userID string) (*UserPayload, error) {
 	var u authUser
-	err := s.db.DB.Get(&u, "SELECT id, name, email, password, avatar_url, auth_provider, google_id, apple_id, created_at FROM users WHERE id = $1", userID)
+	err := s.db.DB.Get(&u, "SELECT id, name, email, password, avatar_url, auth_provider, google_id, apple_id, timezone, due_date_warning_threshold, email_notifications_enabled, created_at FROM users WHERE id = $1", userID)
 	if err != nil {
 		if stderrors.Is(err, sql.ErrNoRows) {
 			return nil, errors.NotFoundWithCode("User not found", constants.CodeUserNotFound)
@@ -694,21 +701,8 @@ func (s *AuthService) GetCurrentUser(userID string) (*UserPayload, error) {
 		return nil, errors.DatabaseError("Failed to fetch user", err)
 	}
 
-	googleBound := (u.GoogleID != nil && *u.GoogleID != "") || (derefString(u.AuthProvider) == "google")
-	appleBound := (u.AppleID != nil && *u.AppleID != "") || (derefString(u.AuthProvider) == "apple")
-	hasPassword := u.Password != nil && *u.Password != ""
-
-	return &UserPayload{
-		ID:          u.ID,
-		Name:        u.Name,
-		Email:       u.Email,
-		AvatarURL:   derefString(u.AvatarURL),
-		Provider:    derefString(u.AuthProvider),
-		GoogleBound: googleBound,
-		AppleBound:  appleBound,
-		HasPassword: hasPassword,
-		CreatedAt:   derefTime(u.CreatedAt),
-	}, nil
+	payload := u.toPayload()
+	return &payload, nil
 }
 
 // BindOAuth connects Google or Apple credentials to the currently authenticated user.
@@ -865,11 +859,35 @@ func (s *AuthService) DeleteAccount(userID string, req *DeleteAccountRequest) er
 
 // UpdateProfile validates and updates the current user's profile.
 type UpdateProfileRequest struct {
-	Name string `json:"name" validate:"omitempty,min=3,max=100"`
+	Name                      *string `json:"name" validate:"omitempty,min=3,max=100"`
+	Timezone                  *string `json:"timezone" validate:"omitempty,max=50"`
+	DueDateWarningThreshold   *int    `json:"due_date_warning_threshold" validate:"omitempty,min=0,max=43200"`
+	EmailNotificationsEnabled *bool   `json:"email_notifications_enabled"`
 }
 
 func (s *AuthService) UpdateProfile(userID string, req *UpdateProfileRequest) (*UserPayload, error) {
-	_, err := s.db.DB.Exec("UPDATE users SET name = $1, updated_at = NOW() WHERE id = $2", req.Name, userID)
+	query := "UPDATE users SET updated_at = NOW()"
+	args := []interface{}{userID}
+
+	if req.Name != nil && *req.Name != "" {
+		query += fmt.Sprintf(", name = $%d", len(args)+1)
+		args = append(args, *req.Name)
+	}
+	if req.Timezone != nil && *req.Timezone != "" {
+		query += fmt.Sprintf(", timezone = $%d", len(args)+1)
+		args = append(args, *req.Timezone)
+	}
+	if req.DueDateWarningThreshold != nil {
+		query += fmt.Sprintf(", due_date_warning_threshold = $%d", len(args)+1)
+		args = append(args, *req.DueDateWarningThreshold)
+	}
+	if req.EmailNotificationsEnabled != nil {
+		query += fmt.Sprintf(", email_notifications_enabled = $%d", len(args)+1)
+		args = append(args, *req.EmailNotificationsEnabled)
+	}
+
+	query += " WHERE id = $1"
+	_, err := s.db.DB.Exec(query, args...)
 	if err != nil {
 		return nil, errors.DatabaseError("Failed to update profile", err)
 	}

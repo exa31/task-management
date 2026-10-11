@@ -228,7 +228,7 @@ func Load() *Config {
 		Reminder: ReminderConfig{
 			Enabled:       getEnvAsBool("REMINDER_ENABLED", true),
 			BaseURL:       getEnv("APP_URL", getEnv("WEBHOOK_BASE_URL", "http://localhost:3000")),
-			WebhookSecret: getEnv("REMINDER_WEBHOOK_SECRET", "task-management-reminder-secret"),
+			WebhookSecret: getEnv("INTERNAL_TOKEN", getEnv("REMINDER_WEBHOOK_SECRET", "task-management-reminder-secret")),
 			Resend: ResendConfig{
 				APIKey:    getEnv("RESEND_API_KEY", ""),
 				FromEmail: getEnv("RESEND_FROM_EMAIL", "onboarding@resend.dev"),

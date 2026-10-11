@@ -82,5 +82,18 @@ export const taskDrawer = {
   deleteSubtaskConfirmHeader: 'Hapus Butir Checklist',
   deleteSubtaskConfirmMessage: 'Apakah Anda yakin ingin menghapus "{title}"?',
   closeEsc: 'Tutup (Esc)',
-  deleteTask: 'Hapus tugas'
+  deleteTask: 'Hapus tugas',
+  saveChanges: 'Simpan Perubahan',
+  savingChanges: 'Menyimpan...',
+  unsavedChanges: 'Perubahan belum disimpan',
+  resetChanges: 'Reset',
+  pinFocusTooltip: 'Sematkan ke Horizon Fokus',
+  unpinFocusTooltip: 'Hapus dari Horizon Fokus',
+  deleteTaskTooltip: 'Hapus tugas ini',
+  closeDrawerTooltip: 'Tutup sidebar (Esc)',
+  saveProgressTooltip: 'Simpan catatan progres',
+  addSubtaskTooltip: 'Tambah butir subtask',
+  deleteSubtaskTooltip: 'Hapus butir subtask',
+  saveTaskTooltip: 'Simpan perubahan tugas',
+  resetTaskTooltip: 'Batalkan perubahan'
 }

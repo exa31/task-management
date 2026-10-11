@@ -34,6 +34,10 @@ type mockRepository struct {
 	createSubtaskFunc func(ctx context.Context, userID string, taskID int64, title string) (*SubtaskResponse, error)
 	updateSubtaskFunc func(ctx context.Context, userID string, taskID int64, subtaskID int64, req UpdateSubtaskRequest) (*SubtaskResponse, error)
 	deleteSubtaskFunc func(ctx context.Context, userID string, taskID int64, subtaskID int64) error
+
+	findByIDSystemFunc     func(ctx context.Context, id int64) (*TaskResponse, string, string, int, bool, error)
+	markDueWarningSentFunc func(ctx context.Context, id int64) error
+	getUserThresholdFunc   func(ctx context.Context, userID string) (int, string, error)
 }
 
 func (m *mockRepository) Create(ctx context.Context, userID string, req CreateTaskRequest) (*TaskResponse, error) {
@@ -104,6 +108,27 @@ func (m *mockRepository) DeleteSubtask(ctx context.Context, userID string, taskI
 		return m.deleteSubtaskFunc(ctx, userID, taskID, subtaskID)
 	}
 	return nil
+}
+
+func (m *mockRepository) FindByIDSystem(ctx context.Context, id int64) (*TaskResponse, string, string, int, bool, error) {
+	if m.findByIDSystemFunc != nil {
+		return m.findByIDSystemFunc(ctx, id)
+	}
+	return nil, "", "", 0, false, nil
+}
+
+func (m *mockRepository) MarkDueWarningSent(ctx context.Context, id int64) error {
+	if m.markDueWarningSentFunc != nil {
+		return m.markDueWarningSentFunc(ctx, id)
+	}
+	return nil
+}
+
+func (m *mockRepository) GetUserThresholdAndTimezone(ctx context.Context, userID string) (int, string, error) {
+	if m.getUserThresholdFunc != nil {
+		return m.getUserThresholdFunc(ctx, userID)
+	}
+	return 1440, "Asia/Jakarta", nil
 }
 
 func TestTaskService_Create(t *testing.T) {
@@ -242,3 +267,36 @@ func TestTaskService_FindAll(t *testing.T) {
 		t.Fatalf("expected 2 tasks, got %d", len(res))
 	}
 }
+
+func TestTaskService_ProcessDueWarning(t *testing.T) {
+	ctx := context.Background()
+	dueDate := time.Now().Add(2 * time.Hour)
+	markedSent := false
+
+	mockRepo := &mockRepository{
+		findByIDSystemFunc: func(ctx context.Context, id int64) (*TaskResponse, string, string, int, bool, error) {
+			return &TaskResponse{
+				ID:       id,
+				UserID:   "user-1",
+				Title:    "Urgent Bugfix",
+				Status:   "todo",
+				Priority: "urgent",
+				DueDate:  &dueDate,
+			}, "dev@example.com", "Asia/Jakarta", 1440, true, nil
+		},
+		markDueWarningSentFunc: func(ctx context.Context, id int64) error {
+			markedSent = true
+			return nil
+		},
+	}
+
+	svc := NewService(mockRepo, &mockTransactor{})
+	err := svc.ProcessDueWarning(ctx, 1)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if !markedSent {
+		t.Errorf("expected markDueWarningSent to be called")
+	}
+}
+

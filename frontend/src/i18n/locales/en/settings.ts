@@ -71,6 +71,28 @@ export const settings = {
     button: 'Open MCP Settings'
   },
 
+  // Notification & Due Date Warning Preferences
+  notifications: {
+    title: 'Notification & Due Date Warning Preferences',
+    subtitle: 'Configure your timezone, deadline warning threshold alerts, and automated email reminders.',
+    timezoneLabel: 'Display & Reminder Timezone',
+    timezoneHint: 'All due date alerts and email summaries will be aligned with this timezone.',
+    thresholdLabel: 'Due Date Warning Alert Threshold',
+    thresholdHint: 'TaskHub will send an email alert (Resend), realtime notification (SSE), and mobile push (FCM) when a task approaches its deadline.',
+    threshold15m: '15 Minutes before deadline',
+    threshold1h: '1 Hour before deadline',
+    threshold3h: '3 Hours before deadline',
+    threshold12h: '12 Hours before deadline',
+    threshold24h: '24 Hours (1 Day) before deadline',
+    threshold48h: '48 Hours (2 Days) before deadline',
+    emailNotificationsLabel: 'Email Deadline Warnings (via Resend)',
+    emailNotificationsDesc: 'Send an email notification to your account when tasks reach the warning threshold.',
+    savePreferences: 'Save Notification Preferences',
+    saving: 'Saving preferences...',
+    savedSuccess: 'Notification preferences saved successfully.',
+    savedError: 'Failed to update notification preferences.'
+  },
+
   // Danger Zone Section
   dangerZone: {
     title: 'Danger Zone',

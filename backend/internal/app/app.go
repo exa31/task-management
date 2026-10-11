@@ -39,6 +39,10 @@ type Container struct {
 	Storage         storage.Storage
 	Logger          *slog.Logger
 	ReminderService reminder.Service
+	AsynqScheduler  *notification.AsynqScheduler
+	EmailSender     notification.EmailSender
+	PushSender      notification.PushSender
+	ReminderRepo    reminder.Repository
 }
 
 // Boot loads the configuration, sets up the logger and every enabled
@@ -184,6 +188,10 @@ func Boot() (*Container, func() error) {
 
 	reminderSvc := reminder.NewService(reminderRepo, asynqSched, emailSender, pushSender, container.Hub, logger)
 	container.ReminderService = reminderSvc
+	container.AsynqScheduler = asynqSched
+	container.EmailSender = emailSender
+	container.PushSender = pushSender
+	container.ReminderRepo = reminderRepo
 	logger.Info("asynq scheduler initialized for enqueuing delayed HTTP reminder tasks",
 		slog.String("base_url", cfg.Reminder.BaseURL),
 	)

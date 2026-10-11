@@ -19,6 +19,7 @@ export interface Task {
   status: TaskStatus
   priority: TaskPriority
   due_date?: string | null
+  due_date_warning_sent_at?: string | null
   is_focus: boolean
   tags: string[]
   project_id?: number | null

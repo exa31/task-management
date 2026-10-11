@@ -82,5 +82,18 @@ export const taskDrawer = {
   deleteSubtaskConfirmHeader: 'Delete Subtask',
   deleteSubtaskConfirmMessage: 'Are you sure you want to delete "{title}"?',
   closeEsc: 'Close (Esc)',
-  deleteTask: 'Delete task'
+  deleteTask: 'Delete task',
+  saveChanges: 'Save Changes',
+  savingChanges: 'Saving...',
+  unsavedChanges: 'Unsaved changes',
+  resetChanges: 'Reset',
+  pinFocusTooltip: 'Pin task to focus horizon',
+  unpinFocusTooltip: 'Remove task from focus horizon',
+  deleteTaskTooltip: 'Delete this task',
+  closeDrawerTooltip: 'Close drawer (Esc)',
+  saveProgressTooltip: 'Save progress note log',
+  addSubtaskTooltip: 'Add subtask item',
+  deleteSubtaskTooltip: 'Delete subtask',
+  saveTaskTooltip: 'Save task modifications',
+  resetTaskTooltip: 'Discard unsaved changes'
 }

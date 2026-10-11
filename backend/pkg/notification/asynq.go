@@ -12,25 +12,30 @@ import (
 )
 
 const (
-	TypeHTTPPost         = "http:post"
+	TypeHTTPPost         = "task:http_post"
+	TypeLegacyHTTPPost   = "http:post"
 	TypeWebhookSend      = "webhook:send"
 	TypeReminderDispatch = "reminder:dispatch"
 	QueueDefault         = "default"
 )
 
-type HTTPTaskPayload struct {
+type WorkerAsynqHTTPPayload struct {
 	URL        string            `json:"url"`
-	Method     string            `json:"method"`
+	Method     string            `json:"method,omitempty"`
 	Headers    map[string]string `json:"headers,omitempty"`
-	Body       any               `json:"body"`
-	Payload    any               `json:"payload,omitempty"`
-	Data       any               `json:"data,omitempty"`
+	Body       string            `json:"body"`
 	ReminderID int64             `json:"reminder_id,omitempty"`
+	TaskID     int64             `json:"task_id,omitempty"`
 }
 
 type ReminderScheduler interface {
 	ScheduleReminder(ctx context.Context, reminderID int64, remindAt time.Time) error
 	CancelReminder(ctx context.Context, reminderID int64) error
+}
+
+type TaskDueScheduler interface {
+	ScheduleTaskDueAlert(ctx context.Context, taskID int64, remindAt time.Time) error
+	CancelTaskDueAlert(ctx context.Context, taskID int64) error
 }
 
 type AsynqScheduler struct {
@@ -88,21 +93,17 @@ func (s *AsynqScheduler) ScheduleReminder(ctx context.Context, reminderID int64,
 	triggerURL := fmt.Sprintf("%s/api/v1/reminders/trigger", s.baseURL)
 	headers := map[string]string{
 		"Content-Type":     "application/json",
+		"X-Internal-Token": s.webhookSecret,
 		"X-Webhook-Secret": s.webhookSecret,
 	}
 
-	body := map[string]any{
-		"reminder_id": reminderID,
-		"id":          reminderID,
-	}
+	bodyJSON := fmt.Sprintf(`{"reminder_id":%d,"id":%d}`, reminderID, reminderID)
 
-	payloadObj := HTTPTaskPayload{
+	payloadObj := WorkerAsynqHTTPPayload{
 		URL:        triggerURL,
 		Method:     "POST",
 		Headers:    headers,
-		Body:       body,
-		Payload:    body,
-		Data:       body,
+		Body:       bodyJSON,
 		ReminderID: reminderID,
 	}
 
@@ -154,6 +155,79 @@ func (s *AsynqScheduler) CancelReminder(ctx context.Context, reminderID int64) e
 	if err != nil {
 		s.logger.Debug("asynq task deletion error (may already be finished or absent)",
 			slog.Int64("reminder_id", reminderID),
+			slog.String("queue", s.queue),
+			slog.String("error", err.Error()),
+		)
+	}
+	return nil
+}
+
+func (s *AsynqScheduler) ScheduleTaskDueAlert(ctx context.Context, taskID int64, remindAt time.Time) error {
+	triggerURL := fmt.Sprintf("%s/api/v1/tasks/due-warning/trigger", s.baseURL)
+	headers := map[string]string{
+		"Content-Type":     "application/json",
+		"X-Internal-Token": s.webhookSecret,
+		"X-Webhook-Secret": s.webhookSecret,
+	}
+
+	bodyJSON := fmt.Sprintf(`{"task_id":%d,"id":%d}`, taskID, taskID)
+
+	payloadObj := WorkerAsynqHTTPPayload{
+		URL:     triggerURL,
+		Method:  "POST",
+		Headers: headers,
+		Body:    bodyJSON,
+		TaskID:  taskID,
+	}
+
+	payload, err := json.Marshal(payloadObj)
+	if err != nil {
+		return fmt.Errorf("failed to serialize task due alert payload: %w", err)
+	}
+
+	taskIDStr := fmt.Sprintf("task_due:%d", taskID)
+
+	// Clean up existing task if re-scheduling
+	_ = s.inspector.DeleteTask(s.queue, taskIDStr)
+
+	task := asynq.NewTask(
+		s.taskType,
+		payload,
+		asynq.TaskID(taskIDStr),
+		asynq.MaxRetry(3),
+		asynq.Retention(24*time.Hour),
+	)
+
+	info, err := s.client.EnqueueContext(ctx, task, asynq.ProcessAt(remindAt), asynq.Queue(s.queue))
+	if err != nil {
+		s.logger.Error("failed to enqueue task due alert to asynq",
+			slog.Int64("task_id", taskID),
+			slog.Time("remind_at", remindAt),
+			slog.String("task_type", s.taskType),
+			slog.String("queue", s.queue),
+			slog.String("target_url", triggerURL),
+			slog.String("error", err.Error()),
+		)
+		return fmt.Errorf("failed to enqueue task due alert: %w", err)
+	}
+
+	s.logger.Info("task due alert successfully scheduled in asynq",
+		slog.Int64("task_id", taskID),
+		slog.String("asynq_id", info.ID),
+		slog.String("task_type", s.taskType),
+		slog.String("queue", s.queue),
+		slog.String("target_url", triggerURL),
+		slog.Time("process_at", remindAt),
+	)
+	return nil
+}
+
+func (s *AsynqScheduler) CancelTaskDueAlert(ctx context.Context, taskID int64) error {
+	taskIDStr := fmt.Sprintf("task_due:%d", taskID)
+	err := s.inspector.DeleteTask(s.queue, taskIDStr)
+	if err != nil {
+		s.logger.Debug("asynq task deletion error for task due alert",
+			slog.Int64("task_id", taskID),
 			slog.String("queue", s.queue),
 			slog.String("error", err.Error()),
 		)

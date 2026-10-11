@@ -697,3 +697,59 @@ textarea {
 .dark .p-datepicker .p-datepicker-buttonbar button {
   color: #818cf8 !important;
 }
+
+/* PrimeReact Tooltip Custom Styling */
+.p-tooltip {
+  max-width: 280px;
+  pointer-events: none;
+  z-index: 999999 !important;
+  transition: opacity 0.15s ease-in-out;
+}
+
+.p-tooltip .p-tooltip-text {
+  background: #0f172a !important;
+  color: #f8fafc !important;
+  font-size: 0.725rem !important;
+  line-height: 1.1rem !important;
+  font-weight: 500 !important;
+  padding: 0.35rem 0.65rem !important;
+  border-radius: 0.5rem !important;
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.4), 0 8px 10px -6px rgba(0, 0, 0, 0.2) !important;
+  border: 1px solid rgba(255, 255, 255, 0.12) !important;
+  letter-spacing: -0.01em;
+}
+
+.dark .p-tooltip .p-tooltip-text {
+  background: #1e293b !important;
+  color: #f1f5f9 !important;
+  border: 1px solid rgba(255, 255, 255, 0.15) !important;
+}
+
+.p-tooltip.p-tooltip-top .p-tooltip-arrow {
+  border-top-color: #0f172a !important;
+}
+.dark .p-tooltip.p-tooltip-top .p-tooltip-arrow {
+  border-top-color: #1e293b !important;
+}
+
+.p-tooltip.p-tooltip-bottom .p-tooltip-arrow {
+  border-bottom-color: #0f172a !important;
+}
+.dark .p-tooltip.p-tooltip-bottom .p-tooltip-arrow {
+  border-bottom-color: #1e293b !important;
+}
+
+.p-tooltip.p-tooltip-left .p-tooltip-arrow {
+  border-left-color: #0f172a !important;
+}
+.dark .p-tooltip.p-tooltip-left .p-tooltip-arrow {
+  border-left-color: #1e293b !important;
+}
+
+.p-tooltip.p-tooltip-right .p-tooltip-arrow {
+  border-right-color: #0f172a !important;
+}
+.dark .p-tooltip.p-tooltip-right .p-tooltip-arrow {
+  border-right-color: #1e293b !important;
+}
+

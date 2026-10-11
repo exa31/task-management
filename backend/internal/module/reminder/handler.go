@@ -25,7 +25,10 @@ func NewHandler(service Service, webhookSecret string) *Handler {
 // Trigger is the webhook endpoint invoked by the external Asynq worker via HTTP POST.
 // Secret verification from headers is MANDATORY (not optional).
 func (h *Handler) Trigger(c *fiber.Ctx) error {
-	incomingSecret := c.Get("X-Webhook-Secret")
+	incomingSecret := c.Get("X-Internal-Token")
+	if incomingSecret == "" {
+		incomingSecret = c.Get("X-Webhook-Secret")
+	}
 	if incomingSecret == "" {
 		incomingSecret = c.Get("X-Reminder-Secret")
 	}

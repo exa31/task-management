@@ -86,9 +86,14 @@ export const requestFcmToken = async (): Promise<string | null> => {
 
         // Invalidate queries to refresh badges and list
         queryClient.invalidateQueries({ queryKey: reminderKeys.all })
+        queryClient.invalidateQueries({ queryKey: ['tasks'] })
 
         // Toast in app
-        appToast.info(`⏰ ${title}: ${body}`)
+        if (payload.data?.type === 'task:due_warning') {
+          appToast.warn(`⚠️ ${title}: ${body}`)
+        } else {
+          appToast.info(`⏰ ${title}: ${body}`)
+        }
       })
     }
 

@@ -1,4 +1,5 @@
 import { ConfirmDialog } from 'primereact/confirmdialog'
+import { Tooltip } from 'primereact/tooltip'
 import { useEffect } from 'react'
 import { Outlet, useLocation } from 'react-router-dom'
 
@@ -45,6 +46,7 @@ function App() {
     <>
       <AppToastContainer />
       <ConfirmDialog />
+      <Tooltip target="[data-pr-tooltip]" position="top" showDelay={200} />
       <ErrorBoundary>
         <Outlet />
       </ErrorBoundary>

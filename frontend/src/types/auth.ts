@@ -10,6 +10,9 @@ export interface User {
   google_bound?: boolean
   apple_bound?: boolean
   has_password?: boolean
+  timezone?: string
+  due_date_warning_threshold?: number
+  email_notifications_enabled?: boolean
   created_at?: string
 }
 

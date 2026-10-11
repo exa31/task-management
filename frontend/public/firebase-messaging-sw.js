@@ -81,7 +81,8 @@ self.addEventListener('push', (event) => {
 // Focus or open web application when user clicks notification
 self.addEventListener('notificationclick', (event) => {
   event.notification.close()
-  const targetUrl = '/reminders'
+  const customData = event.notification.data || {}
+  const targetUrl = customData.task_id ? '/tasks' : '/reminders'
 
   event.waitUntil(
     clients.matchAll({ type: 'window', includeUncontrolled: true }).then((clientList) => {

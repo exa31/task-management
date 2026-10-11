@@ -25,6 +25,10 @@ type Repository interface {
 	CreateSubtask(ctx context.Context, userID string, taskID int64, title string) (*SubtaskResponse, error)
 	UpdateSubtask(ctx context.Context, userID string, taskID int64, subtaskID int64, req UpdateSubtaskRequest) (*SubtaskResponse, error)
 	DeleteSubtask(ctx context.Context, userID string, taskID int64, subtaskID int64) error
+
+	FindByIDSystem(ctx context.Context, id int64) (*TaskResponse, string, string, int, bool, error)
+	MarkDueWarningSent(ctx context.Context, id int64) error
+	GetUserThresholdAndTimezone(ctx context.Context, userID string) (int, string, error)
 }
 
 type repository struct {
@@ -46,17 +50,18 @@ type taskEntity struct {
 	Description      string         `db:"description"`
 	Status           string         `db:"status"`
 	Priority         string         `db:"priority"`
-	DueDate          *time.Time     `db:"due_date"`
-	IsFocus          bool           `db:"is_focus"`
-	Tags             pq.StringArray `db:"tags"`
-	ProjectID        *int64         `db:"project_id"`
-	ProjectName      *string        `db:"project_name"`
-	ProjectColor     *string        `db:"project_color"`
-	LastProgressNote string         `db:"last_progress_note"`
-	LastProgressAt   *time.Time     `db:"last_progress_at"`
-	SourceNoteID     *int64         `db:"source_note_id"`
-	CreatedAt        time.Time      `db:"created_at"`
-	UpdatedAt        time.Time      `db:"updated_at"`
+	DueDate              *time.Time     `db:"due_date"`
+	DueDateWarningSentAt *time.Time     `db:"due_date_warning_sent_at"`
+	IsFocus              bool           `db:"is_focus"`
+	Tags                 pq.StringArray `db:"tags"`
+	ProjectID            *int64         `db:"project_id"`
+	ProjectName          *string        `db:"project_name"`
+	ProjectColor         *string        `db:"project_color"`
+	LastProgressNote     string         `db:"last_progress_note"`
+	LastProgressAt       *time.Time     `db:"last_progress_at"`
+	SourceNoteID         *int64         `db:"source_note_id"`
+	CreatedAt            time.Time      `db:"created_at"`
+	UpdatedAt            time.Time      `db:"updated_at"`
 }
 
 func (e *taskEntity) toResponse(subtasks []SubtaskResponse) TaskResponse {
@@ -85,11 +90,12 @@ func (e *taskEntity) toResponse(subtasks []SubtaskResponse) TaskResponse {
 		UserID:            e.UserID,
 		Title:             e.Title,
 		Description:       e.Description,
-		Status:            e.Status,
-		Priority:          e.Priority,
-		DueDate:           e.DueDate,
-		IsFocus:           e.IsFocus,
-		Tags:              tags,
+		Status:               e.Status,
+		Priority:             e.Priority,
+		DueDate:              e.DueDate,
+		DueDateWarningSentAt: e.DueDateWarningSentAt,
+		IsFocus:              e.IsFocus,
+		Tags:                 tags,
 		ProjectID:         e.ProjectID,
 		ProjectName:       e.ProjectName,
 		ProjectColor:      e.ProjectColor,
@@ -144,7 +150,7 @@ func (r *repository) Create(ctx context.Context, userID string, req CreateTaskRe
 	query := `
 		INSERT INTO tasks (user_id, title, description, status, priority, due_date, is_focus, tags, project_id, source_note_id, created_at, updated_at)
 		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, NOW(), NOW())
-		RETURNING id, user_id, title, description, status, priority, due_date, is_focus, tags, project_id, last_progress_note, last_progress_at, source_note_id, created_at, updated_at
+		RETURNING id, user_id, title, description, status, priority, due_date, due_date_warning_sent_at, is_focus, tags, project_id, last_progress_note, last_progress_at, source_note_id, created_at, updated_at
 	`
 	err := r.exec(ctx).QueryRowxContext(ctx, query, userID, req.Title, req.Description, status, priority, req.DueDate, req.IsFocus, pq.Array(tags), req.ProjectID, req.SourceNoteID).StructScan(&entity)
 	if err != nil {
@@ -179,7 +185,7 @@ func (r *repository) Create(ctx context.Context, userID string, req CreateTaskRe
 func (r *repository) FindByID(ctx context.Context, userID string, id int64) (*TaskResponse, error) {
 	query := `
 		SELECT 
-			t.id, t.user_id, t.title, t.description, t.status, t.priority, t.due_date, t.is_focus, t.tags,
+			t.id, t.user_id, t.title, t.description, t.status, t.priority, t.due_date, t.due_date_warning_sent_at, t.is_focus, t.tags,
 			t.project_id, p.name as project_name, p.color as project_color,
 			t.last_progress_note, t.last_progress_at, t.source_note_id, t.created_at, t.updated_at
 		FROM tasks t
@@ -207,7 +213,7 @@ func (r *repository) FindByID(ctx context.Context, userID string, id int64) (*Ta
 func (r *repository) FindAll(ctx context.Context, userID string, filter TaskFilter) ([]TaskResponse, error) {
 	query := `
 		SELECT 
-			t.id, t.user_id, t.title, t.description, t.status, t.priority, t.due_date, t.is_focus, t.tags,
+			t.id, t.user_id, t.title, t.description, t.status, t.priority, t.due_date, t.due_date_warning_sent_at, t.is_focus, t.tags,
 			t.project_id, p.name as project_name, p.color as project_color,
 			t.last_progress_note, t.last_progress_at, t.source_note_id, t.created_at, t.updated_at
 		FROM tasks t
@@ -319,8 +325,14 @@ func (r *repository) Update(ctx context.Context, userID string, id int64, req Up
 	}
 
 	dueDate := existing.DueDate
+	var dueDateWarningSentAt = existing.DueDateWarningSentAt
 	if req.DueDate != nil {
 		dueDate = req.DueDate
+		if (existing.DueDate == nil && req.DueDate != nil) ||
+			(existing.DueDate != nil && req.DueDate == nil) ||
+			(existing.DueDate != nil && req.DueDate != nil && !existing.DueDate.Equal(*req.DueDate)) {
+			dueDateWarningSentAt = nil
+		}
 	}
 
 	isFocus := existing.IsFocus
@@ -356,12 +368,12 @@ func (r *repository) Update(ctx context.Context, userID string, id int64, req Up
 
 	query := `
 		UPDATE tasks
-		SET title = $1, description = $2, status = $3, priority = $4, due_date = $5, is_focus = $6, tags = $7, project_id = $8, last_progress_note = $9, last_progress_at = $10, updated_at = NOW()
-		WHERE id = $11 AND user_id = $12
-		RETURNING id, user_id, title, description, status, priority, due_date, is_focus, tags, project_id, last_progress_note, last_progress_at, source_note_id, created_at, updated_at
+		SET title = $1, description = $2, status = $3, priority = $4, due_date = $5, due_date_warning_sent_at = $6, is_focus = $7, tags = $8, project_id = $9, last_progress_note = $10, last_progress_at = $11, updated_at = NOW()
+		WHERE id = $12 AND user_id = $13
+		RETURNING id, user_id, title, description, status, priority, due_date, due_date_warning_sent_at, is_focus, tags, project_id, last_progress_note, last_progress_at, source_note_id, created_at, updated_at
 	`
 	var entity taskEntity
-	err = r.exec(ctx).QueryRowxContext(ctx, query, title, desc, status, priority, dueDate, isFocus, pq.Array(tags), projectID, lastProgressNote, lastProgressAt, id, userID).StructScan(&entity)
+	err = r.exec(ctx).QueryRowxContext(ctx, query, title, desc, status, priority, dueDate, dueDateWarningSentAt, isFocus, pq.Array(tags), projectID, lastProgressNote, lastProgressAt, id, userID).StructScan(&entity)
 	if err != nil {
 		return nil, fmt.Errorf("failed to update task: %w", err)
 	}
@@ -508,3 +520,70 @@ func (r *repository) DeleteSubtask(ctx context.Context, userID string, taskID in
 	}
 	return nil
 }
+
+func (r *repository) FindByIDSystem(ctx context.Context, id int64) (*TaskResponse, string, string, int, bool, error) {
+	query := `
+		SELECT 
+			t.id, t.user_id, t.title, t.description, t.status, t.priority, t.due_date, t.due_date_warning_sent_at, t.is_focus, t.tags,
+			t.project_id, p.name as project_name, p.color as project_color,
+			t.last_progress_note, t.last_progress_at, t.source_note_id, t.created_at, t.updated_at,
+			u.email, u.timezone, u.due_date_warning_threshold, u.email_notifications_enabled
+		FROM tasks t
+		JOIN users u ON u.id = t.user_id
+		LEFT JOIN projects p ON p.id = t.project_id
+		WHERE t.id = $1
+	`
+	type systemEntity struct {
+		taskEntity
+		Email                     string `db:"email"`
+		Timezone                  string `db:"timezone"`
+		DueDateWarningThreshold   int    `db:"due_date_warning_threshold"`
+		EmailNotificationsEnabled bool   `db:"email_notifications_enabled"`
+	}
+	var se systemEntity
+	err := r.exec(ctx).GetContext(ctx, &se, query, id)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, "", "", 0, false, nil
+		}
+		return nil, "", "", 0, false, fmt.Errorf("failed to find task system: %w", err)
+	}
+
+	subtasks, _ := r.fetchSubtasks(ctx, se.ID)
+	res := se.taskEntity.toResponse(subtasks)
+	tz := se.Timezone
+	if tz == "" {
+		tz = "Asia/Jakarta"
+	}
+	threshold := se.DueDateWarningThreshold
+	if threshold <= 0 {
+		threshold = 1440
+	}
+	return &res, se.Email, tz, threshold, se.EmailNotificationsEnabled, nil
+}
+
+func (r *repository) MarkDueWarningSent(ctx context.Context, id int64) error {
+	query := `UPDATE tasks SET due_date_warning_sent_at = NOW() WHERE id = $1`
+	_, err := r.exec(ctx).ExecContext(ctx, query, id)
+	return err
+}
+
+func (r *repository) GetUserThresholdAndTimezone(ctx context.Context, userID string) (int, string, error) {
+	query := `SELECT due_date_warning_threshold, timezone FROM users WHERE id = $1`
+	var row struct {
+		Threshold int    `db:"due_date_warning_threshold"`
+		Timezone  string `db:"timezone"`
+	}
+	err := r.exec(ctx).GetContext(ctx, &row, query, userID)
+	if err != nil {
+		return 1440, "Asia/Jakarta", nil
+	}
+	if row.Threshold <= 0 {
+		row.Threshold = 1440
+	}
+	if row.Timezone == "" {
+		row.Timezone = "Asia/Jakarta"
+	}
+	return row.Threshold, row.Timezone, nil
+}
+

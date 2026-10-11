@@ -93,6 +93,7 @@ export const TaskReminderSection = ({ taskId, taskTitle, dueDate }: TaskReminder
             setEditingReminder(null)
             setIsModalOpen(true)
           }}
+          data-pr-tooltip={t('reminders.newReminder')}
           className="text-[11px] font-semibold text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 dark:hover:text-indigo-300 flex items-center gap-1 cursor-pointer"
         >
           <i className="pi pi-plus text-[10px]" />
@@ -110,6 +111,7 @@ export const TaskReminderSection = ({ taskId, taskTitle, dueDate }: TaskReminder
             type="button"
             onClick={() => handleCreatePreset(15, t('reminders.preset15mBefore'))}
             disabled={createMutation.isPending}
+            data-pr-tooltip={t('reminders.preset15mBefore')}
             className="px-2 py-0.5 rounded-md text-[10px] font-semibold border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 transition-colors cursor-pointer"
           >
             {t('reminders.preset15m')}
@@ -118,6 +120,7 @@ export const TaskReminderSection = ({ taskId, taskTitle, dueDate }: TaskReminder
             type="button"
             onClick={() => handleCreatePreset(60, t('reminders.preset1hBefore'))}
             disabled={createMutation.isPending}
+            data-pr-tooltip={t('reminders.preset1hBefore')}
             className="px-2 py-0.5 rounded-md text-[10px] font-semibold border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 transition-colors cursor-pointer"
           >
             {t('reminders.preset1h')}
@@ -126,6 +129,7 @@ export const TaskReminderSection = ({ taskId, taskTitle, dueDate }: TaskReminder
             type="button"
             onClick={() => handleCreatePreset(1440, t('reminders.preset1dBefore'))}
             disabled={createMutation.isPending}
+            data-pr-tooltip={t('reminders.preset1dBefore')}
             className="px-2 py-0.5 rounded-md text-[10px] font-semibold border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 transition-colors cursor-pointer"
           >
             {t('reminders.preset1d')}
@@ -182,8 +186,8 @@ export const TaskReminderSection = ({ taskId, taskTitle, dueDate }: TaskReminder
                           snoozeMutation.mutate({ id: rem.id, payload: { minutes: 15 } })
                         }
                         disabled={snoozeMutation.isPending}
+                        data-pr-tooltip={t('reminders.snooze15m')}
                         className="px-1.5 py-0.5 rounded text-[10px] font-semibold border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 transition-colors cursor-pointer"
-                        title={t('reminders.snooze15m')}
                       >
                         {t('reminders.quickAdd15m')}
                       </button>
@@ -191,7 +195,7 @@ export const TaskReminderSection = ({ taskId, taskTitle, dueDate }: TaskReminder
                         type="button"
                         onClick={() => dismissMutation.mutate(rem.id)}
                         disabled={dismissMutation.isPending}
-                        title={t('reminders.dismiss')}
+                        data-pr-tooltip={t('reminders.dismiss')}
                         className="w-6 h-6 rounded flex items-center justify-center text-emerald-600 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-950/40 transition-colors cursor-pointer"
                       >
                         <i className="pi pi-check text-[11px]" />
@@ -205,7 +209,7 @@ export const TaskReminderSection = ({ taskId, taskTitle, dueDate }: TaskReminder
                       setEditingReminder(rem)
                       setIsModalOpen(true)
                     }}
-                    title={t('common.edit')}
+                    data-pr-tooltip={t('common.edit')}
                     className="w-6 h-6 rounded flex items-center justify-center text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
                   >
                     <i className="pi pi-pencil text-[11px]" />
@@ -225,7 +229,7 @@ export const TaskReminderSection = ({ taskId, taskTitle, dueDate }: TaskReminder
                       })
                     }}
                     disabled={deleteMutation.isPending}
-                    title={t('common.delete')}
+                    data-pr-tooltip={t('common.delete')}
                     className="w-6 h-6 rounded flex items-center justify-center text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition-colors cursor-pointer"
                   >
                     <i className="pi pi-trash text-[11px]" />
