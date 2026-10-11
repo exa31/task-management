@@ -18,18 +18,20 @@ export const TaskFocusHorizon: React.FC = () => {
   if (focusTasks.length === 0) return null
 
   return (
-    <div className="rounded-xl border border-indigo-200 dark:border-indigo-500/30 bg-indigo-50/70 dark:bg-gradient-to-r dark:from-indigo-950/40 dark:via-slate-900 dark:to-indigo-950/20 p-3.5 shadow-sm dark:shadow-lg backdrop-blur-md">
-      <div className="flex items-center justify-between mb-2.5">
+    <div className="rounded-2xl border border-slate-200/80 dark:border-slate-800/80 bg-white/80 dark:bg-slate-900/70 p-4 sm:p-5 shadow-xs backdrop-blur-xl space-y-3">
+      <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <span className="flex h-2 w-2 rounded-full bg-indigo-500 dark:bg-indigo-400 animate-pulse" />
-          <h2 className="text-xs font-semibold uppercase tracking-wider text-indigo-900 dark:text-indigo-300">
+          <div className="w-6 h-6 rounded-lg bg-amber-500/10 dark:bg-amber-400/15 border border-amber-500/20 dark:border-amber-400/20 flex items-center justify-center text-amber-500 dark:text-amber-400">
+            <i className="pi pi-star-fill text-xs" />
+          </div>
+          <span className="text-xs font-bold uppercase tracking-wider text-slate-800 dark:text-slate-200">
             {t('focus.title')}
-          </h2>
-          <span className="px-1.5 py-0.2 rounded text-[10px] font-mono bg-indigo-100 dark:bg-indigo-500/20 text-indigo-800 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-500/30">
+          </span>
+          <span className="px-2 py-0.5 rounded-full text-[10px] font-mono font-semibold bg-amber-500/10 dark:bg-amber-400/10 text-amber-700 dark:text-amber-400 border border-amber-500/20 dark:border-amber-400/20">
             {t('focus.activeCount', { count: focusTasks.length })}
           </span>
         </div>
-        <span className="text-[11px] text-slate-500 dark:text-slate-400">
+        <span className="text-[11px] text-slate-500 dark:text-slate-400 hidden sm:inline-flex items-center gap-1.5">
           {t('focus.subtitle')}
         </span>
       </div>
@@ -39,7 +41,7 @@ export const TaskFocusHorizon: React.FC = () => {
           <div
             key={task.id}
             onClick={() => openDrawer(task)}
-            className="group relative flex items-center justify-between gap-3 rounded-lg border border-slate-200 dark:border-slate-800/80 bg-white dark:bg-slate-900/90 p-2.5 hover:border-indigo-400 dark:hover:border-indigo-500/40 hover:bg-slate-50 dark:hover:bg-slate-800 cursor-pointer transition-all shadow-xs"
+            className="group relative flex items-center justify-between gap-3 rounded-xl border border-slate-200/80 dark:border-slate-800/80 bg-slate-50/70 dark:bg-slate-950/40 p-3 hover:border-indigo-400/60 dark:hover:border-indigo-500/50 hover:bg-white dark:hover:bg-slate-900/90 cursor-pointer transition-all shadow-2xs"
           >
             <div className="flex items-center gap-2.5 min-w-0">
               <button
@@ -50,22 +52,23 @@ export const TaskFocusHorizon: React.FC = () => {
                     payload: { status: 'done' }
                   })
                 }}
-                className="h-4 w-4 rounded border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 hover:border-indigo-500 flex items-center justify-center shrink-0 transition-colors"
+                className="h-4 w-4 rounded border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 hover:border-indigo-500 hover:bg-indigo-50 dark:hover:bg-indigo-950/50 flex items-center justify-center shrink-0 transition-colors"
                 title={t('focus.completeTask')}
+                data-pr-tooltip={t('focus.completeTask')}
               >
                 <i className="pi pi-check text-[9px] text-transparent hover:text-indigo-500 dark:hover:text-indigo-400" />
               </button>
               <div className="min-w-0">
-                <p className="text-xs font-medium text-slate-800 dark:text-slate-200 truncate group-hover:text-indigo-600 dark:group-hover:text-indigo-200">
+                <p className="text-xs font-semibold text-slate-800 dark:text-slate-200 truncate group-hover:text-indigo-600 dark:group-hover:text-indigo-300 transition-colors">
                   {task.title}
                 </p>
                 {task.last_progress_note ? (
-                  <p className="text-[10px] text-indigo-600 dark:text-indigo-400 truncate mt-0.5">
-                    <i className="pi pi-history text-[8px] mr-1" />
-                    {task.last_progress_note}
+                  <p className="text-[10px] text-indigo-600 dark:text-indigo-400 truncate mt-0.5 flex items-center gap-1 font-medium">
+                    <i className="pi pi-history text-[8px]" />
+                    <span>{task.last_progress_note}</span>
                   </p>
                 ) : (
-                  <p className="text-[10px] text-slate-500 truncate mt-0.5">
+                  <p className="text-[10px] text-slate-500 dark:text-slate-400 truncate mt-0.5">
                     {task.subtasks_count > 0
                       ? t('focus.checklistProgress', {
                           completed: task.subtasks_completed,
@@ -83,10 +86,11 @@ export const TaskFocusHorizon: React.FC = () => {
                 e.stopPropagation()
                 toggleFocusMutation.mutate(task.id)
               }}
-              className="p-1 rounded text-slate-400 dark:text-slate-500 hover:text-amber-500 dark:hover:text-amber-400 shrink-0"
+              className="p-1.5 rounded-lg text-amber-500 dark:text-amber-400 hover:bg-amber-500/10 dark:hover:bg-amber-400/10 shrink-0 transition-colors"
               title={t('focus.removeFromFocus')}
+              data-pr-tooltip={t('focus.removeFromFocus')}
             >
-              <i className="pi pi-star-fill text-amber-500 dark:text-amber-400 text-xs" />
+              <i className="pi pi-star-fill text-xs" />
             </button>
           </div>
         ))}
