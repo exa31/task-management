@@ -1,9 +1,8 @@
 import { ConfirmDialog } from 'primereact/confirmdialog'
-import { Tooltip } from 'primereact/tooltip'
 import { useEffect } from 'react'
 import { Outlet, useLocation } from 'react-router-dom'
 
-import { AppToastContainer, ErrorBoundary } from '@/components'
+import { AppToastContainer, ErrorBoundary, GlobalTooltip } from '@/components'
 import { useTranslation } from '@/i18n'
 
 function App() {
@@ -46,7 +45,7 @@ function App() {
     <>
       <AppToastContainer />
       <ConfirmDialog />
-      <Tooltip target="[data-pr-tooltip]" position="top" showDelay={200} />
+      <GlobalTooltip />
       <ErrorBoundary>
         <Outlet />
       </ErrorBoundary>
