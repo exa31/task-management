@@ -1,5 +1,6 @@
 import React, { useState } from 'react'
 
+import { apiBaseUrl } from '@/api/client'
 import { confirmDialog } from '@/components'
 import { useCreateMcpToken, useDeleteMcpToken, useMcpTokens } from '@/hooks'
 import { useTranslation } from '@/i18n'
@@ -49,10 +50,22 @@ export const McpSettingsPage: React.FC = () => {
     ? generatedToken.raw_token
     : '<YOUR_PERSONAL_ACCESS_TOKEN>'
 
+  const resolvedBackendUrl =
+    apiBaseUrl ||
+    (typeof window !== 'undefined' && window.location.hostname.includes('eka-dev.cloud')
+      ? 'https://be-task-hub.eka-dev.cloud'
+      : typeof window !== 'undefined' &&
+          window.location.hostname !== 'localhost' &&
+          window.location.hostname !== '127.0.0.1'
+        ? window.location.origin
+        : 'http://localhost:3000')
+
+  const mcpServerUrl = `${resolvedBackendUrl}/api/v1/mcp`
+
   const antigravitySnippet = `{
   "mcpServers": {
     "task-management": {
-      "url": "http://localhost:3000/api/v1/mcp",
+      "url": "${mcpServerUrl}",
       "headers": {
         "Authorization": "Bearer ${activeTokenSecret}"
       }
@@ -63,7 +76,7 @@ export const McpSettingsPage: React.FC = () => {
   const cursorSnippet = `{
   "mcpServers": {
     "task-hub": {
-      "url": "http://localhost:3000/api/v1/mcp",
+      "url": "${mcpServerUrl}",
       "headers": {
         "Authorization": "Bearer ${activeTokenSecret}"
       }
@@ -77,7 +90,7 @@ export const McpSettingsPage: React.FC = () => {
       "command": "curl",
       "args": [
         "-X", "POST",
-        "http://localhost:3000/api/v1/mcp",
+        "${mcpServerUrl}",
         "-H", "Authorization: Bearer ${activeTokenSecret}",
         "-H", "Content-Type: application/json"
       ]
