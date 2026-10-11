@@ -52,7 +52,7 @@ export const taskModal = {
   projectLabel: 'Modul / Project Task',
   noProjectOption: 'Tanpa Modul Project',
   checklistPlaceholder: 'Langkah 1: Setup skema database\nLangkah 2: Hubungkan API controller',
-  createNewProject: '+ Project Baru',
+  createNewProject: 'Project Baru',
   cancel: 'Batal',
   submit: 'Buat Tugas',
   titleRequired: 'Judul tugas wajib diisi'
@@ -74,7 +74,7 @@ export const taskDrawer = {
   progressPlaceholder: 'mis. Skema database selesai, lanjut pengerjaan UI...',
   saveProgressNote: 'Simpan Catatan Progres',
   subtasksChecklist: 'Checklist Subtask ({completed}/{total})',
-  addSubtaskPlaceholder: '+ Tambah langkah checklist...',
+  addSubtaskPlaceholder: 'Tambah langkah checklist...',
   add: 'Tambah',
   deleteTaskConfirmHeader: 'Hapus Tugas',
   deleteTaskConfirmMessage:

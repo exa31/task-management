@@ -6,7 +6,7 @@ export const projects = {
   addTaskToProject: 'Tambah Task ke Project Ini',
   loading: 'Memuat modul project...',
   empty: 'Belum ada modul project. Buat project baru untuk mulai mengelompokkan task Anda!',
-  emptyTasks: 'Belum ada task di project ini. Klik "+ Tambah Task" untuk membuat task!',
+  emptyTasks: 'Belum ada task di project ini. Klik "Tambah Task" untuk membuat task!',
   noTasksInStatus: 'Tidak ada task di status ini',
   tasksConnected: '{count} task terhubung',
   tasksDone: '{done} dari {total} selesai ({percent}%)',

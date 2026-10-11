@@ -6,7 +6,7 @@ export const projects = {
   addTaskToProject: 'Add Task to this Project',
   loading: 'Loading projects...',
   empty: 'No project modules yet. Create a project to start organizing tasks!',
-  emptyTasks: 'No tasks found in this project. Click "+ Add Task" to create one!',
+  emptyTasks: 'No tasks found in this project. Click "Add Task" to create one!',
   noTasksInStatus: 'No tasks in this status',
   tasksConnected: '{count} tasks connected',
   tasksDone: '{done} of {total} completed ({percent}%)',

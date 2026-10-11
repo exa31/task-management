@@ -52,7 +52,7 @@ export const taskModal = {
   projectLabel: 'Task Module / Project',
   noProjectOption: 'No Project Module',
   checklistPlaceholder: 'Step 1: Setup database schema\nStep 2: Connect API controller',
-  createNewProject: '+ New Project',
+  createNewProject: 'New Project',
   cancel: 'Cancel',
   submit: 'Create Task',
   titleRequired: 'Task title is required'
@@ -74,7 +74,7 @@ export const taskDrawer = {
   progressPlaceholder: 'e.g. Completed DB schema migration, now hooking up Fiber handlers...',
   saveProgressNote: 'Save Progress Note',
   subtasksChecklist: 'Checklist Subtasks ({completed}/{total})',
-  addSubtaskPlaceholder: '+ Add subtask item...',
+  addSubtaskPlaceholder: 'Add subtask item...',
   add: 'Add',
   deleteTaskConfirmHeader: 'Delete Task',
   deleteTaskConfirmMessage:
