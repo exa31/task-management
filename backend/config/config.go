@@ -119,6 +119,7 @@ type OAuthConfig struct {
 	GoogleClientSecret string
 	GoogleRedirectURI  string
 	AppleClientID      string
+	AppleBundleID      string
 	AppleTeamID        string
 	AppleKeyID         string
 }
@@ -213,6 +214,7 @@ func Load() *Config {
 			GoogleClientSecret: getEnv("GOOGLE_CLIENT_SECRET", ""),
 			GoogleRedirectURI:  getEnv("GOOGLE_REDIRECT_URI", "postmessage"),
 			AppleClientID:      getEnv("APPLE_CLIENT_ID", ""),
+			AppleBundleID:      getEnv("APPLE_BUNDLE_ID", ""),
 			AppleTeamID:        getEnv("APPLE_TEAM_ID", ""),
 			AppleKeyID:         getEnv("APPLE_KEY_ID", ""),
 		},

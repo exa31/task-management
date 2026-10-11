@@ -465,6 +465,41 @@ type appleUserInfo struct {
 	Picture string
 }
 
+func (s *AuthService) getAllowedAppleAudiences() []string {
+	if s.cfg == nil {
+		return nil
+	}
+	var audiences []string
+	if s.cfg.OAuth.AppleClientID != "" {
+		for _, id := range strings.Split(s.cfg.OAuth.AppleClientID, ",") {
+			if trimmed := strings.TrimSpace(id); trimmed != "" {
+				audiences = append(audiences, trimmed)
+			}
+		}
+	}
+	if s.cfg.OAuth.AppleBundleID != "" {
+		for _, id := range strings.Split(s.cfg.OAuth.AppleBundleID, ",") {
+			if trimmed := strings.TrimSpace(id); trimmed != "" {
+				audiences = append(audiences, trimmed)
+			}
+		}
+	}
+	return audiences
+}
+
+func (s *AuthService) isAllowedAppleAudience(aud string) bool {
+	allowedList := s.getAllowedAppleAudiences()
+	if len(allowedList) == 0 {
+		return true
+	}
+	for _, allowed := range allowedList {
+		if allowed == aud {
+			return true
+		}
+	}
+	return false
+}
+
 func (s *AuthService) verifyAppleAuth(req *OAuthLoginRequest) (*appleUserInfo, error) {
 	var email string
 	var name string
@@ -494,11 +529,15 @@ func (s *AuthService) verifyAppleAuth(req *OAuthLoginRequest) (*appleUserInfo, e
 						return nil, errors.UnauthorizedWithCode("Invalid Apple token issuer", constants.CodeAppleTokenInvalidIssuer)
 					}
 
-					// Validate Audience against configured AppleClientID
-					if s.cfg != nil && s.cfg.OAuth.AppleClientID != "" {
+					// Validate Audience against configured Apple Client ID(s) and mobile Bundle ID(s)
+					if s.cfg != nil && len(s.getAllowedAppleAudiences()) > 0 {
 						aud, ok := claims["aud"].(string)
-						if !ok || aud != s.cfg.OAuth.AppleClientID {
-							return nil, errors.UnauthorizedWithCode(fmt.Sprintf("Apple token audience '%s' does not match configured Apple Client ID '%s'", aud, s.cfg.OAuth.AppleClientID), constants.CodeAppleTokenAudienceMismatch)
+						if !ok || !s.isAllowedAppleAudience(aud) {
+							allowedStr := strings.Join(s.getAllowedAppleAudiences(), ", ")
+							return nil, errors.UnauthorizedWithCode(
+								fmt.Sprintf("Apple token audience '%s' does not match any configured Apple Client ID or Bundle ID [%s]", aud, allowedStr),
+								constants.CodeAppleTokenAudienceMismatch,
+							)
 						}
 					}
 
