@@ -189,18 +189,22 @@ export const TaskListView: React.FC = () => {
                   >
                     {task.title}
                   </span>
-                  {task.project_name && (
-                    <span
-                      className="inline-flex items-center gap-1 px-1.5 py-0.2 rounded text-[10px] font-semibold border shadow-2xs shrink-0"
-                      style={{
-                        backgroundColor: `${task.project_color || '#6366f1'}15`,
-                        borderColor: `${task.project_color || '#6366f1'}35`,
-                        color: task.project_color || '#6366f1'
-                      }}
-                    >
-                      📁 {task.project_name}
-                    </span>
-                  )}
+                    {task.project_name && (
+                      <span
+                        className="inline-flex items-center gap-1.5 px-1.5 py-0.5 rounded text-[10px] font-semibold border shadow-2xs shrink-0"
+                        style={{
+                          backgroundColor: `${task.project_color || '#6366f1'}15`,
+                          borderColor: `${task.project_color || '#6366f1'}35`,
+                          color: task.project_color || '#6366f1'
+                        }}
+                      >
+                        <span
+                          className="w-1.5 h-1.5 rounded-full shrink-0"
+                          style={{ backgroundColor: task.project_color || '#6366f1' }}
+                        />
+                        {task.project_name}
+                      </span>
+                    )}
                   {task.tags && task.tags.length > 0 && (
                     <span className="hidden md:inline-flex items-center gap-1 text-[10px] font-mono text-slate-500">
                       {task.tags.map((t) => `#${t}`).join(' ')}

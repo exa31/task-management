@@ -4,32 +4,9 @@ import { confirmDialog } from '@/components'
 import { useDeleteProject, useTasks, useToggleFocus, useUpdateTask } from '@/hooks'
 import { useTranslation } from '@/i18n'
 import { useTaskStore, useUIStore } from '@/stores'
-import type { Project, Task, TaskPriority, TaskStatus } from '@/types'
+import { STATUS_COLORS, type Project, type Task, type TaskPriority, type TaskStatus } from '@/types'
 
 const STATUS_KEYS: TaskStatus[] = ['backlog', 'todo', 'in_progress', 'review', 'done']
-
-const STATUS_COLORS: Record<TaskStatus, { badge: string; dot: string }> = {
-  backlog: {
-    badge: 'bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300',
-    dot: 'bg-slate-400'
-  },
-  todo: {
-    badge: 'bg-blue-50 text-blue-700 dark:bg-blue-950/40 dark:text-blue-300',
-    dot: 'bg-blue-500'
-  },
-  in_progress: {
-    badge: 'bg-amber-50 text-amber-700 dark:bg-amber-950/40 dark:text-amber-300',
-    dot: 'bg-amber-500'
-  },
-  review: {
-    badge: 'bg-purple-50 text-purple-700 dark:bg-purple-950/40 dark:text-purple-300',
-    dot: 'bg-purple-500'
-  },
-  done: {
-    badge: 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300',
-    dot: 'bg-emerald-500'
-  }
-}
 
 const PRIORITY_ICONS: Record<TaskPriority, { icon: string; class: string }> = {
   urgent: { icon: 'pi-exclamation-triangle', class: 'text-rose-500' },

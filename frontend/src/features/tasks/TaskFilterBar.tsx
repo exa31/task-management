@@ -3,6 +3,7 @@ import React from 'react'
 import { useProjects, useTasks } from '@/hooks'
 import { useTranslation } from '@/i18n'
 import { useTaskStore, useUIStore } from '@/stores'
+import { STATUS_COLORS, type TaskStatus } from '@/types'
 
 export const TaskFilterBar: React.FC = () => {
   const {
@@ -106,12 +107,21 @@ export const TaskFilterBar: React.FC = () => {
               <button
                 key={s.id}
                 onClick={() => setFilterStatus(s.id)}
-                className={`px-2.5 py-1 rounded-full text-xs font-medium transition-colors whitespace-nowrap ${
+                className={`px-2.5 py-1 rounded-full text-xs font-medium transition-colors whitespace-nowrap inline-flex items-center gap-1.5 ${
                   filterStatus === s.id
                     ? 'bg-indigo-600 text-white'
                     : 'bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 border border-slate-200 dark:border-slate-800'
                 }`}
               >
+                {s.id ? (
+                  <span
+                    className={`w-1.5 h-1.5 rounded-full ${
+                      filterStatus === s.id
+                        ? 'bg-white'
+                        : STATUS_COLORS[s.id as TaskStatus]?.dot || 'bg-slate-400'
+                    }`}
+                  />
+                ) : null}
                 {s.label}
               </button>
             ))}

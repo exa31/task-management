@@ -3,15 +3,9 @@ import React, { useMemo } from 'react'
 import { useTasks, useToggleFocus, useUpdateTask } from '@/hooks'
 import { useTranslation } from '@/i18n'
 import { useTaskStore } from '@/stores'
-import type { TaskFilterParams, TaskStatus } from '@/types'
+import { STATUS_COLORS, type TaskFilterParams, type TaskStatus } from '@/types'
 
-const COLUMNS: { id: TaskStatus; color: string }[] = [
-  { id: 'backlog', color: 'border-slate-800' },
-  { id: 'todo', color: 'border-blue-900/50' },
-  { id: 'in_progress', color: 'border-amber-900/50' },
-  { id: 'review', color: 'border-purple-900/50' },
-  { id: 'done', color: 'border-emerald-900/50' }
-]
+const COLUMNS: TaskStatus[] = ['backlog', 'todo', 'in_progress', 'review', 'done']
 
 export const TaskBoardView: React.FC = () => {
   const { openDrawer, filterPriority, filterTag, filterProject, filterFocusOnly, searchQuery } =
@@ -83,29 +77,21 @@ export const TaskBoardView: React.FC = () => {
 
   return (
     <div className="h-full flex gap-3.5 items-stretch overflow-x-auto pb-2 scrollbar-thin">
-      {COLUMNS.map((col) => {
-        const columnTasks = tasks.filter((t) => t.status === col.id)
-        const colTitle = t(`tasks.status.${col.id}`)
+      {COLUMNS.map((status) => {
+        const columnTasks = tasks.filter((t) => t.status === status)
+        const colTitle = t(`tasks.status.${status}`)
 
         return (
           <div
-            key={col.id}
+            key={status}
             onDragOver={handleDragOver}
-            onDrop={(e) => handleDrop(e, col.id)}
+            onDrop={(e) => handleDrop(e, status)}
             className="flex flex-col rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-100/70 dark:bg-slate-900/50 p-2.5 flex-1 min-w-[280px] h-full"
           >
             {/* Column Header */}
             <div className="flex items-center justify-between pb-2 mb-2 border-b border-slate-200 dark:border-slate-800/80 px-1 shrink-0">
               <span className="text-xs font-semibold text-slate-700 dark:text-slate-300 flex items-center gap-2">
-                <span
-                  className={`h-2 w-2 rounded-full ${
-                    col.id === 'done'
-                      ? 'bg-emerald-500'
-                      : col.id === 'in_progress'
-                        ? 'bg-amber-500'
-                        : 'bg-slate-400 dark:bg-slate-500'
-                  }`}
-                />
+                <span className={`h-2 w-2 rounded-full ${STATUS_COLORS[status].dot}`} />
                 {colTitle}
               </span>
               <span className="px-1.5 py-0.2 rounded-full text-[10px] font-mono bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-400">
@@ -171,14 +157,18 @@ export const TaskBoardView: React.FC = () => {
                     <div className="flex items-center gap-1.5">
                       {task.project_name && (
                         <span
-                          className="inline-flex items-center gap-0.5 px-1 py-0.2 rounded text-[9px] font-semibold border shadow-2xs"
+                          className="inline-flex items-center gap-1.5 px-1.5 py-0.5 rounded text-[9px] font-semibold border shadow-2xs"
                           style={{
                             backgroundColor: `${task.project_color || '#6366f1'}15`,
                             borderColor: `${task.project_color || '#6366f1'}35`,
                             color: task.project_color || '#6366f1'
                           }}
                         >
-                          📁 {task.project_name}
+                          <span
+                            className="w-1.5 h-1.5 rounded-full shrink-0"
+                            style={{ backgroundColor: task.project_color || '#6366f1' }}
+                          />
+                          {task.project_name}
                         </span>
                       )}
                       <span className="uppercase font-mono tracking-wider font-semibold">
