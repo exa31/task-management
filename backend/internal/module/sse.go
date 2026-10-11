@@ -38,9 +38,6 @@ func NewSSEHandler(hub *realtime.Hub) *SSEHandler {
 func (h *SSEHandler) Events(c *fiber.Ctx) error {
 	clientID := uuid.New().String()
 	userID, _ := c.Locals("user_id").(string)
-	if userID == "" {
-		userID = c.Query("user_id")
-	}
 
 	client := &realtime.Client{
 		ID:      clientID,

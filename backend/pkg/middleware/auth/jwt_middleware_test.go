@@ -149,3 +149,28 @@ func TestGetUserIDUnset(t *testing.T) {
 		t.Errorf("status = %d, want 401", resp.StatusCode)
 	}
 }
+
+func TestAuthMiddlewareWithQueryToken(t *testing.T) {
+	app, svc := testApp()
+	pair, err := svc.GenerateTokenPair("user-query-77", "query@b.com")
+	if err != nil {
+		t.Fatalf("token generation failed: %v", err)
+	}
+
+	req := httptest.NewRequest(http.MethodGet, "/whoami?token="+pair.AccessToken, nil)
+	resp, err := app.Test(req)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode != http.StatusOK {
+		t.Errorf("status = %d, want 200", resp.StatusCode)
+	}
+	got := make([]byte, 0, 64)
+	buf := make([]byte, 128)
+	n, _ := resp.Body.Read(buf)
+	got = append(got, buf[:n]...)
+	if string(got) != `{"email":"query@b.com","user_id":"user-query-77"}` {
+		t.Errorf("unexpected body: %s", string(got))
+	}
+}

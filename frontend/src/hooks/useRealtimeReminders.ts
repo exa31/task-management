@@ -53,7 +53,7 @@ export const useRealtimeReminders = () => {
       }
     }
 
-    const sseUrl = `${apiBaseUrl}/api/v1/realtime/sse/events?token=${encodeURIComponent(token)}&user_id=${encodeURIComponent(userId)}`
+    const sseUrl = `${apiBaseUrl}/api/v1/realtime/sse/events?token=${encodeURIComponent(token)}`
     const es = new EventSource(sseUrl)
     activeEventSource = es
 
