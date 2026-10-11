@@ -2,6 +2,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 
 import { projectApi } from '@/api'
 import { useAppToast } from '@/components'
+import { useTranslation } from '@/i18n'
 import type { CreateProjectPayload, Project, UpdateProjectPayload } from '@/types'
 
 import { taskKeys } from './useTasksQuery'
@@ -32,6 +33,7 @@ export const useProjects = () =>
 export const useCreateProject = () => {
   const queryClient = useQueryClient()
   const toast = useAppToast()
+  const { t } = useTranslation()
 
   return useMutation({
     mutationFn: async (payload: CreateProjectPayload) => {
@@ -41,7 +43,7 @@ export const useCreateProject = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: projectKeys.all })
       queryClient.invalidateQueries({ queryKey: taskKeys.all })
-      toast.success('Project berhasil dibuat')
+      toast.success(t('projects.createdSuccess'))
     },
     onError: (err) => {
       toast.error(err)
@@ -52,6 +54,7 @@ export const useCreateProject = () => {
 export const useUpdateProject = () => {
   const queryClient = useQueryClient()
   const toast = useAppToast()
+  const { t } = useTranslation()
 
   return useMutation({
     mutationFn: async ({ id, payload }: { id: number; payload: UpdateProjectPayload }) => {
@@ -61,7 +64,7 @@ export const useUpdateProject = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: projectKeys.all })
       queryClient.invalidateQueries({ queryKey: taskKeys.all })
-      toast.success('Project berhasil diperbarui')
+      toast.success(t('projects.updatedSuccess'))
     },
     onError: (err) => {
       toast.error(err)
@@ -72,6 +75,7 @@ export const useUpdateProject = () => {
 export const useDeleteProject = () => {
   const queryClient = useQueryClient()
   const toast = useAppToast()
+  const { t } = useTranslation()
 
   return useMutation({
     mutationFn: async (id: number) => {
@@ -80,7 +84,7 @@ export const useDeleteProject = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: projectKeys.all })
       queryClient.invalidateQueries({ queryKey: taskKeys.all })
-      toast.success('Project berhasil dihapus')
+      toast.success(t('projects.deletedSuccess'))
     },
     onError: (err) => {
       toast.error(err)

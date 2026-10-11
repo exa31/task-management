@@ -1,6 +1,5 @@
 import React, { useEffect, useState } from 'react'
 
-import { useAppToast } from '@/components'
 import { useCreateProject, useUpdateProject } from '@/hooks'
 import { useTranslation } from '@/i18n'
 import type { Project } from '@/types'
@@ -30,7 +29,6 @@ export const ProjectModal: React.FC<ProjectModalProps> = ({
   onSuccess
 }) => {
   const { t } = useTranslation()
-  const toast = useAppToast()
   const createMutation = useCreateProject()
   const updateMutation = useUpdateProject()
 
@@ -68,7 +66,6 @@ export const ProjectModal: React.FC<ProjectModalProps> = ({
             color
           }
         })
-        toast.success(t('projects.updatedSuccess'))
         if (onSuccess && res) onSuccess(res)
       } else {
         const res = await createMutation.mutateAsync({
@@ -76,12 +73,11 @@ export const ProjectModal: React.FC<ProjectModalProps> = ({
           description: description.trim(),
           color
         })
-        toast.success(t('projects.createdSuccess'))
         if (onSuccess && res) onSuccess(res)
       }
       onClose()
-    } catch (err: unknown) {
-      toast.error(err instanceof Error ? err.message : 'Error')
+    } catch {
+      // Error is handled by mutation onError callback
     } finally {
       setIsSubmitting(false)
     }
