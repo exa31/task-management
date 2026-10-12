@@ -23,6 +23,65 @@ public enum L10n {
         public static var signInGoogle: String { "auth.signInGoogle".localized }
         public static var secure: String { "auth.secure".localized }
         public static var signOut: String { "auth.signOut".localized }
+        public static var sessionExpired: String { "auth.error.sessionExpired".localized }
+        public static var windowNotFound: String { "auth.error.windowNotFound".localized }
+        public static var googleTokenFailed: String { "auth.error.googleTokenFailed".localized }
+        public static var appleTokenFailed: String { "auth.error.appleTokenFailed".localized }
+    }
+
+    public enum Tasks {
+        public static var title: String { "tasks.title".localized }
+        public static var newTask: String { "tasks.new".localized }
+        public static var searchPlaceholder: String { "tasks.searchPlaceholder".localized }
+        public static var allProjects: String { "tasks.allProjects".localized }
+        public static var allStatuses: String { "tasks.allStatuses".localized }
+        public static var allPriorities: String { "tasks.allPriorities".localized }
+        public static var focusOnly: String { "tasks.focusOnly".localized }
+        public static var resetFilters: String { "tasks.resetFilters".localized }
+        public static var resetAllFilters: String { "tasks.resetAllFilters".localized }
+        public static var emptyTitle: String { "tasks.emptyTitle".localized }
+        public static var emptyDesc: String { "tasks.emptyDesc".localized }
+        public static var noTasksFilterTitle: String { "tasks.noTasksFilterTitle".localized }
+        public static var noTasksFilterDesc: String { "tasks.noTasksFilterDesc".localized }
+        public static var createTask: String { "tasks.createTask".localized }
+        public static var saveFailed: String { "tasks.saveFailed".localized }
+        public static var noSubtasks: String { "tasks.noSubtasks".localized }
+        public static var lastProgressNote: String { "tasks.lastProgressNote".localized }
+        public static func subtasksCount(done: Int, total: Int) -> String {
+            "tasks.subtasksCount".localized(with: done, total)
+        }
+    }
+
+    public enum Projects {
+        public static var title: String { "projects.title".localized }
+        public static var newProject: String { "projects.new".localized }
+        public static var emptyTitle: String { "projects.emptyTitle".localized }
+        public static var emptyDesc: String { "projects.emptyDesc".localized }
+        public static var emptyGuidance: String { "projects.emptyGuidance".localized }
+        public static var createFirst: String { "projects.createFirst".localized }
+        public static var noMatchingProjects: String { "projects.noMatchingProjects".localized }
+        public static func noProjectsMatchingDesc(query: String) -> String {
+            "projects.noProjectsMatchingDesc".localized(with: query)
+        }
+        public static func deleteConfirmation(name: String) -> String {
+            "projects.deleteConfirmation".localized(with: name)
+        }
+        public static var deleteWarningNotice: String { "projects.deleteWarningNotice".localized }
+        public static var totalProjects: String { "projects.totalProjects".localized }
+    }
+
+    public enum Notes {
+        public static var title: String { "notes.title".localized }
+        public static var newNote: String { "notes.new".localized }
+        public static var emptyTitle: String { "notes.emptyTitle".localized }
+        public static var emptyDesc: String { "notes.emptyDesc".localized }
+        public static var loading: String { "notes.loading".localized }
+        public static var sectionInfo: String { "notes.sectionInfo".localized }
+        public static var fieldTitle: String { "notes.fieldTitle".localized }
+        public static var fieldType: String { "notes.fieldType".localized }
+        public static var typeActionable: String { "notes.typeActionable".localized }
+        public static var typeKnowledge: String { "notes.typeKnowledge".localized }
+        public static var fieldContent: String { "notes.fieldContent".localized }
     }
 
     public enum Reminders {
@@ -66,6 +125,15 @@ public enum L10n {
         public static var fullName: String { "settings.fullName".localized }
         public static var emailAddress: String { "settings.emailAddress".localized }
         public static var saveProfile: String { "settings.saveProfile".localized }
+        public static var profileUpdated: String { "settings.profileUpdated".localized }
+        public static var avatarUpdated: String { "settings.avatarUpdated".localized }
+        public static var preferencesSaved: String { "settings.preferencesSaved".localized }
+        public static func accountDisconnected(provider: String) -> String {
+            "settings.accountDisconnected".localized(with: provider)
+        }
+        public static var appleConnected: String { "settings.appleConnected".localized }
+        public static var deleteConfirmPrompt: String { "settings.deleteConfirmPrompt".localized }
+        public static var deletePermanentNotice: String { "settings.deletePermanentNotice".localized }
         public static var linkedAccounts: String { "settings.linkedAccounts".localized }
         public static var connected: String { "settings.connected".localized }
         public static var disconnect: String { "settings.disconnect".localized }

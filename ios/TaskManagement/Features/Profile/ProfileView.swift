@@ -67,10 +67,12 @@ public final class ProfileViewModel {
             )
             self.user = updated
             self.name = updated.name
-            self.successToast = "Profil berhasil diperbarui!"
+            self.successToast = L10n.Settings.profileUpdated
+            AppLogger.success("Profile details updated successfully", category: .app)
             self.isSavingProfile = false
             return true
         } catch {
+            AppLogger.error("Failed to update profile", error: error, category: .app)
             self.errorMessage = error.localizedDescription
             self.isSavingProfile = false
             return false
@@ -85,8 +87,10 @@ public final class ProfileViewModel {
         do {
             let updated = try await apiClient.uploadAvatar(data: imageData)
             self.user = updated
-            self.successToast = "Foto profil berhasil diperbarui!"
+            self.successToast = L10n.Settings.avatarUpdated
+            AppLogger.success("Avatar image uploaded successfully", category: .app)
         } catch {
+            AppLogger.error("Failed to upload avatar", error: error, category: .app)
             self.errorMessage = error.localizedDescription
         }
         self.isUploadingAvatar = false
@@ -106,10 +110,12 @@ public final class ProfileViewModel {
                 )
             )
             self.user = updated
-            self.successToast = "Preferensi notifikasi berhasil disimpan!"
+            self.successToast = L10n.Settings.preferencesSaved
+            AppLogger.success("Notification preferences updated successfully", category: .app)
             self.isSavingNotifications = false
             return true
         } catch {
+            AppLogger.error("Failed to update notification preferences", error: error, category: .app)
             self.errorMessage = error.localizedDescription
             self.isSavingNotifications = false
             return false
@@ -125,9 +131,11 @@ public final class ProfileViewModel {
             self.user = updated
             self.googleBound = updated.googleBound
             self.appleBound = updated.appleBound
-            self.successToast = "Akun \(provider.capitalized) berhasil diputuskan."
+            self.successToast = L10n.Settings.accountDisconnected(provider: provider.capitalized)
+            AppLogger.success("OAuth provider unlinked successfully", category: .auth, metadata: ["provider": provider])
             return true
         } catch {
+            AppLogger.error("Failed to unbind OAuth provider", error: error, category: .auth, metadata: ["provider": provider])
             self.errorMessage = error.localizedDescription
             return false
         }
@@ -155,8 +163,10 @@ public final class ProfileViewModel {
                         )
                         self.user = updated
                         self.appleBound = updated.appleBound
-                        self.successToast = "Apple ID berhasil dihubungkan."
+                        self.successToast = L10n.Settings.appleConnected
+                        AppLogger.success("Apple ID linked successfully to profile", category: .auth)
                     } catch {
+                        AppLogger.error("Failed to bind Apple ID", error: error, category: .auth)
                         self.errorMessage = error.localizedDescription
                     }
                 }
@@ -169,7 +179,7 @@ public final class ProfileViewModel {
     @MainActor
     public func deleteAccount(confirmation: String) async -> Bool {
         guard confirmation.trimmingCharacters(in: .whitespaces).uppercased() == "DELETE" else {
-            self.errorMessage = "Ketik \"DELETE\" untuk mengonfirmasi penghapusan akun."
+            self.errorMessage = L10n.Settings.deleteConfirmPrompt
             return false
         }
         isDeletingAccount = true
@@ -849,17 +859,17 @@ public struct ProfileView: View {
                         .foregroundColor(AppColors.priorityUrgent)
                 }
 
-                Text("Hapus Akun Permanen?")
+                Text(L10n.Settings.deleteAccount)
                     .font(.system(size: 18, weight: .bold))
 
-                Text("Tindakan ini tidak dapat dibatalkan. Semua data tugas, proyek, dan catatan Anda akan dihapus selamanya.")
+                Text(L10n.Settings.deletePermanentNotice)
                     .font(.system(size: 13))
                     .foregroundColor(.secondary)
                     .multilineTextAlignment(.center)
                     .padding(.horizontal, 16)
 
                 VStack(alignment: .leading, spacing: 6) {
-                    Text("Ketik \"DELETE\" untuk konfirmasi:")
+                    Text(L10n.Settings.deleteConfirmPrompt)
                         .font(.system(size: 12, weight: .semibold))
                         .foregroundColor(.primary)
 

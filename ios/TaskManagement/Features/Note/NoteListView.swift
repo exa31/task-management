@@ -17,7 +17,9 @@ public final class NoteViewModel {
         isLoading = true
         do {
             self.notes = try await apiClient.getNotes()
+            AppLogger.info("Notes loaded successfully", category: .app, metadata: ["count": notes.count])
         } catch {
+            AppLogger.error("Failed to load notes", error: error, category: .app)
             self.errorMessage = error.localizedDescription
         }
         self.isLoading = false
@@ -30,8 +32,10 @@ public final class NoteViewModel {
                 _ = try await apiClient.createNote(
                     req: CreateNoteRequest(title: title, content: content, type: type, color: "#6366F1", isPinned: false)
                 )
+                AppLogger.success("Note created successfully", category: .app, metadata: ["type": type])
                 await loadNotes()
             } catch {
+                AppLogger.error("Failed to create note", error: error, category: .app)
                 self.errorMessage = error.localizedDescription
             }
         }
@@ -55,7 +59,7 @@ public struct NoteListView: View {
                 if viewModel.isLoading && viewModel.notes.isEmpty {
                     VStack(spacing: 12) {
                         ProgressView()
-                        Text("Memuat catatan…").font(.system(size: 13)).foregroundColor(.secondary)
+                        Text(L10n.Notes.loading).font(.system(size: 13)).foregroundColor(.secondary)
                     }
                 } else if viewModel.notes.isEmpty {
                     VStack(spacing: 14) {
@@ -67,9 +71,9 @@ public struct NoteListView: View {
                                 .font(.system(size: 32))
                                 .foregroundColor(AppColors.primary)
                         }
-                        Text("Belum Ada Catatan")
+                        Text(L10n.Notes.emptyTitle)
                             .font(.system(size: 17, weight: .bold))
-                        Text("Tulis ide, referensi pengetahuan, atau catatan actionable.")
+                        Text(L10n.Notes.emptyDesc)
                             .font(.system(size: 13))
                             .foregroundColor(.secondary)
                             .multilineTextAlignment(.center)
@@ -78,7 +82,7 @@ public struct NoteListView: View {
                         Button(action: { showCreateSheet = true }) {
                             HStack(spacing: 6) {
                                 Image(systemName: "plus")
-                                Text("Tulis Catatan")
+                                Text(L10n.Notes.newNote)
                             }
                             .font(.system(size: 14, weight: .semibold))
                             .padding(.horizontal, 16)
@@ -137,7 +141,7 @@ public struct NoteListView: View {
                     }
                 }
             }
-            .navigationTitle("Catatan & Ide")
+            .navigationTitle(L10n.Notes.title)
             .toolbar {
                 ToolbarItem(placement: .primaryAction) {
                     Button(action: { showCreateSheet = true }) {
@@ -150,27 +154,27 @@ public struct NoteListView: View {
             .sheet(isPresented: $showCreateSheet) {
                 NavigationStack {
                     Form {
-                        Section(header: Text("Informasi Catatan")) {
-                            TextField("Judul Catatan *", text: $newTitle)
-                            Picker("Tipe", selection: $newType) {
-                                Text("Actionable (Bisa jadi tugas)").tag("actionable")
-                                Text("Knowledge (Wawasan)").tag("knowledge")
+                        Section(header: Text(L10n.Notes.sectionInfo)) {
+                            TextField(L10n.Notes.fieldTitle, text: $newTitle)
+                            Picker(L10n.Notes.fieldType, selection: $newType) {
+                                Text(L10n.Notes.typeActionable).tag("actionable")
+                                Text(L10n.Notes.typeKnowledge).tag("knowledge")
                             }
                         }
 
-                        Section(header: Text("Isi Catatan Markdown")) {
+                        Section(header: Text(L10n.Notes.fieldContent)) {
                             TextEditor(text: $newContent)
                                 .frame(minHeight: 140)
                         }
                     }
-                    .navigationTitle("Catatan Baru")
+                    .navigationTitle(L10n.Notes.newNote)
                     .navigationBarTitleDisplayMode(.inline)
                     .toolbar {
                         ToolbarItem(placement: .cancellationAction) {
-                            Button("Batal") { showCreateSheet = false }
+                            Button(L10n.General.cancel) { showCreateSheet = false }
                         }
                         ToolbarItem(placement: .confirmationAction) {
-                            Button("Simpan") {
+                            Button(L10n.General.save) {
                                 viewModel.createNote(title: newTitle, content: newContent, type: newType)
                                 newTitle = ""
                                 newContent = ""

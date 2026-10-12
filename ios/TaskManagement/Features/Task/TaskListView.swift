@@ -293,11 +293,11 @@ public struct TaskListView: View {
                         }
 
                         VStack(spacing: 4) {
-                            Text(viewModel.hasActiveFilters ? "Tidak Ada Tugas yang Sesuai" : "Tidak Ada Tugas")
+                            Text(viewModel.hasActiveFilters ? L10n.Tasks.noTasksFilterTitle : L10n.Tasks.emptyTitle)
                                 .font(.system(size: 17, weight: .bold))
                             Text(viewModel.hasActiveFilters
-                                 ? "Tidak ada tugas yang sesuai dengan kriteria filter atau pencarian saat ini."
-                                 : "Belum ada tugas di kategori ini. Buat tugas baru sekarang!")
+                                 ? L10n.Tasks.noTasksFilterDesc
+                                 : L10n.Tasks.emptyDesc)
                                 .font(.system(size: 13))
                                 .foregroundColor(.secondary)
                                 .multilineTextAlignment(.center)
@@ -312,7 +312,7 @@ public struct TaskListView: View {
                             }) {
                                 HStack(spacing: 6) {
                                     Image(systemName: "arrow.counterclockwise")
-                                    Text("Reset Semua Filter")
+                                    Text(L10n.Tasks.resetAllFilters)
                                 }
                                 .font(.system(size: 14, weight: .semibold))
                                 .padding(.horizontal, 16)
@@ -326,7 +326,7 @@ public struct TaskListView: View {
                             Button(action: { showCreateSheet = true }) {
                                 HStack(spacing: 6) {
                                     Image(systemName: "plus")
-                                    Text("Buat Tugas")
+                                    Text(L10n.Tasks.createTask)
                                 }
                                 .font(.system(size: 14, weight: .semibold))
                                 .padding(.horizontal, 16)
@@ -950,7 +950,7 @@ public struct CreateTaskSheet: View {
                     onCreated?()
                     dismiss()
                 } else {
-                    errorMessage = viewModel.errorMessage ?? "Gagal menyimpan tugas."
+                    errorMessage = viewModel.errorMessage ?? L10n.Tasks.saveFailed
                 }
             }
         }

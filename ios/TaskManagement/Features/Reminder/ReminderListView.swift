@@ -24,7 +24,9 @@ public final class ReminderViewModel {
         isLoading = true
         do {
             self.reminders = try await apiClient.getReminders()
+            AppLogger.info("Reminders loaded successfully", category: .reminder, metadata: ["count": reminders.count])
         } catch {
+            AppLogger.error("Failed to load reminders", error: error, category: .reminder)
             self.errorMessage = error.localizedDescription
         }
         self.isLoading = false
@@ -74,10 +76,12 @@ public final class ReminderViewModel {
                 remindAt: remindAtStr,
                 taskId: taskId
             )
+            AppLogger.success("Reminder created successfully", category: .reminder, metadata: ["title": trimmedTitle])
             await loadReminders()
             isCreating = false
             return true
         } catch {
+            AppLogger.error("Failed to create reminder", error: error, category: .reminder)
             self.errorMessage = error.localizedDescription
             isCreating = false
             return false
@@ -89,8 +93,10 @@ public final class ReminderViewModel {
         Task {
             do {
                 _ = try await apiClient.snoozeReminder(id: id, minutes: 15)
+                AppLogger.success("Reminder snoozed for 15 minutes", category: .reminder, metadata: ["id": id])
                 await loadReminders()
             } catch {
+                AppLogger.error("Failed to snooze reminder", error: error, category: .reminder, metadata: ["id": id])
                 self.errorMessage = error.localizedDescription
             }
         }
@@ -101,8 +107,10 @@ public final class ReminderViewModel {
         Task {
             do {
                 _ = try await apiClient.dismissReminder(id: id)
+                AppLogger.success("Reminder dismissed", category: .reminder, metadata: ["id": id])
                 await loadReminders()
             } catch {
+                AppLogger.error("Failed to dismiss reminder", error: error, category: .reminder, metadata: ["id": id])
                 self.errorMessage = error.localizedDescription
             }
         }
@@ -113,8 +121,10 @@ public final class ReminderViewModel {
         Task {
             do {
                 try await apiClient.deleteReminder(id: id)
+                AppLogger.success("Reminder deleted", category: .reminder, metadata: ["id": id])
                 await loadReminders()
             } catch {
+                AppLogger.error("Failed to delete reminder", error: error, category: .reminder, metadata: ["id": id])
                 self.errorMessage = error.localizedDescription
             }
         }

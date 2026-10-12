@@ -172,7 +172,7 @@ public struct TaskDetailSheet: View {
                             }
                         }
                     } else {
-                        Text("Tidak ada subtask checklist.")
+                        Text(L10n.Tasks.noSubtasks)
                             .font(.system(size: 13))
                             .foregroundColor(.secondary)
                             .padding(.vertical, 8)
@@ -182,7 +182,7 @@ public struct TaskDetailSheet: View {
                 // Last Progress Note Preview
                 if let lastNote = task.lastProgressNote, !lastNote.isEmpty {
                     VStack(alignment: .leading, spacing: 6) {
-                        Text("CATATAN PROGRES TERAKHIR")
+                        Text(L10n.Tasks.lastProgressNote)
                             .font(.system(size: 11, weight: .bold))
                             .foregroundColor(.secondary)
 

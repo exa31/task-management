@@ -35,7 +35,9 @@ public final class ProjectViewModel {
             async let fetchedTasks = apiClient.getTasks()
             self.projects = try await fetchedProjects
             self.tasks = try await fetchedTasks
+            AppLogger.info("Projects and tasks loaded", category: .app, metadata: ["projectsCount": projects.count, "tasksCount": tasks.count])
         } catch {
+            AppLogger.error("Failed to load projects data", error: error, category: .app)
             self.errorMessage = error.localizedDescription
         }
         self.isLoading = false
@@ -97,9 +99,11 @@ public final class ProjectViewModel {
     public func createProject(name: String, color: String, description: String) async -> Bool {
         do {
             _ = try await apiClient.createProject(req: CreateProjectRequest(name: name, color: color, description: description))
+            AppLogger.success("Project created successfully", category: .app, metadata: ["name": name])
             await loadData()
             return true
         } catch {
+            AppLogger.error("Failed to create project", error: error, category: .app)
             self.errorMessage = error.localizedDescription
             return false
         }
@@ -109,9 +113,11 @@ public final class ProjectViewModel {
     public func updateProject(id: Int64, name: String, color: String, description: String) async -> Bool {
         do {
             _ = try await apiClient.updateProject(id: id, req: UpdateProjectRequest(name: name, color: color, description: description))
+            AppLogger.success("Project updated successfully", category: .app, metadata: ["id": id])
             await loadData()
             return true
         } catch {
+            AppLogger.error("Failed to update project", error: error, category: .app)
             self.errorMessage = error.localizedDescription
             return false
         }
@@ -122,9 +128,11 @@ public final class ProjectViewModel {
         do {
             try await apiClient.deleteProject(id: id)
             expandedProjectIds.remove(id)
+            AppLogger.success("Project deleted successfully", category: .app, metadata: ["id": id])
             await loadData()
             return true
         } catch {
+            AppLogger.error("Failed to delete project", error: error, category: .app)
             self.errorMessage = error.localizedDescription
             return false
         }
@@ -207,11 +215,11 @@ public struct ProjectListView: View {
                                     .font(.system(size: 32))
                                     .foregroundColor(AppColors.primary)
                             }
-                            Text(viewModel.searchQuery.isEmpty ? "Belum Ada Proyek" : "Tidak Ada Hasil")
+                            Text(viewModel.searchQuery.isEmpty ? L10n.Projects.emptyTitle : L10n.Projects.noMatchingProjects)
                                 .font(.system(size: 17, weight: .bold))
                             Text(viewModel.searchQuery.isEmpty
-                                 ? "Kelompokkan tugas ke dalam proyek untuk memudahkan pelacakan progres."
-                                 : "Tidak ada proyek yang sesuai dengan kata kunci \"\(viewModel.searchQuery)\".")
+                                 ? L10n.Projects.emptyGuidance
+                                 : L10n.Projects.noProjectsMatchingDesc(query: viewModel.searchQuery))
                                 .font(.system(size: 13))
                                 .foregroundColor(.secondary)
                                 .multilineTextAlignment(.center)
@@ -224,7 +232,7 @@ public struct ProjectListView: View {
                                 }) {
                                     HStack(spacing: 6) {
                                         Image(systemName: "plus")
-                                        Text("Buat Proyek Pertama")
+                                        Text(L10n.Projects.createFirst)
                                     }
                                     .font(.system(size: 14, weight: .semibold))
                                     .padding(.horizontal, 16)
@@ -335,15 +343,15 @@ public struct ProjectListView: View {
                 titleVisibility: .visible,
                 presenting: projectToDelete
             ) { proj in
-                Button("Hapus Proyek \"\(proj.name)\"", role: .destructive) {
+                Button(L10n.Projects.deleteConfirmation(name: proj.name), role: .destructive) {
                     Task {
                         _ = await viewModel.deleteProject(id: proj.id)
                         await taskViewModel.loadProjects()
                     }
                 }
-                Button("Batal", role: .cancel) {}
+                Button(L10n.General.cancel, role: .cancel) {}
             } message: { proj in
-                Text("Tugas yang terhubung dengan proyek ini tidak akan dihapus, tetapi relasi proyek akan dilepas.")
+                Text(L10n.Projects.deleteWarningNotice)
             }
         }
     }

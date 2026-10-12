@@ -24,7 +24,8 @@ public final class AuthViewModel {
             queue: .main
         ) { [weak self] _ in
             Task { @MainActor [weak self] in
-                self?.signOut(withMessage: "Sesi telah berakhir atau tidak valid. Silakan login kembali.")
+                AppLogger.warn("Session expired notification received; signing out user", category: .auth)
+                self?.signOut(withMessage: L10n.Auth.sessionExpired)
             }
         }
     }
@@ -32,6 +33,7 @@ public final class AuthViewModel {
     public func checkSession() {
         if keychain.get(key: "access_token") != nil {
             isAuthenticated = true
+            AppLogger.info("Active session token found in Keychain", category: .auth)
             Task {
                 await PushNotificationManager.shared.registerDeviceTokenWithBackend()
             }
@@ -55,6 +57,7 @@ public final class AuthViewModel {
                     appleIDCredential.fullName?.familyName
                 ].compactMap { $0 }.joined(separator: " ")
 
+                AppLogger.info("Initiating Apple Sign-In exchange with backend", category: .auth)
                 Task {
                     do {
                         _ = try await apiClient.oauthLogin(
@@ -68,17 +71,21 @@ public final class AuthViewModel {
                             )
                         )
                         self.isAuthenticated = true
+                        AppLogger.success("Apple Sign-In completed successfully", category: .auth)
                         await PushNotificationManager.shared.registerDeviceTokenWithBackend()
                     } catch {
+                        AppLogger.error("Apple Sign-In backend verification failed", error: error, category: .auth)
                         self.errorMessage = error.localizedDescription
                     }
                     self.isLoading = false
                 }
             } else {
+                AppLogger.error("Failed to extract Apple ID Token from authorization credential", category: .auth)
                 isLoading = false
-                errorMessage = "Failed to extract Apple ID Token"
+                errorMessage = L10n.Auth.appleTokenFailed
             }
         case .failure(let error):
+            AppLogger.warn("Apple Sign-In authorization flow cancelled or failed", category: .auth, metadata: ["error": error.localizedDescription])
             isLoading = false
             errorMessage = error.localizedDescription
         }
@@ -87,12 +94,14 @@ public final class AuthViewModel {
     public func handleGoogleSignIn() {
         guard let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
               let rootVC = windowScene.windows.first(where: { $0.isKeyWindow })?.rootViewController ?? windowScene.windows.first?.rootViewController else {
-            errorMessage = "Tidak dapat menemukan jendela aplikasi untuk Google Sign-In"
+            AppLogger.warn("Could not find key window view controller for Google Sign-In presentation", category: .auth)
+            errorMessage = L10n.Auth.windowNotFound
             return
         }
 
         isLoading = true
         errorMessage = nil
+        AppLogger.info("Presenting Google Sign-In dialog", category: .auth)
 
         GIDSignIn.sharedInstance.signIn(withPresenting: rootVC) { [weak self] signInResult, error in
             Task { @MainActor [weak self] in
@@ -102,7 +111,10 @@ public final class AuthViewModel {
                     let nsError = error as NSError
                     // GIDSignInErrorCodeCanceled = -5
                     if nsError.code != -5 {
+                        AppLogger.error("Google Sign-In presented error", error: error, category: .auth)
                         self.errorMessage = error.localizedDescription
+                    } else {
+                        AppLogger.info("User cancelled Google Sign-In dialog", category: .auth)
                     }
                     self.isLoading = false
                     return
@@ -110,7 +122,8 @@ public final class AuthViewModel {
 
                 guard let user = signInResult?.user,
                       let idToken = user.idToken?.tokenString else {
-                    self.errorMessage = "Gagal memverifikasi token Google."
+                    AppLogger.error("Google Sign-In returned empty user or idToken", category: .auth)
+                    self.errorMessage = L10n.Auth.googleTokenFailed
                     self.isLoading = false
                     return
                 }
@@ -119,6 +132,7 @@ public final class AuthViewModel {
                 let name = user.profile?.name ?? "Google User"
                 let avatarUrl = user.profile?.imageURL(withDimension: 200)?.absoluteString
 
+                AppLogger.info("Exchanging Google ID token with backend", category: .auth)
                 do {
                     _ = try await self.apiClient.oauthLogin(
                         req: OAuthLoginRequest(
@@ -131,8 +145,10 @@ public final class AuthViewModel {
                         )
                     )
                     self.isAuthenticated = true
+                    AppLogger.success("Google Sign-In completed successfully", category: .auth)
                     await PushNotificationManager.shared.registerDeviceTokenWithBackend()
                 } catch {
+                    AppLogger.error("Google Sign-In backend verification failed", error: error, category: .auth)
                     self.errorMessage = error.localizedDescription
                 }
                 self.isLoading = false
