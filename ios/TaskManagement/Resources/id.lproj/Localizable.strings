@@ -1,0 +1,55 @@
+/* Indonesian Localizable.strings */
+
+/* Navigation */
+"nav.tasks" = "Tugas";
+"nav.projects" = "Proyek";
+"nav.notes" = "Catatan";
+"nav.reminders" = "Pengingat";
+"nav.profile" = "Profil";
+
+/* Auth */
+"auth.title" = "Task Manager Native";
+"auth.subtitle" = "Kelola tugas, ide, dan pengingat secara real-time tersinkronisasi dengan backend Go.";
+"auth.signin.apple" = "Masuk dengan Apple";
+"auth.signin.google" = "Masuk dengan Google";
+"auth.signout" = "Keluar (Sign Out)";
+
+/* Tasks */
+"tasks.title" = "Daftar Tugas";
+"tasks.search" = "Cari tugas…";
+"tasks.filter.all" = "Semua";
+"tasks.filter.todo" = "To Do";
+"tasks.filter.inprogress" = "Dalam Proses";
+"tasks.filter.done" = "Selesai";
+"tasks.empty" = "Belum ada tugas di kategori ini.";
+"tasks.new" = "Tugas Baru";
+"tasks.field.title" = "Judul Tugas";
+"tasks.field.description" = "Deskripsi (Opsional)";
+"tasks.priority" = "Prioritas";
+"tasks.subtasks.count" = "%lld/%lld checklist";
+
+/* Projects */
+"projects.title" = "Proyek";
+"projects.new" = "Proyek Baru";
+"projects.name" = "Nama Proyek";
+"projects.tasks.count" = "%lld tugas";
+
+/* Notes */
+"notes.title" = "Catatan";
+"notes.new" = "Catatan Baru";
+"notes.field.title" = "Judul Catatan";
+"notes.field.content" = "Isi Markdown";
+"notes.empty" = "Belum ada catatan.";
+
+/* Reminders */
+"reminders.title" = "Pengingat";
+"reminders.empty" = "Tidak ada pengingat aktif.";
+"reminders.snooze" = "Tunda 15 mnt";
+"reminders.dismiss" = "Selesai";
+"reminders.active" = "Pengingat Aktif: %@";
+
+/* General */
+"general.save" = "Simpan";
+"general.cancel" = "Batal";
+"general.close" = "Tutup";
+"general.language" = "Bahasa";

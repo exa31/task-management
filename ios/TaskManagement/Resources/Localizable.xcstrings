@@ -1,0 +1,668 @@
+{
+  "sourceLanguage" : "en",
+  "strings" : {
+    "(%lld)" : {
+
+    },
+    "#%@" : {
+
+    },
+    "%@ (%@)" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@ (%2$@)"
+          }
+        }
+      }
+    },
+    "%lld" : {
+
+    },
+    "%lld aktif" : {
+
+    },
+    "%lld tugas (%lld selesai)" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$lld tugas (%2$lld selesai)"
+          }
+        }
+      }
+    },
+    "%lld/%lld" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$lld/%2$lld"
+          }
+        }
+      }
+    },
+    "%lld/%lld checklist" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$lld/%2$lld checklist"
+          }
+        }
+      }
+    },
+    "%lld%%" : {
+
+    },
+    "1 Jam sebelum jatuh tempo" : {
+
+    },
+    "1.0.0" : {
+
+    },
+    "3 Jam sebelum jatuh tempo" : {
+
+    },
+    "12 Jam sebelum jatuh tempo" : {
+
+    },
+    "15 Menit sebelum jatuh tempo" : {
+
+    },
+    "24 Jam (1 hari) sebelum jatuh tempo" : {
+
+    },
+    "48 Jam (2 hari) sebelum jatuh tempo" : {
+
+    },
+    "ACTIONABLE" : {
+
+    },
+    "Actionable (Bisa jadi tugas)" : {
+
+    },
+    "Akun Terhubung (OAuth)" : {
+
+    },
+    "Alamat Email" : {
+
+    },
+    "Ambang Peringatan" : {
+
+    },
+    "Ambang Peringatan Batas Waktu" : {
+
+    },
+    "America/Los_Angeles (PDT/PST)" : {
+
+    },
+    "America/New_York (EDT/EST)" : {
+
+    },
+    "Anda akan keluar dari sesi ini dan harus login kembali untuk mengakses data." : {
+
+    },
+    "Apakah Anda yakin ingin memutuskan hubungan akun %@?" : {
+
+    },
+    "App Version" : {
+
+    },
+    "Apple ID" : {
+
+    },
+    "Asia/Jakarta (WIB, UTC+7)" : {
+
+    },
+    "Asia/Jayapura (WIT, UTC+9)" : {
+
+    },
+    "Asia/Makassar (WITA, UTC+8)" : {
+
+    },
+    "Asia/Singapore (SGT, UTC+8)" : {
+
+    },
+    "Asia/Tokyo (JST, UTC+9)" : {
+
+    },
+    "Atur zona waktu reminder dan toleransi peringatan sebelum tugas jatuh tempo." : {
+
+    },
+    "Backlog" : {
+
+    },
+    "Batal" : {
+
+    },
+    "Batal Fokus" : {
+
+    },
+    "Belum Ada Catatan" : {
+
+    },
+    "Belum Ada Proyek" : {
+
+    },
+    "Belum Ada Riwayat Log" : {
+
+    },
+    "Belum ada tugas di kategori ini" : {
+
+    },
+    "Belum ada tugas di kategori ini. Buat tugas baru sekarang!" : {
+
+    },
+    "Belum Terhubung" : {
+
+    },
+    "Buat Proyek Baru" : {
+
+    },
+    "Buat Proyek Pertama" : {
+
+    },
+    "Buat Tugas" : {
+
+    },
+    "Buat Tugas Baru" : {
+
+    },
+    "Cari proyek…" : {
+
+    },
+    "Cari tugas, tag, atau deskripsi…" : {
+
+    },
+    "Catatan & Ide" : {
+
+    },
+    "Catatan Baru" : {
+
+    },
+    "CATATAN PROGRES TERAKHIR" : {
+
+    },
+    "Checklist Subtask" : {
+
+    },
+    "Daftar Tugas" : {
+
+    },
+    "DELETE" : {
+
+    },
+    "Deskripsi (Opsional)" : {
+
+    },
+    "Detail Tugas" : {
+
+    },
+    "Edit Proyek" : {
+
+    },
+    "Europe/London (BST/GMT)" : {
+
+    },
+    "Fokus" : {
+
+    },
+    "Fokus (%lld)" : {
+
+    },
+    "Fokus Hari Ini" : {
+
+    },
+    "G" : {
+
+    },
+    "Ganti Foto Profil" : {
+
+    },
+    "general.cancel" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cancel"
+          }
+        },
+        "id" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Batal"
+          }
+        }
+      }
+    },
+    "general.save" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Save"
+          }
+        },
+        "id" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Simpan"
+          }
+        }
+      }
+    },
+    "Google Account" : {
+
+    },
+    "Hapus" : {
+
+    },
+    "Hapus Akun" : {
+
+    },
+    "Hapus Akun Permanen" : {
+
+    },
+    "Hapus Akun Permanen?" : {
+
+    },
+    "Hapus Proyek" : {
+
+    },
+    "Hapus Proyek \"%@\"" : {
+
+    },
+    "Hapus Proyek?" : {
+
+    },
+    "High" : {
+
+    },
+    "Hubungkan akun Anda untuk kemudahan masuk multi-platform." : {
+
+    },
+    "In Progress" : {
+
+    },
+    "Informasi Catatan" : {
+
+    },
+    "Informasi Profil" : {
+
+    },
+    "Informasi Proyek" : {
+
+    },
+    "Informasi Tugas" : {
+
+    },
+    "Isi Catatan Markdown" : {
+
+    },
+    "Judul Catatan *" : {
+
+    },
+    "Judul Tugas *" : {
+
+    },
+    "Kelompokkan tugas ke dalam proyek untuk memudahkan pelacakan progres." : {
+
+    },
+    "Keluar (Sign Out)" : {
+
+    },
+    "Keluar dari Akun" : {
+
+    },
+    "Ketik \"DELETE\" untuk konfirmasi:" : {
+
+    },
+    "Kirim" : {
+
+    },
+    "KNOWLEDGE" : {
+
+    },
+    "Knowledge (Wawasan)" : {
+
+    },
+    "Konfirmasi Keluar" : {
+
+    },
+    "Konfirmasi Penghapusan" : {
+
+    },
+    "Low" : {
+
+    },
+    "Medium" : {
+
+    },
+    "Memuat catatan…" : {
+
+    },
+    "Memuat daftar proyek…" : {
+
+    },
+    "Memuat daftar tugas…" : {
+
+    },
+    "Memuat riwayat log..." : {
+
+    },
+    "Menghapus akun Anda secara permanen beserta seluruh tugas, modul proyek, catatan, dan pengingat yang tersimpan." : {
+
+    },
+    "Nama Lengkap" : {
+
+    },
+    "Nama Proyek *" : {
+
+    },
+    "nav.notes" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Notes"
+          }
+        },
+        "id" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Catatan"
+          }
+        }
+      }
+    },
+    "nav.profile" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Profile"
+          }
+        },
+        "id" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Profil"
+          }
+        }
+      }
+    },
+    "nav.projects" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Projects"
+          }
+        },
+        "id" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Proyek"
+          }
+        }
+      }
+    },
+    "nav.reminders" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Reminders"
+          }
+        },
+        "id" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pengingat"
+          }
+        }
+      }
+    },
+    "nav.tasks" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tasks"
+          }
+        },
+        "id" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tugas"
+          }
+        }
+      }
+    },
+    "Notifikasi Email" : {
+
+    },
+    "Pilih Proyek" : {
+
+    },
+    "Pilih warna aksen untuk modul/proyek ini:" : {
+
+    },
+    "Pilihan Warna" : {
+
+    },
+    "Pisahkan koma (contoh: bug, api, mobile)" : {
+
+    },
+    "Preferensi Notifikasi & Waktu" : {
+
+    },
+    "Prioritas" : {
+
+    },
+    "Proyek" : {
+
+    },
+    "Proyek & Modul" : {
+
+    },
+    "Putuskan" : {
+
+    },
+    "Putuskan %@" : {
+
+    },
+    "Putuskan Akun?" : {
+
+    },
+    "Reset (%lld)" : {
+
+    },
+    "Reset Semua Filter" : {
+
+    },
+    "Review" : {
+
+    },
+    "Riwayat Log" : {
+
+    },
+    "Semua perubahan status, subtask, dan catatan progres akan tercatat di sini secara kronologis." : {
+
+    },
+    "Semua Prioritas" : {
+
+    },
+    "Semua Proyek" : {
+
+    },
+    "Simpan" : {
+
+    },
+    "Simpan Perubahan Profil" : {
+
+    },
+    "Simpan Preferensi Notifikasi" : {
+
+    },
+    "Status" : {
+
+    },
+    "Status & Prioritas" : {
+
+    },
+    "STATUS TUGAS" : {
+
+    },
+    "SUBTASKS (%lld/%lld)" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "SUBTASKS (%1$lld/%2$lld)"
+          }
+        }
+      }
+    },
+    "Tags / Label" : {
+
+    },
+    "Tambah subtask baru…" : {
+
+    },
+    "Tambah Tugas di Proyek Ini" : {
+
+    },
+    "Tandai Belum Selesai" : {
+
+    },
+    "Tandai Selesai" : {
+
+    },
+    "Tanggal & Jam" : {
+
+    },
+    "Tanpa Proyek" : {
+
+    },
+    "tasks.search" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Search tasks…"
+          }
+        },
+        "id" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cari tugas…"
+          }
+        }
+      }
+    },
+    "tasks.title" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Task List"
+          }
+        },
+        "id" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Daftar Tugas"
+          }
+        }
+      }
+    },
+    "Tenggat Waktu" : {
+
+    },
+    "Terhubung" : {
+
+    },
+    "Terima email peringatan saat tugas mendekati batas waktu." : {
+
+    },
+    "Tetapkan Batas Waktu" : {
+
+    },
+    "Theme" : {
+
+    },
+    "Tidak Ada Hasil" : {
+
+    },
+    "Tidak ada proyek yang sesuai dengan kata kunci \"%@\"." : {
+
+    },
+    "Tidak ada subtask checklist." : {
+
+    },
+    "Tidak Ada Tugas" : {
+
+    },
+    "Tidak Ada Tugas yang Sesuai" : {
+
+    },
+    "Tidak ada tugas yang sesuai dengan kriteria filter atau pencarian saat ini." : {
+
+    },
+    "Tindakan ini tidak dapat dibatalkan. Semua data tugas, proyek, dan catatan Anda akan dihapus selamanya." : {
+
+    },
+    "Tipe" : {
+
+    },
+    "To Do" : {
+
+    },
+    "Tugas yang terhubung dengan proyek ini tidak akan dihapus, tetapi relasi proyek akan dilepas." : {
+
+    },
+    "Tulis Catatan" : {
+
+    },
+    "Tulis catatan progres atau update log..." : {
+
+    },
+    "Tulis ide, referensi pengetahuan, atau catatan actionable." : {
+
+    },
+    "Tutup" : {
+
+    },
+    "Urgent" : {
+
+    },
+    "UTC (UTC+0)" : {
+
+    },
+    "Versi Aplikasi" : {
+
+    },
+    "Zona Berbahaya" : {
+
+    },
+    "Zona Waktu" : {
+
+    },
+    "Zona Waktu (Timezone)" : {
+
+    }
+  },
+  "version" : "1.0"
+}

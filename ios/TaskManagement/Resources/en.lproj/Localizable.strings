@@ -1,0 +1,55 @@
+/* English Localizable.strings */
+
+/* Navigation */
+"nav.tasks" = "Tasks";
+"nav.projects" = "Projects";
+"nav.notes" = "Notes";
+"nav.reminders" = "Reminders";
+"nav.profile" = "Profile";
+
+/* Auth */
+"auth.title" = "Task Manager Native";
+"auth.subtitle" = "Manage tasks, ideas, and reminders in real-time synced with Go backend.";
+"auth.signin.apple" = "Sign in with Apple";
+"auth.signin.google" = "Sign in with Google";
+"auth.signout" = "Sign Out";
+
+/* Tasks */
+"tasks.title" = "Task List";
+"tasks.search" = "Search tasks…";
+"tasks.filter.all" = "All";
+"tasks.filter.todo" = "To Do";
+"tasks.filter.inprogress" = "In Progress";
+"tasks.filter.done" = "Done";
+"tasks.empty" = "No tasks found in this category.";
+"tasks.new" = "New Task";
+"tasks.field.title" = "Task Title";
+"tasks.field.description" = "Description (Optional)";
+"tasks.priority" = "Priority";
+"tasks.subtasks.count" = "%lld/%lld checklist";
+
+/* Projects */
+"projects.title" = "Projects";
+"projects.new" = "New Project";
+"projects.name" = "Project Name";
+"projects.tasks.count" = "%lld tasks";
+
+/* Notes */
+"notes.title" = "Notes";
+"notes.new" = "New Note";
+"notes.field.title" = "Note Title";
+"notes.field.content" = "Markdown Content";
+"notes.empty" = "No notes available.";
+
+/* Reminders */
+"reminders.title" = "Reminders";
+"reminders.empty" = "No active reminders.";
+"reminders.snooze" = "Snooze 15m";
+"reminders.dismiss" = "Dismiss";
+"reminders.active" = "Active Reminder: %@";
+
+/* General */
+"general.save" = "Save";
+"general.cancel" = "Cancel";
+"general.close" = "Close";
+"general.language" = "Language";
