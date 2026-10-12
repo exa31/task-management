@@ -7,6 +7,8 @@ import (
 	"log/slog"
 	"testing"
 	"time"
+
+	"golang/pkg/notification"
 )
 
 type mockRepository struct {
@@ -222,6 +224,107 @@ func TestService_ProcessReminder(t *testing.T) {
 		err := svc.ProcessReminder(ctx, 99)
 		if err == nil {
 			t.Fatalf("expected error for non-existent reminder")
+		}
+	})
+}
+
+type mockTestPushSender struct {
+	sendPushNotificationWithResultFunc func(ctx context.Context, tokens []string, title, body string, data map[string]string) (*notification.PushResult, error)
+}
+
+func (m *mockTestPushSender) SendPushNotification(ctx context.Context, tokens []string, title, body string, data map[string]string) error {
+	_, err := m.SendPushNotificationWithResult(ctx, tokens, title, body, data)
+	return err
+}
+
+func (m *mockTestPushSender) SendPushNotificationWithResult(ctx context.Context, tokens []string, title, body string, data map[string]string) (*notification.PushResult, error) {
+	if m.sendPushNotificationWithResultFunc != nil {
+		return m.sendPushNotificationWithResultFunc(ctx, tokens, title, body, data)
+	}
+	return &notification.PushResult{SuccessCount: len(tokens), FailureCount: 0, TotalTokens: len(tokens)}, nil
+}
+
+func TestService_TestFCM(t *testing.T) {
+	ctx := context.Background()
+	logger := slog.New(slog.NewTextHandler(io.Discard, nil))
+
+	mockRepo := &mockRepository{
+		getUserDeviceTokensFunc: func(ctx context.Context, userID string) ([]string, error) {
+			if userID == "user-with-tokens" {
+				return []string{"fcm-token-alpha-1234567890", "fcm-token-beta-1234567890"}, nil
+			}
+			return []string{}, nil
+		},
+	}
+
+	mockPush := &mockTestPushSender{}
+	svc := NewService(mockRepo, nil, nil, mockPush, nil, logger)
+
+	t.Run("Returns graceful message when target user has no registered tokens", func(t *testing.T) {
+		res, err := svc.TestFCM(ctx, "user-no-tokens", TestFCMRequest{}, false)
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+		if res.Success {
+			t.Errorf("expected success to be false when 0 tokens found")
+		}
+		if res.TokensCount != 0 {
+			t.Errorf("expected 0 tokens, got %d", res.TokensCount)
+		}
+	})
+
+	t.Run("Rejects cross-user targeting when not admin/dev", func(t *testing.T) {
+		_, err := svc.TestFCM(ctx, "caller-user", TestFCMRequest{TargetUserID: "other-user"}, false)
+		if err == nil {
+			t.Fatalf("expected forbidden error for unauthorized cross-user targeting")
+		}
+	})
+
+	t.Run("Allows cross-user targeting when isAdminOrDev is true", func(t *testing.T) {
+		res, err := svc.TestFCM(ctx, "caller-user", TestFCMRequest{TargetUserID: "user-with-tokens"}, true)
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+		if !res.Success {
+			t.Errorf("expected push to succeed")
+		}
+		if res.TokensCount != 2 {
+			t.Errorf("expected 2 tokens, got %d", res.TokensCount)
+		}
+		if res.TargetUserID != "user-with-tokens" {
+			t.Errorf("expected target_user_id to be user-with-tokens, got %s", res.TargetUserID)
+		}
+	})
+
+	t.Run("Dispatches to custom token directly", func(t *testing.T) {
+		customToken := "direct-fcm-custom-token-xyz-12345678"
+		res, err := svc.TestFCM(ctx, "caller-user", TestFCMRequest{
+			Token: customToken,
+			Title: "Direct Test",
+			Body:  "Direct message",
+		}, false)
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+		if !res.Success {
+			t.Errorf("expected push to succeed for direct token")
+		}
+		if res.TokensCount != 1 {
+			t.Errorf("expected 1 token, got %d", res.TokensCount)
+		}
+		if res.Title != "Direct Test" {
+			t.Errorf("expected title 'Direct Test', got '%s'", res.Title)
+		}
+	})
+
+	t.Run("Gracefully handles nil PushSender without panicking", func(t *testing.T) {
+		svcNoPush := NewService(mockRepo, nil, nil, nil, nil, logger)
+		res, err := svcNoPush.TestFCM(ctx, "user-with-tokens", TestFCMRequest{}, false)
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+		if res.Success {
+			t.Errorf("expected success to be false when pushSender is nil")
 		}
 	})
 }

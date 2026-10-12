@@ -265,10 +265,12 @@ func (r *Router) registerReminders(api fiber.Router) {
 		return
 	}
 	webhookSecret := ""
+	isDev := false
 	if r.Config != nil {
 		webhookSecret = r.Config.Reminder.WebhookSecret
+		isDev = r.Config.App.Environment != "production"
 	}
-	handler := reminder.NewHandler(r.ReminderService, webhookSecret)
+	handler := reminder.NewHandler(r.ReminderService, webhookSecret, isDev)
 	reminders := api.Group("/reminders")
 
 	// External Asynq worker webhook trigger endpoint (Public/Secret-protected)
@@ -284,4 +286,11 @@ func (r *Router) registerReminders(api fiber.Router) {
 	reminders.Post("/:id/snooze", handler.Snooze)
 	reminders.Post("/:id/dismiss", handler.Dismiss)
 	reminders.Post("/device-token", handler.RegisterDeviceToken)
+	reminders.Post("/test-fcm", handler.TestFCM)
+
+	// Notifications alias for convenience
+	notifications := api.Group("/notifications")
+	notifications.Use(authMiddleware.AuthMiddleware(r.JWTService))
+	notifications.Post("/test-fcm", handler.TestFCM)
+	notifications.Post("/device-token", handler.RegisterDeviceToken)
 }

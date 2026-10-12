@@ -13,12 +13,18 @@ import (
 type Handler struct {
 	service       Service
 	webhookSecret string
+	isDev         bool
 }
 
-func NewHandler(service Service, webhookSecret string) *Handler {
+func NewHandler(service Service, webhookSecret string, isDev ...bool) *Handler {
+	dev := false
+	if len(isDev) > 0 {
+		dev = isDev[0]
+	}
 	return &Handler{
 		service:       service,
 		webhookSecret: webhookSecret,
+		isDev:         dev,
 	}
 }
 
@@ -235,4 +241,32 @@ func (h *Handler) RegisterDeviceToken(c *fiber.Ctx) error {
 	}
 
 	return response.SuccessMessageResponse(c, "Device token registered successfully")
+}
+
+func (h *Handler) TestFCM(c *fiber.Ctx) error {
+	callingUserID, err := authMiddleware.GetUserID(c)
+	if err != nil {
+		return err
+	}
+
+	var req TestFCMRequest
+	if err := validation.Default.BindAndValidate(c, &req); err != nil {
+		return err
+	}
+
+	secretHeader := c.Get("X-Internal-Token")
+	if secretHeader == "" {
+		secretHeader = c.Get("X-Webhook-Secret")
+	}
+	if secretHeader == "" {
+		secretHeader = c.Get("X-Admin-Secret")
+	}
+	isAdminOrDev := (secretHeader != "" && h.webhookSecret != "" && secretHeader == h.webhookSecret) || h.isDev
+
+	result, err := h.service.TestFCM(c.UserContext(), callingUserID, req, isAdminOrDev)
+	if err != nil {
+		return err
+	}
+
+	return response.SuccessResponse(c, result, "Test push notification processed")
 }

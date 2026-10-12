@@ -2,8 +2,10 @@ package reminder
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log/slog"
+	"strings"
 	"time"
 
 	"golang/pkg/notification"
@@ -19,6 +21,7 @@ type Service interface {
 	Snooze(ctx context.Context, userID string, id int64, req SnoozeReminderRequest) (*ReminderResponse, error)
 	Dismiss(ctx context.Context, userID string, id int64) (*ReminderResponse, error)
 	RegisterDeviceToken(ctx context.Context, userID string, req RegisterDeviceTokenRequest) error
+	TestFCM(ctx context.Context, callingUserID string, req TestFCMRequest, isAdminOrDev bool) (*TestFCMResponse, error)
 
 	// ProcessReminder is invoked by background Asynq worker when a reminder is due
 	ProcessReminder(ctx context.Context, reminderID int64) error
@@ -205,4 +208,121 @@ func (s *service) ProcessReminder(ctx context.Context, reminderID int64) error {
 
 	s.logger.Info("reminder successfully processed and marked sent", slog.Int64("reminder_id", reminderID))
 	return nil
+}
+
+func (s *service) TestFCM(ctx context.Context, callingUserID string, req TestFCMRequest, isAdminOrDev bool) (*TestFCMResponse, error) {
+	targetUserID := callingUserID
+	if req.TargetUserID != "" && req.TargetUserID != callingUserID {
+		if !isAdminOrDev {
+			return nil, errors.New("forbidden: cannot send test push notifications to other users without authorization")
+		}
+		targetUserID = req.TargetUserID
+	}
+
+	var tokens []string
+	if req.Token != "" {
+		if !isAdminOrDev && req.TargetUserID != "" && req.TargetUserID != callingUserID {
+			return nil, errors.New("forbidden: custom token testing restricted")
+		}
+		tokens = []string{req.Token}
+	} else {
+		var err error
+		tokens, err = s.repo.GetUserDeviceTokens(ctx, targetUserID)
+		if err != nil {
+			return nil, fmt.Errorf("failed to fetch device tokens: %w", err)
+		}
+	}
+
+	title := req.Title
+	if title == "" {
+		title = "Task Hub Test Notification"
+	}
+
+	body := req.Body
+	if body == "" {
+		body = "Push notification delivered successfully from Task Hub backend!"
+	}
+
+	data := req.Data
+	if data == nil {
+		data = make(map[string]string)
+	}
+	if _, ok := data["type"]; !ok {
+		data["type"] = "test_fcm"
+	}
+	if _, ok := data["user_id"]; !ok {
+		data["user_id"] = targetUserID
+	}
+	if _, ok := data["timestamp"]; !ok {
+		data["timestamp"] = time.Now().UTC().Format(time.RFC3339)
+	}
+
+	// Mask tokens for secure response preview
+	maskedTokens := make([]string, len(tokens))
+	for i, t := range tokens {
+		if len(t) > 16 {
+			maskedTokens[i] = fmt.Sprintf("%s...%s", t[:8], t[len(t)-6:])
+		} else {
+			maskedTokens[i] = t
+		}
+	}
+
+	if len(tokens) == 0 {
+		return &TestFCMResponse{
+			Success:      false,
+			Message:      fmt.Sprintf("No registered device tokens found for user %s. Register device token via POST /reminders/device-token first.", targetUserID),
+			TargetUserID: targetUserID,
+			TokensCount:  0,
+			Tokens:       maskedTokens,
+			Title:        title,
+			Body:         body,
+			Data:         data,
+		}, nil
+	}
+
+	if s.pushSender == nil {
+		return &TestFCMResponse{
+			Success:      false,
+			Message:      "FCM push sender is not configured on backend server (check FCM_SERVICE_ACCOUNT_KEY or FCM_CREDENTIALS_BASE64)",
+			TargetUserID: targetUserID,
+			TokensCount:  len(tokens),
+			Tokens:       maskedTokens,
+			Title:        title,
+			Body:         body,
+			Data:         data,
+		}, nil
+	}
+
+	pushResult, err := s.pushSender.SendPushNotificationWithResult(ctx, tokens, title, body, data)
+	if err != nil {
+		return &TestFCMResponse{
+			Success:      false,
+			Message:      fmt.Sprintf("FCM dispatch error: %v", err),
+			TargetUserID: targetUserID,
+			TokensCount:  len(tokens),
+			Tokens:       maskedTokens,
+			Title:        title,
+			Body:         body,
+			Data:         data,
+		}, nil
+	}
+
+	success := pushResult.SuccessCount > 0
+	msg := fmt.Sprintf("FCM push dispatched to %d device(s): %d successful, %d failed", len(tokens), pushResult.SuccessCount, pushResult.FailureCount)
+	if pushResult.FailureCount > 0 && len(pushResult.Errors) > 0 {
+		msg = fmt.Sprintf("%s. Failures: %s", msg, strings.Join(pushResult.Errors, "; "))
+	}
+
+	return &TestFCMResponse{
+		Success:      success,
+		Message:      msg,
+		TargetUserID: targetUserID,
+		TokensCount:  len(tokens),
+		SuccessCount: pushResult.SuccessCount,
+		FailureCount: pushResult.FailureCount,
+		Tokens:       maskedTokens,
+		Title:        title,
+		Body:         body,
+		Data:         data,
+	}, nil
 }

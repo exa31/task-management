@@ -66,3 +66,26 @@ type ReminderResponse struct {
 	CreatedAt   time.Time  `json:"created_at" db:"created_at"`
 	UpdatedAt   time.Time  `json:"updated_at" db:"updated_at"`
 }
+
+// TestFCMRequest payload for testing FCM push notification dispatch.
+type TestFCMRequest struct {
+	TargetUserID string            `json:"target_user_id" validate:"omitempty"`
+	Token        string            `json:"token" validate:"omitempty"`
+	Title        string            `json:"title" validate:"omitempty,max=255"`
+	Body         string            `json:"body" validate:"omitempty,max=1000"`
+	Data         map[string]string `json:"data" validate:"omitempty"`
+}
+
+// TestFCMResponse represents the outcome of a test FCM push notification.
+type TestFCMResponse struct {
+	Success      bool              `json:"success"`
+	Message      string            `json:"message"`
+	TargetUserID string            `json:"target_user_id"`
+	TokensCount  int               `json:"tokens_count"`
+	SuccessCount int               `json:"success_count"`
+	FailureCount int               `json:"failure_count"`
+	Tokens       []string          `json:"tokens_masked"`
+	Title        string            `json:"title"`
+	Body         string            `json:"body"`
+	Data         map[string]string `json:"data,omitempty"`
+}

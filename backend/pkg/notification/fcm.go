@@ -13,8 +13,16 @@ import (
 	"google.golang.org/api/option"
 )
 
+type PushResult struct {
+	SuccessCount int      `json:"success_count"`
+	FailureCount int      `json:"failure_count"`
+	TotalTokens  int      `json:"total_tokens"`
+	Errors       []string `json:"errors,omitempty"`
+}
+
 type PushSender interface {
 	SendPushNotification(ctx context.Context, tokens []string, title, body string, data map[string]string) error
+	SendPushNotificationWithResult(ctx context.Context, tokens []string, title, body string, data map[string]string) (*PushResult, error)
 }
 
 type FCMPushSender struct {
@@ -83,14 +91,19 @@ func NewFCMPushSender(ctx context.Context, projectID, credsFile, credsJSON, cred
 }
 
 func (s *FCMPushSender) SendPushNotification(ctx context.Context, tokens []string, title, body string, data map[string]string) error {
+	_, err := s.SendPushNotificationWithResult(ctx, tokens, title, body, data)
+	return err
+}
+
+func (s *FCMPushSender) SendPushNotificationWithResult(ctx context.Context, tokens []string, title, body string, data map[string]string) (*PushResult, error) {
 	if s.client == nil {
 		s.logger.Warn("fcm push skipped: FCM credentials not configured")
-		return errors.New("fcm credentials not configured")
+		return nil, errors.New("fcm credentials not configured")
 	}
 
 	if len(tokens) == 0 {
 		s.logger.Debug("fcm push skipped: no device tokens registered for user")
-		return nil
+		return &PushResult{SuccessCount: 0, FailureCount: 0, TotalTokens: 0}, nil
 	}
 
 	msg := &messaging.MulticastMessage{
@@ -100,12 +113,38 @@ func (s *FCMPushSender) SendPushNotification(ctx context.Context, tokens []strin
 			Body:  body,
 		},
 		Data: data,
+		APNS: &messaging.APNSConfig{
+			Payload: &messaging.APNSPayload{
+				Aps: &messaging.Aps{
+					Sound: "default",
+				},
+			},
+		},
 	}
 
 	resp, err := s.client.SendEachForMulticast(ctx, msg)
 	if err != nil {
 		s.logger.Error("failed to send fcm multicast message", slog.String("error", err.Error()))
-		return fmt.Errorf("fcm send error: %w", err)
+		return nil, fmt.Errorf("fcm send error: %w", err)
+	}
+
+	res := &PushResult{
+		SuccessCount: resp.SuccessCount,
+		FailureCount: resp.FailureCount,
+		TotalTokens:  len(tokens),
+	}
+
+	if resp.FailureCount > 0 {
+		for i, r := range resp.Responses {
+			if !r.Success && r.Error != nil {
+				errMsg := fmt.Sprintf("token[%d]: %v", i, r.Error)
+				res.Errors = append(res.Errors, errMsg)
+				s.logger.Warn("fcm token delivery failed",
+					slog.Int("index", i),
+					slog.String("error", r.Error.Error()),
+				)
+			}
+		}
 	}
 
 	s.logger.Info("fcm push notification dispatched",
@@ -114,5 +153,5 @@ func (s *FCMPushSender) SendPushNotification(ctx context.Context, tokens []strin
 		slog.Int("total_tokens", len(tokens)),
 	)
 
-	return nil
+	return res, nil
 }
