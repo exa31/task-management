@@ -25,9 +25,7 @@ final class AppDelegate: NSObject, UIApplicationDelegate {
         _ application: UIApplication,
         didFailToRegisterForRemoteNotificationsWithError error: Error
     ) {
-        #if DEBUG
-        print("⚠️ [PushNotification] Failed to register for remote notifications: \(error.localizedDescription)")
-        #endif
+        AppLogger.warn("Failed to register for remote notifications", category: .push, metadata: ["error": error.localizedDescription])
     }
 }
 

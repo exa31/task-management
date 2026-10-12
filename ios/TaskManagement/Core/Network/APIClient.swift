@@ -100,14 +100,10 @@ public actor APIClient {
         // Auto Refresh Token on 401
         if httpResponse.statusCode == 401 {
             if retryOn401 {
-                #if DEBUG
-                print("🔄 [HTTP AUTH] 401 Unauthorized encountered. Attempting token refresh...")
-                #endif
+                AppLogger.warn("401 Unauthorized encountered. Attempting token refresh...", category: .auth)
                 let refreshed = await refreshToken()
                 if refreshed {
-                    #if DEBUG
-                    print("🔄 [HTTP AUTH] Token refreshed successfully. Retrying request...")
-                    #endif
+                    AppLogger.success("Token refreshed successfully. Retrying request...", category: .auth)
                     return try await request(endpoint: endpoint, method: method, body: body, retryOn401: false)
                 }
             }
@@ -118,15 +114,11 @@ public actor APIClient {
 
         guard (200...299).contains(httpResponse.statusCode) else {
             if let baseRes = try? decoder.decode(BaseResponse<String>.self, from: data) {
-                #if DEBUG
-                print("❌ [HTTP ERROR RESPONSE] Code \(httpResponse.statusCode) - \(baseRes.message)")
-                #endif
+                AppLogger.error("HTTP error response: \(baseRes.message)", category: .network, metadata: ["statusCode": httpResponse.statusCode])
                 throw APIError.serverError(baseRes.message)
             }
             let msg = "Server returned code \(httpResponse.statusCode)"
-            #if DEBUG
-            print("❌ [HTTP ERROR RESPONSE] \(msg)")
-            #endif
+            AppLogger.error("HTTP error response: \(msg)", category: .network, metadata: ["statusCode": httpResponse.statusCode])
             throw APIError.serverError(msg)
         }
 
@@ -145,17 +137,13 @@ public actor APIClient {
                let empty = EmptyResponse() as? T {
                 return empty
             }
-            #if DEBUG
-            print("❌ [JSON DECODE ERROR] Failed to decode \(T.self): \(error)")
-            #endif
+            AppLogger.error("Failed to decode response payload", error: error, category: .network, metadata: ["type": "\(T.self)"])
             throw APIError.decodingError(error)
         }
     }
 
     private func handleSessionExpired() async {
-        #if DEBUG
-        print("❌ [HTTP AUTH] Token refresh failed. Clearing credentials and broadcasting session expiration.")
-        #endif
+        AppLogger.warn("Token refresh failed. Clearing credentials and broadcasting session expiration", category: .auth)
         keychain.clearAll()
         await MainActor.run {
             NotificationCenter.default.post(name: .sessionExpired, object: nil)

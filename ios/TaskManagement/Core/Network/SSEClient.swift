@@ -26,13 +26,9 @@ public final class SSEClient: Sendable {
                 request.timeoutInterval = .infinity
 
                 do {
-                    #if DEBUG
-                    print("⚡ [SSE CONNECTING] Connecting to \(url.absoluteString)...")
-                    #endif
+                    AppLogger.info("Connecting to SSE stream...", category: .sse, metadata: ["url": url.absoluteString])
                     let (asyncBytes, _) = try await URLSession.shared.bytes(for: request)
-                    #if DEBUG
-                    print("⚡ [SSE CONNECTED] Stream established successfully.")
-                    #endif
+                    AppLogger.success("SSE stream established successfully", category: .sse)
                     var currentEvent = "message"
 
                     for try await line in asyncBytes.lines {
@@ -45,9 +41,7 @@ public final class SSEClient: Sendable {
                         }
                     }
                 } catch {
-                    #if DEBUG
-                    print("⚡ [SSE DISCONNECTED / ERROR] \(error.localizedDescription)")
-                    #endif
+                    AppLogger.warn("SSE stream disconnected or encountered error", category: .sse, metadata: ["error": error.localizedDescription])
                 }
                 continuation.finish()
             }

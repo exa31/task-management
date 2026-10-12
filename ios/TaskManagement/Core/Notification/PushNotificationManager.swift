@@ -24,21 +24,15 @@ public final class PushNotificationManager: NSObject, UNUserNotificationCenterDe
         UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .badge, .sound]) { granted, error in
             Task { @MainActor in
                 if let error = error {
-                    #if DEBUG
-                    print("⚠️ [PushNotification] Authorization request error: \(error.localizedDescription)")
-                    #endif
+                    AppLogger.error("Authorization request failed", error: error, category: .push)
                     return
                 }
 
                 if granted {
-                    #if DEBUG
-                    print("✅ [PushNotification] User granted notification permissions.")
-                    #endif
+                    AppLogger.success("Notification permissions granted by user", category: .push)
                     UIApplication.shared.registerForRemoteNotifications()
                 } else {
-                    #if DEBUG
-                    print("ℹ️ [PushNotification] User denied notification permissions.")
-                    #endif
+                    AppLogger.info("Notification permissions denied by user", category: .push)
                 }
             }
         }
@@ -50,9 +44,7 @@ public final class PushNotificationManager: NSObject, UNUserNotificationCenterDe
         self.deviceToken = token
         UserDefaults.standard.set(token, forKey: tokenKey)
 
-        #if DEBUG
-        print("📲 [PushNotification] Received APNs device token: \(token)")
-        #endif
+        AppLogger.info("APNs device token received", category: .push, metadata: ["token": token])
 
         Task {
             await registerDeviceTokenWithBackend(token: token)
@@ -63,28 +55,20 @@ public final class PushNotificationManager: NSObject, UNUserNotificationCenterDe
     public func registerDeviceTokenWithBackend(token: String? = nil) async {
         let resolvedToken = token ?? self.deviceToken ?? UserDefaults.standard.string(forKey: tokenKey)
         guard let validToken = resolvedToken, !validToken.isEmpty else {
-            #if DEBUG
-            print("ℹ️ [PushNotification] No valid device token available for registration.")
-            #endif
+            AppLogger.debug("No valid device token available for registration", category: .push)
             return
         }
 
         guard KeychainManager.shared.get(key: "access_token") != nil else {
-            #if DEBUG
-            print("ℹ️ [PushNotification] Device token cached locally. Waiting for user login before registering to backend.")
-            #endif
+            AppLogger.info("Device token cached locally; awaiting user authentication", category: .push)
             return
         }
 
         do {
             try await APIClient.shared.registerDeviceToken(token: validToken)
-            #if DEBUG
-            print("🚀 [PushNotification] Successfully registered device token to backend.")
-            #endif
+            AppLogger.success("Successfully registered device token to backend", category: .push, metadata: ["platform": "ios"])
         } catch {
-            #if DEBUG
-            print("⚠️ [PushNotification] Failed to register device token to backend: \(error.localizedDescription)")
-            #endif
+            AppLogger.warn("Failed to register device token to backend", category: .push, metadata: ["error": error.localizedDescription])
         }
     }
 
@@ -106,9 +90,7 @@ public final class PushNotificationManager: NSObject, UNUserNotificationCenterDe
         withCompletionHandler completionHandler: @escaping () -> Void
     ) {
         let userInfo = response.notification.request.content.userInfo
-        #if DEBUG
-        print("🔔 [PushNotification] User tapped on notification with payload: \(userInfo)")
-        #endif
+        AppLogger.info("User tapped notification", category: .push, metadata: ["keys": userInfo.keys.map(String.init).joined(separator: ",")])
         completionHandler()
     }
 }

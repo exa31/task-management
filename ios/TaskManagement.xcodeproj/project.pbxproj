@@ -31,6 +31,7 @@
 		BB0102030405060708090002 /* TaskManagement/Core/Localization/I18n.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB0102030405060708090001 /* TaskManagement/Core/Localization/I18n.swift */; };
 		BB0102030405060708090004 /* TaskManagement/Core/Localization/L10n.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB0102030405060708090003 /* TaskManagement/Core/Localization/L10n.swift */; };
 		BB0102030405060708090012 /* TaskManagement/Core/Notification/PushNotificationManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB0102030405060708090011 /* TaskManagement/Core/Notification/PushNotificationManager.swift */; };
+		BB0102030405060708090022 /* TaskManagement/Core/Logger/AppLogger.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB0102030405060708090021 /* TaskManagement/Core/Logger/AppLogger.swift */; };
 		CC0102030405060708090002 /* TaskManagement/GoogleService-Info.plist in Resources */ = {isa = PBXBuildFile; fileRef = CC0102030405060708090001 /* TaskManagement/GoogleService-Info.plist */; };
 		CC0102030405060708090013 /* GoogleSignIn in Frameworks */ = {isa = PBXBuildFile; productRef = CC0102030405060708090011 /* GoogleSignIn */; };
 		CC0102030405060708090014 /* GoogleSignInSwift in Frameworks */ = {isa = PBXBuildFile; productRef = CC0102030405060708090012 /* GoogleSignInSwift */; };
@@ -65,6 +66,7 @@
 		CC0102030405060708090001 /* TaskManagement/GoogleService-Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = TaskManagement/GoogleService-Info.plist; sourceTree = "<group>"; };
 		CC0102030405060708090003 /* TaskManagement/Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = TaskManagement/Info.plist; sourceTree = "<group>"; };
 		BB0102030405060708090011 /* TaskManagement/Core/Notification/PushNotificationManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TaskManagement/Core/Notification/PushNotificationManager.swift; sourceTree = "<group>"; };
+		BB0102030405060708090021 /* TaskManagement/Core/Logger/AppLogger.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TaskManagement/Core/Logger/AppLogger.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -111,6 +113,7 @@
 				BB0102030405060708090001 /* TaskManagement/Core/Localization/I18n.swift */,
 				BB0102030405060708090003 /* TaskManagement/Core/Localization/L10n.swift */,
 				BB0102030405060708090011 /* TaskManagement/Core/Notification/PushNotificationManager.swift */,
+				BB0102030405060708090021 /* TaskManagement/Core/Logger/AppLogger.swift */,
 			);
 			sourceTree = "<group>";
 		};
@@ -214,6 +217,7 @@
 				CBD9DAE4F0BC2EE4A9446086 /* TaskManagement/Features/Task/TaskViewModel.swift in Sources */,
 				9179CC5DC9DB4AA927B1C295 /* TaskManagement/TaskManagementApp.swift in Sources */,
 				BB0102030405060708090012 /* TaskManagement/Core/Notification/PushNotificationManager.swift in Sources */,
+				BB0102030405060708090022 /* TaskManagement/Core/Logger/AppLogger.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
