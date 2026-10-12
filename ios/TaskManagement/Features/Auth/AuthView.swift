@@ -142,12 +142,17 @@ public struct AuthView: View {
 
                             // Google Sign-In Button
                             Button(action: {
-                                viewModel.handleGoogleSignInSimulated()
+                                viewModel.handleGoogleSignIn()
                             }) {
                                 HStack(spacing: 10) {
-                                    Image(systemName: "g.circle.fill")
-                                        .font(.system(size: 20, weight: .bold))
-                                        .foregroundColor(AppColors.primary)
+                                    if viewModel.isLoading {
+                                        ProgressView()
+                                            .tint(.primary)
+                                    } else {
+                                        Image(systemName: "g.circle.fill")
+                                            .font(.system(size: 20, weight: .bold))
+                                            .foregroundColor(AppColors.primary)
+                                    }
 
                                     Text(L10n.Auth.signInGoogle)
                                         .font(.system(size: 16, weight: .semibold))
@@ -160,10 +165,11 @@ public struct AuthView: View {
                                 .overlay(
                                     RoundedRectangle(cornerRadius: 14, style: .continuous)
                                         .stroke(Color.secondary.opacity(0.2), lineWidth: 1)
-                                )
+                                 )
                                 .shadow(color: Color.black.opacity(0.04), radius: 4, x: 0, y: 2)
                             }
                             .buttonStyle(.plain)
+                            .disabled(viewModel.isLoading)
                         }
                         .padding(.horizontal, 24)
 

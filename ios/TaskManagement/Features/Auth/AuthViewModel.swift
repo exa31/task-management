@@ -1,6 +1,8 @@
 import SwiftUI
 import AuthenticationServices
+import GoogleSignIn
 
+@MainActor
 @Observable
 public final class AuthViewModel {
     public var isLoading = false
@@ -21,7 +23,9 @@ public final class AuthViewModel {
             object: nil,
             queue: .main
         ) { [weak self] _ in
-            self?.signOut(withMessage: "Sesi telah berakhir atau tidak valid. Silakan login kembali.")
+            Task { @MainActor [weak self] in
+                self?.signOut(withMessage: "Sesi telah berakhir atau tidak valid. Silakan login kembali.")
+            }
         }
     }
 
@@ -33,7 +37,6 @@ public final class AuthViewModel {
         }
     }
 
-    @MainActor
     public func handleAppleSignIn(result: Result<ASAuthorization, Error>) {
         isLoading = true
         errorMessage = nil
@@ -77,32 +80,63 @@ public final class AuthViewModel {
         }
     }
 
-    @MainActor
-    public func handleGoogleSignInSimulated() {
+    public func handleGoogleSignIn() {
+        guard let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
+              let rootVC = windowScene.windows.first(where: { $0.isKeyWindow })?.rootViewController ?? windowScene.windows.first?.rootViewController else {
+            errorMessage = "Tidak dapat menemukan jendela aplikasi untuk Google Sign-In"
+            return
+        }
+
         isLoading = true
         errorMessage = nil
 
-        Task {
-            do {
-                _ = try await apiClient.oauthLogin(
-                    req: OAuthLoginRequest(
-                        provider: "google",
-                        idToken: "mock_google_id_token",
-                        code: nil,
-                        email: "user@gmail.com",
-                        name: "Google User",
-                        avatarUrl: nil
+        GIDSignIn.sharedInstance.signIn(withPresenting: rootVC) { [weak self] signInResult, error in
+            Task { @MainActor [weak self] in
+                guard let self = self else { return }
+
+                if let error = error {
+                    let nsError = error as NSError
+                    // GIDSignInErrorCodeCanceled = -5
+                    if nsError.code != -5 {
+                        self.errorMessage = error.localizedDescription
+                    }
+                    self.isLoading = false
+                    return
+                }
+
+                guard let user = signInResult?.user,
+                      let idToken = user.idToken?.tokenString else {
+                    self.errorMessage = "Gagal memverifikasi token Google."
+                    self.isLoading = false
+                    return
+                }
+
+                let email = user.profile?.email
+                let name = user.profile?.name ?? "Google User"
+                let avatarUrl = user.profile?.imageURL(withDimension: 200)?.absoluteString
+
+                do {
+                    _ = try await self.apiClient.oauthLogin(
+                        req: OAuthLoginRequest(
+                            provider: "google",
+                            idToken: idToken,
+                            code: nil,
+                            email: email,
+                            name: name,
+                            avatarUrl: avatarUrl
+                        )
                     )
-                )
-                self.isAuthenticated = true
-            } catch {
-                self.errorMessage = error.localizedDescription
+                    self.isAuthenticated = true
+                } catch {
+                    self.errorMessage = error.localizedDescription
+                }
+                self.isLoading = false
             }
-            self.isLoading = false
         }
     }
 
     public func signOut(withMessage message: String? = nil) {
+        GIDSignIn.sharedInstance.signOut()
         keychain.clearAll()
         isAuthenticated = false
         if let message {

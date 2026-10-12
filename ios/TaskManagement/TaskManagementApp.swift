@@ -1,4 +1,5 @@
 import SwiftUI
+import GoogleSignIn
 
 /*
 Entry Point iOS (SwiftUI Modern iOS 17+):
@@ -33,6 +34,9 @@ struct TaskManagementApp: App {
             }
             .preferredColorScheme(colorScheme)
             .environment(\.locale, Locale(identifier: I18n.shared.currentLanguage.rawValue))
+            .onOpenURL { url in
+                _ = GIDSignIn.sharedInstance.handle(url)
+            }
         }
     }
 }

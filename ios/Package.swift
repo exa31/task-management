@@ -14,10 +14,16 @@ let package = Package(
             targets: ["TaskManagement"]
         )
     ],
-    dependencies: [],
+    dependencies: [
+        .package(url: "https://github.com/google/GoogleSignIn-iOS.git", from: "7.1.0")
+    ],
     targets: [
         .target(
             name: "TaskManagement",
+            dependencies: [
+                .product(name: "GoogleSignIn", package: "GoogleSignIn-iOS"),
+                .product(name: "GoogleSignInSwift", package: "GoogleSignIn-iOS")
+            ],
             path: "TaskManagement",
             exclude: [
                 "TaskManagement.entitlements",
