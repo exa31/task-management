@@ -32,6 +32,9 @@ public final class AuthViewModel {
     public func checkSession() {
         if keychain.get(key: "access_token") != nil {
             isAuthenticated = true
+            Task {
+                await PushNotificationManager.shared.registerDeviceTokenWithBackend()
+            }
         } else {
             isAuthenticated = false
         }
@@ -65,6 +68,7 @@ public final class AuthViewModel {
                             )
                         )
                         self.isAuthenticated = true
+                        await PushNotificationManager.shared.registerDeviceTokenWithBackend()
                     } catch {
                         self.errorMessage = error.localizedDescription
                     }
@@ -127,6 +131,7 @@ public final class AuthViewModel {
                         )
                     )
                     self.isAuthenticated = true
+                    await PushNotificationManager.shared.registerDeviceTokenWithBackend()
                 } catch {
                     self.errorMessage = error.localizedDescription
                 }

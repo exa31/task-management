@@ -30,6 +30,7 @@
 		FDDEC5DD0A52676EDD40E351 /* TaskManagement/Core/Network/APIClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = ECD9BA6A132A72063EE28259 /* TaskManagement/Core/Network/APIClient.swift */; };
 		BB0102030405060708090002 /* TaskManagement/Core/Localization/I18n.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB0102030405060708090001 /* TaskManagement/Core/Localization/I18n.swift */; };
 		BB0102030405060708090004 /* TaskManagement/Core/Localization/L10n.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB0102030405060708090003 /* TaskManagement/Core/Localization/L10n.swift */; };
+		BB0102030405060708090012 /* TaskManagement/Core/Notification/PushNotificationManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB0102030405060708090011 /* TaskManagement/Core/Notification/PushNotificationManager.swift */; };
 		CC0102030405060708090002 /* TaskManagement/GoogleService-Info.plist in Resources */ = {isa = PBXBuildFile; fileRef = CC0102030405060708090001 /* TaskManagement/GoogleService-Info.plist */; };
 		CC0102030405060708090013 /* GoogleSignIn in Frameworks */ = {isa = PBXBuildFile; productRef = CC0102030405060708090011 /* GoogleSignIn */; };
 		CC0102030405060708090014 /* GoogleSignInSwift in Frameworks */ = {isa = PBXBuildFile; productRef = CC0102030405060708090012 /* GoogleSignInSwift */; };
@@ -63,6 +64,7 @@
 		BB0102030405060708090003 /* TaskManagement/Core/Localization/L10n.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TaskManagement/Core/Localization/L10n.swift; sourceTree = "<group>"; };
 		CC0102030405060708090001 /* TaskManagement/GoogleService-Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = TaskManagement/GoogleService-Info.plist; sourceTree = "<group>"; };
 		CC0102030405060708090003 /* TaskManagement/Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = TaskManagement/Info.plist; sourceTree = "<group>"; };
+		BB0102030405060708090011 /* TaskManagement/Core/Notification/PushNotificationManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TaskManagement/Core/Notification/PushNotificationManager.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -108,6 +110,7 @@
 				8BEFD367C4AB92E0F59B0B1F /* TaskManagement.app */,
 				BB0102030405060708090001 /* TaskManagement/Core/Localization/I18n.swift */,
 				BB0102030405060708090003 /* TaskManagement/Core/Localization/L10n.swift */,
+				BB0102030405060708090011 /* TaskManagement/Core/Notification/PushNotificationManager.swift */,
 			);
 			sourceTree = "<group>";
 		};
@@ -210,6 +213,7 @@
 				C545EBEC9823415F2A5D82A8 /* TaskManagement/Features/Task/TaskDetailSheet.swift in Sources */,
 				CBD9DAE4F0BC2EE4A9446086 /* TaskManagement/Features/Task/TaskViewModel.swift in Sources */,
 				9179CC5DC9DB4AA927B1C295 /* TaskManagement/TaskManagementApp.swift in Sources */,
+				BB0102030405060708090012 /* TaskManagement/Core/Notification/PushNotificationManager.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
