@@ -20,7 +20,9 @@ export const SettingsPage: React.FC = () => {
   // Notification & Due Date Alert State
   const [timezone, setTimezone] = useState(user?.timezone || 'Asia/Jakarta')
   const [threshold, setThreshold] = useState<number>(user?.due_date_warning_threshold ?? 1440)
-  const [emailEnabled, setEmailEnabled] = useState<boolean>(user?.email_notifications_enabled ?? true)
+  const [emailEnabled, setEmailEnabled] = useState<boolean>(
+    user?.email_notifications_enabled ?? true
+  )
   const [isSavingNotifications, setIsSavingNotifications] = useState(false)
 
   // Danger Zone Delete Modal State
@@ -36,8 +38,10 @@ export const SettingsPage: React.FC = () => {
     if (user) {
       if (user.name) setName(user.name)
       if (user.timezone) setTimezone(user.timezone)
-      if (user.due_date_warning_threshold !== undefined) setThreshold(user.due_date_warning_threshold)
-      if (user.email_notifications_enabled !== undefined) setEmailEnabled(user.email_notifications_enabled)
+      if (user.due_date_warning_threshold !== undefined)
+        setThreshold(user.due_date_warning_threshold)
+      if (user.email_notifications_enabled !== undefined)
+        setEmailEnabled(user.email_notifications_enabled)
     }
   }, [user])
 
@@ -545,7 +549,9 @@ export const SettingsPage: React.FC = () => {
                   <option value="UTC">UTC (UTC+0)</option>
                   <option value="Europe/London">Europe/London (BST/GMT)</option>
                   <option value="America/New_York">America/New_York (EDT/EST, UTC-4/5)</option>
-                  <option value="America/Los_Angeles">America/Los_Angeles (PDT/PST, UTC-7/8)</option>
+                  <option value="America/Los_Angeles">
+                    America/Los_Angeles (PDT/PST, UTC-7/8)
+                  </option>
                 </select>
                 <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-1">
                   {t('settings.notifications.timezoneHint')}

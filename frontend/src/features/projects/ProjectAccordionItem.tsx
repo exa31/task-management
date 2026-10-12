@@ -4,7 +4,7 @@ import { confirmDialog } from '@/components'
 import { useDeleteProject, useTasks, useToggleFocus, useUpdateTask } from '@/hooks'
 import { useTranslation } from '@/i18n'
 import { useTaskStore, useUIStore } from '@/stores'
-import { STATUS_COLORS, type Project, type Task, type TaskPriority, type TaskStatus } from '@/types'
+import { type Project, STATUS_COLORS, type Task, type TaskPriority, type TaskStatus } from '@/types'
 
 const STATUS_KEYS: TaskStatus[] = ['backlog', 'todo', 'in_progress', 'review', 'done']
 

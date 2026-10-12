@@ -95,5 +95,23 @@ export const taskDrawer = {
   addSubtaskTooltip: 'Add subtask item',
   deleteSubtaskTooltip: 'Delete subtask',
   saveTaskTooltip: 'Save task modifications',
-  resetTaskTooltip: 'Discard unsaved changes'
+  resetTaskTooltip: 'Discard unsaved changes',
+  tabDetails: 'Details',
+  tabActivities: 'Activity & Timeline',
+  activityTimelineTitle: 'Activity History',
+  activityTimelineSubtitle: 'Audit trail and chronological worklog updates.',
+  noActivitiesYet: 'No activities recorded yet.',
+  postActivityPlaceholder: 'Add a new progress note or update comment...',
+  postActivityBtn: 'Add Note',
+  postingActivity: 'Posting...',
+  activityType: {
+    task_created: 'Task Created',
+    task_updated: 'Task Updated',
+    progress_logged: 'Progress Note',
+    subtask_created: 'Subtask Added',
+    subtask_toggled: 'Subtask Updated',
+    subtask_deleted: 'Subtask Deleted',
+    focus_toggled: 'Focus Changed'
+  },
+  justNow: 'Just now'
 }

@@ -64,7 +64,6 @@ func (u *UpdateTaskRequest) UnmarshalJSON(data []byte) error {
 	return nil
 }
 
-
 // LogProgressRequest payload for updating context ("inget-inget udah sampe mana").
 type LogProgressRequest struct {
 	ProgressNote        string  `json:"progress_note" validate:"required"`
@@ -106,12 +105,12 @@ type TaskCursorResponse struct {
 
 // TaskResponse represents a detailed task object.
 type TaskResponse struct {
-	ID                int64             `json:"id" db:"id"`
-	UserID            string            `json:"user_id" db:"user_id"`
-	Title             string            `json:"title" db:"title"`
-	Description       string            `json:"description" db:"description"`
-	Status            string            `json:"status" db:"status"`
-	Priority          string            `json:"priority" db:"priority"`
+	ID                   int64             `json:"id" db:"id"`
+	UserID               string            `json:"user_id" db:"user_id"`
+	Title                string            `json:"title" db:"title"`
+	Description          string            `json:"description" db:"description"`
+	Status               string            `json:"status" db:"status"`
+	Priority             string            `json:"priority" db:"priority"`
 	DueDate              *time.Time        `json:"due_date" db:"due_date"`
 	DueDateWarningSentAt *time.Time        `json:"due_date_warning_sent_at" db:"due_date_warning_sent_at"`
 	IsFocus              bool              `json:"is_focus" db:"is_focus"`
@@ -143,3 +142,19 @@ func (r *TriggerDueWarningRequest) TargetID() int64 {
 	return r.ID
 }
 
+// TaskActivityResponse represents a historical audit log or progress event for a task.
+type TaskActivityResponse struct {
+	ID           int64           `json:"id" db:"id"`
+	TaskID       int64           `json:"task_id" db:"task_id"`
+	UserID       string          `json:"user_id" db:"user_id"`
+	ActivityType string          `json:"activity_type" db:"activity_type"`
+	Description  string          `json:"description" db:"description"`
+	Changes      json.RawMessage `json:"changes" db:"changes"`
+	CreatedAt    time.Time       `json:"created_at" db:"created_at"`
+}
+
+// CreateTaskActivityRequest payload for posting a manual activity note / progress comment.
+type CreateTaskActivityRequest struct {
+	ActivityType string `json:"activity_type" validate:"omitempty,max=50"`
+	Description  string `json:"description" validate:"required,min=1"`
+}

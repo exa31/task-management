@@ -263,6 +263,49 @@ func (h *Handler) DeleteSubtask(c *fiber.Ctx) error {
 	return response.SuccessMessageResponse(c, "Subtask deleted successfully")
 }
 
+func (h *Handler) GetActivities(c *fiber.Ctx) error {
+	userID, err := authMiddleware.GetUserID(c)
+	if err != nil {
+		return err
+	}
+
+	taskID, err := strconv.ParseInt(c.Params("id"), 10, 64)
+	if err != nil {
+		return fiber.NewError(fiber.StatusBadRequest, "Invalid task ID")
+	}
+
+	results, err := h.service.GetActivities(c.UserContext(), userID, taskID)
+	if err != nil {
+		return err
+	}
+
+	return response.SuccessResponse(c, results, "Task activities retrieved successfully")
+}
+
+func (h *Handler) CreateActivity(c *fiber.Ctx) error {
+	userID, err := authMiddleware.GetUserID(c)
+	if err != nil {
+		return err
+	}
+
+	taskID, err := strconv.ParseInt(c.Params("id"), 10, 64)
+	if err != nil {
+		return fiber.NewError(fiber.StatusBadRequest, "Invalid task ID")
+	}
+
+	var req CreateTaskActivityRequest
+	if err := validation.Default.BindAndValidate(c, &req); err != nil {
+		return err
+	}
+
+	result, err := h.service.CreateActivity(c.UserContext(), userID, taskID, req)
+	if err != nil {
+		return err
+	}
+
+	return response.CreatedResponse(c, result, "Task activity recorded successfully")
+}
+
 // TriggerDueWarning is the webhook endpoint invoked by the external Asynq worker via HTTP POST.
 func (h *Handler) TriggerDueWarning(webhookSecret string) fiber.Handler {
 	return func(c *fiber.Ctx) error {
@@ -302,4 +345,3 @@ func (h *Handler) TriggerDueWarning(webhookSecret string) fiber.Handler {
 		return response.SuccessMessageResponse(c, "Task due warning processed successfully")
 	}
 }
-

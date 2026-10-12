@@ -1,3 +1,4 @@
+export * from './TaskActivityTimeline'
 export * from './TaskBoardView'
 export * from './TaskDrawer'
 export * from './TaskFilterBar'

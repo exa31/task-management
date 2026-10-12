@@ -41,6 +41,8 @@ func setupTaskTestApp(repo Repository, userID string) *fiber.App {
 	group.Delete("/:id", handler.Delete)
 	group.Put("/:id/progress", handler.LogProgress)
 	group.Patch("/:id/focus", handler.ToggleFocus)
+	group.Get("/:id/activities", handler.GetActivities)
+	group.Post("/:id/activities", handler.CreateActivity)
 
 	return app
 }
@@ -356,5 +358,64 @@ func TestTaskAPI_List_WithProjectFilter(t *testing.T) {
 	data := res["data"].([]interface{})
 	if len(data) != 1 {
 		t.Fatalf("expected 1 task in response, got %d", len(data))
+	}
+}
+
+func TestTaskHandler_Activities(t *testing.T) {
+	testUser := "user-uuid-123"
+	taskID := int64(10)
+
+	repo := &mockRepository{
+		findByIDFunc: func(ctx context.Context, userID string, id int64) (*TaskResponse, error) {
+			return &TaskResponse{
+				ID:     id,
+				UserID: userID,
+				Title:  "Task with Activities",
+			}, nil
+		},
+		createActivityFunc: func(ctx context.Context, tid int64, uid string, actType string, desc string, changes []byte) (*TaskActivityResponse, error) {
+			return &TaskActivityResponse{
+				ID:           1,
+				TaskID:       tid,
+				UserID:       uid,
+				ActivityType: actType,
+				Description:  desc,
+				CreatedAt:    time.Now(),
+			}, nil
+		},
+		findActivitiesFunc: func(ctx context.Context, uid string, tid int64) ([]TaskActivityResponse, error) {
+			return []TaskActivityResponse{
+				{
+					ID:           1,
+					TaskID:       tid,
+					UserID:       uid,
+					ActivityType: "progress_note",
+					Description:  "Testing activity handler",
+					CreatedAt:    time.Now(),
+				},
+			}, nil
+		},
+	}
+
+	app := setupTaskTestApp(repo, testUser)
+
+	// Test GET /api/v1/tasks/:id/activities
+	getResp := doJSONTaskRequest(t, app, http.MethodGet, fmt.Sprintf("/api/v1/tasks/%d/activities", taskID), nil)
+	if getResp.StatusCode != http.StatusOK {
+		t.Fatalf("expected GET status 200, got %d", getResp.StatusCode)
+	}
+	getRes := parseJSONTaskResponse(t, getResp)
+	actData, ok := getRes["data"].([]interface{})
+	if !ok || len(actData) != 1 {
+		t.Fatalf("expected 1 activity item, got %v", getRes["data"])
+	}
+
+	// Test POST /api/v1/tasks/:id/activities
+	postBody := map[string]string{
+		"description": "Progress catatan manual",
+	}
+	postResp := doJSONTaskRequest(t, app, http.MethodPost, fmt.Sprintf("/api/v1/tasks/%d/activities", taskID), postBody)
+	if postResp.StatusCode != http.StatusCreated {
+		t.Fatalf("expected POST status 201, got %d", postResp.StatusCode)
 	}
 }

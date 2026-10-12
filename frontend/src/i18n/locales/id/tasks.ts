@@ -95,5 +95,23 @@ export const taskDrawer = {
   addSubtaskTooltip: 'Tambah butir subtask',
   deleteSubtaskTooltip: 'Hapus butir subtask',
   saveTaskTooltip: 'Simpan perubahan tugas',
-  resetTaskTooltip: 'Batalkan perubahan'
+  resetTaskTooltip: 'Batalkan perubahan',
+  tabDetails: 'Detail',
+  tabActivities: 'Aktivitas & Riwayat',
+  activityTimelineTitle: 'Riwayat Aktivitas',
+  activityTimelineSubtitle: 'Jejak audit dan pembaruan progres kerja secara kronologis.',
+  noActivitiesYet: 'Belum ada riwayat aktivitas.',
+  postActivityPlaceholder: 'Tulis catatan progres atau komentar update...',
+  postActivityBtn: 'Tambah Catatan',
+  postingActivity: 'Menambahkan...',
+  activityType: {
+    task_created: 'Tugas Dibuat',
+    task_updated: 'Tugas Diperbarui',
+    progress_logged: 'Catatan Progres',
+    subtask_created: 'Subtask Ditambahkan',
+    subtask_toggled: 'Subtask Diperbarui',
+    subtask_deleted: 'Subtask Dihapus',
+    focus_toggled: 'Fokus Diubah'
+  },
+  justNow: 'Baru saja'
 }

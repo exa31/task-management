@@ -15,7 +15,8 @@ export const firebaseConfig = {
   vapidKey: import.meta.env.VITE_FIREBASE_VAPID_KEY || ''
 }
 
-export const isFirebaseConfigured = (): boolean => Boolean(
+export const isFirebaseConfigured = (): boolean =>
+  Boolean(
     firebaseConfig.apiKey &&
     firebaseConfig.projectId &&
     firebaseConfig.messagingSenderId &&

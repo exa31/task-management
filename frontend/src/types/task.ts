@@ -108,3 +108,18 @@ export interface TaskCursorResponse {
   next_cursor?: number | null
   has_more: boolean
 }
+
+export interface TaskActivity {
+  id: number
+  task_id: number
+  user_id: string
+  activity_type: string
+  description: string
+  changes?: Record<string, unknown>
+  created_at: string
+}
+
+export interface CreateTaskActivityPayload {
+  description: string
+  activity_type?: string
+}

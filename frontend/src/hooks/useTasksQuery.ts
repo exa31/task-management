@@ -16,7 +16,8 @@ export const taskKeys = {
   all: ['tasks'] as const,
   list: (params?: TaskFilterParams) => ['tasks', 'list', params || {}] as const,
   infinite: (params?: TaskFilterParams) => ['tasks', 'infinite', params || {}] as const,
-  detail: (id: number) => ['tasks', 'detail', id] as const
+  detail: (id: number) => ['tasks', 'detail', id] as const,
+  activities: (id: number) => ['tasks', 'activities', id] as const
 }
 
 const cleanParams = (params?: TaskFilterParams): TaskFilterParams | undefined => {
@@ -253,6 +254,36 @@ export const useDeleteSubtask = () => {
   return useMutation({
     mutationFn: async ({ taskId, subtaskId }: { taskId: number; subtaskId: number }) => {
       await taskApi.deleteSubtask(taskId, subtaskId)
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: taskKeys.all })
+    },
+    onError: (err) => {
+      toast.error(err)
+    }
+  })
+}
+
+export const useTaskActivities = (taskId?: number) =>
+  useQuery({
+    queryKey: taskId ? taskKeys.activities(taskId) : ['tasks', 'activities', 'null'],
+    enabled: !!taskId,
+    queryFn: async () => {
+      if (!taskId) return []
+      const res = await taskApi.getActivities(taskId)
+      const { data } = res
+      return Array.isArray(data) ? data : []
+    }
+  })
+
+export const useCreateTaskActivity = () => {
+  const queryClient = useQueryClient()
+  const toast = useAppToast()
+
+  return useMutation({
+    mutationFn: async ({ taskId, description }: { taskId: number; description: string }) => {
+      const res = await taskApi.createActivity(taskId, { description })
+      return res.data
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: taskKeys.all })

@@ -97,7 +97,9 @@ APPLE_CLIENT_ID=com.yourbrand.app.service`
                   <li>
                     Di bagian <strong>Authorized JavaScript origins</strong>, tambahkan:{' '}
                     <code className="px-1 py-0.5 rounded bg-slate-100 dark:bg-slate-800 font-mono text-indigo-600 dark:text-indigo-400">
-                      {typeof window !== 'undefined' ? window.location.origin : 'http://localhost:5173'}
+                      {typeof window !== 'undefined'
+                        ? window.location.origin
+                        : 'http://localhost:5173'}
                     </code>
                   </li>
                   <li>

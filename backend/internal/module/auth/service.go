@@ -57,7 +57,7 @@ type authUser struct {
 	GoogleID                  *string    `db:"google_id"`
 	AppleID                   *string    `db:"apple_id"`
 	Timezone                  string     `db:"timezone"`
-	DueDateWarningThreshold    int        `db:"due_date_warning_threshold"`
+	DueDateWarningThreshold   int        `db:"due_date_warning_threshold"`
 	EmailNotificationsEnabled bool       `db:"email_notifications_enabled"`
 	IsActive                  bool       `db:"is_active"`
 	CreatedAt                 *time.Time `db:"created_at"`

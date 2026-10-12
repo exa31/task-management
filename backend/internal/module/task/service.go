@@ -2,8 +2,10 @@ package task
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"log/slog"
+	"strings"
 	"time"
 
 	"golang/database"
@@ -28,6 +30,9 @@ type Service interface {
 	CreateSubtask(ctx context.Context, userID string, taskID int64, req CreateSubtaskRequest) (*SubtaskResponse, error)
 	UpdateSubtask(ctx context.Context, userID string, taskID int64, subtaskID int64, req UpdateSubtaskRequest) (*SubtaskResponse, error)
 	DeleteSubtask(ctx context.Context, userID string, taskID int64, subtaskID int64) error
+
+	GetActivities(ctx context.Context, userID string, taskID int64) ([]TaskActivityResponse, error)
+	CreateActivity(ctx context.Context, userID string, taskID int64, req CreateTaskActivityRequest) (*TaskActivityResponse, error)
 
 	// CreateFromNote implements note.TaskCreator
 	CreateFromNote(ctx context.Context, userID string, noteID int64, title string, content string, req note.ConvertToTaskRequest) (int64, error)
@@ -83,7 +88,18 @@ func (s *service) Create(ctx context.Context, userID string, req CreateTaskReque
 		txCtx := database.ContextWithTx(ctx, tx)
 		var err error
 		res, err = s.repo.Create(txCtx, userID, req)
-		return err
+		if err != nil {
+			return err
+		}
+		if res != nil {
+			changes, _ := json.Marshal(map[string]any{
+				"title":    res.Title,
+				"status":   res.Status,
+				"priority": res.Priority,
+			})
+			_, _ = s.repo.CreateActivity(txCtx, res.ID, userID, "task_created", "Task created", changes)
+		}
+		return nil
 	})
 	if err != nil {
 		return nil, err
@@ -147,7 +163,49 @@ func (s *service) Update(ctx context.Context, userID string, id int64, req Updat
 			return errors.TaskNotFound()
 		}
 		res, err = s.repo.Update(txCtx, userID, id, req)
-		return err
+		if err != nil {
+			return err
+		}
+		if res != nil {
+			var changeDescs []string
+			diffs := make(map[string]map[string]any)
+
+			if entity.Title != res.Title {
+				diffs["title"] = map[string]any{"old": entity.Title, "new": res.Title}
+				changeDescs = append(changeDescs, fmt.Sprintf("Title changed to '%s'", res.Title))
+			}
+			if entity.Status != res.Status {
+				diffs["status"] = map[string]any{"old": entity.Status, "new": res.Status}
+				changeDescs = append(changeDescs, fmt.Sprintf("Status changed from '%s' to '%s'", entity.Status, res.Status))
+			}
+			if entity.Priority != res.Priority {
+				diffs["priority"] = map[string]any{"old": entity.Priority, "new": res.Priority}
+				changeDescs = append(changeDescs, fmt.Sprintf("Priority changed from '%s' to '%s'", entity.Priority, res.Priority))
+			}
+			if (entity.DueDate == nil && res.DueDate != nil) || (entity.DueDate != nil && res.DueDate == nil) || (entity.DueDate != nil && res.DueDate != nil && !entity.DueDate.Equal(*res.DueDate)) {
+				diffs["due_date"] = map[string]any{"old": entity.DueDate, "new": res.DueDate}
+				if res.DueDate != nil {
+					changeDescs = append(changeDescs, fmt.Sprintf("Due date set to %s", res.DueDate.Format("02 Jan 2006 15:04")))
+				} else {
+					changeDescs = append(changeDescs, "Due date removed")
+				}
+			}
+			if (entity.ProjectID == nil && res.ProjectID != nil) || (entity.ProjectID != nil && res.ProjectID == nil) || (entity.ProjectID != nil && res.ProjectID != nil && *entity.ProjectID != *res.ProjectID) {
+				diffs["project_id"] = map[string]any{"old": entity.ProjectID, "new": res.ProjectID}
+				changeDescs = append(changeDescs, "Project changed")
+			}
+			if entity.Description != res.Description {
+				diffs["description"] = map[string]any{"old": entity.Description, "new": res.Description}
+				changeDescs = append(changeDescs, "Description updated")
+			}
+
+			if len(changeDescs) > 0 {
+				changesJSON, _ := json.Marshal(diffs)
+				desc := strings.Join(changeDescs, ", ")
+				_, _ = s.repo.CreateActivity(txCtx, res.ID, userID, "task_updated", desc, changesJSON)
+			}
+		}
+		return nil
 	})
 	if err != nil {
 		return nil, err
@@ -206,9 +264,37 @@ func (s *service) LogProgress(ctx context.Context, userID string, id int64, req 
 			return errors.TaskNotFound()
 		}
 		res, err = s.repo.LogProgress(txCtx, userID, id, req)
-		return err
+		if err != nil {
+			return err
+		}
+		if res != nil {
+			changesMap := map[string]any{
+				"progress_note": req.ProgressNote,
+			}
+			if req.Status != nil && *req.Status != "" {
+				changesMap["status"] = *req.Status
+			}
+			if len(req.CompletedSubtaskIDs) > 0 {
+				changesMap["completed_subtask_ids"] = req.CompletedSubtaskIDs
+			}
+			changesJSON, _ := json.Marshal(changesMap)
+			_, _ = s.repo.CreateActivity(txCtx, res.ID, userID, "progress_logged", req.ProgressNote, changesJSON)
+		}
+		return nil
 	})
-	return res, err
+	if err != nil {
+		return nil, err
+	}
+	if s.hub != nil {
+		s.hub.Broadcast(&realtime.Message{
+			Type:   "task:activity_created",
+			UserID: userID,
+			Data: map[string]any{
+				"task_id": id,
+			},
+		})
+	}
+	return res, nil
 }
 
 func (s *service) ToggleFocus(ctx context.Context, userID string, id int64) (*TaskResponse, error) {
@@ -223,7 +309,18 @@ func (s *service) ToggleFocus(ctx context.Context, userID string, id int64) (*Ta
 			return errors.TaskNotFound()
 		}
 		res, err = s.repo.ToggleFocus(txCtx, userID, id)
-		return err
+		if err != nil {
+			return err
+		}
+		if res != nil {
+			desc := "Removed from focus"
+			if res.IsFocus {
+				desc = "Added to focus horizon"
+			}
+			changesJSON, _ := json.Marshal(map[string]any{"is_focus": res.IsFocus})
+			_, _ = s.repo.CreateActivity(txCtx, res.ID, userID, "focus_toggled", desc, changesJSON)
+		}
+		return nil
 	})
 	return res, err
 }
@@ -241,8 +338,25 @@ func (s *service) CreateSubtask(ctx context.Context, userID string, taskID int64
 		}
 		var err2 error
 		res, err2 = s.repo.CreateSubtask(txCtx, userID, taskID, req.Title)
-		return err2
+		if err2 != nil {
+			return err2
+		}
+		if res != nil {
+			desc := fmt.Sprintf("Added subtask: %s", req.Title)
+			changesJSON, _ := json.Marshal(map[string]any{"subtask_id": res.ID, "title": req.Title})
+			_, _ = s.repo.CreateActivity(txCtx, taskID, userID, "subtask_created", desc, changesJSON)
+		}
+		return nil
 	})
+	if err == nil && s.hub != nil {
+		s.hub.Broadcast(&realtime.Message{
+			Type:   "task:activity_created",
+			UserID: userID,
+			Data: map[string]any{
+				"task_id": taskID,
+			},
+		})
+	}
 	return res, err
 }
 
@@ -259,13 +373,43 @@ func (s *service) UpdateSubtask(ctx context.Context, userID string, taskID int64
 		}
 		var err2 error
 		res, err2 = s.repo.UpdateSubtask(txCtx, userID, taskID, subtaskID, req)
-		return err2
+		if err2 != nil {
+			return err2
+		}
+		if res != nil {
+			var desc string
+			if req.IsCompleted != nil {
+				if *req.IsCompleted {
+					desc = fmt.Sprintf("Completed subtask: %s", res.Title)
+				} else {
+					desc = fmt.Sprintf("Marked subtask as incomplete: %s", res.Title)
+				}
+			} else {
+				desc = fmt.Sprintf("Updated subtask: %s", res.Title)
+			}
+			changesJSON, _ := json.Marshal(map[string]any{
+				"subtask_id":   subtaskID,
+				"title":        res.Title,
+				"is_completed": res.IsCompleted,
+			})
+			_, _ = s.repo.CreateActivity(txCtx, taskID, userID, "subtask_toggled", desc, changesJSON)
+		}
+		return nil
 	})
+	if err == nil && s.hub != nil {
+		s.hub.Broadcast(&realtime.Message{
+			Type:   "task:activity_created",
+			UserID: userID,
+			Data: map[string]any{
+				"task_id": taskID,
+			},
+		})
+	}
 	return res, err
 }
 
 func (s *service) DeleteSubtask(ctx context.Context, userID string, taskID int64, subtaskID int64) error {
-	return s.db.WithTransactionCtx(ctx, func(tx *sqlx.Tx) error {
+	err := s.db.WithTransactionCtx(ctx, func(tx *sqlx.Tx) error {
 		txCtx := database.ContextWithTx(ctx, tx)
 		entity, err := s.repo.FindByID(txCtx, userID, taskID)
 		if err != nil {
@@ -274,8 +418,88 @@ func (s *service) DeleteSubtask(ctx context.Context, userID string, taskID int64
 		if entity == nil {
 			return errors.TaskNotFound()
 		}
-		return s.repo.DeleteSubtask(txCtx, userID, taskID, subtaskID)
+		subtaskTitle := fmt.Sprintf("#%d", subtaskID)
+		for _, st := range entity.Subtasks {
+			if st.ID == subtaskID {
+				subtaskTitle = st.Title
+				break
+			}
+		}
+		if err := s.repo.DeleteSubtask(txCtx, userID, taskID, subtaskID); err != nil {
+			return err
+		}
+		desc := fmt.Sprintf("Deleted subtask: %s", subtaskTitle)
+		changesJSON, _ := json.Marshal(map[string]any{"subtask_id": subtaskID, "title": subtaskTitle})
+		_, _ = s.repo.CreateActivity(txCtx, taskID, userID, "subtask_deleted", desc, changesJSON)
+		return nil
 	})
+	if err == nil && s.hub != nil {
+		s.hub.Broadcast(&realtime.Message{
+			Type:   "task:activity_created",
+			UserID: userID,
+			Data: map[string]any{
+				"task_id": taskID,
+			},
+		})
+	}
+	return err
+}
+
+func (s *service) GetActivities(ctx context.Context, userID string, taskID int64) ([]TaskActivityResponse, error) {
+	var res []TaskActivityResponse
+	err := s.db.WithReadOnlyTransactionCtx(ctx, func(tx *sqlx.Tx) error {
+		txCtx := database.ContextWithTx(ctx, tx)
+		entity, err := s.repo.FindByID(txCtx, userID, taskID)
+		if err != nil {
+			return err
+		}
+		if entity == nil {
+			return errors.TaskNotFound()
+		}
+		res, err = s.repo.FindActivitiesByTaskID(txCtx, userID, taskID)
+		return err
+	})
+	return res, err
+}
+
+func (s *service) CreateActivity(ctx context.Context, userID string, taskID int64, req CreateTaskActivityRequest) (*TaskActivityResponse, error) {
+	var res *TaskActivityResponse
+	err := s.db.WithTransactionCtx(ctx, func(tx *sqlx.Tx) error {
+		txCtx := database.ContextWithTx(ctx, tx)
+		entity, err := s.repo.FindByID(txCtx, userID, taskID)
+		if err != nil {
+			return err
+		}
+		if entity == nil {
+			return errors.TaskNotFound()
+		}
+		actType := req.ActivityType
+		if actType == "" {
+			actType = "progress_note"
+		}
+		changesJSON, _ := json.Marshal(map[string]any{"progress_note": req.Description})
+		res, err = s.repo.CreateActivity(txCtx, taskID, userID, actType, req.Description, changesJSON)
+		if err != nil {
+			return err
+		}
+		_, _ = s.repo.LogProgress(txCtx, userID, taskID, LogProgressRequest{
+			ProgressNote: req.Description,
+		})
+		return nil
+	})
+	if err != nil {
+		return nil, err
+	}
+	if s.hub != nil {
+		s.hub.Broadcast(&realtime.Message{
+			Type:   "task:activity_created",
+			UserID: userID,
+			Data: map[string]any{
+				"task_id": taskID,
+			},
+		})
+	}
+	return res, nil
 }
 
 func (s *service) CreateFromNote(ctx context.Context, userID string, noteID int64, title string, content string, req note.ConvertToTaskRequest) (int64, error) {

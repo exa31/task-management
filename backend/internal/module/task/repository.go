@@ -3,6 +3,7 @@ package task
 import (
 	"context"
 	"database/sql"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"time"
@@ -26,6 +27,9 @@ type Repository interface {
 	UpdateSubtask(ctx context.Context, userID string, taskID int64, subtaskID int64, req UpdateSubtaskRequest) (*SubtaskResponse, error)
 	DeleteSubtask(ctx context.Context, userID string, taskID int64, subtaskID int64) error
 
+	CreateActivity(ctx context.Context, taskID int64, userID string, activityType string, description string, changes []byte) (*TaskActivityResponse, error)
+	FindActivitiesByTaskID(ctx context.Context, userID string, taskID int64) ([]TaskActivityResponse, error)
+
 	FindByIDSystem(ctx context.Context, id int64) (*TaskResponse, string, string, int, bool, error)
 	MarkDueWarningSent(ctx context.Context, id int64) error
 	GetUserThresholdAndTimezone(ctx context.Context, userID string) (int, string, error)
@@ -44,12 +48,12 @@ func (r *repository) exec(ctx context.Context) database.QueryExecutor {
 }
 
 type taskEntity struct {
-	ID               int64          `db:"id"`
-	UserID           string         `db:"user_id"`
-	Title            string         `db:"title"`
-	Description      string         `db:"description"`
-	Status           string         `db:"status"`
-	Priority         string         `db:"priority"`
+	ID                   int64          `db:"id"`
+	UserID               string         `db:"user_id"`
+	Title                string         `db:"title"`
+	Description          string         `db:"description"`
+	Status               string         `db:"status"`
+	Priority             string         `db:"priority"`
 	DueDate              *time.Time     `db:"due_date"`
 	DueDateWarningSentAt *time.Time     `db:"due_date_warning_sent_at"`
 	IsFocus              bool           `db:"is_focus"`
@@ -86,28 +90,28 @@ func (e *taskEntity) toResponse(subtasks []SubtaskResponse) TaskResponse {
 	}
 
 	return TaskResponse{
-		ID:                e.ID,
-		UserID:            e.UserID,
-		Title:             e.Title,
-		Description:       e.Description,
+		ID:                   e.ID,
+		UserID:               e.UserID,
+		Title:                e.Title,
+		Description:          e.Description,
 		Status:               e.Status,
 		Priority:             e.Priority,
 		DueDate:              e.DueDate,
 		DueDateWarningSentAt: e.DueDateWarningSentAt,
 		IsFocus:              e.IsFocus,
 		Tags:                 tags,
-		ProjectID:         e.ProjectID,
-		ProjectName:       e.ProjectName,
-		ProjectColor:      e.ProjectColor,
-		LastProgressNote:  e.LastProgressNote,
-		LastProgressAt:    e.LastProgressAt,
-		SourceNoteID:      e.SourceNoteID,
-		Subtasks:          subtasks,
-		SubtasksCount:     totalCount,
-		SubtasksCompleted: completedCount,
-		ProgressPercent:   percent,
-		CreatedAt:         e.CreatedAt,
-		UpdatedAt:         e.UpdatedAt,
+		ProjectID:            e.ProjectID,
+		ProjectName:          e.ProjectName,
+		ProjectColor:         e.ProjectColor,
+		LastProgressNote:     e.LastProgressNote,
+		LastProgressAt:       e.LastProgressAt,
+		SourceNoteID:         e.SourceNoteID,
+		Subtasks:             subtasks,
+		SubtasksCount:        totalCount,
+		SubtasksCompleted:    completedCount,
+		ProgressPercent:      percent,
+		CreatedAt:            e.CreatedAt,
+		UpdatedAt:            e.UpdatedAt,
 	}
 }
 
@@ -587,3 +591,66 @@ func (r *repository) GetUserThresholdAndTimezone(ctx context.Context, userID str
 	return row.Threshold, row.Timezone, nil
 }
 
+type taskActivityEntity struct {
+	ID           int64     `db:"id"`
+	TaskID       int64     `db:"task_id"`
+	UserID       string    `db:"user_id"`
+	ActivityType string    `db:"activity_type"`
+	Description  string    `db:"description"`
+	Changes      []byte    `db:"changes"`
+	CreatedAt    time.Time `db:"created_at"`
+}
+
+func (e *taskActivityEntity) toResponse() TaskActivityResponse {
+	raw := json.RawMessage(e.Changes)
+	if len(raw) == 0 {
+		raw = json.RawMessage("{}")
+	}
+	return TaskActivityResponse{
+		ID:           e.ID,
+		TaskID:       e.TaskID,
+		UserID:       e.UserID,
+		ActivityType: e.ActivityType,
+		Description:  e.Description,
+		Changes:      raw,
+		CreatedAt:    e.CreatedAt,
+	}
+}
+
+func (r *repository) CreateActivity(ctx context.Context, taskID int64, userID string, activityType string, description string, changes []byte) (*TaskActivityResponse, error) {
+	if len(changes) == 0 {
+		changes = []byte("{}")
+	}
+	query := `
+		INSERT INTO task_activities (task_id, user_id, activity_type, description, changes, created_at)
+		VALUES ($1, $2, $3, $4, $5, NOW())
+		RETURNING id, task_id, user_id, activity_type, description, changes, created_at
+	`
+	var entity taskActivityEntity
+	err := r.exec(ctx).QueryRowxContext(ctx, query, taskID, userID, activityType, description, changes).StructScan(&entity)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create task activity: %w", err)
+	}
+	res := entity.toResponse()
+	return &res, nil
+}
+
+func (r *repository) FindActivitiesByTaskID(ctx context.Context, userID string, taskID int64) ([]TaskActivityResponse, error) {
+	query := `
+		SELECT ta.id, ta.task_id, ta.user_id, ta.activity_type, ta.description, ta.changes, ta.created_at
+		FROM task_activities ta
+		INNER JOIN tasks t ON t.id = ta.task_id
+		WHERE ta.task_id = $1 AND t.user_id = $2
+		ORDER BY ta.created_at DESC, ta.id DESC
+	`
+	var rows []taskActivityEntity
+	err := r.exec(ctx).SelectContext(ctx, &rows, query, taskID, userID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to list task activities: %w", err)
+	}
+	res := make([]TaskActivityResponse, len(rows))
+	for i, row := range rows {
+		res[i] = row.toResponse()
+	}
+	return res, nil
+}

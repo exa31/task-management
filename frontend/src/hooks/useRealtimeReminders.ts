@@ -102,6 +102,8 @@ export const useRealtimeReminders = () => {
               icon: '/favicon.ico'
             })
           }
+        } else if (parsed.type === 'task:activity_created') {
+          queryClient.invalidateQueries({ queryKey: ['tasks'] })
         }
       } catch {
         // Non-JSON SSE ping/keep-alive message

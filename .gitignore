@@ -46,3 +46,15 @@ Thumbs.db
 tmp/
 temp/
 scratch/
+
+# Personal Learning Notes
+/notes/
+
+# Mobile build outputs & caches
+ios/.build/
+ios/DerivedData/
+ios/*.xcodeproj/xcuserdata/
+ios/*.xcodeproj/project.xcworkspace/xcuserdata/
+android/.gradle/
+android/app/build/
+android/local.properties

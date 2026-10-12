@@ -38,6 +38,9 @@ type mockRepository struct {
 	findByIDSystemFunc     func(ctx context.Context, id int64) (*TaskResponse, string, string, int, bool, error)
 	markDueWarningSentFunc func(ctx context.Context, id int64) error
 	getUserThresholdFunc   func(ctx context.Context, userID string) (int, string, error)
+
+	createActivityFunc func(ctx context.Context, taskID int64, userID string, activityType string, description string, changes []byte) (*TaskActivityResponse, error)
+	findActivitiesFunc func(ctx context.Context, userID string, taskID int64) ([]TaskActivityResponse, error)
 }
 
 func (m *mockRepository) Create(ctx context.Context, userID string, req CreateTaskRequest) (*TaskResponse, error) {
@@ -129,6 +132,27 @@ func (m *mockRepository) GetUserThresholdAndTimezone(ctx context.Context, userID
 		return m.getUserThresholdFunc(ctx, userID)
 	}
 	return 1440, "Asia/Jakarta", nil
+}
+
+func (m *mockRepository) CreateActivity(ctx context.Context, taskID int64, userID string, activityType string, description string, changes []byte) (*TaskActivityResponse, error) {
+	if m.createActivityFunc != nil {
+		return m.createActivityFunc(ctx, taskID, userID, activityType, description, changes)
+	}
+	return &TaskActivityResponse{
+		ID:           1,
+		TaskID:       taskID,
+		UserID:       userID,
+		ActivityType: activityType,
+		Description:  description,
+		CreatedAt:    time.Now(),
+	}, nil
+}
+
+func (m *mockRepository) FindActivitiesByTaskID(ctx context.Context, userID string, taskID int64) ([]TaskActivityResponse, error) {
+	if m.findActivitiesFunc != nil {
+		return m.findActivitiesFunc(ctx, userID, taskID)
+	}
+	return []TaskActivityResponse{}, nil
 }
 
 func TestTaskService_Create(t *testing.T) {
@@ -300,3 +324,70 @@ func TestTaskService_ProcessDueWarning(t *testing.T) {
 	}
 }
 
+func TestTaskService_Activities(t *testing.T) {
+	ctx := context.Background()
+	testUserID := "user-uuid-123"
+	taskID := int64(42)
+
+	activityCreated := false
+	mockRepo := &mockRepository{
+		findByIDFunc: func(ctx context.Context, userID string, id int64) (*TaskResponse, error) {
+			return &TaskResponse{
+				ID:     id,
+				UserID: userID,
+				Title:  "Test Task",
+			}, nil
+		},
+		createActivityFunc: func(ctx context.Context, tid int64, uid string, actType string, desc string, changes []byte) (*TaskActivityResponse, error) {
+			activityCreated = true
+			return &TaskActivityResponse{
+				ID:           101,
+				TaskID:       tid,
+				UserID:       uid,
+				ActivityType: actType,
+				Description:  desc,
+				CreatedAt:    time.Now(),
+			}, nil
+		},
+		findActivitiesFunc: func(ctx context.Context, uid string, tid int64) ([]TaskActivityResponse, error) {
+			return []TaskActivityResponse{
+				{
+					ID:           101,
+					TaskID:       tid,
+					UserID:       uid,
+					ActivityType: "progress_note",
+					Description:  "Selesai implementasi endpoint",
+					CreatedAt:    time.Now(),
+				},
+			}, nil
+		},
+		logProgressFunc: func(ctx context.Context, userID string, id int64, req LogProgressRequest) (*TaskResponse, error) {
+			return &TaskResponse{ID: id, UserID: userID, LastProgressNote: req.ProgressNote}, nil
+		},
+	}
+
+	svc := NewService(mockRepo, &mockTransactor{})
+
+	// 1. CreateActivity
+	act, err := svc.CreateActivity(ctx, testUserID, taskID, CreateTaskActivityRequest{
+		Description: "Selesai implementasi endpoint",
+	})
+	if err != nil {
+		t.Fatalf("unexpected error creating activity: %v", err)
+	}
+	if act == nil || !activityCreated {
+		t.Fatalf("expected activity to be created")
+	}
+
+	// 2. GetActivities
+	activities, err := svc.GetActivities(ctx, testUserID, taskID)
+	if err != nil {
+		t.Fatalf("unexpected error getting activities: %v", err)
+	}
+	if len(activities) != 1 {
+		t.Fatalf("expected 1 activity, got %d", len(activities))
+	}
+	if activities[0].Description != "Selesai implementasi endpoint" {
+		t.Fatalf("unexpected activity description: %s", activities[0].Description)
+	}
+}

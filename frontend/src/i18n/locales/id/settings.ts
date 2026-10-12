@@ -75,11 +75,14 @@ export const settings = {
   // Notification & Due Date Warning Preferences
   notifications: {
     title: 'Preferensi Notifikasi & Peringatan Deadline',
-    subtitle: 'Atur zona waktu, batas waktu peringatan sebelum deadline tiba, dan pengingat email otomatis.',
+    subtitle:
+      'Atur zona waktu, batas waktu peringatan sebelum deadline tiba, dan pengingat email otomatis.',
     timezoneLabel: 'Zona Waktu Tampilan & Pengingat',
-    timezoneHint: 'Seluruh notifikasi tenggat waktu dan format email akan disesuaikan dengan zona waktu ini.',
+    timezoneHint:
+      'Seluruh notifikasi tenggat waktu dan format email akan disesuaikan dengan zona waktu ini.',
     thresholdLabel: 'Batas Peringatan Menjelang Deadline',
-    thresholdHint: 'TaskHub akan mengirim notifikasi email (Resend), realtime (SSE), dan mobile push (FCM) saat tugas mendekati batas tenggat waktu.',
+    thresholdHint:
+      'TaskHub akan mengirim notifikasi email (Resend), realtime (SSE), dan mobile push (FCM) saat tugas mendekati batas tenggat waktu.',
     threshold15m: '15 Menit sebelum deadline',
     threshold1h: '1 Jam sebelum deadline',
     threshold3h: '3 Jam sebelum deadline',
@@ -87,7 +90,8 @@ export const settings = {
     threshold24h: '24 Jam (1 Hari) sebelum deadline',
     threshold48h: '48 Jam (2 Hari) sebelum deadline',
     emailNotificationsLabel: 'Notifikasi Email Deadline (via Resend)',
-    emailNotificationsDesc: 'Kirim email peringatan ke akun Anda saat tugas mencapai ambang batas peringatan.',
+    emailNotificationsDesc:
+      'Kirim email peringatan ke akun Anda saat tugas mencapai ambang batas peringatan.',
     savePreferences: 'Simpan Preferensi Notifikasi',
     saving: 'Menyimpan preferensi...',
     savedSuccess: 'Preferensi notifikasi berhasil disimpan.',

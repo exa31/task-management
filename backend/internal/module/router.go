@@ -170,6 +170,8 @@ func (r *Router) registerNotesAndTasks(api fiber.Router) {
 	tasks.Post("/:id/subtasks", taskHandler.CreateSubtask)
 	tasks.Put("/:id/subtasks/:subtaskId", taskHandler.UpdateSubtask)
 	tasks.Delete("/:id/subtasks/:subtaskId", taskHandler.DeleteSubtask)
+	tasks.Get("/:id/activities", taskHandler.GetActivities)
+	tasks.Post("/:id/activities", taskHandler.CreateActivity)
 
 	// Projects routes (Per-user isolated)
 	projectRepo := project.NewRepository(db)
@@ -283,4 +285,3 @@ func (r *Router) registerReminders(api fiber.Router) {
 	reminders.Post("/:id/dismiss", handler.Dismiss)
 	reminders.Post("/device-token", handler.RegisterDeviceToken)
 }
-

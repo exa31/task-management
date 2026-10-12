@@ -346,7 +346,9 @@ export const TaskModal: React.FC = () => {
                   >
                     <div className="flex items-center gap-2 flex-1 min-w-0">
                       <i className="pi pi-check-square text-xs text-indigo-500 dark:text-indigo-400 shrink-0" />
-                      <span className="truncate text-slate-800 dark:text-slate-200">{st.title}</span>
+                      <span className="truncate text-slate-800 dark:text-slate-200">
+                        {st.title}
+                      </span>
                     </div>
 
                     <button

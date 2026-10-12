@@ -1,8 +1,10 @@
 import type {
+  CreateTaskActivityPayload,
   CreateTaskPayload,
   LogProgressPayload,
   Subtask,
   Task,
+  TaskActivity,
   TaskCursorResponse,
   TaskFilterParams,
   UpdateTaskPayload
@@ -38,5 +40,11 @@ export const taskApi = {
   ) => apiClient.put<Subtask>(`/api/v1/tasks/${taskId}/subtasks/${subtaskId}`, payload),
 
   deleteSubtask: (taskId: number, subtaskId: number) =>
-    apiClient.delete(`/api/v1/tasks/${taskId}/subtasks/${subtaskId}`)
+    apiClient.delete(`/api/v1/tasks/${taskId}/subtasks/${subtaskId}`),
+
+  getActivities: (taskId: number) =>
+    apiClient.get<TaskActivity[]>(`/api/v1/tasks/${taskId}/activities`),
+
+  createActivity: (taskId: number, payload: CreateTaskActivityPayload) =>
+    apiClient.post<TaskActivity>(`/api/v1/tasks/${taskId}/activities`, payload)
 }
