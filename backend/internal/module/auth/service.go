@@ -608,9 +608,6 @@ func (s *AuthService) verifyAppleAuth(req *OAuthLoginRequest) (*appleUserInfo, e
 	}
 
 	picture := req.AvatarURL
-	if picture == "" {
-		picture = "https://api.dicebear.com/7.x/bottts/svg?seed=" + email
-	}
 
 	return &appleUserInfo{
 		Sub:     sub,
@@ -700,6 +697,9 @@ func (s *AuthService) OAuthLogin(req *OAuthLoginRequest) (*AuthResponse, error) 
 			googleID = nil
 			appleID = &providerID
 		}
+		if avatarURL == "" {
+			avatarURL = "https://api.dicebear.com/7.x/bottts/svg?seed=" + uid
+		}
 		err = s.db.DB.QueryRowx(
 			`INSERT INTO users (id, name, email, avatar_url, auth_provider, provider_id, google_id, apple_id, is_active, timezone, due_date_warning_threshold, email_notifications_enabled, created_at, updated_at)
 			 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, TRUE, 'Asia/Jakarta', 1440, TRUE, NOW(), NOW())
@@ -713,10 +713,14 @@ func (s *AuthService) OAuthLogin(req *OAuthLoginRequest) (*AuthResponse, error) 
 		if !user.IsActive {
 			return nil, errors.ForbiddenWithCode("Account is deactivated", constants.CodeAccountDeactivated)
 		}
+		newAvatar := ""
+		if (user.AvatarURL == nil || *user.AvatarURL == "") && avatarURL != "" {
+			newAvatar = avatarURL
+		}
 		updateQuery := fmt.Sprintf("UPDATE users SET avatar_url = COALESCE(NULLIF($1, ''), avatar_url), auth_provider = $2, provider_id = COALESCE(NULLIF($3, ''), provider_id), %s = COALESCE($3, %s), updated_at = NOW() WHERE id = $4", providerCol, providerCol)
-		_, _ = s.db.DB.Exec(updateQuery, avatarURL, provider, providerID, user.ID)
-		if avatarURL != "" {
-			user.AvatarURL = &avatarURL
+		_, _ = s.db.DB.Exec(updateQuery, newAvatar, provider, providerID, user.ID)
+		if newAvatar != "" {
+			user.AvatarURL = &newAvatar
 		}
 		if provider == "apple" {
 			user.AppleID = &providerID

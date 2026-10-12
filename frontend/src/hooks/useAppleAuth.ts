@@ -173,7 +173,7 @@ export function useAppleAuth(options: UseAppleAuthOptions = {}) {
           name,
           id_token: authorization.id_token,
           code: authorization.code,
-          avatar_url: `https://api.dicebear.com/7.x/bottts/svg?seed=${email || 'apple-user'}`
+          avatar_url: ''
         })
 
         localStorage.setItem('has_logged_in_before', 'true')
