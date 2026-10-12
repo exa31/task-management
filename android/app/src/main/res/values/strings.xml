@@ -1,0 +1,68 @@
+<resources>
+    <string name="app_name">Task Management</string>
+
+    <!-- Navigation -->
+    <string name="nav_tasks">Tasks</string>
+    <string name="nav_projects">Projects</string>
+    <string name="nav_notes">Notes</string>
+    <string name="nav_reminders">Reminders</string>
+    <string name="nav_profile">Profile</string>
+
+    <!-- Auth -->
+    <string name="auth_title">Task Manager Native</string>
+    <string name="auth_subtitle">Manage tasks, ideas, and reminders in real-time synced with Go backend.</string>
+    <string name="sign_in_google">Sign in with Google</string>
+    <string name="sign_in_apple">Sign in with Apple</string>
+    <string name="sign_out">Sign Out</string>
+
+    <!-- Tasks -->
+    <string name="task_list_title">Task List</string>
+    <string name="search_tasks_hint">Search tasks…</string>
+    <string name="filter_all">All</string>
+    <string name="filter_todo">To Do</string>
+    <string name="filter_in_progress">In Progress</string>
+    <string name="filter_done">Done</string>
+    <string name="empty_tasks">No tasks found in this category.</string>
+    <string name="create_task">Create New Task</string>
+    <string name="task_title_label">Task Title *</string>
+    <string name="task_desc_label">Description (Optional)</string>
+    <string name="save">Save</string>
+    <string name="cancel">Cancel</string>
+    <string name="subtasks_count">%1$d/%2$d subtasks</string>
+
+    <!-- Projects -->
+    <string name="projects_title">Projects &amp; Modules</string>
+    <string name="empty_projects">No projects yet. Create your first project!</string>
+    <string name="create_project">Create New Project</string>
+    <string name="project_name_label">Project Name</string>
+    <string name="project_desc_label">Description</string>
+    <string name="project_tasks_count">%1$d tasks</string>
+
+    <!-- Notes -->
+    <string name="notes_title">Notes &amp; Ideas</string>
+    <string name="empty_notes">No notes available.</string>
+    <string name="create_note">New Note</string>
+    <string name="note_title_label">Title</string>
+    <string name="note_content_label">Markdown Content</string>
+
+    <!-- Reminders -->
+    <string name="reminders_title">Reminders &amp; Alerts</string>
+    <string name="empty_reminders">No pending reminders.</string>
+    <string name="snooze_15m">Snooze 15m</string>
+    <string name="dismiss">Dismiss</string>
+    <string name="active_reminder_prefix">Active Reminder: %1$s</string>
+    <string name="close">Close</string>
+
+    <!-- Profile & Settings -->
+    <string name="profile_title">Profile &amp; Settings</string>
+    <string name="account_info">Account Info</string>
+    <string name="auth_status">Status: Connected via OAuth</string>
+    <string name="language_setting">Language</string>
+    <string name="tab_details_subtasks">Details &amp; Subtasks</string>
+    <string name="tab_activity_logs">Activity Logs</string>
+    <string name="activity_logs_title">Activity History</string>
+    <string name="activity_logs_empty">No activity records yet.</string>
+    <string name="activity_logs_empty_desc">All status changes, subtasks, and progress notes will appear here chronologically.</string>
+    <string name="post_note_placeholder">Write a progress note or update log…</string>
+    <string name="send">Send</string>
+</resources>

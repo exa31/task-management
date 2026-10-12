@@ -1,0 +1,62 @@
+<resources>
+    <string name="app_name">Manajemen Tugas</string>
+
+    <!-- Navigation -->
+    <string name="nav_tasks">Tugas</string>
+    <string name="nav_projects">Proyek</string>
+    <string name="nav_notes">Catatan</string>
+    <string name="nav_reminders">Pengingat</string>
+    <string name="nav_profile">Profil</string>
+
+    <!-- Auth -->
+    <string name="auth_title">Task Manager Native</string>
+    <string name="auth_subtitle">Kelola tugas, ide, dan pengingat secara real-time tersinkronisasi dengan backend Go.</string>
+    <string name="sign_in_google">Masuk dengan Google</string>
+    <string name="sign_in_apple">Masuk dengan Apple</string>
+    <string name="sign_out">Keluar (Sign Out)</string>
+
+    <!-- Tasks -->
+    <string name="task_list_title">Daftar Tugas</string>
+    <string name="search_tasks_hint">Cari tugas…</string>
+    <string name="filter_all">Semua</string>
+    <string name="filter_todo">To Do</string>
+    <string name="filter_in_progress">Dalam Proses</string>
+    <string name="filter_done">Selesai</string>
+    <string name="empty_tasks">Belum ada tugas di kategori ini.</string>
+    <string name="create_task">Buat Tugas Baru</string>
+    <string name="task_title_label">Judul Tugas *</string>
+    <string name="task_desc_label">Deskripsi (Opsional)</string>
+    <string name="save">Simpan</string>
+    <string name="cancel">Batal</string>
+    <string name="subtasks_count">%1$d/%2$d checklist</string>
+
+    <!-- Projects -->
+    <string name="projects_title">Proyek &amp; Modul</string>
+    <string name="empty_projects">Belum ada proyek. Tambahkan proyek pertama Anda!</string>
+    <string name="create_project">Buat Proyek Baru</string>
+    <string name="project_name_label">Nama Proyek</string>
+    <string name="project_desc_label">Deskripsi</string>
+    <string name="project_tasks_count">%1$d tugas</string>
+
+    <!-- Notes -->
+    <string name="notes_title">Catatan &amp; Ide</string>
+    <string name="empty_notes">Belum ada catatan.</string>
+    <string name="create_note">Tulis Catatan</string>
+    <string name="note_title_label">Judul</string>
+    <string name="note_content_label">Isi Markdown</string>
+
+    <!-- Reminders -->
+    <string name="reminders_title">Pengingat &amp; Notifikasi</string>
+    <string name="empty_reminders">Tidak ada pengingat tertunda.</string>
+    <string name="snooze_15m">Tunda 15 mnt</string>
+    <string name="dismiss">Selesai</string>
+    <string name="active_reminder_prefix">Pengingat Aktif: %1$s</string>
+    <string name="close">Tutup</string>
+
+    <!-- Profile & Settings -->
+    <string name="profile_title">Profil &amp; Pengaturan</string>
+    <string name="account_info">Informasi Akun</string>
+    <string name="auth_status">Status: Terhubung via OAuth</string>
+    <string name="backend_status">Backend: Golang Fiber v2 + PostgreSQL</string>
+    <string name="language_setting">Bahasa</string>
+</resources>
