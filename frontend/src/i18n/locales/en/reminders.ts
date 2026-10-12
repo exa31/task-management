@@ -66,5 +66,13 @@ export const reminders = {
   taskDueBadge: 'Due: {date}',
   titlePlaceholder: 'e.g. Follow up with client regarding project scope',
   dateTimePlaceholder: 'Select date and time',
-  descriptionPlaceholder: 'Add optional notes or reminder instructions...'
+  descriptionPlaceholder: 'Add optional notes or reminder instructions...',
+  searchTaskPlaceholder: 'Search tasks by title...',
+  searchTaskHint: 'Type to search across your tasks...',
+  searchingTasks: 'Searching tasks...',
+  noTasksFound: 'No matching tasks found',
+  selectTask: 'Select a task',
+  unlinkTask: 'Unlink task',
+  linkedTask: 'Linked Task',
+  recentTasks: 'Recent active tasks'
 }

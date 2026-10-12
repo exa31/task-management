@@ -281,8 +281,8 @@ export default function Login() {
 
         {/* Bottom Footer Credits */}
         <div className="pt-4 border-t border-slate-200 dark:border-slate-900 text-xs text-slate-500 flex items-center justify-between font-mono">
-          <span>TaskHub Developer Edition</span>
-          <span>Go Fiber • React 19 • Tailwind v4</span>
+          <span>TaskHub Workspace</span>
+          <span>Cloud Sync & Security</span>
         </div>
       </div>
 

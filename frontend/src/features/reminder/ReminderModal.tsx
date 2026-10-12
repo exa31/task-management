@@ -1,8 +1,8 @@
 import { Calendar } from 'primereact/calendar'
-import React, { type FormEvent, useEffect, useState } from 'react'
+import React, { type FormEvent, useEffect, useRef, useState } from 'react'
 
 import { getLocalizedErrorMessage } from '@/api'
-import { useCreateReminder, useTasks, useUpdateReminder } from '@/hooks'
+import { useCreateReminder, useTask, useTasks, useUpdateReminder } from '@/hooks'
 import { useTranslation } from '@/i18n'
 import type { Reminder, Task } from '@/types'
 
@@ -20,8 +20,6 @@ export const ReminderModal: React.FC<ReminderModalProps> = ({
   initialReminder = null
 }) => {
   const { t, locale } = useTranslation()
-  const { data: rawTasks } = useTasks()
-  const tasks = Array.isArray(rawTasks) ? rawTasks : []
 
   const createMutation = useCreateReminder()
   const updateMutation = useUpdateReminder()
@@ -32,10 +30,16 @@ export const ReminderModal: React.FC<ReminderModalProps> = ({
   const [remindAtDate, setRemindAtDate] = useState<Date | null>(null)
   const [errorMsg, setErrorMsg] = useState<string | null>(null)
 
+  // Lightweight on-demand task combobox
+  const [taskSearchQuery, setTaskSearchQuery] = useState('')
+  const [debouncedSearch, setDebouncedSearch] = useState('')
+  const [isTaskSelectorOpen, setIsTaskSelectorOpen] = useState(false)
+  const taskSelectorRef = useRef<HTMLDivElement>(null)
+
   // Initialize or reset form state
   useEffect(() => {
-    if (initialReminder) {
-      if (isOpen) {
+    if (isOpen) {
+      if (initialReminder) {
         setTitle(initialReminder.title)
         setDescription(initialReminder.description || '')
         setTaskId(initialReminder.task_id || null)
@@ -48,8 +52,44 @@ export const ReminderModal: React.FC<ReminderModalProps> = ({
         setRemindAtDate(new Date(Date.now() + 60 * 60 * 1000))
       }
       setErrorMsg(null)
+      setIsTaskSelectorOpen(false)
+      setTaskSearchQuery('')
     }
   }, [isOpen, initialReminder, initialTaskId])
+
+  // Debounce task search (250ms)
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      setDebouncedSearch(taskSearchQuery.trim())
+    }, 250)
+    return () => clearTimeout(handler)
+  }, [taskSearchQuery])
+
+  // Close dropdown on outside click
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (taskSelectorRef.current && !taskSelectorRef.current.contains(event.target as Node)) {
+        setIsTaskSelectorOpen(false)
+      }
+    }
+    if (isTaskSelectorOpen) {
+      document.addEventListener('mousedown', handleClickOutside)
+    }
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [isTaskSelectorOpen])
+
+  // Fetch only the single selected task by ID
+  const { data: selectedTask } = useTask(taskId || undefined)
+
+  // Fetch search results on-demand with limit 15 only when selector is open
+  const { data: rawSearchTasks, isLoading: isSearchingTasks } = useTasks(
+    {
+      search: debouncedSearch || undefined,
+      limit: 15
+    },
+    { enabled: isOpen && isTaskSelectorOpen }
+  )
+  const searchResults = Array.isArray(rawSearchTasks) ? rawSearchTasks : []
 
   if (!isOpen) return null
 
@@ -166,37 +206,165 @@ export const ReminderModal: React.FC<ReminderModalProps> = ({
 
           {/* Linked Task Selector */}
           <div>
-            <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
-              {t('reminders.fieldTask')}
-            </label>
-            <select
-              value={taskId === null ? '' : String(taskId)}
-              onChange={(e) => setTaskId(e.target.value ? parseInt(e.target.value, 10) : null)}
-              className="w-full rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 px-2.5 py-1.5 text-xs text-slate-900 dark:text-slate-200 focus:border-indigo-500 focus:outline-none transition-colors"
-            >
-              <option
-                value=""
-                className="bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100"
-              >
-                {t('reminders.noTask')}
-              </option>
-              {tasks.map((tk: Task) => (
-                <option
-                  key={tk.id}
-                  value={String(tk.id)}
-                  className="bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100"
+            <div className="flex items-center justify-between mb-1">
+              <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300">
+                {t('reminders.fieldTask')}
+              </label>
+              {taskId !== null && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setTaskId(null)
+                    setIsTaskSelectorOpen(false)
+                    setTaskSearchQuery('')
+                  }}
+                  className="text-[11px] text-rose-500 hover:text-rose-600 dark:text-rose-400 font-medium cursor-pointer"
                 >
-                  {tk.title}{' '}
-                  {tk.due_date
-                    ? ` (${t('reminders.taskDueBadge', {
-                        date: new Date(tk.due_date).toLocaleDateString(
-                          locale === 'id' ? 'id-ID' : 'en-US'
-                        )
-                      })})`
-                    : ''}
-                </option>
-              ))}
-            </select>
+                  {t('reminders.unlinkTask')}
+                </button>
+              )}
+            </div>
+
+            {taskId !== null && !isTaskSelectorOpen ? (
+              <div className="flex items-center justify-between gap-3 p-2.5 rounded-xl border border-indigo-200/80 dark:border-indigo-900/60 bg-indigo-50/50 dark:bg-indigo-950/30">
+                <div className="flex items-center gap-2.5 min-w-0">
+                  <div className="w-7 h-7 rounded-lg bg-indigo-100 dark:bg-indigo-900/60 text-indigo-600 dark:text-indigo-400 flex items-center justify-center shrink-0">
+                    <i className="pi pi-check-square text-xs" />
+                  </div>
+                  <div className="min-w-0">
+                    <p className="text-xs font-semibold text-slate-900 dark:text-slate-100 truncate">
+                      {selectedTask?.title || initialReminder?.task_title || `#${taskId}`}
+                    </p>
+                    <div className="flex items-center gap-2 mt-0.5 text-[10px] text-slate-500 dark:text-slate-400">
+                      {selectedTask?.status && (
+                        <span className="px-1.5 py-0.2 rounded font-mono uppercase bg-white/70 dark:bg-slate-900/70 border border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-300">
+                          {selectedTask.status}
+                        </span>
+                      )}
+                      {selectedTask?.project_name && (
+                        <span className="flex items-center gap-1">
+                          <i className="pi pi-folder text-[9px]" />
+                          {selectedTask.project_name}
+                        </span>
+                      )}
+                      {selectedTask?.due_date && (
+                        <span className="flex items-center gap-1 font-mono">
+                          <i className="pi pi-calendar text-[9px]" />
+                          {new Date(selectedTask.due_date).toLocaleDateString(
+                            locale === 'id' ? 'id-ID' : 'en-US'
+                          )}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setIsTaskSelectorOpen(true)}
+                  className="px-2.5 py-1 rounded-lg text-[11px] font-medium border border-indigo-200 dark:border-indigo-800 bg-white dark:bg-slate-900 hover:bg-slate-50 dark:hover:bg-slate-800 text-indigo-600 dark:text-indigo-400 transition-colors shrink-0 cursor-pointer"
+                >
+                  {t('common.edit') || 'Ganti'}
+                </button>
+              </div>
+            ) : (
+              <div className="relative" ref={taskSelectorRef}>
+                <div className="relative">
+                  <i className="pi pi-search absolute left-3 top-1/2 -translate-y-1/2 text-xs text-slate-400" />
+                  <input
+                    type="text"
+                    value={taskSearchQuery}
+                    onChange={(e) => {
+                      setTaskSearchQuery(e.target.value)
+                      if (!isTaskSelectorOpen) setIsTaskSelectorOpen(true)
+                    }}
+                    onFocus={() => setIsTaskSelectorOpen(true)}
+                    placeholder={t('reminders.searchTaskPlaceholder')}
+                    className="w-full pl-8 pr-8 py-2 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 text-xs text-slate-900 dark:text-slate-100 placeholder-slate-400 focus:outline-none focus:border-indigo-500 transition-colors"
+                  />
+                  {taskSearchQuery && (
+                    <button
+                      type="button"
+                      onClick={() => setTaskSearchQuery('')}
+                      className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 cursor-pointer"
+                    >
+                      <i className="pi pi-times-circle text-xs" />
+                    </button>
+                  )}
+                </div>
+
+                {isTaskSelectorOpen && (
+                  <div className="absolute left-0 right-0 top-full mt-1 max-h-56 overflow-y-auto rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-xl z-30 p-1 divide-y divide-slate-100 dark:divide-slate-800/60">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setTaskId(null)
+                        setIsTaskSelectorOpen(false)
+                        setTaskSearchQuery('')
+                      }}
+                      className="w-full px-3 py-2 text-left rounded-lg text-xs flex items-center justify-between hover:bg-slate-50 dark:hover:bg-slate-800/60 transition-colors cursor-pointer text-slate-500 dark:text-slate-400"
+                    >
+                      <span className="flex items-center gap-2">
+                        <i className="pi pi-times text-[10px]" />
+                        <span>{t('reminders.noTask')}</span>
+                      </span>
+                      {taskId === null && <i className="pi pi-check text-xs text-indigo-500" />}
+                    </button>
+
+                    {isSearchingTasks ? (
+                      <div className="py-4 text-center text-xs text-slate-400 flex items-center justify-center gap-2">
+                        <i className="pi pi-spin pi-spinner text-xs text-indigo-500" />
+                        <span>{t('reminders.searchingTasks')}</span>
+                      </div>
+                    ) : searchResults.length === 0 ? (
+                      <div className="py-4 text-center text-xs text-slate-400">
+                        {t('reminders.noTasksFound')}
+                      </div>
+                    ) : (
+                      searchResults.map((tk: Task) => (
+                        <button
+                          key={tk.id}
+                          type="button"
+                          onClick={() => {
+                            setTaskId(tk.id)
+                            setIsTaskSelectorOpen(false)
+                            setTaskSearchQuery('')
+                          }}
+                          className={`w-full px-3 py-2 text-left rounded-lg text-xs flex items-center justify-between hover:bg-slate-50 dark:hover:bg-slate-800/60 transition-colors cursor-pointer ${
+                            taskId === tk.id
+                              ? 'bg-indigo-50/70 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400 font-semibold'
+                              : 'text-slate-800 dark:text-slate-200'
+                          }`}
+                        >
+                          <div className="min-w-0 flex-1 pr-2">
+                            <div className="flex items-center gap-2">
+                              <span className="truncate">{tk.title}</span>
+                              <span className="shrink-0 text-[9px] px-1.5 py-0.2 rounded font-mono font-medium bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400">
+                                {tk.status}
+                              </span>
+                            </div>
+                            {(tk.project_name || tk.due_date) && (
+                              <div className="flex items-center gap-2 mt-0.5 text-[10px] text-slate-400">
+                                {tk.project_name && <span>{tk.project_name}</span>}
+                                {tk.due_date && (
+                                  <span>
+                                    {new Date(tk.due_date).toLocaleDateString(
+                                      locale === 'id' ? 'id-ID' : 'en-US'
+                                    )}
+                                  </span>
+                                )}
+                              </div>
+                            )}
+                          </div>
+                          {taskId === tk.id && (
+                            <i className="pi pi-check text-xs text-indigo-500 shrink-0" />
+                          )}
+                        </button>
+                      ))
+                    )}
+                  </div>
+                )}
+              </div>
+            )}
           </div>
 
           {/* Date & Time Picker + Quick Presets */}

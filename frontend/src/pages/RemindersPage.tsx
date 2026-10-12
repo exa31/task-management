@@ -1,18 +1,18 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 
+import { taskApi } from '@/api'
 import { confirmDialog } from '@/components'
 import { ReminderModal } from '@/features/reminder'
 import {
   useDeleteReminder,
   useDismissReminder,
   useReminders,
-  useSnoozeReminder,
-  useTasks
+  useSnoozeReminder
 } from '@/hooks'
 import { useTranslation } from '@/i18n'
 import { useTaskStore } from '@/stores'
-import type { Reminder, Task } from '@/types'
+import type { Reminder } from '@/types'
 
 type FilterTab = 'all' | 'pending' | 'sent' | 'dismissed'
 
@@ -31,9 +31,6 @@ export default function RemindersPage() {
     status: activeTab === 'all' ? 'all' : activeTab
   })
   const reminders = useMemo(() => reminderData?.items || [], [reminderData?.items])
-
-  const { data: rawTasks } = useTasks()
-  const tasks = useMemo(() => (Array.isArray(rawTasks) ? rawTasks : []), [rawTasks])
 
   const deleteMutation = useDeleteReminder()
   const snoozeMutation = useSnoozeReminder()
@@ -67,14 +64,18 @@ export default function RemindersPage() {
     )
   }, [reminders, searchQuery])
 
-  const handleOpenTask = (reminder: Reminder) => {
+  const handleOpenTask = async (reminder: Reminder) => {
     if (!reminder.task_id) return
-    const target = tasks.find((tk: Task) => tk.id === reminder.task_id)
-    if (target) {
-      openDrawer(target)
-    } else {
-      navigate('/tasks')
+    try {
+      const res = await taskApi.getById(reminder.task_id)
+      if (res?.data) {
+        openDrawer(res.data)
+        return
+      }
+    } catch {
+      // Fallback
     }
+    navigate('/tasks')
   }
 
   const formatDateTime = (dateStr: string) => {

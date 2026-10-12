@@ -1,10 +1,11 @@
 import { useEffect, useRef, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 
-import { useDismissReminder, useReminders, useSnoozeReminder, useTasks } from '@/hooks'
+import { taskApi } from '@/api'
+import { useDismissReminder, useReminders, useSnoozeReminder } from '@/hooks'
 import { useTranslation } from '@/i18n'
 import { useTaskStore } from '@/stores'
-import type { Reminder, Task } from '@/types'
+import type { Reminder } from '@/types'
 
 export const NotificationBell = () => {
   const [isOpen, setIsOpen] = useState(false)
@@ -16,8 +17,6 @@ export const NotificationBell = () => {
   // Fetch pending reminders
   const { data: reminderData } = useReminders({ status: 'pending' })
   const reminders = reminderData?.items || []
-  const { data: rawTasks } = useTasks()
-  const tasks = Array.isArray(rawTasks) ? rawTasks : []
 
   const dismissMutation = useDismissReminder()
   const snoozeMutation = useSnoozeReminder()
@@ -42,15 +41,19 @@ export const NotificationBell = () => {
     return () => document.removeEventListener('mousedown', handleClickOutside)
   }, [isOpen])
 
-  const handleOpenTask = (reminder: Reminder) => {
+  const handleOpenTask = async (reminder: Reminder) => {
     setIsOpen(false)
     if (!reminder.task_id) return
-    const targetTask = tasks.find((tk: Task) => tk.id === reminder.task_id)
-    if (targetTask) {
-      openDrawer(targetTask)
-    } else {
-      navigate('/tasks')
+    try {
+      const res = await taskApi.getById(reminder.task_id)
+      if (res?.data) {
+        openDrawer(res.data)
+        return
+      }
+    } catch {
+      // Fallback to tasks list
     }
+    navigate('/tasks')
   }
 
   const formatRelativeTime = (dateStr: string) => {

@@ -82,14 +82,14 @@ export const settings = {
       'Seluruh notifikasi tenggat waktu dan format email akan disesuaikan dengan zona waktu ini.',
     thresholdLabel: 'Batas Peringatan Menjelang Deadline',
     thresholdHint:
-      'TaskHub akan mengirim notifikasi email (Resend), realtime (SSE), dan mobile push (FCM) saat tugas mendekati batas tenggat waktu.',
+      'TaskHub akan mengirim notifikasi email dan pemberitahuan saat tugas mendekati batas tenggat waktu.',
     threshold15m: '15 Menit sebelum deadline',
     threshold1h: '1 Jam sebelum deadline',
     threshold3h: '3 Jam sebelum deadline',
     threshold12h: '12 Jam sebelum deadline',
     threshold24h: '24 Jam (1 Hari) sebelum deadline',
     threshold48h: '48 Jam (2 Hari) sebelum deadline',
-    emailNotificationsLabel: 'Notifikasi Email Deadline (via Resend)',
+    emailNotificationsLabel: 'Notifikasi Email Deadline',
     emailNotificationsDesc:
       'Kirim email peringatan ke akun Anda saat tugas mencapai ambang batas peringatan.',
     savePreferences: 'Simpan Preferensi Notifikasi',

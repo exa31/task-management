@@ -80,14 +80,14 @@ export const settings = {
     timezoneHint: 'All due date alerts and email summaries will be aligned with this timezone.',
     thresholdLabel: 'Due Date Warning Alert Threshold',
     thresholdHint:
-      'TaskHub will send an email alert (Resend), realtime notification (SSE), and mobile push (FCM) when a task approaches its deadline.',
+      'TaskHub will send email alerts and push notifications when a task approaches its deadline.',
     threshold15m: '15 Minutes before deadline',
     threshold1h: '1 Hour before deadline',
     threshold3h: '3 Hours before deadline',
     threshold12h: '12 Hours before deadline',
     threshold24h: '24 Hours (1 Day) before deadline',
     threshold48h: '48 Hours (2 Days) before deadline',
-    emailNotificationsLabel: 'Email Deadline Warnings (via Resend)',
+    emailNotificationsLabel: 'Email Deadline Warnings',
     emailNotificationsDesc:
       'Send an email notification to your account when tasks reach the warning threshold.',
     savePreferences: 'Save Notification Preferences',

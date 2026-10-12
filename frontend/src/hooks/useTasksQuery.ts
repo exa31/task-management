@@ -37,10 +37,11 @@ const cleanParams = (params?: TaskFilterParams): TaskFilterParams | undefined =>
   return cleaned
 }
 
-export const useTasks = (params?: TaskFilterParams) => {
+export const useTasks = (params?: TaskFilterParams, options?: { enabled?: boolean }) => {
   const cleaned = cleanParams(params)
   return useQuery({
     queryKey: taskKeys.list(cleaned),
+    enabled: options?.enabled,
     queryFn: async (): Promise<Task[]> => {
       const res = await taskApi.getAll(cleaned)
       const raw = res.data

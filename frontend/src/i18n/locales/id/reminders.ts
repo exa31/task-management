@@ -66,5 +66,13 @@ export const reminders = {
   taskDueBadge: 'Tenggat: {date}',
   titlePlaceholder: 'Contoh: Hubungi klien terkait lingkup proyek',
   dateTimePlaceholder: 'Pilih tanggal dan waktu',
-  descriptionPlaceholder: 'Tambahkan catatan atau instruksi pengingat opsional...'
+  descriptionPlaceholder: 'Tambahkan catatan atau instruksi pengingat opsional...',
+  searchTaskPlaceholder: 'Cari tugas berdasarkan judul...',
+  searchTaskHint: 'Ketik untuk mencari tugas...',
+  searchingTasks: 'Mencari tugas...',
+  noTasksFound: 'Tidak ada tugas yang cocok',
+  selectTask: 'Pilih tugas',
+  unlinkTask: 'Lepas tautan tugas',
+  linkedTask: 'Tugas Terkait',
+  recentTasks: 'Tugas aktif terbaru'
 }
