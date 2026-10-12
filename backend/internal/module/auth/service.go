@@ -663,37 +663,65 @@ func (s *AuthService) OAuthLogin(req *OAuthLoginRequest) (*AuthResponse, error) 
 	}
 
 	var user authUser
-	err := s.db.DB.Get(&user, "SELECT id, name, email, password, avatar_url, auth_provider, google_id, apple_id, timezone, due_date_warning_threshold, email_notifications_enabled, is_active, created_at FROM users WHERE email = $1", email)
-	if err != nil {
-		if stderrors.Is(err, sql.ErrNoRows) {
-			uid := uuid.New().String()
-			googleID := &providerID
-			var appleID *string
-			if provider == "apple" {
-				googleID = nil
-				appleID = &providerID
-			}
-			err = s.db.DB.QueryRowx(
-				`INSERT INTO users (id, name, email, avatar_url, auth_provider, provider_id, google_id, apple_id, is_active, timezone, due_date_warning_threshold, email_notifications_enabled, created_at, updated_at)
-				 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, TRUE, 'Asia/Jakarta', 1440, TRUE, NOW(), NOW())
-				 RETURNING id, name, email, avatar_url, auth_provider, google_id, apple_id, timezone, due_date_warning_threshold, email_notifications_enabled, created_at`,
-				uid, name, email, avatarURL, provider, providerID, googleID, appleID,
-			).StructScan(&user)
-			if err != nil {
-				return nil, errors.DatabaseError("Failed to create user account", err)
-			}
-		} else {
-			return nil, errors.DatabaseError("Database error during OAuth lookup", err)
+	var err error
+	found := false
+
+	// 1. Try finding user by provider unique identifier (apple_id or google_id)
+	providerCol := "google_id"
+	if provider == "apple" {
+		providerCol = "apple_id"
+	}
+
+	if providerID != "" {
+		providerQuery := fmt.Sprintf("SELECT id, name, email, password, avatar_url, auth_provider, google_id, apple_id, timezone, due_date_warning_threshold, email_notifications_enabled, is_active, created_at FROM users WHERE %s = $1", providerCol)
+		err = s.db.DB.Get(&user, providerQuery, providerID)
+		if err == nil {
+			found = true
+		} else if !stderrors.Is(err, sql.ErrNoRows) {
+			return nil, errors.DatabaseError("Database error during OAuth provider ID lookup", err)
+		}
+	}
+
+	// 2. If not matched by provider ID, fallback to email lookup
+	if !found && email != "" {
+		err = s.db.DB.Get(&user, "SELECT id, name, email, password, avatar_url, auth_provider, google_id, apple_id, timezone, due_date_warning_threshold, email_notifications_enabled, is_active, created_at FROM users WHERE email = $1", email)
+		if err == nil {
+			found = true
+		} else if !stderrors.Is(err, sql.ErrNoRows) {
+			return nil, errors.DatabaseError("Database error during OAuth email lookup", err)
+		}
+	}
+
+	if !found {
+		uid := uuid.New().String()
+		googleID := &providerID
+		var appleID *string
+		if provider == "apple" {
+			googleID = nil
+			appleID = &providerID
+		}
+		err = s.db.DB.QueryRowx(
+			`INSERT INTO users (id, name, email, avatar_url, auth_provider, provider_id, google_id, apple_id, is_active, timezone, due_date_warning_threshold, email_notifications_enabled, created_at, updated_at)
+			 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, TRUE, 'Asia/Jakarta', 1440, TRUE, NOW(), NOW())
+			 RETURNING id, name, email, avatar_url, auth_provider, google_id, apple_id, timezone, due_date_warning_threshold, email_notifications_enabled, created_at`,
+			uid, name, email, avatarURL, provider, providerID, googleID, appleID,
+		).StructScan(&user)
+		if err != nil {
+			return nil, errors.DatabaseError("Failed to create user account", err)
 		}
 	} else {
-		bindCol := "google_id"
-		if provider == "apple" {
-			bindCol = "apple_id"
+		if !user.IsActive {
+			return nil, errors.ForbiddenWithCode("Account is deactivated", constants.CodeAccountDeactivated)
 		}
-		updateQuery := fmt.Sprintf("UPDATE users SET avatar_url = COALESCE(NULLIF($1, ''), avatar_url), auth_provider = $2, provider_id = COALESCE(NULLIF($3, ''), provider_id), %s = COALESCE($3, %s), updated_at = NOW() WHERE id = $4", bindCol, bindCol)
+		updateQuery := fmt.Sprintf("UPDATE users SET avatar_url = COALESCE(NULLIF($1, ''), avatar_url), auth_provider = $2, provider_id = COALESCE(NULLIF($3, ''), provider_id), %s = COALESCE($3, %s), updated_at = NOW() WHERE id = $4", providerCol, providerCol)
 		_, _ = s.db.DB.Exec(updateQuery, avatarURL, provider, providerID, user.ID)
 		if avatarURL != "" {
 			user.AvatarURL = &avatarURL
+		}
+		if provider == "apple" {
+			user.AppleID = &providerID
+		} else {
+			user.GoogleID = &providerID
 		}
 	}
 
