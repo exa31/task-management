@@ -1,4 +1,8 @@
+#if canImport(UIKit)
 import UIKit
+#elseif canImport(AppKit)
+import AppKit
+#endif
 import UserNotifications
 
 @MainActor
@@ -30,7 +34,11 @@ public final class PushNotificationManager: NSObject, UNUserNotificationCenterDe
 
                 if granted {
                     AppLogger.success("Notification permissions granted by user", category: .push)
+                    #if canImport(UIKit)
                     UIApplication.shared.registerForRemoteNotifications()
+                    #elseif canImport(AppKit)
+                    NSApplication.shared.registerForRemoteNotifications()
+                    #endif
                 } else {
                     AppLogger.info("Notification permissions denied by user", category: .push)
                 }

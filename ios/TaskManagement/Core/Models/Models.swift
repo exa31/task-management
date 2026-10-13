@@ -434,6 +434,85 @@ public struct PaginatedResponse<T: Codable>: Codable {
     }
 }
 
+// MARK: - MCP (Model Context Protocol) Tokens
+public struct McpToken: Codable, Identifiable, Sendable {
+    public let id: Int64
+    public let userId: String
+    public let name: String
+    public let tokenPrefix: String
+    public let lastUsedAt: String?
+    public let createdAt: String
+    public let expiresAt: String?
+
+    public init(
+        id: Int64,
+        userId: String,
+        name: String,
+        tokenPrefix: String,
+        lastUsedAt: String? = nil,
+        createdAt: String,
+        expiresAt: String? = nil
+    ) {
+        self.id = id
+        self.userId = userId
+        self.name = name
+        self.tokenPrefix = tokenPrefix
+        self.lastUsedAt = lastUsedAt
+        self.createdAt = createdAt
+        self.expiresAt = expiresAt
+    }
+
+    enum CodingKeys: String, CodingKey {
+        case id, name
+        case userId = "user_id"
+        case tokenPrefix = "token_prefix"
+        case lastUsedAt = "last_used_at"
+        case createdAt = "created_at"
+        case expiresAt = "expires_at"
+    }
+}
+
+public struct GenerateMcpTokenRequest: Codable, Sendable {
+    public let name: String
+
+    public init(name: String) {
+        self.name = name
+    }
+}
+
+public struct GenerateMcpTokenResponse: Codable, Identifiable, Sendable {
+    public let id: Int64
+    public let name: String
+    public let tokenPrefix: String
+    public let rawToken: String
+    public let createdAt: String
+    public let expiresAt: String?
+
+    public init(
+        id: Int64,
+        name: String,
+        tokenPrefix: String,
+        rawToken: String,
+        createdAt: String,
+        expiresAt: String? = nil
+    ) {
+        self.id = id
+        self.name = name
+        self.tokenPrefix = tokenPrefix
+        self.rawToken = rawToken
+        self.createdAt = createdAt
+        self.expiresAt = expiresAt
+    }
+
+    enum CodingKeys: String, CodingKey {
+        case id, name
+        case tokenPrefix = "token_prefix"
+        case rawToken = "raw_token"
+        case createdAt = "created_at"
+        case expiresAt = "expires_at"
+    }
+}
+
 public struct EmptyResponse: Codable {
     public init() {}
 }

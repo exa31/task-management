@@ -1,0 +1,12 @@
+Task Hub is a modern, real-time productivity workspace designed for individuals, teams, and AI-assisted workflows. Organize your daily tasks, track long-term projects, manage rich notes, and set precision reminders—all synchronized instantly across all your devices.
+
+KEY FEATURES:
+• Smart Task Management: Group tasks by status (Backlog, Todo, In Progress, Review, Done) and priorities (Urgent, High, Medium, Low).
+• Checklist & Subtasks: Break complex tasks into actionable checklists with instant progress tracking.
+• Activity Trail & Logs: Full audit trails for every modification, status update, and comment.
+• Project Organization: Group related work with custom project color codes and track milestone progress.
+• Fast Markdown Notes: Keep ideas, meeting summaries, and snippets in one unified place.
+• Real-time SSE Synchronization: Live updates without manual pulling or refreshing.
+• AI & Model Context Protocol (MCP): Connect AI coding assistants (Claude Desktop, Cursor, Antigravity IDE) via dedicated Personal Access Tokens.
+• Seamless Authentication: Sign in securely with Apple ID or Google.
+• Native Apple Design: Smooth gestures, dark mode support, and responsive layouts built with modern SwiftUI.

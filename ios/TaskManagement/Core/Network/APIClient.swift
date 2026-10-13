@@ -381,4 +381,19 @@ public actor APIClient {
         let body = try encoder.encode(req)
         let _: String? = try? await request(endpoint: "reminders/device-token", method: "POST", body: body)
     }
+
+    // MARK: - MCP (Model Context Protocol)
+    public func getMcpTokens() async throws -> [McpToken] {
+        return try await request(endpoint: "tokens")
+    }
+
+    public func generateMcpToken(name: String) async throws -> GenerateMcpTokenResponse {
+        let req = GenerateMcpTokenRequest(name: name)
+        let body = try encoder.encode(req)
+        return try await request(endpoint: "tokens", method: "POST", body: body)
+    }
+
+    public func deleteMcpToken(id: Int64) async throws {
+        let _: EmptyResponse = try await request(endpoint: "tokens/\(id)", method: "DELETE")
+    }
 }

@@ -1,6 +1,8 @@
 import SwiftUI
 import GoogleSignIn
 
+#if canImport(UIKit)
+import UIKit
 final class AppDelegate: NSObject, UIApplicationDelegate {
     func application(
         _ application: UIApplication,
@@ -28,14 +30,38 @@ final class AppDelegate: NSObject, UIApplicationDelegate {
         AppLogger.warn("Failed to register for remote notifications", category: .push, metadata: ["error": error.localizedDescription])
     }
 }
+#elseif canImport(AppKit)
+import AppKit
+final class AppDelegate: NSObject, NSApplicationDelegate {
+    func applicationDidFinishLaunching(_ notification: Notification) {
+        Task { @MainActor in
+            PushNotificationManager.shared.configure()
+        }
+    }
+
+    func application(_ application: NSApplication, didRegisterForRemoteNotificationsWithDeviceToken deviceToken: Data) {
+        Task { @MainActor in
+            PushNotificationManager.shared.handleDeviceTokenData(deviceToken)
+        }
+    }
+
+    func application(_ application: NSApplication, didFailToRegisterForRemoteNotificationsWithError error: Error) {
+        AppLogger.warn("Failed to register for remote notifications", category: .push, metadata: ["error": error.localizedDescription])
+    }
+}
+#endif
 
 /*
-Entry Point iOS (SwiftUI Modern iOS 17+):
-@main menandai struct ini sebagai gerbang awal eksekusi aplikasi oleh sistem operasi iOS.
+Entry Point iOS / macOS (SwiftUI Modern iOS 17+ / macOS 14+):
+@main menandai struct ini sebagai gerbang awal eksekusi aplikasi.
 */
 @main
 struct TaskManagementApp: App {
+    #if canImport(UIKit)
     @UIApplicationDelegateAdaptor(AppDelegate.self) private var appDelegate
+    #elseif canImport(AppKit)
+    @NSApplicationDelegateAdaptor(AppDelegate.self) private var appDelegate
+    #endif
     @State private var authViewModel = AuthViewModel()
     @AppStorage("app_appearance") private var appAppearance: String = "system"
 

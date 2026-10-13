@@ -1,0 +1,45 @@
+name: Deploy Android (Jetpack Compose) - [MANUAL ONLY]
+
+# =========================================================================
+# PENTING: Workflow ini TIDAK berjalan otomatis pada push atau PR.
+# Hanya dapat di-trigger secara manual (workflow_dispatch) via tab GitHub Actions
+# jika Anda sudah siap merilis versi Android ke Play Store atau GitHub Release.
+# =========================================================================
+on:
+  workflow_dispatch:
+    inputs:
+      track:
+        description: 'Google Play Store Track (internal, alpha, beta, production)'
+        required: false
+        default: 'internal'
+      upload_to_play_store:
+        description: 'Upload otomatis ke Google Play Console'
+        type: boolean
+        default: false
+
+permissions:
+  contents: write
+  packages: write
+  issues: write
+  pull-requests: write
+
+jobs:
+  deploy-android:
+    name: Build & Deploy Android (Manual)
+    uses: exa31/github-workflows/.github/workflows/compose-android.yml@v1.0.0
+    with:
+      app_name: task-hub-android
+      java_version: "17"
+      module_name: app
+      package_name: cloud.eka_dev.task_hub
+      build_type: both
+      track: ${{ inputs.track || 'internal' }}
+      upload_to_play_store: ${{ inputs.upload_to_play_store || false }}
+      tag_prefix: "android-"
+    secrets:
+      ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+      ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+      ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+      ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+      PLAY_STORE_SERVICE_ACCOUNT_JSON: ${{ secrets.PLAY_STORE_SERVICE_ACCOUNT_JSON }}
+      ENV_FILE: ${{ secrets.ENV_FILE }}

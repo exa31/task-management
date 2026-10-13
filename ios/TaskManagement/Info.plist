@@ -23,5 +23,9 @@
 	<array>
 		<string>remote-notification</string>
 	</array>
+	<key>ITSAppUsesNonExemptEncryption</key>
+	<false/>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>Task Hub needs access to your photo library to update your avatar photo.</string>
 </dict>
 </plist>

@@ -35,6 +35,8 @@
 		CC0102030405060708090002 /* TaskManagement/GoogleService-Info.plist in Resources */ = {isa = PBXBuildFile; fileRef = CC0102030405060708090001 /* TaskManagement/GoogleService-Info.plist */; };
 		CC0102030405060708090013 /* GoogleSignIn in Frameworks */ = {isa = PBXBuildFile; productRef = CC0102030405060708090011 /* GoogleSignIn */; };
 		CC0102030405060708090014 /* GoogleSignInSwift in Frameworks */ = {isa = PBXBuildFile; productRef = CC0102030405060708090012 /* GoogleSignInSwift */; };
+		DD0102030405060708090002 /* TaskManagement/Features/Mcp/McpViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = DD0102030405060708090001 /* TaskManagement/Features/Mcp/McpViewModel.swift */; };
+		DD0102030405060708090004 /* TaskManagement/Features/Mcp/McpSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DD0102030405060708090003 /* TaskManagement/Features/Mcp/McpSettingsView.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -67,6 +69,8 @@
 		CC0102030405060708090003 /* TaskManagement/Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = TaskManagement/Info.plist; sourceTree = "<group>"; };
 		BB0102030405060708090011 /* TaskManagement/Core/Notification/PushNotificationManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TaskManagement/Core/Notification/PushNotificationManager.swift; sourceTree = "<group>"; };
 		BB0102030405060708090021 /* TaskManagement/Core/Logger/AppLogger.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TaskManagement/Core/Logger/AppLogger.swift; sourceTree = "<group>"; };
+		DD0102030405060708090001 /* TaskManagement/Features/Mcp/McpViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TaskManagement/Features/Mcp/McpViewModel.swift; sourceTree = "<group>"; };
+		DD0102030405060708090003 /* TaskManagement/Features/Mcp/McpSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TaskManagement/Features/Mcp/McpSettingsView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -114,6 +118,8 @@
 				BB0102030405060708090003 /* TaskManagement/Core/Localization/L10n.swift */,
 				BB0102030405060708090011 /* TaskManagement/Core/Notification/PushNotificationManager.swift */,
 				BB0102030405060708090021 /* TaskManagement/Core/Logger/AppLogger.swift */,
+				DD0102030405060708090001 /* TaskManagement/Features/Mcp/McpViewModel.swift */,
+				DD0102030405060708090003 /* TaskManagement/Features/Mcp/McpSettingsView.swift */,
 			);
 			sourceTree = "<group>";
 		};
@@ -218,6 +224,8 @@
 				9179CC5DC9DB4AA927B1C295 /* TaskManagement/TaskManagementApp.swift in Sources */,
 				BB0102030405060708090012 /* TaskManagement/Core/Notification/PushNotificationManager.swift in Sources */,
 				BB0102030405060708090022 /* TaskManagement/Core/Logger/AppLogger.swift in Sources */,
+				DD0102030405060708090002 /* TaskManagement/Features/Mcp/McpViewModel.swift in Sources */,
+				DD0102030405060708090004 /* TaskManagement/Features/Mcp/McpSettingsView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

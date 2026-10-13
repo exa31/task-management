@@ -155,6 +155,42 @@ public enum L10n {
         public static var dangerZone: String { "settings.dangerZone".localized }
         public static var deleteAccount: String { "settings.deleteAccount".localized }
         public static var deleteWarning: String { "settings.deleteWarning".localized }
+        public static var mcpIntegration: String { "settings.mcpIntegration".localized }
+        public static var mcpIntegrationDesc: String { "settings.mcpIntegrationDesc".localized }
+    }
+
+    public enum Mcp {
+        public static var title: String { "mcp.title".localized }
+        public static var subtitle: String { "mcp.subtitle".localized }
+        public static var endpoint: String { "mcp.endpoint".localized }
+        public static var endpointCopied: String { "mcp.endpointCopied".localized }
+        public static var tokensTitle: String { "mcp.tokensTitle".localized }
+        public static var tokensSubtitle: String { "mcp.tokensSubtitle".localized }
+        public static var generateToken: String { "mcp.generateToken".localized }
+        public static var tokenNamePlaceholder: String { "mcp.tokenNamePlaceholder".localized }
+        public static var tokenCreatedTitle: String { "mcp.tokenCreatedTitle".localized }
+        public static var tokenCreatedWarning: String { "mcp.tokenCreatedWarning".localized }
+        public static var copyToken: String { "mcp.copyToken".localized }
+        public static var tokenCopied: String { "mcp.tokenCopied".localized }
+        public static var revoke: String { "mcp.revoke".localized }
+        public static var revokeConfirmTitle: String { "mcp.revokeConfirmTitle".localized }
+        public static func revokeConfirmMessage(name: String) -> String {
+            "mcp.revokeConfirmMessage".localized(with: name)
+        }
+        public static var noTokens: String { "mcp.noTokens".localized }
+        public static func lastUsed(date: String) -> String {
+            "mcp.lastUsed".localized(with: date)
+        }
+        public static var neverUsed: String { "mcp.neverUsed".localized }
+        public static func createdOn(date: String) -> String {
+            "mcp.createdOn".localized(with: date)
+        }
+        public static var configSnippets: String { "mcp.configSnippets".localized }
+        public static var copyConfig: String { "mcp.copyConfig".localized }
+        public static var configCopied: String { "mcp.configCopied".localized }
+        public static var antigravityConfig: String { "mcp.antigravityConfig".localized }
+        public static var cursorConfig: String { "mcp.cursorConfig".localized }
+        public static var claudeConfig: String { "mcp.claudeConfig".localized }
     }
 
     public enum General {

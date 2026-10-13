@@ -274,10 +274,13 @@ public struct ProfileView: View {
                     // 4. Appearance & Language (Dark Mode & Locale)
                     appearanceAndLanguageSection
 
-                    // 5. Danger Zone (Permanent Account Deletion)
+                    // 5. AI & MCP Integration
+                    mcpIntegrationSection
+
+                    // 6. Danger Zone (Permanent Account Deletion)
                     dangerZoneSection
 
-                    // 6. Sign Out Button
+                    // 7. Sign Out Button
                     Button(action: { showSignOutConfirmation = true }) {
                         HStack(spacing: 8) {
                             Image(systemName: "rectangle.portrait.and.arrow.right")
@@ -803,7 +806,50 @@ public struct ProfileView: View {
         )
     }
 
-    // MARK: - Section 5: Danger Zone
+    // MARK: - Section 5: AI & MCP Integration
+    private var mcpIntegrationSection: some View {
+        NavigationLink(destination: McpSettingsView()) {
+            HStack(spacing: 14) {
+                ZStack {
+                    RoundedRectangle(cornerRadius: 12, style: .continuous)
+                        .fill(AppColors.brandGradient)
+                        .frame(width: 42, height: 42)
+                        .shadow(color: AppColors.primary.opacity(0.3), radius: 4, x: 0, y: 2)
+
+                    Image(systemName: "cpu.fill")
+                        .font(.system(size: 18, weight: .semibold))
+                        .foregroundColor(.white)
+                }
+
+                VStack(alignment: .leading, spacing: 3) {
+                    Text(L10n.Settings.mcpIntegration)
+                        .font(.system(size: 15, weight: .bold))
+                        .foregroundColor(.primary)
+
+                    Text(L10n.Settings.mcpIntegrationDesc)
+                        .font(.system(size: 12))
+                        .foregroundColor(.secondary)
+                        .lineLimit(2)
+                }
+
+                Spacer()
+
+                Image(systemName: "chevron.right")
+                    .font(.system(size: 14, weight: .semibold))
+                    .foregroundColor(.secondary)
+            }
+            .padding(16)
+            .background(Color(.secondarySystemGroupedBackground))
+            .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+            .overlay(
+                RoundedRectangle(cornerRadius: 16, style: .continuous)
+                    .stroke(AppColors.primary.opacity(0.15), lineWidth: 1)
+            )
+        }
+        .buttonStyle(.plain)
+    }
+
+    // MARK: - Section 6: Danger Zone
     private var dangerZoneSection: some View {
         VStack(alignment: .leading, spacing: 12) {
             HStack(spacing: 8) {

@@ -1,11 +1,59 @@
 import Foundation
 
+/// Helper to safely read client configuration from environment variables, Info.plist, or optional bundled .env
+public enum EnvReader {
+    private static var cachedValues: [String: String]?
+
+    public static func value(for key: String) -> String? {
+        if let envVal = ProcessInfo.processInfo.environment[key], !envVal.isEmpty {
+            return envVal
+        }
+        if let infoVal = Bundle.main.object(forInfoDictionaryKey: key) as? String, !infoVal.isEmpty {
+            return infoVal
+        }
+        if cachedValues == nil {
+            cachedValues = loadDotEnv()
+        }
+        return cachedValues?[key]
+    }
+
+    private static func loadDotEnv() -> [String: String] {
+        var dict: [String: String] = [:]
+        guard let url = Bundle.main.url(forResource: ".env", withExtension: nil) ??
+                        Bundle.main.url(forResource: "env", withExtension: nil),
+              let content = try? String(contentsOf: url, encoding: .utf8) else {
+            return dict
+        }
+        for line in content.components(separatedBy: .newlines) {
+            let trimmed = line.trimmingCharacters(in: .whitespacesAndNewlines)
+            if trimmed.isEmpty || trimmed.hasPrefix("#") { continue }
+            let parts = trimmed.split(separator: "=", maxSplits: 1).map(String.init)
+            if parts.count == 2 {
+                let k = parts[0].trimmingCharacters(in: .whitespaces)
+                var v = parts[1].trimmingCharacters(in: .whitespaces)
+                if (v.hasPrefix("\"") && v.hasSuffix("\"")) || (v.hasPrefix("'") && v.hasSuffix("'")) {
+                    v = String(v.dropFirst().dropLast())
+                }
+                dict[k] = v
+            }
+        }
+        return dict
+    }
+}
+
 public enum AppEnvironment: String, CaseIterable, Sendable {
     case development = "Development"
     case staging = "Staging"
     case production = "Production"
 
     public static var current: AppEnvironment {
+        if let envStr = EnvReader.value(for: "ENVIRONMENT")?.lowercased() {
+            switch envStr {
+            case "staging": return .staging
+            case "production", "prod": return .production
+            default: return .development
+            }
+        }
         #if DEBUG
         return .development
         #else
@@ -16,14 +64,10 @@ public enum AppEnvironment: String, CaseIterable, Sendable {
     public static let bundleIdentifier = "cloud.eka-dev.task-hub"
 
     public var baseURL: String {
-        switch self {
-        case .development:
-            return "https://be-task-hub.eka-dev.cloud/api/v1"
-        case .staging:
-            return "https://be-task-hub.eka-dev.cloud/api/v1"
-        case .production:
-            return "https://be-task-hub.eka-dev.cloud/api/v1"
+        if let custom = EnvReader.value(for: "API_BASE_URL"), !custom.isEmpty {
+            return custom
         }
+        return "https://be-task-hub.eka-dev.cloud/api/v1"
     }
 
     public var sseURL: String {
@@ -31,12 +75,13 @@ public enum AppEnvironment: String, CaseIterable, Sendable {
     }
 
     public var googleClientID: String {
-        switch self {
-        case .development:
-            return "YOUR_DEV_IOS_GOOGLE_CLIENT_ID.apps.googleusercontent.com"
-        case .staging, .production:
-            return "YOUR_PROD_IOS_GOOGLE_CLIENT_ID.apps.googleusercontent.com"
+        if let custom = EnvReader.value(for: "GOOGLE_CLIENT_ID"), !custom.isEmpty {
+            return custom
         }
+        if let plistVal = Bundle.main.object(forInfoDictionaryKey: "GIDClientID") as? String, !plistVal.isEmpty {
+            return plistVal
+        }
+        return "897905079551-86q6g4ov6b966r2t7sbmqsmks5bea682.apps.googleusercontent.com"
     }
 }
 

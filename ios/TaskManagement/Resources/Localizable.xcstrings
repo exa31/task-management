@@ -1,6 +1,9 @@
 {
   "sourceLanguage" : "en",
   "strings" : {
+    "" : {
+
+    },
     "(%lld)" : {
 
     },
@@ -16,6 +19,9 @@
           }
         }
       }
+    },
+    "%@..." : {
+
     },
     "%lld" : {
 
@@ -80,9 +86,6 @@
     "ACTIONABLE" : {
 
     },
-    "Actionable (Bisa jadi tugas)" : {
-
-    },
     "Akun Terhubung (OAuth)" : {
 
     },
@@ -102,6 +105,9 @@
 
     },
     "Anda akan keluar dari sesi ini dan harus login kembali untuk mengakses data." : {
+
+    },
+    "Antigravity / VS Code" : {
 
     },
     "Apakah Anda yakin ingin memutuskan hubungan akun %@?" : {
@@ -140,31 +146,16 @@
     "Batal Fokus" : {
 
     },
-    "Belum Ada Catatan" : {
-
-    },
-    "Belum Ada Proyek" : {
-
-    },
     "Belum Ada Riwayat Log" : {
 
     },
     "Belum ada tugas di kategori ini" : {
 
     },
-    "Belum ada tugas di kategori ini. Buat tugas baru sekarang!" : {
-
-    },
     "Belum Terhubung" : {
 
     },
     "Buat Proyek Baru" : {
-
-    },
-    "Buat Proyek Pertama" : {
-
-    },
-    "Buat Tugas" : {
 
     },
     "Buat Tugas Baru" : {
@@ -176,16 +167,13 @@
     "Cari tugas, tag, atau deskripsi…" : {
 
     },
-    "Catatan & Ide" : {
-
-    },
-    "Catatan Baru" : {
-
-    },
-    "CATATAN PROGRES TERAKHIR" : {
-
-    },
     "Checklist Subtask" : {
+
+    },
+    "Claude Desktop" : {
+
+    },
+    "Cursor" : {
 
     },
     "Daftar Tugas" : {
@@ -267,13 +255,7 @@
     "Hapus Akun Permanen" : {
 
     },
-    "Hapus Akun Permanen?" : {
-
-    },
     "Hapus Proyek" : {
-
-    },
-    "Hapus Proyek \"%@\"" : {
 
     },
     "Hapus Proyek?" : {
@@ -288,9 +270,6 @@
     "In Progress" : {
 
     },
-    "Informasi Catatan" : {
-
-    },
     "Informasi Profil" : {
 
     },
@@ -300,16 +279,10 @@
     "Informasi Tugas" : {
 
     },
-    "Isi Catatan Markdown" : {
-
-    },
-    "Judul Catatan *" : {
+    "JSON-RPC 2.0 • Active" : {
 
     },
     "Judul Tugas *" : {
-
-    },
-    "Kelompokkan tugas ke dalam proyek untuk memudahkan pelacakan progres." : {
 
     },
     "Keluar (Sign Out)" : {
@@ -318,16 +291,10 @@
     "Keluar dari Akun" : {
 
     },
-    "Ketik \"DELETE\" untuk konfirmasi:" : {
-
-    },
     "Kirim" : {
 
     },
     "KNOWLEDGE" : {
-
-    },
-    "Knowledge (Wawasan)" : {
 
     },
     "Konfirmasi Keluar" : {
@@ -340,9 +307,6 @@
 
     },
     "Medium" : {
-
-    },
-    "Memuat catatan…" : {
 
     },
     "Memuat daftar proyek…" : {
@@ -487,9 +451,6 @@
     "Reset (%lld)" : {
 
     },
-    "Reset Semua Filter" : {
-
-    },
     "Review" : {
 
     },
@@ -603,43 +564,10 @@
     "Theme" : {
 
     },
-    "Tidak Ada Hasil" : {
-
-    },
-    "Tidak ada proyek yang sesuai dengan kata kunci \"%@\"." : {
-
-    },
-    "Tidak ada subtask checklist." : {
-
-    },
-    "Tidak Ada Tugas" : {
-
-    },
-    "Tidak Ada Tugas yang Sesuai" : {
-
-    },
-    "Tidak ada tugas yang sesuai dengan kriteria filter atau pencarian saat ini." : {
-
-    },
-    "Tindakan ini tidak dapat dibatalkan. Semua data tugas, proyek, dan catatan Anda akan dihapus selamanya." : {
-
-    },
-    "Tipe" : {
-
-    },
     "To Do" : {
 
     },
-    "Tugas yang terhubung dengan proyek ini tidak akan dihapus, tetapi relasi proyek akan dilepas." : {
-
-    },
-    "Tulis Catatan" : {
-
-    },
     "Tulis catatan progres atau update log..." : {
-
-    },
-    "Tulis ide, referensi pengetahuan, atau catatan actionable." : {
 
     },
     "Tutup" : {

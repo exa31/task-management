@@ -1,0 +1,12 @@
+Task Hub adalah aplikasi produktivitas modern yang dirancang untuk mengelola alur kerja harian, proyek tim, dan integrasi kecerdasan buatan (AI). Kelola tugas, pantau proyek jangka panjang, tulis catatan, dan atur pengingat dengan sinkronisasi instan real-time di seluruh perangkat Anda.
+
+FITUR UTAMA:
+• Manajemen Tugas Pintar: Kelola tugas berdasarkan status (Backlog, Todo, In Progress, Review, Done) serta prioritas (Urgent, High, Medium, Low).
+• Subtugas & Checklist: Bagi tugas besar menjadi langkah terukur dengan bilah persentase kemajuan interaktif.
+• Riwayat & Log Aktivitas: Catatan jejak audit lengkap untuk setiap pembaruan, perubahan status, dan catatan progres.
+• Organisasi Proyek: Kelompokkan pekerjaan dengan warna proyek kustom dan pantau milestone secara terstruktur.
+• Catatan Produktif: Simpan ide, ringkasan rapat, dan referensi kerja dalam satu wadah terpadu.
+• Sinkronisasi Real-time SSE: Pembaruan data otomatis seketika tanpa perlu memuat ulang halaman secara manual.
+• Integrasi AI & Model Context Protocol (MCP): Hubungkan asisten AI (Claude, Cursor, Antigravity IDE) langsung ke ruang kerja Anda menggunakan Personal Access Token yang aman.
+• Autentikasi Mudah & Aman: Masuk cepat menggunakan Sign in with Apple atau Google.
+• Desain Native Apple: Antarmuka elegan, animasi dinamis, serta dukungan Dark Mode penuh dengan standar modern SwiftUI.
