@@ -202,11 +202,16 @@ func (r *Router) registerNotesAndTasks(api fiber.Router) {
 
 	// GraphQL route (Playground on GET in browser, JSON execution on POST)
 	userRepo := usermodule.NewUserRepository(db)
+	reminderRepo := r.ReminderRepo
+	if reminderRepo == nil {
+		reminderRepo = reminder.NewRepository(db)
+	}
 	gqlSchema, err := graphqlmodule.BuildSchema(graphqlmodule.SchemaConfig{
-		UserRepo:    userRepo,
-		ProjectRepo: projectRepo,
-		TaskRepo:    taskRepo,
-		NoteRepo:    noteRepo,
+		UserRepo:     userRepo,
+		ProjectRepo:  projectRepo,
+		TaskRepo:     taskRepo,
+		NoteRepo:     noteRepo,
+		ReminderRepo: reminderRepo,
 	})
 	if err == nil {
 		gqlHandler := graphqlmodule.NewHandler(gqlSchema, r.JWTService)

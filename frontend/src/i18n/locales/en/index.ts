@@ -9,6 +9,7 @@ import { nav } from './nav'
 import { convertModal, noteModal, notes } from './notes'
 import { projects } from './projects'
 import { reminders } from './reminders'
+import { calendar } from './calendar'
 import { settings } from './settings'
 import { taskDrawer, taskModal, tasks } from './tasks'
 
@@ -23,6 +24,7 @@ export const en = {
   taskDrawer,
   projects,
   reminders,
+  calendar,
   notes,
   noteModal,
   convertModal,

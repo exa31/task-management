@@ -146,6 +146,7 @@ func (r *TriggerDueWarningRequest) TargetID() int64 {
 type TaskActivityResponse struct {
 	ID           int64           `json:"id" db:"id"`
 	TaskID       int64           `json:"task_id" db:"task_id"`
+	TaskTitle    string          `json:"task_title,omitempty" db:"task_title"`
 	UserID       string          `json:"user_id" db:"user_id"`
 	ActivityType string          `json:"activity_type" db:"activity_type"`
 	Description  string          `json:"description" db:"description"`

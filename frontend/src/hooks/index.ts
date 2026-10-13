@@ -2,6 +2,7 @@
  * Hooks Barrel Export
  */
 export * from './useAppleAuth'
+export * from './useCalendarQuery'
 export { useDarkMode } from './useDarkMode'
 export * from './useFcm'
 export * from './useGoogleAuth'

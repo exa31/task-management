@@ -41,6 +41,7 @@ type mockRepository struct {
 
 	createActivityFunc func(ctx context.Context, taskID int64, userID string, activityType string, description string, changes []byte) (*TaskActivityResponse, error)
 	findActivitiesFunc func(ctx context.Context, userID string, taskID int64) ([]TaskActivityResponse, error)
+	findActivitiesByUserFunc func(ctx context.Context, userID string, from, to *time.Time) ([]TaskActivityResponse, error)
 }
 
 func (m *mockRepository) Create(ctx context.Context, userID string, req CreateTaskRequest) (*TaskResponse, error) {
@@ -151,6 +152,13 @@ func (m *mockRepository) CreateActivity(ctx context.Context, taskID int64, userI
 func (m *mockRepository) FindActivitiesByTaskID(ctx context.Context, userID string, taskID int64) ([]TaskActivityResponse, error) {
 	if m.findActivitiesFunc != nil {
 		return m.findActivitiesFunc(ctx, userID, taskID)
+	}
+	return []TaskActivityResponse{}, nil
+}
+
+func (m *mockRepository) FindActivitiesByUser(ctx context.Context, userID string, from, to *time.Time) ([]TaskActivityResponse, error) {
+	if m.findActivitiesByUserFunc != nil {
+		return m.findActivitiesByUserFunc(ctx, userID, from, to)
 	}
 	return []TaskActivityResponse{}, nil
 }

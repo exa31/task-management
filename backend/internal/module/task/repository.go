@@ -29,6 +29,7 @@ type Repository interface {
 
 	CreateActivity(ctx context.Context, taskID int64, userID string, activityType string, description string, changes []byte) (*TaskActivityResponse, error)
 	FindActivitiesByTaskID(ctx context.Context, userID string, taskID int64) ([]TaskActivityResponse, error)
+	FindActivitiesByUser(ctx context.Context, userID string, from, to *time.Time) ([]TaskActivityResponse, error)
 
 	FindByIDSystem(ctx context.Context, id int64) (*TaskResponse, string, string, int, bool, error)
 	MarkDueWarningSent(ctx context.Context, id int64) error
@@ -651,6 +652,66 @@ func (r *repository) FindActivitiesByTaskID(ctx context.Context, userID string, 
 	res := make([]TaskActivityResponse, len(rows))
 	for i, row := range rows {
 		res[i] = row.toResponse()
+	}
+	return res, nil
+}
+
+func (r *repository) FindActivitiesByUser(ctx context.Context, userID string, from, to *time.Time) ([]TaskActivityResponse, error) {
+	query := `
+		SELECT ta.id, ta.task_id, COALESCE(t.title, '') AS task_title, ta.user_id, ta.activity_type, ta.description, ta.changes, ta.created_at
+		FROM task_activities ta
+		INNER JOIN tasks t ON t.id = ta.task_id
+		WHERE ta.user_id = $1
+	`
+	args := []interface{}{userID}
+	argIdx := 2
+
+	if from != nil {
+		query += fmt.Sprintf(" AND ta.created_at >= $%d", argIdx)
+		args = append(args, *from)
+		argIdx++
+	}
+	if to != nil {
+		query += fmt.Sprintf(" AND ta.created_at <= $%d", argIdx)
+		args = append(args, *to)
+		argIdx++
+	}
+
+	query += " ORDER BY ta.created_at DESC, ta.id DESC LIMIT 150"
+
+	type activityWithTitleEntity struct {
+		ID           int64     `db:"id"`
+		TaskID       int64     `db:"task_id"`
+		TaskTitle    string    `db:"task_title"`
+		UserID       string    `db:"user_id"`
+		ActivityType string    `db:"activity_type"`
+		Description  string    `db:"description"`
+		Changes      []byte    `db:"changes"`
+		CreatedAt    time.Time `db:"created_at"`
+	}
+
+	var rows []activityWithTitleEntity
+	err := r.exec(ctx).SelectContext(ctx, &rows, query, args...)
+	if err != nil {
+		return nil, fmt.Errorf("failed to list user activities: %w", err)
+	}
+
+	res := make([]TaskActivityResponse, len(rows))
+	for i, row := range rows {
+		raw := json.RawMessage(row.Changes)
+		if len(raw) == 0 {
+			raw = json.RawMessage("{}")
+		}
+		res[i] = TaskActivityResponse{
+			ID:           row.ID,
+			TaskID:       row.TaskID,
+			TaskTitle:    row.TaskTitle,
+			UserID:       row.UserID,
+			ActivityType: row.ActivityType,
+			Description:  row.Description,
+			Changes:      raw,
+			CreatedAt:    row.CreatedAt,
+		}
 	}
 	return res, nil
 }

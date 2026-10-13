@@ -24,6 +24,8 @@ function App() {
       pageTitle = t('nav.tasks')
     } else if (path.startsWith('/projects')) {
       pageTitle = t('nav.projects')
+    } else if (path.startsWith('/calendar')) {
+      pageTitle = t('nav.calendar')
     } else if (path.startsWith('/reminders')) {
       pageTitle = t('nav.reminders')
     } else if (path.startsWith('/notes')) {

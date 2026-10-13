@@ -108,6 +108,21 @@ export default function Sidebar({ isSidebarOpen }: SidebarProps) {
         </Link>
 
         <Link
+          to="/calendar"
+          className={`flex items-center justify-between px-3 py-2 rounded-lg text-xs font-medium transition-colors ${
+            isActive('/calendar')
+              ? 'bg-indigo-50 dark:bg-indigo-600/20 text-indigo-600 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-500/30'
+              : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-900'
+          }`}
+          title={t('nav.calendar')}
+        >
+          <div className="flex items-center gap-2.5">
+            <i className="pi pi-calendar text-sm" />
+            {isSidebarOpen && <span>{t('nav.calendar')}</span>}
+          </div>
+        </Link>
+
+        <Link
           to="/reminders"
           className={`flex items-center justify-between px-3 py-2 rounded-lg text-xs font-medium transition-colors ${
             isActive('/reminders')

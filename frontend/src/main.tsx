@@ -18,6 +18,7 @@ import Login from './pages/Login.tsx'
 import McpSettingsPage from './pages/McpSettingsPage.tsx'
 import NotesPage from './pages/NotesPage.tsx'
 import NotFound from './pages/NotFound.tsx'
+import CalendarPage from './pages/CalendarPage.tsx'
 import ProjectsPage from './pages/ProjectsPage.tsx'
 import RemindersPage from './pages/RemindersPage.tsx'
 import SettingsPage from './pages/SettingsPage.tsx'
@@ -57,6 +58,7 @@ const router = createBrowserRouter([
               { path: 'dashboard', element: <Dashboard /> },
               { path: 'tasks', element: <TasksPage /> },
               { path: 'projects', element: <ProjectsPage /> },
+              { path: 'calendar', element: <CalendarPage /> },
               { path: 'reminders', element: <RemindersPage /> },
               { path: 'notes', element: <NotesPage /> },
               { path: 'settings', element: <SettingsPage /> },
