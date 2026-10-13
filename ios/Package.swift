@@ -31,6 +31,9 @@ let package = Package(
                 "GoogleService-Info.plist",
                 "Resources/en.lproj",
                 "Resources/id.lproj"
+            ],
+            resources: [
+                .process("Resources")
             ]
         )
     ]

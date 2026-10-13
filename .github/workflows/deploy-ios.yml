@@ -39,7 +39,7 @@ jobs:
         run: sudo xcode-select -s /Applications/Xcode.app
 
       - name: SPM Build Check
-        run: swift build --package-path . --triple arm64-apple-ios17.0-simulator
+        run: swift build --package-path . --sdk $(xcrun --sdk iphonesimulator --show-sdk-path) --triple arm64-apple-ios17.0-simulator
 
   # ==========================================
   # 2. CD Deployment: Reusable Workflow from exa31/github-workflows
