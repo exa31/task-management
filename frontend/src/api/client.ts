@@ -159,6 +159,10 @@ axiosInstance.interceptors.response.use(
       }
     }
 
+    if (axios.isCancel(error)) {
+      return Promise.reject(error)
+    }
+
     return Promise.reject(parseApiError(error))
   }
 )
@@ -179,6 +183,9 @@ export const apiClient = {
       const unwrapped = res.data?.data !== undefined ? res.data.data : res.data
       return { data: unwrapped as T }
     } catch (err) {
+      if (axios.isCancel(err)) {
+        throw err
+      }
       throw parseApiError(err)
     }
   },
@@ -193,6 +200,9 @@ export const apiClient = {
       const unwrapped = res.data?.data !== undefined ? res.data.data : res.data
       return { data: unwrapped as T }
     } catch (err) {
+      if (axios.isCancel(err)) {
+        throw err
+      }
       throw parseApiError(err)
     }
   },
@@ -207,6 +217,9 @@ export const apiClient = {
       const unwrapped = res.data?.data !== undefined ? res.data.data : res.data
       return { data: unwrapped as T }
     } catch (err) {
+      if (axios.isCancel(err)) {
+        throw err
+      }
       throw parseApiError(err)
     }
   },
@@ -217,6 +230,9 @@ export const apiClient = {
       const unwrapped = res.data?.data !== undefined ? res.data.data : res.data
       return { data: unwrapped as T }
     } catch (err) {
+      if (axios.isCancel(err)) {
+        throw err
+      }
       throw parseApiError(err)
     }
   }

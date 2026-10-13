@@ -10,6 +10,6 @@ export const calendarKeys = {
 export const useCalendarGraphQL = (from?: string, to?: string) =>
   useQuery<CalendarGraphQLResponse>({
     queryKey: calendarKeys.range(from, to),
-    queryFn: () => fetchCalendarData(from, to),
+    queryFn: ({ signal }) => fetchCalendarData(from, to, signal),
     staleTime: 30 * 1000
   })

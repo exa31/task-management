@@ -7,6 +7,7 @@ import {
   calendarKeys,
   reminderKeys,
   useCalendarGraphQL,
+  useDebounce,
   useDismissReminder,
   useSnoozeReminder
 } from '@/hooks'
@@ -41,9 +42,12 @@ export const CalendarPage: React.FC = () => {
     }
   }, [currentDate])
 
+  // Debounce rapid month/week navigation (250ms), combined with AbortController for in-flight cancellation
+  const debouncedRange = useDebounce(queryRange, 250)
+
   const { data, isFetching, refetch } = useCalendarGraphQL(
-    queryRange.from,
-    queryRange.to
+    debouncedRange.from,
+    debouncedRange.to
   )
 
   const snoozeMutation = useSnoozeReminder()

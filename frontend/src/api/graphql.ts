@@ -86,11 +86,13 @@ export const CALENDAR_DATA_QUERY = `
 
 export async function fetchGraphQL<T = unknown>(
   query: string,
-  variables?: Record<string, unknown>
+  variables?: Record<string, unknown>,
+  signal?: AbortSignal
 ): Promise<T> {
   const response = await axiosInstance.post<{ data?: T; errors?: Array<{ message: string }> }>(
     '/api/v1/graphql',
-    { query, variables }
+    { query, variables },
+    { signal }
   )
 
   if (response.data.errors && response.data.errors.length > 0) {
@@ -101,6 +103,10 @@ export async function fetchGraphQL<T = unknown>(
   return response.data.data as T
 }
 
-export async function fetchCalendarData(from?: string, to?: string): Promise<CalendarGraphQLResponse> {
-  return fetchGraphQL<CalendarGraphQLResponse>(CALENDAR_DATA_QUERY, { from, to })
+export async function fetchCalendarData(
+  from?: string,
+  to?: string,
+  signal?: AbortSignal
+): Promise<CalendarGraphQLResponse> {
+  return fetchGraphQL<CalendarGraphQLResponse>(CALENDAR_DATA_QUERY, { from, to }, signal)
 }
