@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"golang/internal/module/note"
+	"golang/internal/module/reminder"
 	"golang/internal/module/task"
 
 	"github.com/jmoiron/sqlx"
@@ -212,5 +213,65 @@ func TestMCPService_HandleJSONRPC(t *testing.T) {
 	})
 	if callResp.Error != nil {
 		t.Fatalf("tool call failed: %v", callResp.Error)
+	}
+}
+
+type dummyReminderService struct {
+	reminder.Service
+	createFunc func(ctx context.Context, userID string, req reminder.CreateReminderRequest) (*reminder.ReminderResponse, error)
+	listFunc   func(ctx context.Context, userID string, filter reminder.ReminderFilter) ([]reminder.ReminderResponse, int, error)
+}
+
+func (d *dummyReminderService) Create(ctx context.Context, userID string, req reminder.CreateReminderRequest) (*reminder.ReminderResponse, error) {
+	if d.createFunc != nil {
+		return d.createFunc(ctx, userID, req)
+	}
+	return &reminder.ReminderResponse{ID: 101, Title: req.Title, RemindAt: req.RemindAt}, nil
+}
+
+func (d *dummyReminderService) List(ctx context.Context, userID string, filter reminder.ReminderFilter) ([]reminder.ReminderResponse, int, error) {
+	if d.listFunc != nil {
+		return d.listFunc(ctx, userID, filter)
+	}
+	return []reminder.ReminderResponse{{ID: 101, Title: "Standup"}}, 1, nil
+}
+
+func TestMCPService_ReminderTools(t *testing.T) {
+	ctx := context.Background()
+	testUserID := "user-uuid-123"
+
+	remSvc := &dummyReminderService{}
+	svc := NewService(&mockTokenRepository{}, &dummyNoteService{}, &dummyTaskService{}, &mockTransactor{})
+	svc.SetReminderService(remSvc)
+
+	// Test create_reminder
+	createResp := svc.HandleJSONRPC(ctx, testUserID, JSONRPCRequest{
+		Method: "tools/call",
+		ID:     1,
+		Params: map[string]interface{}{
+			"name": "create_reminder",
+			"arguments": map[string]interface{}{
+				"title":     "Team Sync",
+				"remind_at": "2026-10-15T09:00:00Z",
+			},
+		},
+	})
+	if createResp.Error != nil {
+		t.Fatalf("create_reminder failed: %v", createResp.Error)
+	}
+
+	// Test list_reminders
+	listResp := svc.HandleJSONRPC(ctx, testUserID, JSONRPCRequest{
+		Method: "tools/call",
+		ID:     2,
+		Params: map[string]interface{}{
+			"name": "list_reminders",
+			"arguments": map[string]interface{}{
+				"status": "pending",
+			},
+		},
+	})
+	if listResp.Error != nil {
+		t.Fatalf("list_reminders failed: %v", listResp.Error)
 	}
 }

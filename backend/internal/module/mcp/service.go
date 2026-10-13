@@ -3,12 +3,15 @@ package mcp
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"strconv"
 	"strings"
+	"time"
 
 	"golang/database"
 	"golang/internal/module/note"
+	"golang/internal/module/reminder"
 	"golang/internal/module/task"
 
 	"github.com/jmoiron/sqlx"
@@ -20,13 +23,15 @@ type Service interface {
 	DeleteToken(ctx context.Context, userID string, tokenID int64) error
 	ValidateToken(ctx context.Context, rawToken string) (string, error)
 	HandleJSONRPC(ctx context.Context, userID string, req JSONRPCRequest) JSONRPCResponse
+	SetReminderService(reminderService reminder.Service)
 }
 
 type service struct {
-	tokenRepo   TokenRepository
-	noteService note.Service
-	taskService task.Service
-	db          database.Transactor
+	tokenRepo       TokenRepository
+	noteService     note.Service
+	taskService     task.Service
+	reminderService reminder.Service
+	db              database.Transactor
 }
 
 func NewService(tokenRepo TokenRepository, noteService note.Service, taskService task.Service, db database.Transactor) Service {
@@ -36,6 +41,10 @@ func NewService(tokenRepo TokenRepository, noteService note.Service, taskService
 		taskService: taskService,
 		db:          db,
 	}
+}
+
+func (s *service) SetReminderService(reminderService reminder.Service) {
+	s.reminderService = reminderService
 }
 
 func (s *service) CreateToken(ctx context.Context, userID string, name string) (*GenerateTokenResponse, error) {
@@ -223,6 +232,35 @@ func (s *service) getToolDefinitions() []map[string]interface{} {
 			},
 		},
 		{
+			"name":        "update_task",
+			"description": "Update task details such as title, description, priority, due date, focus, and tags.",
+			"inputSchema": map[string]interface{}{
+				"type": "object",
+				"properties": map[string]interface{}{
+					"task_id":     map[string]interface{}{"type": "number", "description": "Task ID to update"},
+					"title":       map[string]interface{}{"type": "string", "description": "New title"},
+					"description": map[string]interface{}{"type": "string", "description": "New description"},
+					"status":      map[string]interface{}{"type": "string", "enum": []string{"backlog", "todo", "in_progress", "review", "done"}},
+					"priority":    map[string]interface{}{"type": "string", "enum": []string{"low", "medium", "high", "urgent"}},
+					"is_focus":    map[string]interface{}{"type": "boolean", "description": "Pin to Today's Focus"},
+					"due_date":    map[string]interface{}{"type": "string", "description": "Due date ISO-8601 string"},
+					"tags":        map[string]interface{}{"type": "array", "items": map[string]interface{}{"type": "string"}},
+				},
+				"required": []string{"task_id"},
+			},
+		},
+		{
+			"name":        "delete_task",
+			"description": "Permanently delete a task by ID.",
+			"inputSchema": map[string]interface{}{
+				"type": "object",
+				"properties": map[string]interface{}{
+					"task_id": map[string]interface{}{"type": "number", "description": "Task ID to delete"},
+				},
+				"required": []string{"task_id"},
+			},
+		},
+		{
 			"name":        "log_task_progress",
 			"description": "Record recent progress update on a task ('inget-inget udah sampai mana') and optionally mark subtasks done.",
 			"inputSchema": map[string]interface{}{
@@ -245,6 +283,67 @@ func (s *service) getToolDefinitions() []map[string]interface{} {
 					"task_id": map[string]interface{}{"type": "number", "description": "Task ID"},
 				},
 				"required": []string{"task_id"},
+			},
+		},
+		{
+			"name":        "create_reminder",
+			"description": "Create a reminder/notification alert for a deadline or event.",
+			"inputSchema": map[string]interface{}{
+				"type": "object",
+				"properties": map[string]interface{}{
+					"title":       map[string]interface{}{"type": "string", "description": "Reminder title/headline"},
+					"description": map[string]interface{}{"type": "string", "description": "Optional notes or details"},
+					"remind_at":    map[string]interface{}{"type": "string", "description": "Scheduled trigger timestamp (ISO-8601/RFC3339, e.g. '2026-10-15T09:00:00Z')"},
+					"task_id":      map[string]interface{}{"type": "number", "description": "Optional linked Task ID"},
+				},
+				"required": []string{"title", "remind_at"},
+			},
+		},
+		{
+			"name":        "list_reminders",
+			"description": "List reminders filtered by status (pending, sent, dismissed, all).",
+			"inputSchema": map[string]interface{}{
+				"type": "object",
+				"properties": map[string]interface{}{
+					"status":  map[string]interface{}{"type": "string", "enum": []string{"pending", "sent", "dismissed", "all"}, "description": "Filter by status (default: all)"},
+					"task_id": map[string]interface{}{"type": "number", "description": "Filter by associated task ID"},
+					"limit":   map[string]interface{}{"type": "number", "description": "Max results to return (default 50)"},
+					"offset":  map[string]interface{}{"type": "number", "description": "Pagination offset"},
+				},
+			},
+		},
+		{
+			"name":        "snooze_reminder",
+			"description": "Snooze/postpone an existing reminder by a specified number of minutes.",
+			"inputSchema": map[string]interface{}{
+				"type": "object",
+				"properties": map[string]interface{}{
+					"reminder_id": map[string]interface{}{"type": "number", "description": "Reminder ID"},
+					"minutes":     map[string]interface{}{"type": "number", "description": "Duration in minutes to postpone (default 15)"},
+				},
+				"required": []string{"reminder_id"},
+			},
+		},
+		{
+			"name":        "dismiss_reminder",
+			"description": "Dismiss/acknowledge a reminder so it no longer triggers notifications.",
+			"inputSchema": map[string]interface{}{
+				"type": "object",
+				"properties": map[string]interface{}{
+					"reminder_id": map[string]interface{}{"type": "number", "description": "Reminder ID"},
+				},
+				"required": []string{"reminder_id"},
+			},
+		},
+		{
+			"name":        "delete_reminder",
+			"description": "Permanently delete a reminder by ID.",
+			"inputSchema": map[string]interface{}{
+				"type": "object",
+				"properties": map[string]interface{}{
+					"reminder_id": map[string]interface{}{"type": "number", "description": "Reminder ID"},
+				},
+				"required": []string{"reminder_id"},
 			},
 		},
 	}
@@ -378,6 +477,68 @@ func (s *service) callTool(ctx context.Context, userID string, name string, args
 			Content: []MCPToolContent{{Type: "text", Text: string(jsonStr)}},
 		}, nil
 
+	case "update_task":
+		taskID := int64(parseInt(args["task_id"], 0))
+		var titlePtr, descPtr, statusPtr, priorityPtr *string
+		if t, ok := args["title"].(string); ok && t != "" {
+			titlePtr = &t
+		}
+		if d, ok := args["description"].(string); ok {
+			descPtr = &d
+		}
+		if s, ok := args["status"].(string); ok && s != "" {
+			statusPtr = &s
+		}
+		if p, ok := args["priority"].(string); ok && p != "" {
+			priorityPtr = &p
+		}
+		var dueTimePtr *time.Time
+		if dd, ok := args["due_date"].(string); ok && strings.TrimSpace(dd) != "" {
+			if t, err := parseDateTime(dd); err == nil {
+				dueTimePtr = &t
+			}
+		}
+		var isFocusPtr *bool
+		if f, ok := args["is_focus"].(bool); ok {
+			isFocusPtr = &f
+		}
+		var tagsPtr *[]string
+		if rawTags, ok := args["tags"]; ok && rawTags != nil {
+			parsed := parseStringSlice(rawTags)
+			tagsPtr = &parsed
+		}
+
+		res, err := s.taskService.Update(ctx, userID, taskID, task.UpdateTaskRequest{
+			Title:       titlePtr,
+			Description: descPtr,
+			Status:      statusPtr,
+			Priority:    priorityPtr,
+			DueDate:     dueTimePtr,
+			IsFocus:     isFocusPtr,
+			Tags:        tagsPtr,
+		})
+		if err != nil {
+			return nil, err
+		}
+		jsonStr, _ := json.MarshalIndent(res, "", "  ")
+		return &MCPToolResult{
+			Content: []MCPToolContent{{Type: "text", Text: string(jsonStr)}},
+		}, nil
+
+	case "delete_task":
+		taskID := int64(parseInt(args["task_id"], 0))
+		if err := s.taskService.Delete(ctx, userID, taskID); err != nil {
+			return nil, err
+		}
+		out := map[string]interface{}{
+			"message": "Task deleted successfully",
+			"task_id": taskID,
+		}
+		jsonStr, _ := json.MarshalIndent(out, "", "  ")
+		return &MCPToolResult{
+			Content: []MCPToolContent{{Type: "text", Text: string(jsonStr)}},
+		}, nil
+
 	case "log_task_progress":
 		taskID := int64(parseInt(args["task_id"], 0))
 		progressNote, _ := args["progress_note"].(string)
@@ -419,9 +580,141 @@ func (s *service) callTool(ctx context.Context, userID string, name string, args
 			Content: []MCPToolContent{{Type: "text", Text: string(jsonStr)}},
 		}, nil
 
+	case "create_reminder":
+		if s.reminderService == nil {
+			return nil, errors.New("reminder service is not available")
+		}
+		title, _ := args["title"].(string)
+		desc, _ := args["description"].(string)
+		remindAtStr, _ := args["remind_at"].(string)
+		var taskID *int64
+		if tid := parseInt(args["task_id"], 0); tid > 0 {
+			t64 := int64(tid)
+			taskID = &t64
+		}
+
+		remindAt, err := parseDateTime(remindAtStr)
+		if err != nil {
+			return nil, fmt.Errorf("invalid remind_at format: %v (expected ISO-8601/RFC3339, e.g. 2026-10-15T09:00:00Z)", err)
+		}
+
+		res, err := s.reminderService.Create(ctx, userID, reminder.CreateReminderRequest{
+			Title:       title,
+			Description: desc,
+			RemindAt:    remindAt,
+			TaskID:      taskID,
+		})
+		if err != nil {
+			return nil, err
+		}
+		jsonStr, _ := json.MarshalIndent(res, "", "  ")
+		return &MCPToolResult{
+			Content: []MCPToolContent{{Type: "text", Text: string(jsonStr)}},
+		}, nil
+
+	case "list_reminders":
+		if s.reminderService == nil {
+			return nil, errors.New("reminder service is not available")
+		}
+		status, _ := args["status"].(string)
+		limit := parseInt(args["limit"], 50)
+		offset := parseInt(args["offset"], 0)
+		var taskID *int64
+		if tid := parseInt(args["task_id"], 0); tid > 0 {
+			t64 := int64(tid)
+			taskID = &t64
+		}
+
+		res, total, err := s.reminderService.List(ctx, userID, reminder.ReminderFilter{
+			Status: status,
+			TaskID: taskID,
+			Limit:  limit,
+			Offset: offset,
+		})
+		if err != nil {
+			return nil, err
+		}
+		out := map[string]interface{}{
+			"total":     total,
+			"reminders": res,
+		}
+		jsonStr, _ := json.MarshalIndent(out, "", "  ")
+		return &MCPToolResult{
+			Content: []MCPToolContent{{Type: "text", Text: string(jsonStr)}},
+		}, nil
+
+	case "snooze_reminder":
+		if s.reminderService == nil {
+			return nil, errors.New("reminder service is not available")
+		}
+		reminderID := int64(parseInt(args["reminder_id"], 0))
+		minutes := parseInt(args["minutes"], 15)
+
+		res, err := s.reminderService.Snooze(ctx, userID, reminderID, reminder.SnoozeReminderRequest{
+			Minutes: minutes,
+		})
+		if err != nil {
+			return nil, err
+		}
+		jsonStr, _ := json.MarshalIndent(res, "", "  ")
+		return &MCPToolResult{
+			Content: []MCPToolContent{{Type: "text", Text: string(jsonStr)}},
+		}, nil
+
+	case "dismiss_reminder":
+		if s.reminderService == nil {
+			return nil, errors.New("reminder service is not available")
+		}
+		reminderID := int64(parseInt(args["reminder_id"], 0))
+
+		res, err := s.reminderService.Dismiss(ctx, userID, reminderID)
+		if err != nil {
+			return nil, err
+		}
+		jsonStr, _ := json.MarshalIndent(res, "", "  ")
+		return &MCPToolResult{
+			Content: []MCPToolContent{{Type: "text", Text: string(jsonStr)}},
+		}, nil
+
+	case "delete_reminder":
+		if s.reminderService == nil {
+			return nil, errors.New("reminder service is not available")
+		}
+		reminderID := int64(parseInt(args["reminder_id"], 0))
+
+		if err := s.reminderService.Delete(ctx, userID, reminderID); err != nil {
+			return nil, err
+		}
+		out := map[string]interface{}{
+			"message":     "Reminder deleted successfully",
+			"reminder_id": reminderID,
+		}
+		jsonStr, _ := json.MarshalIndent(out, "", "  ")
+		return &MCPToolResult{
+			Content: []MCPToolContent{{Type: "text", Text: string(jsonStr)}},
+		}, nil
+
 	default:
 		return nil, fmt.Errorf("unknown tool: %s", name)
 	}
+}
+
+func parseDateTime(s string) (time.Time, error) {
+	formats := []string{
+		time.RFC3339,
+		"2006-01-02T15:04:05Z07:00",
+		"2006-01-02T15:04:05",
+		"2006-01-02 15:04:05",
+		"2006-01-02 15:04",
+		"2006-01-02",
+	}
+	s = strings.TrimSpace(s)
+	for _, f := range formats {
+		if t, err := time.Parse(f, s); err == nil {
+			return t, nil
+		}
+	}
+	return time.Time{}, fmt.Errorf("unable to parse date %q", s)
 }
 
 func parseStringSlice(v interface{}) []string {

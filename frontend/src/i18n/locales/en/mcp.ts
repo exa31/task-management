@@ -6,6 +6,7 @@ export const mcp = {
   createIdeaNote: 'Capture ideas seamlessly during agent conversations',
   convertNoteToTask: 'Promote raw notes to actionable tasks with steps',
   createTaskAndList: 'Manage task pipelines with status & priorities',
+  manageReminders: 'Schedule and manage alerts & reminders',
   logProgress: 'Log automated work notes with timestamp history',
   newTokenCreated: 'New Token Created: "{name}"',
   copyWarning: 'Copy this token now! For your security, this raw secret will not be shown again.',

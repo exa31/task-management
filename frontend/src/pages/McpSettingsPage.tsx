@@ -149,6 +149,15 @@ export const McpSettingsPage: React.FC = () => {
               <div className="flex items-center gap-2">
                 <i className="pi pi-check text-[10px] text-emerald-500 dark:text-emerald-400" />
                 <span>
+                  <strong className="text-slate-900 dark:text-slate-100">
+                    create_reminder & list_reminders
+                  </strong>
+                  : {t('mcp.manageReminders')}
+                </span>
+              </div>
+              <div className="flex items-center gap-2">
+                <i className="pi pi-check text-[10px] text-emerald-500 dark:text-emerald-400" />
+                <span>
                   <strong className="text-slate-900 dark:text-slate-100">log_task_progress</strong>:{' '}
                   {t('mcp.logProgress')}
                 </span>

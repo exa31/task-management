@@ -138,6 +138,9 @@ func (r *Router) registerNotesAndTasks(api fiber.Router) {
 	// Initialize MCP
 	mcpTokenRepo := mcp.NewTokenRepository(db)
 	mcpService := mcp.NewService(mcpTokenRepo, noteService, taskService, r.DB)
+	if r.ReminderService != nil {
+		mcpService.SetReminderService(r.ReminderService)
+	}
 	mcpHandler := mcp.NewHandler(mcpService)
 
 	webhookSecret := ""

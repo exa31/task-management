@@ -6,6 +6,7 @@ export const mcp = {
   createIdeaNote: 'Catat inspirasi saat percakapan AI berlangsung',
   convertNoteToTask: 'Tingkatkan ide mentah menjadi tugas aktif',
   createTaskAndList: 'Buat dan telusuri daftar tugas',
+  manageReminders: 'Kelola pengingat dan alarm jadwal',
   logProgress: 'Catat riwayat kemajuan secara otomatis',
   newTokenCreated: 'Token Baru Dibuat: "{name}"',
   copyWarning:
