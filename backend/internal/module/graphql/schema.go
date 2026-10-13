@@ -80,10 +80,52 @@ func BuildSchema(cfg SchemaConfig) (graphql.Schema, error) {
 			"project_id":         &graphql.Field{Type: graphql.Int},
 			"project_name":       &graphql.Field{Type: graphql.String},
 			"project_color":      &graphql.Field{Type: graphql.String},
+			"project": &graphql.Field{
+				Type: projectType,
+				Resolve: func(p graphql.ResolveParams) (interface{}, error) {
+					if t, ok := p.Source.(task.TaskResponse); ok && t.ProjectID != nil {
+						name := ""
+						if t.ProjectName != nil {
+							name = *t.ProjectName
+						}
+						color := ""
+						if t.ProjectColor != nil {
+							color = *t.ProjectColor
+						}
+						return map[string]interface{}{
+							"id":    *t.ProjectID,
+							"name":  name,
+							"color": color,
+						}, nil
+					}
+					return nil, nil
+				},
+			},
+			"tags": &graphql.Field{
+				Type: graphql.NewList(graphql.String),
+				Resolve: func(p graphql.ResolveParams) (interface{}, error) {
+					if t, ok := p.Source.(task.TaskResponse); ok {
+						if t.Tags == nil {
+							return []string{}, nil
+						}
+						return t.Tags, nil
+					}
+					return []string{}, nil
+				},
+			},
 			"last_progress_note": &graphql.Field{Type: graphql.String},
 			"subtasks_count":     &graphql.Field{Type: graphql.Int},
 			"subtasks_completed": &graphql.Field{Type: graphql.Int},
 			"progress_percent":   &graphql.Field{Type: graphql.Int},
+			"progress": &graphql.Field{
+				Type: graphql.Int,
+				Resolve: func(p graphql.ResolveParams) (interface{}, error) {
+					if t, ok := p.Source.(task.TaskResponse); ok {
+						return t.ProgressPercent, nil
+					}
+					return 0, nil
+				},
+			},
 			"subtasks":           &graphql.Field{Type: graphql.NewList(subtaskType)},
 			"created_at":         &graphql.Field{Type: graphql.String},
 		},

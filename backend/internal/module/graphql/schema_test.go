@@ -23,8 +23,21 @@ type dummyTaskRepo struct {
 }
 
 func (d *dummyTaskRepo) FindAll(ctx context.Context, userID string, filter taskmodule.TaskFilter) ([]taskmodule.TaskResponse, error) {
+	pID := int64(10)
+	pName := "Project Alpha"
+	pColor := "#3B82F6"
 	return []taskmodule.TaskResponse{
-		{ID: 101, UserID: userID, Title: "Test Task 1", Status: "todo"},
+		{
+			ID:              101,
+			UserID:          userID,
+			Title:           "Test Task 1",
+			Status:          "todo",
+			ProgressPercent: 50,
+			Tags:            []string{"backend", "urgent"},
+			ProjectID:       &pID,
+			ProjectName:     &pName,
+			ProjectColor:    &pColor,
+		},
 	}, nil
 }
 
@@ -66,6 +79,13 @@ func TestBuildSchema_CalendarQuery(t *testing.T) {
 				id
 				title
 				status
+				progress
+				tags
+				project {
+					id
+					name
+					color
+				}
 			}
 			reminders {
 				id
@@ -104,6 +124,19 @@ func TestBuildSchema_CalendarQuery(t *testing.T) {
 	tasks, ok := data["tasks"].([]interface{})
 	if !ok || len(tasks) != 1 {
 		t.Fatalf("expected 1 task, got %v", tasks)
+	}
+
+	firstTask := tasks[0].(map[string]interface{})
+	if firstTask["progress"].(int) != 50 {
+		t.Fatalf("expected progress 50, got %v", firstTask["progress"])
+	}
+	projectMap, ok := firstTask["project"].(map[string]interface{})
+	if !ok || projectMap["name"] != "Project Alpha" {
+		t.Fatalf("expected project name 'Project Alpha', got %v", firstTask["project"])
+	}
+	tagsList, ok := firstTask["tags"].([]interface{})
+	if !ok || len(tagsList) != 2 {
+		t.Fatalf("expected 2 tags, got %v", firstTask["tags"])
 	}
 
 	reminders, ok := data["reminders"].([]interface{})
