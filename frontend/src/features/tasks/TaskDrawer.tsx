@@ -1,5 +1,5 @@
 import { Calendar } from 'primereact/calendar'
-import React, { useEffect, useState } from 'react'
+import React, { useCallback, useEffect, useRef, useState } from 'react'
 
 import { getLocalizedErrorMessage } from '@/api'
 import { confirmDialog } from '@/components'
@@ -49,8 +49,11 @@ export const TaskDrawer: React.FC = () => {
   const [newProgressNote, setNewProgressNote] = useState('')
   const [errorMsg, setErrorMsg] = useState<string | null>(null)
 
+  const prevTaskIdRef = useRef<number | null>(null)
+
   useEffect(() => {
-    if (task) {
+    if (task && task.id !== prevTaskIdRef.current) {
+      prevTaskIdRef.current = task.id
       setTitle(task.title)
       setTitleError(null)
       setErrorMsg(null)
@@ -63,18 +66,30 @@ export const TaskDrawer: React.FC = () => {
     }
   }, [task])
 
-  if (!isDrawerOpen || !task) return null
+  const taskStatus = task?.status
+  const taskPriority = task?.priority
+  const taskDueDate = task?.due_date
+  const taskProjectId = task?.project_id
+
+  useEffect(() => {
+    if (taskStatus !== undefined) setStatus(taskStatus)
+    if (taskPriority !== undefined) setPriority(taskPriority)
+    setDueDate(taskDueDate ? new Date(taskDueDate) : null)
+    setProjectId(taskProjectId ?? null)
+  }, [taskStatus, taskPriority, taskDueDate, taskProjectId])
 
   const isDirty =
-    title.trim() !== task.title ||
-    description !== (task.description || '') ||
-    status !== task.status ||
-    priority !== task.priority ||
-    (dueDate ? dueDate.toISOString() : null) !==
-      (task.due_date ? new Date(task.due_date).toISOString() : null) ||
-    projectId !== (task.project_id ?? null)
+    Boolean(task) &&
+    (title.trim() !== task!.title ||
+      description !== (task!.description || '') ||
+      status !== task!.status ||
+      priority !== task!.priority ||
+      (dueDate ? dueDate.toISOString() : null) !==
+        (task!.due_date ? new Date(task!.due_date).toISOString() : null) ||
+      projectId !== (task!.project_id ?? null))
 
   const handleResetMain = () => {
+    if (!task) return
     setTitle(task.title)
     setTitleError(null)
     setErrorMsg(null)
@@ -85,8 +100,145 @@ export const TaskDrawer: React.FC = () => {
     setProjectId(task.project_id ?? null)
   }
 
+  const handleStatusChange = async (newStatus: TaskStatus) => {
+    if (!task) return
+    setStatus(newStatus)
+    setErrorMsg(null)
+    try {
+      await updateTaskMutation.mutateAsync({
+        id: task.id,
+        payload: { status: newStatus }
+      })
+    } catch (err) {
+      setErrorMsg(getLocalizedErrorMessage(err, t))
+      setStatus(task.status)
+    }
+  }
+
+  const handlePriorityChange = async (newPriority: TaskPriority) => {
+    if (!task) return
+    setPriority(newPriority)
+    setErrorMsg(null)
+    try {
+      await updateTaskMutation.mutateAsync({
+        id: task.id,
+        payload: { priority: newPriority }
+      })
+    } catch (err) {
+      setErrorMsg(getLocalizedErrorMessage(err, t))
+      setPriority(task.priority)
+    }
+  }
+
+  const handleProjectChange = async (newProjectId: number | null) => {
+    if (!task) return
+    setProjectId(newProjectId)
+    setErrorMsg(null)
+    try {
+      await updateTaskMutation.mutateAsync({
+        id: task.id,
+        payload: { project_id: newProjectId }
+      })
+    } catch (err) {
+      setErrorMsg(getLocalizedErrorMessage(err, t))
+      setProjectId(task.project_id ?? null)
+    }
+  }
+
+  const handleDueDateChange = async (newDate: Date | null) => {
+    if (!task) return
+    setDueDate(newDate)
+    setErrorMsg(null)
+    try {
+      await updateTaskMutation.mutateAsync({
+        id: task.id,
+        payload: { due_date: newDate ? newDate.toISOString() : null }
+      })
+    } catch (err) {
+      setErrorMsg(getLocalizedErrorMessage(err, t))
+      setDueDate(task.due_date ? new Date(task.due_date) : null)
+    }
+  }
+
+  const handleTitleBlur = async () => {
+    if (!task) return
+    const trimmed = title.trim()
+    if (!trimmed) {
+      setTitleError(t('taskDrawer.titleRequired'))
+      return
+    }
+    setTitleError(null)
+    if (trimmed === task.title) return
+    setErrorMsg(null)
+    try {
+      await updateTaskMutation.mutateAsync({
+        id: task.id,
+        payload: { title: trimmed }
+      })
+    } catch (err) {
+      setErrorMsg(getLocalizedErrorMessage(err, t))
+    }
+  }
+
+  const handleDescriptionBlur = async () => {
+    if (!task) return
+    if (description === (task.description || '')) return
+    setErrorMsg(null)
+    try {
+      await updateTaskMutation.mutateAsync({
+        id: task.id,
+        payload: { description }
+      })
+    } catch (err) {
+      setErrorMsg(getLocalizedErrorMessage(err, t))
+    }
+  }
+
+  const handleClose = useCallback(async () => {
+    if (task && isDirty && title.trim()) {
+      try {
+        await updateTaskMutation.mutateAsync({
+          id: task.id,
+          payload: {
+            title: title.trim(),
+            description,
+            status,
+            priority,
+            due_date: dueDate ? dueDate.toISOString() : null,
+            project_id: projectId
+          }
+        })
+      } catch {
+        // Continue closing drawer even if auto-save fails
+      }
+    }
+    closeDrawer()
+  }, [
+    task,
+    isDirty,
+    title,
+    description,
+    status,
+    priority,
+    dueDate,
+    projectId,
+    updateTaskMutation,
+    closeDrawer
+  ])
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && isDrawerOpen) {
+        handleClose()
+      }
+    }
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [isDrawerOpen, handleClose])
+
   const handleSubmitMain = async (e?: React.FormEvent) => {
     if (e) e.preventDefault()
+    if (!task) return
     if (!title.trim()) {
       setTitleError(t('taskDrawer.titleRequired'))
       return
@@ -112,7 +264,7 @@ export const TaskDrawer: React.FC = () => {
 
   const handleAddSubtaskSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!newSubtaskTitle.trim()) return
+    if (!task || !newSubtaskTitle.trim()) return
     await addSubtaskMutation.mutateAsync({
       taskId: task.id,
       title: newSubtaskTitle.trim()
@@ -122,7 +274,7 @@ export const TaskDrawer: React.FC = () => {
 
   const handleLogProgressSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!newProgressNote.trim()) return
+    if (!task || !newProgressNote.trim()) return
     await logProgressMutation.mutateAsync({
       id: task.id,
       payload: {
@@ -134,6 +286,7 @@ export const TaskDrawer: React.FC = () => {
   }
 
   const handleDelete = () => {
+    if (!task) return
     confirmDialog({
       header: t('taskDrawer.deleteTaskConfirmHeader'),
       message: t('taskDrawer.deleteTaskConfirmMessage'),
@@ -150,6 +303,7 @@ export const TaskDrawer: React.FC = () => {
   }
 
   const handleDeleteSubtask = (subtaskId: number, subtaskTitle: string) => {
+    if (!task) return
     confirmDialog({
       header: t('taskDrawer.deleteSubtaskConfirmHeader'),
       message: t('taskDrawer.deleteSubtaskConfirmMessage', { title: subtaskTitle }),
@@ -167,11 +321,13 @@ export const TaskDrawer: React.FC = () => {
     })
   }
 
+  if (!isDrawerOpen || !task) return null
+
   return (
     <div className="fixed inset-0 z-50 overflow-hidden">
       {/* Backdrop */}
       <div
-        onClick={closeDrawer}
+        onClick={handleClose}
         className="fixed inset-0 bg-slate-950/40 dark:bg-slate-950/70 backdrop-blur-sm transition-opacity cursor-pointer"
       />
 
@@ -214,7 +370,7 @@ export const TaskDrawer: React.FC = () => {
               </button>
               <button
                 type="button"
-                onClick={closeDrawer}
+                onClick={handleClose}
                 className="p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 cursor-pointer transition-colors"
                 data-pr-tooltip={t('taskDrawer.closeDrawerTooltip')}
               >
@@ -280,7 +436,7 @@ export const TaskDrawer: React.FC = () => {
                     </label>
                     <select
                       value={status}
-                      onChange={(e) => setStatus(e.target.value as TaskStatus)}
+                      onChange={(e) => handleStatusChange(e.target.value as TaskStatus)}
                       className="w-full rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-2.5 py-1.5 text-xs text-slate-800 dark:text-slate-200 focus:border-indigo-500 focus:outline-none transition-colors"
                     >
                       <option
@@ -322,7 +478,7 @@ export const TaskDrawer: React.FC = () => {
                     </label>
                     <select
                       value={priority}
-                      onChange={(e) => setPriority(e.target.value as TaskPriority)}
+                      onChange={(e) => handlePriorityChange(e.target.value as TaskPriority)}
                       className="w-full rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-2.5 py-1.5 text-xs text-slate-800 dark:text-slate-200 focus:border-indigo-500 focus:outline-none transition-colors"
                     >
                       <option
@@ -358,7 +514,7 @@ export const TaskDrawer: React.FC = () => {
                     </label>
                     <Calendar
                       value={dueDate}
-                      onChange={(e) => setDueDate((e.value as Date) || null)}
+                      onChange={(e) => handleDueDateChange((e.value as Date) || null)}
                       showTime
                       hourFormat="24"
                       showIcon
@@ -380,7 +536,7 @@ export const TaskDrawer: React.FC = () => {
                       value={projectId !== null && projectId !== undefined ? String(projectId) : ''}
                       onChange={(e) => {
                         const next = e.target.value ? parseInt(e.target.value, 10) : null
-                        setProjectId(next)
+                        handleProjectChange(next)
                       }}
                       className="w-full rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-2.5 py-1.5 text-xs text-slate-800 dark:text-slate-200 focus:border-indigo-500 focus:outline-none transition-colors"
                     >
@@ -416,6 +572,12 @@ export const TaskDrawer: React.FC = () => {
                       setTitle(e.target.value)
                       if (e.target.value.trim()) setTitleError(null)
                     }}
+                    onBlur={handleTitleBlur}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') {
+                        e.currentTarget.blur()
+                      }
+                    }}
                     placeholder={`${t('taskDrawer.titleLabel')}...`}
                     className={`w-full text-base font-semibold text-slate-900 dark:text-slate-100 bg-transparent border-b ${
                       titleError
@@ -432,6 +594,7 @@ export const TaskDrawer: React.FC = () => {
                     rows={3}
                     value={description}
                     onChange={(e) => setDescription(e.target.value)}
+                    onBlur={handleDescriptionBlur}
                     placeholder={t('taskDrawer.descriptionPlaceholder')}
                     className="w-full mt-2 text-xs text-slate-700 dark:text-slate-300 bg-transparent border-none focus:ring-0 p-0 placeholder-slate-400 dark:placeholder-slate-600 resize-none focus:outline-none"
                   />
@@ -597,15 +760,22 @@ export const TaskDrawer: React.FC = () => {
           {/* Sticky Footer: Submit Changes */}
           <div className="p-4 border-t border-slate-200 dark:border-slate-800 bg-slate-50/95 dark:bg-slate-950/90 backdrop-blur-sm flex items-center justify-between gap-3 shrink-0">
             <div className="flex items-center gap-2 min-w-0">
-              {isDirty ? (
+              {updateTaskMutation.isPending ? (
+                <span className="flex items-center gap-1.5 text-xs font-medium text-indigo-600 dark:text-indigo-400">
+                  <i className="pi pi-spin pi-spinner text-xs" />
+                  <span className="truncate">{t('taskDrawer.savingChanges')}</span>
+                </span>
+              ) : isDirty ? (
                 <span className="flex items-center gap-1.5 text-xs font-medium text-amber-600 dark:text-amber-400">
                   <span className="w-2 h-2 rounded-full bg-amber-500 animate-pulse shrink-0" />
                   <span className="truncate">{t('taskDrawer.unsavedChanges')}</span>
                 </span>
               ) : (
-                <span className="text-xs text-slate-500 dark:text-slate-400 flex items-center gap-1">
-                  <i className="pi pi-check text-[10px] text-emerald-500" />
-                  <span className="truncate">{t('taskDrawer.taskIdBadge', { id: task.id })}</span>
+                <span className="text-xs text-emerald-600 dark:text-emerald-400 flex items-center gap-1.5 font-medium">
+                  <i className="pi pi-check-circle text-xs text-emerald-500" />
+                  <span className="truncate">
+                    {t('taskDrawer.saved')} • {t('taskDrawer.taskIdBadge', { id: task.id })}
+                  </span>
                 </span>
               )}
             </div>

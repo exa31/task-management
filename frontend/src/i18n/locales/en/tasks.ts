@@ -85,6 +85,7 @@ export const taskDrawer = {
   deleteTask: 'Delete task',
   saveChanges: 'Save Changes',
   savingChanges: 'Saving...',
+  saved: 'Saved',
   unsavedChanges: 'Unsaved changes',
   resetChanges: 'Reset',
   pinFocusTooltip: 'Pin task to focus horizon',

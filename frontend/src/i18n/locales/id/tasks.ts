@@ -85,6 +85,7 @@ export const taskDrawer = {
   deleteTask: 'Hapus tugas',
   saveChanges: 'Simpan Perubahan',
   savingChanges: 'Menyimpan...',
+  saved: 'Tersimpan',
   unsavedChanges: 'Perubahan belum disimpan',
   resetChanges: 'Reset',
   pinFocusTooltip: 'Sematkan ke Horizon Fokus',
