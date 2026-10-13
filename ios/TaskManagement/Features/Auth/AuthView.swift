@@ -127,18 +127,32 @@ public struct AuthView: View {
                         // Sign-In Actions
                         VStack(spacing: 14) {
                             // Sign in with Apple Button
-                            SignInWithAppleButton(
-                                onRequest: { request in
-                                    request.requestedScopes = [.fullName, .email]
-                                },
-                                onCompletion: { result in
-                                    viewModel.handleAppleSignIn(result: result)
+                            ZStack {
+                                SignInWithAppleButton(
+                                    onRequest: { request in
+                                        request.requestedScopes = [.fullName, .email]
+                                    },
+                                    onCompletion: { result in
+                                        viewModel.handleAppleSignIn(result: result)
+                                    }
+                                )
+                                .signInWithAppleButtonStyle(.black)
+                                .frame(height: 52)
+                                .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+                                .shadow(color: Color.black.opacity(0.12), radius: 6, x: 0, y: 3)
+                                .environment(\.locale, Locale(identifier: I18n.shared.currentLanguage.rawValue))
+                                .disabled(viewModel.isLoading)
+
+                                if viewModel.isLoading {
+                                    RoundedRectangle(cornerRadius: 14, style: .continuous)
+                                        .fill(Color.black.opacity(0.65))
+                                        .frame(height: 52)
+                                        .overlay(
+                                            ProgressView()
+                                                .tint(.white)
+                                        )
                                 }
-                            )
-                            .signInWithAppleButtonStyle(.black)
-                            .frame(height: 52)
-                            .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
-                            .shadow(color: Color.black.opacity(0.12), radius: 6, x: 0, y: 3)
+                            }
 
                             // Google Sign-In Button
                             Button(action: {

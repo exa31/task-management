@@ -284,7 +284,7 @@ public struct ProfileView: View {
                     Button(action: { showSignOutConfirmation = true }) {
                         HStack(spacing: 8) {
                             Image(systemName: "rectangle.portrait.and.arrow.right")
-                            Text("Keluar (Sign Out)")
+                            Text(L10n.Settings.signOut)
                         }
                         .font(.system(size: 15, weight: .semibold))
                         .foregroundColor(.secondary)
@@ -305,31 +305,31 @@ public struct ProfileView: View {
                 await viewModel.loadProfile()
             }
             .confirmationDialog(
-                "Putuskan Akun?",
+                L10n.Settings.disconnectDialogTitle,
                 isPresented: $showUnbindConfirmation,
                 titleVisibility: .visible,
                 presenting: providerToUnbind
             ) { provider in
-                Button("Putuskan \(provider.capitalized)", role: .destructive) {
+                Button(L10n.Settings.disconnectConfirmButton(provider: provider.capitalized), role: .destructive) {
                     Task {
                         _ = await viewModel.unbindOAuth(provider: provider)
                     }
                 }
-                Button("Batal", role: .cancel) {}
+                Button(L10n.General.cancel, role: .cancel) {}
             } message: { provider in
-                Text("Apakah Anda yakin ingin memutuskan hubungan akun \(provider.capitalized)?")
+                Text(L10n.Settings.disconnectDialogMessage(provider: provider.capitalized))
             }
             .confirmationDialog(
-                "Konfirmasi Keluar",
+                L10n.Settings.signOutDialogTitle,
                 isPresented: $showSignOutConfirmation,
                 titleVisibility: .visible
             ) {
-                Button("Keluar dari Akun", role: .destructive) {
+                Button(L10n.Settings.signOutConfirmButton, role: .destructive) {
                     onSignOut()
                 }
-                Button("Batal", role: .cancel) {}
+                Button(L10n.General.cancel, role: .cancel) {}
             } message: {
-                Text("Anda akan keluar dari sesi ini dan harus login kembali untuk mengakses data.")
+                Text(L10n.Settings.signOutDialogMessage)
             }
             .sheet(isPresented: $showDeleteModal) {
                 deleteAccountModalView
@@ -347,7 +347,7 @@ public struct ProfileView: View {
     // MARK: - Section 1: Profile Information
     private var profileInformationSection: some View {
         VStack(alignment: .leading, spacing: 16) {
-            Label("Informasi Profil", systemImage: "person.crop.circle")
+            Label(L10n.Settings.profileInfo, systemImage: "person.crop.circle")
                 .font(.system(size: 16, weight: .bold))
                 .foregroundColor(.primary)
 
@@ -412,7 +412,7 @@ public struct ProfileView: View {
                         HStack(spacing: 4) {
                             Image(systemName: "arrow.triangle.2.circlepath")
                                 .font(.system(size: 10))
-                            Text("Ganti Foto Profil")
+                            Text(L10n.Settings.changeAvatar)
                                 .font(.system(size: 11, weight: .semibold))
                         }
                         .padding(.horizontal, 8)
@@ -431,11 +431,11 @@ public struct ProfileView: View {
 
             // Name Edit Field
             VStack(alignment: .leading, spacing: 6) {
-                Text("Nama Lengkap")
+                Text(L10n.Settings.fullName)
                     .font(.system(size: 12, weight: .medium))
                     .foregroundColor(.secondary)
 
-                TextField("Nama Lengkap", text: $viewModel.name)
+                TextField(L10n.Settings.fullName, text: $viewModel.name)
                     .font(.system(size: 14))
                     .padding(10)
                     .background(Color(.tertiarySystemGroupedBackground))
@@ -445,7 +445,7 @@ public struct ProfileView: View {
             // Email Field (Read Only)
             VStack(alignment: .leading, spacing: 6) {
                 HStack {
-                    Text("Alamat Email")
+                    Text(L10n.Settings.emailAddress)
                         .font(.system(size: 12, weight: .medium))
                         .foregroundColor(.secondary)
                     Spacer()
@@ -475,7 +475,7 @@ public struct ProfileView: View {
                     } else {
                         Image(systemName: "checkmark")
                             .font(.system(size: 13, weight: .bold))
-                        Text("Simpan Perubahan Profil")
+                        Text(L10n.Settings.saveProfile)
                             .font(.system(size: 14, weight: .semibold))
                     }
                 }
@@ -517,10 +517,10 @@ public struct ProfileView: View {
     private var linkedAccountsSection: some View {
         VStack(alignment: .leading, spacing: 14) {
             VStack(alignment: .leading, spacing: 2) {
-                Label("Akun Terhubung (OAuth)", systemImage: "link")
+                Label(L10n.Settings.linkedAccounts, systemImage: "link")
                     .font(.system(size: 16, weight: .bold))
                     .foregroundColor(.primary)
-                Text("Hubungkan akun Anda untuk kemudahan masuk multi-platform.")
+                Text(L10n.Settings.linkedAccountsDesc)
                     .font(.system(size: 12))
                     .foregroundColor(.secondary)
             }
@@ -543,7 +543,7 @@ public struct ProfileView: View {
                         Circle()
                             .fill(viewModel.googleBound ? AppColors.statusDone : Color.secondary)
                             .frame(width: 6, height: 6)
-                        Text(viewModel.googleBound ? "Terhubung" : "Belum Terhubung")
+                        Text(viewModel.googleBound ? L10n.Settings.connected : L10n.Settings.notConnected)
                             .font(.system(size: 12))
                             .foregroundColor(.secondary)
                     }
@@ -552,7 +552,7 @@ public struct ProfileView: View {
                 Spacer()
 
                 if viewModel.googleBound {
-                    Button("Putuskan") {
+                    Button(L10n.Settings.disconnect) {
                         providerToUnbind = "google"
                         showUnbindConfirmation = true
                     }
@@ -586,7 +586,7 @@ public struct ProfileView: View {
                         Circle()
                             .fill(viewModel.appleBound ? AppColors.statusDone : Color.secondary)
                             .frame(width: 6, height: 6)
-                        Text(viewModel.appleBound ? "Terhubung" : "Belum Terhubung")
+                        Text(viewModel.appleBound ? L10n.Settings.connected : L10n.Settings.notConnected)
                             .font(.system(size: 12))
                             .foregroundColor(.secondary)
                     }
@@ -595,7 +595,7 @@ public struct ProfileView: View {
                 Spacer()
 
                 if viewModel.appleBound {
-                    Button("Putuskan") {
+                    Button(L10n.Settings.disconnect) {
                         providerToUnbind = "apple"
                         showUnbindConfirmation = true
                     }
@@ -633,21 +633,21 @@ public struct ProfileView: View {
     private var notificationPreferencesSection: some View {
         VStack(alignment: .leading, spacing: 16) {
             VStack(alignment: .leading, spacing: 2) {
-                Label("Preferensi Notifikasi & Waktu", systemImage: "bell.badge.fill")
+                Label(L10n.Settings.notifications, systemImage: "bell.badge.fill")
                     .font(.system(size: 16, weight: .bold))
                     .foregroundColor(.primary)
-                Text("Atur zona waktu reminder dan toleransi peringatan sebelum tugas jatuh tempo.")
+                Text(L10n.Settings.notificationsDesc)
                     .font(.system(size: 12))
                     .foregroundColor(.secondary)
             }
 
             // Timezone Picker
             VStack(alignment: .leading, spacing: 6) {
-                Text("Zona Waktu (Timezone)")
+                Text(L10n.Settings.timezone)
                     .font(.system(size: 12, weight: .medium))
                     .foregroundColor(.secondary)
 
-                Picker("Zona Waktu", selection: $viewModel.timezone) {
+                Picker(L10n.Settings.timezone, selection: $viewModel.timezone) {
                     Text("Asia/Jakarta (WIB, UTC+7)").tag("Asia/Jakarta")
                     Text("Asia/Makassar (WITA, UTC+8)").tag("Asia/Makassar")
                     Text("Asia/Jayapura (WIT, UTC+9)").tag("Asia/Jayapura")
@@ -667,17 +667,17 @@ public struct ProfileView: View {
 
             // Due Date Threshold Picker
             VStack(alignment: .leading, spacing: 6) {
-                Text("Ambang Peringatan Batas Waktu")
+                Text(L10n.Settings.threshold)
                     .font(.system(size: 12, weight: .medium))
                     .foregroundColor(.secondary)
 
-                Picker("Ambang Peringatan", selection: $viewModel.threshold) {
-                    Text("15 Menit sebelum jatuh tempo").tag(15)
-                    Text("1 Jam sebelum jatuh tempo").tag(60)
-                    Text("3 Jam sebelum jatuh tempo").tag(180)
-                    Text("12 Jam sebelum jatuh tempo").tag(720)
-                    Text("24 Jam (1 hari) sebelum jatuh tempo").tag(1440)
-                    Text("48 Jam (2 hari) sebelum jatuh tempo").tag(2880)
+                Picker(L10n.Settings.threshold, selection: $viewModel.threshold) {
+                    Text(L10n.Settings.threshold15m).tag(15)
+                    Text(L10n.Settings.threshold1h).tag(60)
+                    Text(L10n.Settings.threshold3h).tag(180)
+                    Text(L10n.Settings.threshold12h).tag(720)
+                    Text(L10n.Settings.threshold24h).tag(1440)
+                    Text(L10n.Settings.threshold48h).tag(2880)
                 }
                 .pickerStyle(.menu)
                 .padding(6)
@@ -689,9 +689,9 @@ public struct ProfileView: View {
             // Email Notification Toggle
             Toggle(isOn: $viewModel.emailNotificationsEnabled) {
                 VStack(alignment: .leading, spacing: 2) {
-                    Text("Notifikasi Email")
+                    Text(L10n.Settings.emailNotifications)
                         .font(.system(size: 14, weight: .medium))
-                    Text("Terima email peringatan saat tugas mendekati batas waktu.")
+                    Text(L10n.Settings.emailNotificationsDesc)
                         .font(.system(size: 11))
                         .foregroundColor(.secondary)
                 }
@@ -711,7 +711,7 @@ public struct ProfileView: View {
                     } else {
                         Image(systemName: "checkmark")
                             .font(.system(size: 13, weight: .bold))
-                        Text("Simpan Preferensi Notifikasi")
+                        Text(L10n.Settings.savePreferences)
                             .font(.system(size: 14, weight: .semibold))
                     }
                 }
@@ -788,7 +788,7 @@ public struct ProfileView: View {
                 Image(systemName: "info.circle.fill")
                     .font(.system(size: 12))
                     .foregroundColor(.secondary)
-                Text(appLanguage == "en" ? "App Version" : "Versi Aplikasi")
+                Text(L10n.Settings.appVersion)
                     .font(.system(size: 13))
                     .foregroundColor(.secondary)
                 Spacer()
@@ -855,12 +855,12 @@ public struct ProfileView: View {
             HStack(spacing: 8) {
                 Image(systemName: "exclamationmark.triangle.fill")
                     .foregroundColor(AppColors.priorityUrgent)
-                Text("Zona Berbahaya")
+                Text(L10n.Settings.dangerZone)
                     .font(.system(size: 16, weight: .bold))
                     .foregroundColor(AppColors.priorityUrgent)
             }
 
-            Text("Menghapus akun Anda secara permanen beserta seluruh tugas, modul proyek, catatan, dan pengingat yang tersimpan.")
+            Text(L10n.Settings.deleteWarning)
                 .font(.system(size: 12))
                 .foregroundColor(.secondary)
                 .lineSpacing(2)
@@ -871,7 +871,7 @@ public struct ProfileView: View {
             }) {
                 HStack(spacing: 6) {
                     Image(systemName: "trash.fill")
-                    Text("Hapus Akun Permanen")
+                    Text(L10n.Settings.deleteAccount)
                 }
                 .font(.system(size: 13, weight: .bold))
                 .foregroundColor(.white)
@@ -932,7 +932,7 @@ public struct ProfileView: View {
                 Spacer()
 
                 HStack(spacing: 12) {
-                    Button("Batal") {
+                    Button(L10n.General.cancel) {
                         showDeleteModal = false
                     }
                     .font(.system(size: 14, weight: .medium))
@@ -954,7 +954,7 @@ public struct ProfileView: View {
                             ProgressView()
                                 .tint(.white)
                         } else {
-                            Text("Hapus Akun")
+                            Text(L10n.Settings.deleteAccount)
                                 .font(.system(size: 14, weight: .bold))
                         }
                     }
@@ -969,11 +969,11 @@ public struct ProfileView: View {
                 .padding(.bottom, 16)
             }
             .padding(.top, 20)
-            .navigationTitle("Konfirmasi Penghapusan")
+            .navigationTitle(L10n.Settings.deleteConfirmTitle)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    Button("Tutup") { showDeleteModal = false }
+                    Button(L10n.General.close) { showDeleteModal = false }
                 }
             }
         }

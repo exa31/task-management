@@ -4,6 +4,15 @@
 <dict>
 	<key>CFBundleDisplayName</key>
 	<string>Task Hub</string>
+	<key>CFBundleDevelopmentRegion</key>
+	<string>en</string>
+	<key>CFBundleLocalizations</key>
+	<array>
+		<string>en</string>
+		<string>id</string>
+	</array>
+	<key>CFBundleAllowMixedLocalizations</key>
+	<true/>
 	<key>GIDClientID</key>
 	<string>897905079551-86q6g4ov6b966r2t7sbmqsmks5bea682.apps.googleusercontent.com</string>
 	<key>CFBundleURLTypes</key>

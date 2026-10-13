@@ -6,8 +6,30 @@ public enum L10n {
         public static var tasks: String { "nav.tasks".localized }
         public static var projects: String { "nav.projects".localized }
         public static var notes: String { "nav.notes".localized }
+        public static var calendar: String { "nav.calendar".localized }
         public static var reminders: String { "nav.reminders".localized }
         public static var settings: String { "nav.settings".localized }
+    }
+
+    public enum Calendar {
+        public static var title: String { "calendar.title".localized }
+        public static var subtitle: String { "calendar.subtitle".localized }
+        public static var today: String { "calendar.today".localized }
+        public static var all: String { "calendar.all".localized }
+        public static var tasks: String { "calendar.tasks".localized }
+        public static var reminders: String { "calendar.reminders".localized }
+        public static var activities: String { "calendar.activities".localized }
+        public static var noItems: String { "calendar.noItems".localized }
+        public static var noTasks: String { "calendar.noTasks".localized }
+        public static var noReminders: String { "calendar.noReminders".localized }
+        public static var noActivities: String { "calendar.noActivities".localized }
+        public static var workLog: String { "calendar.workLog".localized }
+        public static var tasksDue: String { "calendar.tasksDue".localized }
+        public static var scheduledReminders: String { "calendar.scheduledReminders".localized }
+        public static var graphqlPowered: String { "calendar.graphqlPowered".localized }
+        public static var snooze: String { "calendar.snooze".localized }
+        public static var snooze1h: String { "calendar.snooze1h".localized }
+        public static var dismiss: String { "calendar.dismiss".localized }
     }
 
     public enum Auth {
@@ -50,6 +72,50 @@ public enum L10n {
         public static func subtasksCount(done: Int, total: Int) -> String {
             "tasks.subtasksCount".localized(with: done, total)
         }
+        public static var detailTitle: String { "tasks.detailTitle".localized }
+        public static var edit: String { "tasks.edit".localized }
+        public static var editTitle: String { "tasks.editTitle".localized }
+        public static var createTitle: String { "tasks.createTitle".localized }
+        public static var sectionInfo: String { "tasks.sectionInfo".localized }
+        public static var fieldTitle: String { "tasks.fieldTitle".localized }
+        public static var fieldDescription: String { "tasks.fieldDescription".localized }
+        public static var sectionStatusPriority: String { "tasks.sectionStatusPriority".localized }
+        public static var statusLabel: String { "tasks.statusLabel".localized }
+        public static var priorityLabel: String { "tasks.priorityLabel".localized }
+        public static var sectionProject: String { "tasks.sectionProject".localized }
+        public static var selectProject: String { "tasks.selectProject".localized }
+        public static var noProject: String { "tasks.noProject".localized }
+        public static var sectionDueDate: String { "tasks.sectionDueDate".localized }
+        public static var setDueDate: String { "tasks.setDueDate".localized }
+        public static var dateTime: String { "tasks.dateTime".localized }
+        public static var sectionFocus: String { "tasks.sectionFocus".localized }
+        public static var focusToday: String { "tasks.focusToday".localized }
+        public static func activeCount(count: Int) -> String { "tasks.activeCount".localized(with: count) }
+        public static var sectionSubtasks: String { "tasks.sectionSubtasks".localized }
+        public static var addSubtaskPlaceholder: String { "tasks.addSubtaskPlaceholder".localized }
+        public static var sectionTags: String { "tasks.sectionTags".localized }
+        public static var tagsPlaceholder: String { "tasks.tagsPlaceholder".localized }
+        public static var statusHeader: String { "tasks.statusHeader".localized }
+        public static var markDone: String { "tasks.markDone".localized }
+        public static var markUndone: String { "tasks.markUndone".localized }
+        public static var focusToggle: String { "tasks.focusToggle".localized }
+        public static var unfocusToggle: String { "tasks.unfocusToggle".localized }
+        public static var tabDetails: String { "tasks.tabDetails".localized }
+        public static var tabActivities: String { "tasks.tabActivities".localized }
+        public static var postNotePlaceholder: String { "tasks.postNotePlaceholder".localized }
+        public static var send: String { "tasks.send".localized }
+        public static var loadingLogs: String { "tasks.loadingLogs".localized }
+        public static var noLogsTitle: String { "tasks.noLogsTitle".localized }
+        public static var noLogsDesc: String { "tasks.noLogsDesc".localized }
+        public static var activityCreated: String { "tasks.activityCreated".localized }
+        public static var activityUpdated: String { "tasks.activityUpdated".localized }
+        public static var activityProgress: String { "tasks.activityProgress".localized }
+        public static var activitySubtaskCreated: String { "tasks.activitySubtaskCreated".localized }
+        public static var activitySubtaskUpdated: String { "tasks.activitySubtaskUpdated".localized }
+        public static var activitySubtaskDeleted: String { "tasks.activitySubtaskDeleted".localized }
+        public static var activityFocusChanged: String { "tasks.activityFocusChanged".localized }
+        public static var activityDefault: String { "tasks.activityDefault".localized }
+        public static var relativeJustNow: String { "tasks.relativeJustNow".localized }
     }
 
     public enum Projects {
@@ -68,6 +134,23 @@ public enum L10n {
         }
         public static var deleteWarningNotice: String { "projects.deleteWarningNotice".localized }
         public static var totalProjects: String { "projects.totalProjects".localized }
+        public static var sectionInfo: String { "projects.sectionInfo".localized }
+        public static var fieldName: String { "projects.fieldName".localized }
+        public static var fieldDesc: String { "projects.fieldDesc".localized }
+        public static var sectionColor: String { "projects.sectionColor".localized }
+        public static var colorHint: String { "projects.colorHint".localized }
+        public static var createTitle: String { "projects.createTitle".localized }
+        public static var editTitle: String { "projects.editTitle".localized }
+        public static var metricTotal: String { "projects.metricTotal".localized }
+        public static var metricTotalSub: String { "projects.metricTotalSub".localized }
+        public static var metricTasks: String { "projects.metricTasks".localized }
+        public static func metricTasksActive(count: Int) -> String { "projects.metricTasksActive".localized(with: count) }
+        public static var metricDone: String { "projects.metricDone".localized }
+        public static var metricDoneSub: String { "projects.metricDoneSub".localized }
+        public static var metricRate: String { "projects.metricRate".localized }
+        public static var metricRateSub: String { "projects.metricRateSub".localized }
+        public static var noTasksCategory: String { "projects.noTasksCategory".localized }
+        public static var addTaskButton: String { "projects.addTaskButton".localized }
     }
 
     public enum Notes {
@@ -82,6 +165,19 @@ public enum L10n {
         public static var typeActionable: String { "notes.typeActionable".localized }
         public static var typeKnowledge: String { "notes.typeKnowledge".localized }
         public static var fieldContent: String { "notes.fieldContent".localized }
+        public static var pinToTop: String { "notes.pinToTop".localized }
+        public static var searchPlaceholder: String { "notes.searchPlaceholder".localized }
+        public static var filterAll: String { "notes.filterAll".localized }
+        public static var pin: String { "notes.pin".localized }
+        public static var unpin: String { "notes.unpin".localized }
+        public static var editNote: String { "notes.edit".localized }
+        public static var deleteNote: String { "notes.delete".localized }
+        public static var deleteConfirmTitle: String { "notes.deleteConfirmTitle".localized }
+        public static var deleteConfirmMessage: String { "notes.deleteConfirmMessage".localized }
+        public static var convertToTask: String { "notes.convertToTask".localized }
+        public static var convertConfirmTitle: String { "notes.convertConfirmTitle".localized }
+        public static var convertConfirmMessage: String { "notes.convertConfirmMessage".localized }
+        public static var convertedSuccess: String { "notes.convertedSuccess".localized }
     }
 
     public enum Reminders {
@@ -157,6 +253,23 @@ public enum L10n {
         public static var deleteWarning: String { "settings.deleteWarning".localized }
         public static var mcpIntegration: String { "settings.mcpIntegration".localized }
         public static var mcpIntegrationDesc: String { "settings.mcpIntegrationDesc".localized }
+        public static var signOut: String { "settings.signOut".localized }
+        public static var signOutDialogTitle: String { "settings.signOutDialogTitle".localized }
+        public static var signOutConfirmButton: String { "settings.signOutConfirmButton".localized }
+        public static var signOutDialogMessage: String { "settings.signOutDialogMessage".localized }
+        public static var disconnectDialogTitle: String { "settings.disconnectDialogTitle".localized }
+        public static func disconnectConfirmButton(provider: String) -> String { "settings.disconnectConfirmButton".localized(with: provider) }
+        public static func disconnectDialogMessage(provider: String) -> String { "settings.disconnectDialogMessage".localized(with: provider) }
+        public static var linkedAccountsDesc: String { "settings.linkedAccountsDesc".localized }
+        public static var notConnected: String { "settings.notConnected".localized }
+        public static var notificationsDesc: String { "settings.notificationsDesc".localized }
+        public static var threshold15m: String { "settings.threshold15m".localized }
+        public static var threshold1h: String { "settings.threshold1h".localized }
+        public static var threshold3h: String { "settings.threshold3h".localized }
+        public static var threshold12h: String { "settings.threshold12h".localized }
+        public static var threshold24h: String { "settings.threshold24h".localized }
+        public static var threshold48h: String { "settings.threshold48h".localized }
+        public static var deleteConfirmTitle: String { "settings.deleteConfirmTitle".localized }
     }
 
     public enum Mcp {

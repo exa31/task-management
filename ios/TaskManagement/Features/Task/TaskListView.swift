@@ -356,7 +356,7 @@ public struct TaskListView: View {
                                 Button {
                                     viewModel.toggleFocus(task: task)
                                 } label: {
-                                    Label(task.isFocus ? "Batal Fokus" : "Fokus", systemImage: task.isFocus ? "star.slash.fill" : "star.fill")
+                                    Label(task.isFocus ? L10n.Tasks.unfocusToggle : L10n.Tasks.focusToggle, systemImage: task.isFocus ? "star.slash.fill" : "star.fill")
                                 }
                                 .tint(.orange)
                             }
@@ -364,7 +364,7 @@ public struct TaskListView: View {
                                 Button(role: .destructive) {
                                     Task { await viewModel.deleteTask(id: task.id) }
                                 } label: {
-                                    Label("Hapus", systemImage: "trash")
+                                    Label(L10n.General.delete, systemImage: "trash")
                                 }
                             }
                             .listRowSeparator(.hidden)
@@ -379,7 +379,7 @@ public struct TaskListView: View {
                     }
                 }
             }
-            .navigationTitle("Daftar Tugas")
+            .navigationTitle(L10n.Tasks.title)
             .toolbar {
                 ToolbarItem(placement: .navigationBarLeading) {
                     BrandLogoView(size: 26)
@@ -415,10 +415,10 @@ struct TaskFocusHorizonBanner: View {
                 Image(systemName: "star.fill")
                     .font(.system(size: 12))
                     .foregroundColor(.orange)
-                Text("Fokus Hari Ini")
+                Text(L10n.Tasks.focusToday)
                     .font(.system(size: 13, weight: .bold))
                     .foregroundColor(.primary)
-                Text("\(focusTasks.count) aktif")
+                Text(L10n.Tasks.activeCount(count: focusTasks.count))
                     .font(.system(size: 10, weight: .bold))
                     .padding(.horizontal, 6)
                     .padding(.vertical, 2)
@@ -736,23 +736,23 @@ public struct CreateTaskSheet: View {
                     }
                 }
 
-                Section(header: Text("Informasi Tugas")) {
-                    TextField("Judul Tugas *", text: $title)
+                Section(header: Text(L10n.Tasks.sectionInfo)) {
+                    TextField(L10n.Tasks.fieldTitle, text: $title)
                         .font(.system(size: 15))
-                    TextField("Deskripsi (Opsional)", text: $description, axis: .vertical)
+                    TextField(L10n.Tasks.fieldDescription, text: $description, axis: .vertical)
                         .font(.system(size: 14))
                         .lineLimit(3...5)
                 }
 
-                Section(header: Text("Status & Prioritas")) {
-                    Picker("Status", selection: $status) {
+                Section(header: Text(L10n.Tasks.sectionStatusPriority)) {
+                    Picker(L10n.Tasks.statusLabel, selection: $status) {
                         Text("Backlog").tag("backlog")
                         Text("To Do").tag("todo")
                         Text("In Progress").tag("in_progress")
                         Text("Review").tag("review")
                     }
 
-                    Picker("Prioritas", selection: $priority) {
+                    Picker(L10n.Tasks.priorityLabel, selection: $priority) {
                         Text("Low").tag("low")
                         Text("Medium").tag("medium")
                         Text("High").tag("high")
@@ -761,9 +761,9 @@ public struct CreateTaskSheet: View {
                     .pickerStyle(.segmented)
                 }
 
-                Section(header: Text("Proyek")) {
-                    Picker("Pilih Proyek", selection: $selectedProjectId) {
-                        Text("Tanpa Proyek").tag(nil as Int64?)
+                Section(header: Text(L10n.Tasks.sectionProject)) {
+                    Picker(L10n.Tasks.selectProject, selection: $selectedProjectId) {
+                        Text(L10n.Tasks.noProject).tag(nil as Int64?)
                         ForEach(viewModel.projects) { proj in
                             HStack(spacing: 6) {
                                 Circle()
@@ -776,11 +776,11 @@ public struct CreateTaskSheet: View {
                     }
                 }
 
-                Section(header: Text("Tenggat Waktu")) {
-                    Toggle("Tetapkan Batas Waktu", isOn: $hasDueDate)
+                Section(header: Text(L10n.Tasks.sectionDueDate)) {
+                    Toggle(L10n.Tasks.setDueDate, isOn: $hasDueDate)
                     if hasDueDate {
                         DatePicker(
-                            "Tanggal & Jam",
+                            L10n.Tasks.dateTime,
                             selection: $dueDate,
                             displayedComponents: [.date, .hourAndMinute]
                         )
@@ -788,19 +788,19 @@ public struct CreateTaskSheet: View {
                     }
                 }
 
-                Section(header: Text("Fokus")) {
+                Section(header: Text(L10n.Tasks.sectionFocus)) {
                     Toggle(isOn: $isFocus) {
                         HStack(spacing: 8) {
                             Image(systemName: "star.fill")
                                 .foregroundColor(isFocus ? .yellow : .secondary)
-                            Text("Fokus Hari Ini")
+                            Text(L10n.Tasks.focusToday)
                                 .font(.system(size: 15))
                         }
                     }
                 }
 
                 Section(header: HStack {
-                    Text("Checklist Subtask")
+                    Text(L10n.Tasks.sectionSubtasks)
                     if !subtasks.isEmpty {
                         Text("(\(subtasks.count))")
                             .foregroundColor(AppColors.primary)
@@ -827,7 +827,7 @@ public struct CreateTaskSheet: View {
                     }
 
                     HStack {
-                        TextField("Tambah subtask baru…", text: $newSubtaskText)
+                        TextField(L10n.Tasks.addSubtaskPlaceholder, text: $newSubtaskText)
                             .font(.system(size: 14))
                             .onSubmit {
                                 addSubtask()
@@ -843,8 +843,8 @@ public struct CreateTaskSheet: View {
                     }
                 }
 
-                Section(header: Text("Tags / Label")) {
-                    TextField("Pisahkan koma (contoh: bug, api, mobile)", text: $tagsText)
+                Section(header: Text(L10n.Tasks.sectionTags)) {
+                    TextField(L10n.Tasks.tagsPlaceholder, text: $tagsText)
                         .font(.system(size: 14))
 
                     let parsedTags = parseTags(tagsText)
@@ -866,11 +866,11 @@ public struct CreateTaskSheet: View {
                     }
                 }
             }
-            .navigationTitle("Buat Tugas Baru")
+            .navigationTitle(L10n.Tasks.createTitle)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    Button("Batal") { dismiss() }
+                    Button(L10n.General.cancel) { dismiss() }
                 }
                 ToolbarItem(placement: .confirmationAction) {
                     Button(action: handleSave) {
@@ -878,7 +878,7 @@ public struct CreateTaskSheet: View {
                             ProgressView()
                                 .scaleEffect(0.8)
                         } else {
-                            Text("Simpan")
+                            Text(L10n.General.save)
                                 .fontWeight(.semibold)
                         }
                     }

@@ -23,6 +23,11 @@ public struct MainTabView: View {
                     Label(L10n.Nav.projects, systemImage: "folder.fill")
                 }
 
+            CalendarView()
+                .tabItem {
+                    Label(L10n.Nav.calendar, systemImage: "calendar")
+                }
+
             NoteListView(viewModel: noteViewModel)
                 .tabItem {
                     Label(L10n.Nav.notes, systemImage: "note.text")

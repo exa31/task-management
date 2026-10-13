@@ -26,9 +26,6 @@
     "%lld" : {
 
     },
-    "%lld aktif" : {
-
-    },
     "%lld tugas (%lld selesai)" : {
       "localizations" : {
         "en" : {
@@ -62,40 +59,16 @@
     "%lld%%" : {
 
     },
-    "1 Jam sebelum jatuh tempo" : {
+    "⏰ %@" : {
+
+    },
+    "🔗 %@" : {
 
     },
     "1.0.0" : {
 
     },
-    "3 Jam sebelum jatuh tempo" : {
-
-    },
-    "12 Jam sebelum jatuh tempo" : {
-
-    },
-    "15 Menit sebelum jatuh tempo" : {
-
-    },
-    "24 Jam (1 hari) sebelum jatuh tempo" : {
-
-    },
-    "48 Jam (2 hari) sebelum jatuh tempo" : {
-
-    },
     "ACTIONABLE" : {
-
-    },
-    "Akun Terhubung (OAuth)" : {
-
-    },
-    "Alamat Email" : {
-
-    },
-    "Ambang Peringatan" : {
-
-    },
-    "Ambang Peringatan Batas Waktu" : {
 
     },
     "America/Los_Angeles (PDT/PST)" : {
@@ -104,16 +77,7 @@
     "America/New_York (EDT/EST)" : {
 
     },
-    "Anda akan keluar dari sesi ini dan harus login kembali untuk mengakses data." : {
-
-    },
     "Antigravity / VS Code" : {
-
-    },
-    "Apakah Anda yakin ingin memutuskan hubungan akun %@?" : {
-
-    },
-    "App Version" : {
 
     },
     "Apple ID" : {
@@ -134,31 +98,7 @@
     "Asia/Tokyo (JST, UTC+9)" : {
 
     },
-    "Atur zona waktu reminder dan toleransi peringatan sebelum tugas jatuh tempo." : {
-
-    },
     "Backlog" : {
-
-    },
-    "Batal" : {
-
-    },
-    "Batal Fokus" : {
-
-    },
-    "Belum Ada Riwayat Log" : {
-
-    },
-    "Belum ada tugas di kategori ini" : {
-
-    },
-    "Belum Terhubung" : {
-
-    },
-    "Buat Proyek Baru" : {
-
-    },
-    "Buat Tugas Baru" : {
 
     },
     "Cari proyek…" : {
@@ -167,25 +107,16 @@
     "Cari tugas, tag, atau deskripsi…" : {
 
     },
-    "Checklist Subtask" : {
-
-    },
     "Claude Desktop" : {
 
     },
     "Cursor" : {
 
     },
-    "Daftar Tugas" : {
-
-    },
     "DELETE" : {
 
     },
-    "Deskripsi (Opsional)" : {
-
-    },
-    "Detail Tugas" : {
+    "Done" : {
 
     },
     "Edit Proyek" : {
@@ -194,19 +125,16 @@
     "Europe/London (BST/GMT)" : {
 
     },
+    "Filter" : {
+
+    },
     "Fokus" : {
 
     },
     "Fokus (%lld)" : {
 
     },
-    "Fokus Hari Ini" : {
-
-    },
     "G" : {
-
-    },
-    "Ganti Foto Profil" : {
 
     },
     "general.cancel" : {
@@ -246,15 +174,6 @@
     "Google Account" : {
 
     },
-    "Hapus" : {
-
-    },
-    "Hapus Akun" : {
-
-    },
-    "Hapus Akun Permanen" : {
-
-    },
     "Hapus Proyek" : {
 
     },
@@ -264,43 +183,13 @@
     "High" : {
 
     },
-    "Hubungkan akun Anda untuk kemudahan masuk multi-platform." : {
-
-    },
     "In Progress" : {
-
-    },
-    "Informasi Profil" : {
-
-    },
-    "Informasi Proyek" : {
-
-    },
-    "Informasi Tugas" : {
 
     },
     "JSON-RPC 2.0 • Active" : {
 
     },
-    "Judul Tugas *" : {
-
-    },
-    "Keluar (Sign Out)" : {
-
-    },
-    "Keluar dari Akun" : {
-
-    },
-    "Kirim" : {
-
-    },
     "KNOWLEDGE" : {
-
-    },
-    "Konfirmasi Keluar" : {
-
-    },
-    "Konfirmasi Penghapusan" : {
 
     },
     "Low" : {
@@ -313,18 +202,6 @@
 
     },
     "Memuat daftar tugas…" : {
-
-    },
-    "Memuat riwayat log..." : {
-
-    },
-    "Menghapus akun Anda secara permanen beserta seluruh tugas, modul proyek, catatan, dan pengingat yang tersimpan." : {
-
-    },
-    "Nama Lengkap" : {
-
-    },
-    "Nama Proyek *" : {
 
     },
     "nav.notes" : {
@@ -412,24 +289,6 @@
         }
       }
     },
-    "Notifikasi Email" : {
-
-    },
-    "Pilih Proyek" : {
-
-    },
-    "Pilih warna aksen untuk modul/proyek ini:" : {
-
-    },
-    "Pilihan Warna" : {
-
-    },
-    "Pisahkan koma (contoh: bug, api, mobile)" : {
-
-    },
-    "Preferensi Notifikasi & Waktu" : {
-
-    },
     "Prioritas" : {
 
     },
@@ -437,15 +296,6 @@
 
     },
     "Proyek & Modul" : {
-
-    },
-    "Putuskan" : {
-
-    },
-    "Putuskan %@" : {
-
-    },
-    "Putuskan Akun?" : {
 
     },
     "Reset (%lld)" : {
@@ -457,31 +307,10 @@
     "Riwayat Log" : {
 
     },
-    "Semua perubahan status, subtask, dan catatan progres akan tercatat di sini secara kronologis." : {
-
-    },
     "Semua Prioritas" : {
 
     },
     "Semua Proyek" : {
-
-    },
-    "Simpan" : {
-
-    },
-    "Simpan Perubahan Profil" : {
-
-    },
-    "Simpan Preferensi Notifikasi" : {
-
-    },
-    "Status" : {
-
-    },
-    "Status & Prioritas" : {
-
-    },
-    "STATUS TUGAS" : {
 
     },
     "SUBTASKS (%lld/%lld)" : {
@@ -493,27 +322,6 @@
           }
         }
       }
-    },
-    "Tags / Label" : {
-
-    },
-    "Tambah subtask baru…" : {
-
-    },
-    "Tambah Tugas di Proyek Ini" : {
-
-    },
-    "Tandai Belum Selesai" : {
-
-    },
-    "Tandai Selesai" : {
-
-    },
-    "Tanggal & Jam" : {
-
-    },
-    "Tanpa Proyek" : {
-
     },
     "tasks.search" : {
       "extractionState" : "stale",
@@ -549,46 +357,16 @@
         }
       }
     },
-    "Tenggat Waktu" : {
-
-    },
-    "Terhubung" : {
-
-    },
-    "Terima email peringatan saat tugas mendekati batas waktu." : {
-
-    },
-    "Tetapkan Batas Waktu" : {
-
-    },
     "Theme" : {
 
     },
     "To Do" : {
 
     },
-    "Tulis catatan progres atau update log..." : {
-
-    },
-    "Tutup" : {
-
-    },
     "Urgent" : {
 
     },
     "UTC (UTC+0)" : {
-
-    },
-    "Versi Aplikasi" : {
-
-    },
-    "Zona Berbahaya" : {
-
-    },
-    "Zona Waktu" : {
-
-    },
-    "Zona Waktu (Timezone)" : {
 
     }
   },

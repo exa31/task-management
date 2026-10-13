@@ -361,9 +361,81 @@ public struct CreateNoteRequest: Codable {
     public let color: String
     public let isPinned: Bool
 
+    public init(
+        title: String,
+        content: String,
+        type: String,
+        color: String = "#6366F1",
+        isPinned: Bool = false
+    ) {
+        self.title = title
+        self.content = content
+        self.type = type
+        self.color = color
+        self.isPinned = isPinned
+    }
+
     enum CodingKeys: String, CodingKey {
         case title, content, type, color
         case isPinned = "is_pinned"
+    }
+}
+
+public struct UpdateNoteRequest: Codable {
+    public let title: String?
+    public let content: String?
+    public let type: String?
+    public let tags: [String]?
+    public let color: String?
+    public let isPinned: Bool?
+
+    public init(
+        title: String? = nil,
+        content: String? = nil,
+        type: String? = nil,
+        tags: [String]? = nil,
+        color: String? = nil,
+        isPinned: Bool? = nil
+    ) {
+        self.title = title
+        self.content = content
+        self.type = type
+        self.tags = tags
+        self.color = color
+        self.isPinned = isPinned
+    }
+
+    enum CodingKeys: String, CodingKey {
+        case title, content, type, tags, color
+        case isPinned = "is_pinned"
+    }
+}
+
+public struct ConvertNoteToTaskRequest: Codable {
+    public let priority: String?
+    public let projectId: Int64?
+    public let dueDate: String?
+
+    public init(priority: String? = nil, projectId: Int64? = nil, dueDate: String? = nil) {
+        self.priority = priority
+        self.projectId = projectId
+        self.dueDate = dueDate
+    }
+
+    enum CodingKeys: String, CodingKey {
+        case priority
+        case projectId = "project_id"
+        case dueDate = "due_date"
+    }
+}
+
+public struct ConvertNoteResponse: Codable {
+    public let note: Note
+    public let taskId: Int64?
+
+    enum CodingKeys: String, CodingKey {
+        case note
+        case taskId = "task_id"
     }
 }
 

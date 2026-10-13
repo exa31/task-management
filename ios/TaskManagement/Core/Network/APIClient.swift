@@ -346,6 +346,20 @@ public actor APIClient {
         return try await request(endpoint: "notes", method: "POST", body: body)
     }
 
+    public func updateNote(id: Int64, req: UpdateNoteRequest) async throws -> Note {
+        let body = try encoder.encode(req)
+        return try await request(endpoint: "notes/\(id)", method: "PUT", body: body)
+    }
+
+    public func deleteNote(id: Int64) async throws {
+        let _: EmptyResponse? = try? await request(endpoint: "notes/\(id)", method: "DELETE")
+    }
+
+    public func convertNoteToTask(id: Int64, req: ConvertNoteToTaskRequest = ConvertNoteToTaskRequest()) async throws -> ConvertNoteResponse {
+        let body = try encoder.encode(req)
+        return try await request(endpoint: "notes/\(id)/convert-task", method: "POST", body: body)
+    }
+
     public func getReminders() async throws -> [Reminder] {
         do {
             let res: PaginatedResponse<Reminder> = try await request(endpoint: "reminders")
@@ -396,4 +410,90 @@ public actor APIClient {
     public func deleteMcpToken(id: Int64) async throws {
         let _: EmptyResponse = try await request(endpoint: "tokens/\(id)", method: "DELETE")
     }
+
+    // MARK: - GraphQL Client
+    public func graphql<T: Codable>(
+        query: String,
+        variables: [String: Any]? = nil,
+        retryOn401: Bool = true
+    ) async throws -> T {
+        guard let url = URL(string: "\(baseURL)/graphql") else {
+            throw APIError.invalidURL
+        }
+
+        var req = URLRequest(url: url)
+        req.httpMethod = "POST"
+        req.setValue("application/json", forHTTPHeaderField: "Content-Type")
+
+        if let token = keychain.get(key: "access_token") {
+            req.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+        }
+
+        var payload: [String: Any] = ["query": query]
+        if let variables = variables {
+            payload["variables"] = variables
+        }
+        req.httpBody = try JSONSerialization.data(withJSONObject: payload)
+
+        NetworkLogger.logRequest(req)
+        let startTime = CFAbsoluteTimeGetCurrent()
+
+        let (data, response): (Data, URLResponse)
+        do {
+            (data, response) = try await session.data(for: req)
+        } catch {
+            NetworkLogger.logError(url: url.absoluteString, method: "POST", error: error)
+            throw APIError.networkError(error)
+        }
+
+        guard let httpResponse = response as? HTTPURLResponse else {
+            throw APIError.serverError("Invalid server response")
+        }
+
+        let duration = CFAbsoluteTimeGetCurrent() - startTime
+        NetworkLogger.logResponse(
+            url: url.absoluteString,
+            method: "POST",
+            statusCode: httpResponse.statusCode,
+            data: data,
+            duration: duration
+        )
+
+        if httpResponse.statusCode == 401 {
+            if retryOn401 {
+                let refreshed = await refreshToken()
+                if refreshed {
+                    return try await graphql(query: query, variables: variables, retryOn401: false)
+                }
+            }
+            await handleSessionExpired()
+            throw APIError.unauthorized
+        }
+
+        guard (200...299).contains(httpResponse.statusCode) else {
+            throw APIError.serverError("Server returned code \(httpResponse.statusCode)")
+        }
+
+        let envelope = try decoder.decode(GraphQLEnvelope<T>.self, from: data)
+        if let errors = envelope.errors, !errors.isEmpty {
+            let combined = errors.map { $0.message }.joined(separator: ", ")
+            throw APIError.serverError(combined)
+        }
+
+        guard let result = envelope.data else {
+            throw APIError.serverError("No data in GraphQL response")
+        }
+
+        return result
+    }
+}
+
+// MARK: - Internal GraphQL Envelope
+public struct GraphQLEnvelope<P: Codable>: Codable {
+    public let data: P?
+    public let errors: [GraphQLErrorItem]?
+}
+
+public struct GraphQLErrorItem: Codable {
+    public let message: String
 }

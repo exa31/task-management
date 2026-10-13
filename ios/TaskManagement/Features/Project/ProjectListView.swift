@@ -365,33 +365,33 @@ private struct ProjectMetricsHeader: View {
         ScrollView(.horizontal, showsIndicators: false) {
             HStack(spacing: 10) {
                 MetricCard(
-                    title: "Total Proyek",
+                    title: L10n.Projects.metricTotal,
                     value: "\(viewModel.projects.count)",
-                    subtitle: "Proyek Aktif",
+                    subtitle: L10n.Projects.metricTotalSub,
                     icon: "folder.fill",
                     tint: AppColors.primary
                 )
 
                 MetricCard(
-                    title: "Tugas Proyek",
+                    title: L10n.Projects.metricTasks,
                     value: "\(viewModel.projectTasks.count)",
-                    subtitle: "\(viewModel.activeProjectTasksCount) berjalan",
+                    subtitle: L10n.Projects.metricTasksActive(count: viewModel.activeProjectTasksCount),
                     icon: "checklist",
                     tint: AppColors.statusInProgress
                 )
 
                 MetricCard(
-                    title: "Selesai",
+                    title: L10n.Projects.metricDone,
                     value: "\(viewModel.completedProjectTasksCount)",
-                    subtitle: "Tugas tuntas",
+                    subtitle: L10n.Projects.metricDoneSub,
                     icon: "checkmark.circle.fill",
                     tint: AppColors.statusDone
                 )
 
                 MetricCard(
-                    title: "Tingkat Selesai",
+                    title: L10n.Projects.metricRate,
                     value: "\(viewModel.completionRatePercent)%",
-                    subtitle: "Rasio progres",
+                    subtitle: L10n.Projects.metricRateSub,
                     icon: "chart.pie.fill",
                     tint: AppColors.violet
                 )
@@ -658,7 +658,7 @@ private struct ProjectAccordionCard: View {
                     // Tasks List
                     if filteredTasks.isEmpty {
                         VStack(spacing: 8) {
-                            Text("Belum ada tugas di kategori ini")
+                            Text(L10n.Projects.noTasksCategory)
                                 .font(.system(size: 12))
                                 .foregroundColor(.secondary)
                         }
@@ -681,7 +681,7 @@ private struct ProjectAccordionCard: View {
                         HStack(spacing: 6) {
                             Image(systemName: "plus.circle.fill")
                                 .font(.system(size: 14))
-                            Text("Tambah Tugas di Proyek Ini")
+                            Text(L10n.Projects.addTaskButton)
                                 .font(.system(size: 13, weight: .semibold))
                         }
                         .frame(maxWidth: .infinity)
@@ -823,17 +823,17 @@ public struct ProjectFormSheet: View {
     public var body: some View {
         NavigationStack {
             Form {
-                Section(header: Text("Informasi Proyek")) {
-                    TextField("Nama Proyek *", text: $name)
+                Section(header: Text(L10n.Projects.sectionInfo)) {
+                    TextField(L10n.Projects.fieldName, text: $name)
                         .font(.system(size: 15))
-                    TextField("Deskripsi (Opsional)", text: $description, axis: .vertical)
+                    TextField(L10n.Projects.fieldDesc, text: $description, axis: .vertical)
                         .font(.system(size: 14))
                         .lineLimit(2...4)
                 }
 
-                Section(header: Text("Pilihan Warna")) {
+                Section(header: Text(L10n.Projects.sectionColor)) {
                     VStack(alignment: .leading, spacing: 10) {
-                        Text("Pilih warna aksen untuk modul/proyek ini:")
+                        Text(L10n.Projects.colorHint)
                             .font(.system(size: 12))
                             .foregroundColor(.secondary)
 
@@ -869,11 +869,11 @@ public struct ProjectFormSheet: View {
                     .padding(.vertical, 4)
                 }
             }
-            .navigationTitle(editingProject == nil ? "Buat Proyek Baru" : "Edit Proyek")
+            .navigationTitle(editingProject == nil ? L10n.Projects.createTitle : L10n.Projects.editTitle)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    Button("Batal") { dismiss() }
+                    Button(L10n.General.cancel) { dismiss() }
                 }
                 ToolbarItem(placement: .confirmationAction) {
                     Button(action: handleSave) {
@@ -881,7 +881,7 @@ public struct ProjectFormSheet: View {
                             ProgressView()
                                 .scaleEffect(0.8)
                         } else {
-                            Text("Simpan")
+                            Text(L10n.General.save)
                                 .fontWeight(.semibold)
                         }
                     }

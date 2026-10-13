@@ -150,6 +150,45 @@ public final class TaskViewModel {
     }
 
     @MainActor
+    public func updateTask(
+        id: Int64,
+        title: String? = nil,
+        description: String? = nil,
+        status: String? = nil,
+        priority: String? = nil,
+        dueDate: String? = nil,
+        isFocus: Bool? = nil,
+        tags: [String]? = nil,
+        projectId: Int64? = nil
+    ) async -> Bool {
+        do {
+            let updated = try await apiClient.updateTask(
+                id: id,
+                req: UpdateTaskRequest(
+                    title: title,
+                    description: description,
+                    status: status,
+                    priority: priority,
+                    dueDate: dueDate,
+                    isFocus: isFocus,
+                    tags: tags,
+                    projectId: projectId
+                )
+            )
+            if let idx = tasks.firstIndex(where: { $0.id == id }) {
+                tasks[idx] = updated
+            }
+            AppLogger.success("Task updated successfully", category: .task, metadata: ["id": id])
+            await loadTasks()
+            return true
+        } catch {
+            AppLogger.error("Failed to update task", error: error, category: .task)
+            self.errorMessage = error.localizedDescription
+            return false
+        }
+    }
+
+    @MainActor
     public func createTask(
         title: String,
         description: String = "",

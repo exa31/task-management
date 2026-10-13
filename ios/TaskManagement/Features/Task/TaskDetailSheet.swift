@@ -8,6 +8,11 @@ public struct TaskDetailSheet: View {
     @State private var selectedTab = 0
     @State private var newNoteText = ""
     @State private var isPostingNote = false
+    @State private var showEditSheet = false
+
+    private var currentTask: TaskItem {
+        viewModel.tasks.first(where: { $0.id == task.id }) ?? task
+    }
 
     public init(task: TaskItem, viewModel: TaskViewModel) {
         self.task = task
@@ -21,16 +26,16 @@ public struct TaskDetailSheet: View {
                 VStack(alignment: .leading, spacing: 10) {
                     HStack(alignment: .top) {
                         VStack(alignment: .leading, spacing: 4) {
-                            Text(task.title)
+                            Text(currentTask.title)
                                 .font(.system(size: 18, weight: .bold))
                                 .foregroundColor(.primary)
 
                             HStack(spacing: 8) {
-                                if let projName = task.projectName {
-                                    ProjectPill(name: projName, hexColor: task.projectColor)
+                                if let projName = currentTask.projectName {
+                                    ProjectPill(name: projName, hexColor: currentTask.projectColor)
                                 }
-                                PriorityBadge(priority: task.priority)
-                                StatusBadge(status: task.status)
+                                PriorityBadge(priority: currentTask.priority)
+                                StatusBadge(status: currentTask.status)
                             }
                         }
 
@@ -43,8 +48,8 @@ public struct TaskDetailSheet: View {
                         }
                     }
 
-                    if !task.description.isEmpty {
-                        Text(task.description)
+                    if !currentTask.description.isEmpty {
+                        Text(currentTask.description)
                             .font(.system(size: 13))
                             .foregroundColor(.secondary)
                             .lineLimit(3)
@@ -56,7 +61,7 @@ public struct TaskDetailSheet: View {
                 // Custom Segmented Bar
                 HStack(spacing: 8) {
                     TabSegmentButton(
-                        title: "Detail & Subtask",
+                        title: L10n.Tasks.tabDetails,
                         icon: "checklist",
                         isSelected: selectedTab == 0
                     ) {
@@ -64,7 +69,7 @@ public struct TaskDetailSheet: View {
                     }
 
                     TabSegmentButton(
-                        title: "Riwayat Log",
+                        title: L10n.Tasks.tabActivities,
                         icon: "clock.arrow.circlepath",
                         badgeCount: viewModel.taskActivities.count,
                         isSelected: selectedTab == 1
@@ -83,13 +88,26 @@ public struct TaskDetailSheet: View {
                     activityTimelineView
                 }
             }
-            .navigationTitle("Detail Tugas")
+            .navigationTitle(L10n.Tasks.detailTitle)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
+                ToolbarItem(placement: .navigationBarLeading) {
+                    Button(action: { showEditSheet = true }) {
+                        HStack(spacing: 4) {
+                            Image(systemName: "pencil")
+                            Text(L10n.Tasks.edit)
+                        }
+                        .font(.system(size: 14, weight: .semibold))
+                        .foregroundColor(AppColors.primary)
+                    }
+                }
                 ToolbarItem(placement: .navigationBarTrailing) {
-                    Button("Tutup") { dismiss() }
+                    Button(L10n.General.close) { dismiss() }
                         .font(.system(size: 14, weight: .semibold))
                 }
+            }
+            .sheet(isPresented: $showEditSheet) {
+                EditTaskSheet(task: currentTask, viewModel: viewModel)
             }
             .task {
                 await viewModel.loadActivities(for: task.id)
@@ -103,16 +121,16 @@ public struct TaskDetailSheet: View {
             VStack(alignment: .leading, spacing: 16) {
                 // Status Toggle Row
                 VStack(alignment: .leading, spacing: 8) {
-                    Text("STATUS TUGAS")
+                    Text(L10n.Tasks.statusHeader)
                         .font(.system(size: 11, weight: .bold))
                         .foregroundColor(.secondary)
 
                     HStack(spacing: 12) {
-                        Button(action: { viewModel.toggleTaskStatus(task: task) }) {
+                        Button(action: { viewModel.toggleTaskStatus(task: currentTask) }) {
                             HStack(spacing: 8) {
-                                Image(systemName: task.status == "done" ? "checkmark.circle.fill" : "circle")
-                                    .foregroundColor(task.status == "done" ? AppColors.statusDone : .secondary)
-                                Text(task.status == "done" ? "Tandai Belum Selesai" : "Tandai Selesai")
+                                Image(systemName: currentTask.status == "done" ? "checkmark.circle.fill" : "circle")
+                                    .foregroundColor(currentTask.status == "done" ? AppColors.statusDone : .secondary)
+                                Text(currentTask.status == "done" ? L10n.Tasks.markUndone : L10n.Tasks.markDone)
                                     .font(.system(size: 14, weight: .medium))
                             }
                             .padding(.horizontal, 14)
@@ -126,11 +144,11 @@ public struct TaskDetailSheet: View {
                 // Subtasks Section
                 VStack(alignment: .leading, spacing: 10) {
                     HStack {
-                        Text("SUBTASKS (\(task.subtasksCompleted ?? 0)/\(task.subtasksCount ?? 0))")
+                        Text("SUBTASKS (\(currentTask.subtasksCompleted ?? 0)/\(currentTask.subtasksCount ?? 0))")
                             .font(.system(size: 11, weight: .bold))
                             .foregroundColor(.secondary)
                         Spacer()
-                        Text("\(task.progressPercent ?? 0)%")
+                        Text("\(currentTask.progressPercent ?? 0)%")
                             .font(.system(size: 12, weight: .bold))
                             .foregroundColor(AppColors.primary)
                     }
@@ -141,17 +159,17 @@ public struct TaskDetailSheet: View {
                             Capsule().fill(Color.secondary.opacity(0.15))
                             Capsule()
                                 .fill(AppColors.brandGradient)
-                                .frame(width: geo.size.width * CGFloat(Double(task.progressPercent ?? 0) / 100.0))
+                                .frame(width: geo.size.width * CGFloat(Double(currentTask.progressPercent ?? 0) / 100.0))
                         }
                     }
                     .frame(height: 6)
 
-                    if let subtasks = task.subtasks, !subtasks.isEmpty {
+                    if let subtasks = currentTask.subtasks, !subtasks.isEmpty {
                         VStack(spacing: 8) {
                             ForEach(subtasks) { subtask in
                                 HStack(spacing: 10) {
                                     Button(action: {
-                                        viewModel.toggleSubtask(taskId: task.id, subtaskId: subtask.id, currentCompleted: subtask.isCompleted)
+                                        viewModel.toggleSubtask(taskId: currentTask.id, subtaskId: subtask.id, currentCompleted: subtask.isCompleted)
                                     }) {
                                         Image(systemName: subtask.isCompleted ? "checkmark.square.fill" : "square")
                                             .font(.system(size: 16))
@@ -212,7 +230,7 @@ public struct TaskDetailSheet: View {
             // Post Note Input Card
             VStack(spacing: 8) {
                 HStack(spacing: 8) {
-                    TextField("Tulis catatan progres atau update log...", text: $newNoteText)
+                    TextField(L10n.Tasks.postNotePlaceholder, text: $newNoteText)
                         .font(.system(size: 13))
                         .padding(10)
                         .background(Color(.secondarySystemGroupedBackground))
@@ -229,7 +247,7 @@ public struct TaskDetailSheet: View {
                                 Image(systemName: "paperplane.fill")
                                     .font(.system(size: 12))
                             }
-                            Text("Kirim")
+                            Text(L10n.Tasks.send)
                                 .font(.system(size: 13, weight: .semibold))
                         }
                         .padding(.horizontal, 14)
@@ -247,7 +265,7 @@ public struct TaskDetailSheet: View {
             // Timeline Scroll
             if viewModel.isLoadingActivities && viewModel.taskActivities.isEmpty {
                 Spacer()
-                ProgressView("Memuat riwayat log...")
+                ProgressView(L10n.Tasks.loadingLogs)
                 Spacer()
             } else if viewModel.taskActivities.isEmpty {
                 Spacer()
@@ -255,9 +273,9 @@ public struct TaskDetailSheet: View {
                     Image(systemName: "clock.arrow.circlepath")
                         .font(.system(size: 40))
                         .foregroundColor(Color.secondary.opacity(0.5))
-                    Text("Belum Ada Riwayat Log")
+                    Text(L10n.Tasks.noLogsTitle)
                         .font(.system(size: 16, weight: .semibold))
-                    Text("Semua perubahan status, subtask, dan catatan progres akan tercatat di sini secara kronologis.")
+                    Text(L10n.Tasks.noLogsDesc)
                         .font(.system(size: 12))
                         .foregroundColor(.secondary)
                         .multilineTextAlignment(.center)
@@ -301,21 +319,21 @@ struct ActivityTimelineItemView: View {
     private var badgeInfo: (icon: String, color: Color, label: String) {
         switch activity.activityType {
         case "task_created":
-            return ("sparkles", Color.green, "Tugas Dibuat")
+            return ("sparkles", Color.green, L10n.Tasks.activityCreated)
         case "task_updated":
-            return ("pencil", Color.blue, "Tugas Diperbarui")
+            return ("pencil", Color.blue, L10n.Tasks.activityUpdated)
         case "progress_logged":
-            return ("clock.arrow.circlepath", AppColors.indigo, "Catatan Progres")
+            return ("clock.arrow.circlepath", AppColors.indigo, L10n.Tasks.activityProgress)
         case "subtask_created":
-            return ("plus.circle", Color.cyan, "Subtask Ditambahkan")
+            return ("plus.circle", Color.cyan, L10n.Tasks.activitySubtaskCreated)
         case "subtask_toggled":
-            return ("checkmark.circle", Color.teal, "Subtask Diperbarui")
+            return ("checkmark.circle", Color.teal, L10n.Tasks.activitySubtaskUpdated)
         case "subtask_deleted":
-            return ("trash", Color.red, "Subtask Dihapus")
+            return ("trash", Color.red, L10n.Tasks.activitySubtaskDeleted)
         case "focus_toggled":
-            return ("star.fill", Color.yellow, "Fokus Diubah")
+            return ("star.fill", Color.yellow, L10n.Tasks.activityFocusChanged)
         default:
-            return ("bubble.left.fill", Color.secondary, "Catatan Log")
+            return ("bubble.left.fill", Color.secondary, L10n.Tasks.activityDefault)
         }
     }
 
@@ -381,7 +399,7 @@ struct ActivityTimelineItemView: View {
 
         guard let d = date else { return isoString }
         let diff = Int(Date().timeIntervalSince(d))
-        if diff < 60 { return "Baru saja" }
+        if diff < 60 { return L10n.Tasks.relativeJustNow }
         if diff < 3600 { return "\(diff / 60)m lalu" }
         if diff < 86400 { return "\(diff / 3600)j lalu" }
         let dayFormat = DateFormatter()
@@ -427,5 +445,234 @@ struct TabSegmentButton: View {
             .shadow(color: isSelected ? AppColors.indigo.opacity(0.2) : Color.clear, radius: 4, y: 2)
         }
         .buttonStyle(.plain)
+    }
+}
+
+// MARK: - Edit Task Sheet
+public struct EditTaskSheet: View {
+    @Environment(\.dismiss) private var dismiss
+    @Bindable var viewModel: TaskViewModel
+    let task: TaskItem
+    public var onUpdated: (() -> Void)? = nil
+
+    @State private var title: String
+    @State private var description: String
+    @State private var status: String
+    @State private var priority: String
+    @State private var selectedProjectId: Int64?
+    @State private var hasDueDate: Bool
+    @State private var dueDate: Date
+    @State private var isFocus: Bool
+    @State private var tagsText: String
+    @State private var isSubmitting: Bool = false
+    @State private var errorMessage: String? = nil
+
+    public init(
+        task: TaskItem,
+        viewModel: TaskViewModel,
+        onUpdated: (() -> Void)? = nil
+    ) {
+        self.task = task
+        self.viewModel = viewModel
+        self.onUpdated = onUpdated
+
+        _title = State(initialValue: task.title)
+        _description = State(initialValue: task.description)
+        _status = State(initialValue: task.status)
+        _priority = State(initialValue: task.priority)
+        _selectedProjectId = State(initialValue: task.projectId)
+        _isFocus = State(initialValue: task.isFocus)
+        _tagsText = State(initialValue: (task.tags ?? []).joined(separator: ", "))
+
+        if let dueStr = task.dueDate, !dueStr.isEmpty {
+            let formatter = ISO8601DateFormatter()
+            formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+            if let parsed = formatter.date(from: dueStr) {
+                _hasDueDate = State(initialValue: true)
+                _dueDate = State(initialValue: parsed)
+            } else {
+                let simpleFormatter = ISO8601DateFormatter()
+                simpleFormatter.formatOptions = [.withInternetDateTime]
+                if let simpleParsed = simpleFormatter.date(from: dueStr) {
+                    _hasDueDate = State(initialValue: true)
+                    _dueDate = State(initialValue: simpleParsed)
+                } else {
+                    _hasDueDate = State(initialValue: false)
+                    _dueDate = State(initialValue: Date().addingTimeInterval(3600 * 24))
+                }
+            }
+        } else {
+            _hasDueDate = State(initialValue: false)
+            _dueDate = State(initialValue: Date().addingTimeInterval(3600 * 24))
+        }
+    }
+
+    public var body: some View {
+        NavigationStack {
+            Form {
+                if let error = errorMessage {
+                    Section {
+                        HStack(spacing: 8) {
+                            Image(systemName: "exclamationmark.triangle.fill")
+                                .foregroundColor(AppColors.priorityUrgent)
+                            Text(error)
+                                .font(.system(size: 13))
+                                .foregroundColor(AppColors.priorityUrgent)
+                        }
+                    }
+                }
+
+                Section(header: Text(L10n.Tasks.sectionInfo)) {
+                    TextField(L10n.Tasks.fieldTitle, text: $title)
+                        .font(.system(size: 15))
+                    TextField(L10n.Tasks.fieldDescription, text: $description, axis: .vertical)
+                        .font(.system(size: 14))
+                        .lineLimit(3...5)
+                }
+
+                Section(header: Text(L10n.Tasks.sectionStatusPriority)) {
+                    Picker(L10n.Tasks.statusLabel, selection: $status) {
+                        Text("Backlog").tag("backlog")
+                        Text("To Do").tag("todo")
+                        Text("In Progress").tag("in_progress")
+                        Text("Review").tag("review")
+                        Text("Done").tag("done")
+                    }
+
+                    Picker(L10n.Tasks.priorityLabel, selection: $priority) {
+                        Text("Low").tag("low")
+                        Text("Medium").tag("medium")
+                        Text("High").tag("high")
+                        Text("Urgent").tag("urgent")
+                    }
+                    .pickerStyle(.segmented)
+                }
+
+                Section(header: Text(L10n.Tasks.sectionProject)) {
+                    Picker(L10n.Tasks.selectProject, selection: $selectedProjectId) {
+                        Text(L10n.Tasks.noProject).tag(nil as Int64?)
+                        ForEach(viewModel.projects) { proj in
+                            HStack(spacing: 6) {
+                                Circle()
+                                    .fill(Color(hex: proj.color) ?? AppColors.primary)
+                                    .frame(width: 8, height: 8)
+                                Text(proj.name)
+                            }
+                            .tag(proj.id as Int64?)
+                        }
+                    }
+                }
+
+                Section(header: Text(L10n.Tasks.sectionDueDate)) {
+                    Toggle(L10n.Tasks.setDueDate, isOn: $hasDueDate)
+                    if hasDueDate {
+                        DatePicker(
+                            L10n.Tasks.dateTime,
+                            selection: $dueDate,
+                            displayedComponents: [.date, .hourAndMinute]
+                        )
+                        .datePickerStyle(.compact)
+                    }
+                }
+
+                Section(header: Text(L10n.Tasks.sectionFocus)) {
+                    Toggle(isOn: $isFocus) {
+                        HStack(spacing: 8) {
+                            Image(systemName: "star.fill")
+                                .foregroundColor(isFocus ? .yellow : .secondary)
+                            Text(L10n.Tasks.focusToday)
+                                .font(.system(size: 15))
+                        }
+                    }
+                }
+
+                Section(header: Text(L10n.Tasks.sectionTags)) {
+                    TextField(L10n.Tasks.tagsPlaceholder, text: $tagsText)
+                        .font(.system(size: 14))
+
+                    let parsedTags = parseTags(tagsText)
+                    if !parsedTags.isEmpty {
+                        ScrollView(.horizontal, showsIndicators: false) {
+                            HStack(spacing: 6) {
+                                ForEach(parsedTags, id: \.self) { tag in
+                                    Text("#\(tag)")
+                                        .font(.system(size: 11, weight: .semibold))
+                                        .padding(.horizontal, 8)
+                                        .padding(.vertical, 4)
+                                        .background(AppColors.primary.opacity(0.12))
+                                        .foregroundColor(AppColors.primary)
+                                        .clipShape(Capsule())
+                                }
+                            }
+                            .padding(.vertical, 2)
+                        }
+                    }
+                }
+            }
+            .navigationTitle(L10n.Tasks.editTitle)
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button(L10n.General.cancel) { dismiss() }
+                }
+                ToolbarItem(placement: .confirmationAction) {
+                    Button(action: handleSave) {
+                        if isSubmitting {
+                            ProgressView()
+                                .scaleEffect(0.8)
+                        } else {
+                            Text(L10n.General.save)
+                                .fontWeight(.semibold)
+                        }
+                    }
+                    .disabled(title.trimmingCharacters(in: .whitespaces).isEmpty || isSubmitting)
+                }
+            }
+        }
+    }
+
+    private func parseTags(_ input: String) -> [String] {
+        input.components(separatedBy: ",")
+            .map { $0.trimmingCharacters(in: .whitespaces).lowercased() }
+            .filter { !$0.isEmpty }
+    }
+
+    private func handleSave() {
+        guard !title.trimmingCharacters(in: .whitespaces).isEmpty else { return }
+        isSubmitting = true
+        errorMessage = nil
+
+        let parsedTags = parseTags(tagsText)
+        let isoDate: String?
+        if hasDueDate {
+            let formatter = ISO8601DateFormatter()
+            formatter.formatOptions = [.withInternetDateTime]
+            isoDate = formatter.string(from: dueDate)
+        } else {
+            isoDate = nil
+        }
+
+        Task {
+            let success = await viewModel.updateTask(
+                id: task.id,
+                title: title.trimmingCharacters(in: .whitespaces),
+                description: description.trimmingCharacters(in: .whitespaces),
+                status: status,
+                priority: priority,
+                dueDate: isoDate,
+                isFocus: isFocus,
+                tags: parsedTags,
+                projectId: selectedProjectId
+            )
+            await MainActor.run {
+                isSubmitting = false
+                if success {
+                    onUpdated?()
+                    dismiss()
+                } else {
+                    errorMessage = viewModel.errorMessage ?? "Gagal menyimpan perubahan tugas"
+                }
+            }
+        }
     }
 }
