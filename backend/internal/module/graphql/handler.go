@@ -40,8 +40,15 @@ func (h *Handler) Handle(c *fiber.Ctx) error {
 		})
 	}
 
-	// Extract userID if available (from Bearer or OptionalAuth)
+	// Extract userID from context (set by AuthMiddleware)
 	userID, _ := authMiddleware.GetUserID(c)
+	if userID == "" {
+		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
+			"code":    "UNAUTHORIZED",
+			"message": "Authorization token is required or has expired",
+		})
+	}
+
 	ctx := context.WithValue(c.UserContext(), "user_id", userID)
 
 	result := graphql.Do(graphql.Params{

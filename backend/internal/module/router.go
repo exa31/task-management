@@ -215,7 +215,8 @@ func (r *Router) registerNotesAndTasks(api fiber.Router) {
 	})
 	if err == nil {
 		gqlHandler := graphqlmodule.NewHandler(gqlSchema, r.JWTService)
-		api.All("/graphql", authMiddleware.OptionalAuthMiddleware(r.JWTService), gqlHandler.Handle)
+		api.Get("/graphql", gqlHandler.Handle)
+		api.Post("/graphql", authMiddleware.AuthMiddleware(r.JWTService), gqlHandler.Handle)
 	}
 }
 
