@@ -443,6 +443,14 @@ func (s *service) CreateSubtask(ctx context.Context, userID string, taskID int64
 			if _, err := s.repo.CreateActivity(txCtx, taskID, userID, "subtask_created", desc, changesJSON); err != nil {
 				return err
 			}
+			if entity.Status == "done" {
+				progressStatus := "in_progress"
+				if _, err := s.Update(txCtx, userID, taskID, UpdateTaskRequest{
+					Status: &progressStatus,
+				}); err != nil {
+					return err
+				}
+			}
 		}
 		return nil
 	})
@@ -496,6 +504,29 @@ func (s *service) UpdateSubtask(ctx context.Context, userID string, taskID int64
 			if _, err := s.repo.CreateActivity(txCtx, taskID, userID, "subtask_toggled", desc, changesJSON); err != nil {
 				return err
 			}
+
+			if req.IsCompleted != nil {
+				total, completed, countErr := s.repo.CountSubtasks(txCtx, taskID)
+				if countErr == nil && total > 0 {
+					if completed == total && entity.Status != "done" {
+						doneStatus := "done"
+						noFocus := false
+						if _, err := s.Update(txCtx, userID, taskID, UpdateTaskRequest{
+							Status:  &doneStatus,
+							IsFocus: &noFocus,
+						}); err != nil {
+							return err
+						}
+					} else if completed < total && entity.Status == "done" {
+						progressStatus := "in_progress"
+						if _, err := s.Update(txCtx, userID, taskID, UpdateTaskRequest{
+							Status: &progressStatus,
+						}); err != nil {
+							return err
+						}
+					}
+				}
+			}
 		}
 		return nil
 	})
@@ -535,6 +566,18 @@ func (s *service) DeleteSubtask(ctx context.Context, userID string, taskID int64
 		changesJSON, _ := json.Marshal(map[string]any{"subtask_id": subtaskID, "title": subtaskTitle})
 		if _, err := s.repo.CreateActivity(txCtx, taskID, userID, "subtask_deleted", desc, changesJSON); err != nil {
 			return err
+		}
+
+		total, completed, countErr := s.repo.CountSubtasks(txCtx, taskID)
+		if countErr == nil && total > 0 && completed == total && entity.Status != "done" {
+			doneStatus := "done"
+			noFocus := false
+			if _, err := s.Update(txCtx, userID, taskID, UpdateTaskRequest{
+				Status:  &doneStatus,
+				IsFocus: &noFocus,
+			}); err != nil {
+				return err
+			}
 		}
 		return nil
 	})

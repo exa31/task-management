@@ -168,7 +168,7 @@ public struct TaskItem: Codable, Identifiable, Sendable {
     public var status: String // backlog, todo, in_progress, review, done
     public var priority: String // low, medium, high, urgent
     public let dueDate: String?
-    public let isFocus: Bool
+    public var isFocus: Bool
     public let tags: [String]?
     public let projectId: Int64?
     public let projectName: String?

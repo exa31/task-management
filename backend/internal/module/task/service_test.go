@@ -34,6 +34,7 @@ type mockRepository struct {
 	createSubtaskFunc func(ctx context.Context, userID string, taskID int64, req CreateSubtaskRequest) (*SubtaskResponse, error)
 	updateSubtaskFunc func(ctx context.Context, userID string, taskID int64, subtaskID int64, req UpdateSubtaskRequest) (*SubtaskResponse, error)
 	deleteSubtaskFunc func(ctx context.Context, userID string, taskID int64, subtaskID int64) error
+	countSubtasksFunc func(ctx context.Context, taskID int64) (int, int, error)
 
 	findByIDSystemFunc     func(ctx context.Context, id int64) (*TaskResponse, string, string, int, bool, error)
 	markDueWarningSentFunc func(ctx context.Context, id int64) error
@@ -137,6 +138,13 @@ func (m *mockRepository) DeleteSubtask(ctx context.Context, userID string, taskI
 		return m.deleteSubtaskFunc(ctx, userID, taskID, subtaskID)
 	}
 	return nil
+}
+
+func (m *mockRepository) CountSubtasks(ctx context.Context, taskID int64) (int, int, error) {
+	if m.countSubtasksFunc != nil {
+		return m.countSubtasksFunc(ctx, taskID)
+	}
+	return 0, 0, nil
 }
 
 func (m *mockRepository) FindByIDSystem(ctx context.Context, id int64) (*TaskResponse, string, string, int, bool, error) {
@@ -698,6 +706,130 @@ func TestTaskService_ProcessTaskRecurrence_AtomicScheduling(t *testing.T) {
 	if _, ok := sched.recurrenceScheduled[taskID]; !ok {
 		t.Errorf("expected task %d to have its next recurrence scheduled", taskID)
 	}
+}
+
+func TestTaskService_AutoCompletionAndUnfocus(t *testing.T) {
+	ctx := context.Background()
+	taskID := int64(42)
+	userID := "user-123"
+
+	t.Run("all subtasks completed triggers parent task done and unfocus", func(t *testing.T) {
+		var parentUpdatedWithDone bool
+		var parentUpdatedWithUnfocus bool
+
+		mockRepo := &mockRepository{
+			findByIDFunc: func(ctx context.Context, uID string, id int64) (*TaskResponse, error) {
+				return &TaskResponse{
+					ID:      taskID,
+					UserID:  userID,
+					Title:   "Master Task",
+					Status:  "in_progress",
+					IsFocus: true,
+				}, nil
+			},
+			updateSubtaskFunc: func(ctx context.Context, uID string, tID int64, sID int64, req UpdateSubtaskRequest) (*SubtaskResponse, error) {
+				return &SubtaskResponse{
+					ID:          sID,
+					TaskID:      tID,
+					Title:       "Subtask 2",
+					IsCompleted: true,
+				}, nil
+			},
+			createActivityFunc: func(ctx context.Context, tID int64, uID string, actType string, desc string, ch []byte) (*TaskActivityResponse, error) {
+				return &TaskActivityResponse{ID: 1}, nil
+			},
+			countSubtasksFunc: func(ctx context.Context, tID int64) (int, int, error) {
+				return 2, 2, nil // 2 of 2 completed
+			},
+			updateFunc: func(ctx context.Context, uID string, id int64, req UpdateTaskRequest) (*TaskResponse, error) {
+				if req.Status != nil && *req.Status == "done" {
+					parentUpdatedWithDone = true
+				}
+				if req.IsFocus != nil && !*req.IsFocus {
+					parentUpdatedWithUnfocus = true
+				}
+				return &TaskResponse{
+					ID:      id,
+					Status:  "done",
+					IsFocus: false,
+				}, nil
+			},
+			getUserThresholdFunc: func(ctx context.Context, uID string) (int, string, error) {
+				return 30, "Asia/Jakarta", nil
+			},
+		}
+
+		svc := NewService(mockRepo, &mockTransactor{})
+		isComp := true
+		res, err := svc.UpdateSubtask(ctx, userID, taskID, 2, UpdateSubtaskRequest{
+			IsCompleted: &isComp,
+		})
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+		if res == nil || !res.IsCompleted {
+			t.Errorf("expected subtask to be completed")
+		}
+		if !parentUpdatedWithDone {
+			t.Errorf("expected parent task to be automatically updated with status 'done'")
+		}
+		if !parentUpdatedWithUnfocus {
+			t.Errorf("expected parent task to be automatically unfocused")
+		}
+	})
+
+	t.Run("subtask unchecked on done task reverts parent task to in_progress", func(t *testing.T) {
+		var parentRevertedToInProgress bool
+
+		mockRepo := &mockRepository{
+			findByIDFunc: func(ctx context.Context, uID string, id int64) (*TaskResponse, error) {
+				return &TaskResponse{
+					ID:     taskID,
+					UserID: userID,
+					Title:  "Master Task",
+					Status: "done",
+				}, nil
+			},
+			updateSubtaskFunc: func(ctx context.Context, uID string, tID int64, sID int64, req UpdateSubtaskRequest) (*SubtaskResponse, error) {
+				return &SubtaskResponse{
+					ID:          sID,
+					TaskID:      tID,
+					Title:       "Subtask 1",
+					IsCompleted: false,
+				}, nil
+			},
+			createActivityFunc: func(ctx context.Context, tID int64, uID string, actType string, desc string, ch []byte) (*TaskActivityResponse, error) {
+				return &TaskActivityResponse{ID: 2}, nil
+			},
+			countSubtasksFunc: func(ctx context.Context, tID int64) (int, int, error) {
+				return 2, 1, nil // 1 of 2 completed
+			},
+			updateFunc: func(ctx context.Context, uID string, id int64, req UpdateTaskRequest) (*TaskResponse, error) {
+				if req.Status != nil && *req.Status == "in_progress" {
+					parentRevertedToInProgress = true
+				}
+				return &TaskResponse{
+					ID:     id,
+					Status: "in_progress",
+				}, nil
+			},
+			getUserThresholdFunc: func(ctx context.Context, uID string) (int, string, error) {
+				return 30, "Asia/Jakarta", nil
+			},
+		}
+
+		svc := NewService(mockRepo, &mockTransactor{})
+		isComp := false
+		_, err := svc.UpdateSubtask(ctx, userID, taskID, 1, UpdateSubtaskRequest{
+			IsCompleted: &isComp,
+		})
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+		if !parentRevertedToInProgress {
+			t.Errorf("expected parent task status to revert to 'in_progress'")
+		}
+	})
 }
 
 

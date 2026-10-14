@@ -26,6 +26,7 @@ type Repository interface {
 	CreateSubtask(ctx context.Context, userID string, taskID int64, req CreateSubtaskRequest) (*SubtaskResponse, error)
 	UpdateSubtask(ctx context.Context, userID string, taskID int64, subtaskID int64, req UpdateSubtaskRequest) (*SubtaskResponse, error)
 	DeleteSubtask(ctx context.Context, userID string, taskID int64, subtaskID int64) error
+	CountSubtasks(ctx context.Context, taskID int64) (int, int, error)
 
 	CreateActivity(ctx context.Context, taskID int64, userID string, activityType string, description string, changes []byte) (*TaskActivityResponse, error)
 	FindActivitiesByTaskID(ctx context.Context, userID string, taskID int64) ([]TaskActivityResponse, error)
@@ -372,6 +373,10 @@ func (r *repository) Update(ctx context.Context, userID string, id int64, req Up
 	if req.IsFocus != nil {
 		isFocus = *req.IsFocus
 	}
+	// When task is marked done, automatically clear focus unless explicitly specified
+	if status == "done" && req.IsFocus == nil {
+		isFocus = false
+	}
 
 	tags := existing.Tags
 	if req.Tags != nil {
@@ -441,6 +446,11 @@ func (r *repository) Update(ctx context.Context, userID string, id int64, req Up
 		_ = r.exec(ctx).QueryRowxContext(ctx, "SELECT name, color FROM projects WHERE id = $1", *entity.ProjectID).Scan(&entity.ProjectName, &entity.ProjectColor)
 	}
 
+	if entity.Status == "done" {
+		// Automatically mark all subtasks of completed task as completed
+		_, _ = r.exec(ctx).ExecContext(ctx, `UPDATE subtasks SET is_completed = true, updated_at = NOW() WHERE task_id = $1`, entity.ID)
+	}
+
 	subtasks, _ := r.fetchSubtasks(ctx, entity.ID)
 	res := entity.toResponse(subtasks)
 	return &res, nil
@@ -459,7 +469,11 @@ func (r *repository) LogProgress(ctx context.Context, userID string, id int64, r
 	statusUpdate := ""
 	args := []interface{}{req.ProgressNote, id, userID}
 	if req.Status != nil && *req.Status != "" {
-		statusUpdate = ", status = $4"
+		if *req.Status == "done" {
+			statusUpdate = ", status = $4, is_focus = false"
+		} else {
+			statusUpdate = ", status = $4"
+		}
 		args = append(args, *req.Status)
 	}
 
@@ -492,6 +506,10 @@ func (r *repository) LogProgress(ctx context.Context, userID string, id int64, r
 
 	if entity.ProjectID != nil {
 		_ = r.exec(ctx).QueryRowxContext(ctx, "SELECT name, color FROM projects WHERE id = $1", *entity.ProjectID).Scan(&entity.ProjectName, &entity.ProjectColor)
+	}
+
+	if entity.Status == "done" {
+		_, _ = r.exec(ctx).ExecContext(ctx, `UPDATE subtasks SET is_completed = true, updated_at = NOW() WHERE task_id = $1`, entity.ID)
 	}
 
 	subtasks, _ := r.fetchSubtasks(ctx, entity.ID)
@@ -596,6 +614,19 @@ func (r *repository) DeleteSubtask(ctx context.Context, userID string, taskID in
 		return fmt.Errorf("failed to delete subtask: %w", err)
 	}
 	return nil
+}
+
+func (r *repository) CountSubtasks(ctx context.Context, taskID int64) (int, int, error) {
+	type sc struct {
+		Total     int `db:"total"`
+		Completed int `db:"completed"`
+	}
+	var res sc
+	err := r.exec(ctx).GetContext(ctx, &res, `
+		SELECT COUNT(*) as total, COALESCE(COUNT(*) FILTER (WHERE is_completed = true), 0) as completed
+		FROM subtasks WHERE task_id = $1
+	`, taskID)
+	return res.Total, res.Completed, err
 }
 
 func (r *repository) FindByIDSystem(ctx context.Context, id int64) (*TaskResponse, string, string, int, bool, error) {

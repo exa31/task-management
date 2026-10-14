@@ -153,6 +153,11 @@ func (p *PostgresDB) WithTransaction(fn func(tx *sqlx.Tx) error) error {
 // WithTransactionCtx executes a function within a database transaction with context
 // Supports context cancellation and timeout
 func (p *PostgresDB) WithTransactionCtx(ctx context.Context, fn func(tx *sqlx.Tx) error) error {
+	// If already inside an active transaction, reuse it directly
+	if existingTx := TxFromContext(ctx); existingTx != nil {
+		return fn(existingTx)
+	}
+
 	// Start transaction with context
 	tx, err := p.DB.BeginTxx(ctx, nil)
 	if err != nil {
@@ -201,6 +206,11 @@ func (p *PostgresDB) WithTransactionCtx(ctx context.Context, fn func(tx *sqlx.Tx
 
 // WithReadOnlyTransactionCtx executes a function within a read-only database transaction with context
 func (p *PostgresDB) WithReadOnlyTransactionCtx(ctx context.Context, fn func(tx *sqlx.Tx) error) error {
+	// If already inside an active transaction, reuse it directly
+	if existingTx := TxFromContext(ctx); existingTx != nil {
+		return fn(existingTx)
+	}
+
 	// Start read-only transaction with context
 	tx, err := p.DB.BeginTxx(ctx, &sql.TxOptions{ReadOnly: true})
 	if err != nil {

@@ -82,6 +82,13 @@ public final class SharedWidgetDataManager: @unchecked Sendable {
                         }
                     }
                     task.subtasks = subtasks
+                    let allCompleted = !subtasks.isEmpty && subtasks.allSatisfy { $0.isCompleted }
+                    if allCompleted {
+                        task.status = "done"
+                        task.isFocus = false
+                    } else if !isCompleted && task.status == "done" {
+                        task.status = "in_progress"
+                    }
                 }
                 updatedFocus.append(task)
             }
@@ -95,6 +102,13 @@ public final class SharedWidgetDataManager: @unchecked Sendable {
                         }
                     }
                     task.subtasks = subtasks
+                    let allCompleted = !subtasks.isEmpty && subtasks.allSatisfy { $0.isCompleted }
+                    if allCompleted {
+                        task.status = "done"
+                        task.isFocus = false
+                    } else if !isCompleted && task.status == "done" {
+                        task.status = "in_progress"
+                    }
                 }
                 updatedDeadlines.append(task)
             }
