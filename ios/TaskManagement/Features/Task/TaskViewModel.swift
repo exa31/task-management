@@ -13,6 +13,7 @@ public final class TaskViewModel {
     public var projects: [Project] = []
     public var taskActivities: [TaskActivity] = []
     public var isLoadingActivities = false
+    public var selectedTaskForDetail: TaskItem? = nil
 
     private let apiClient = APIClient.shared
 
@@ -41,6 +42,39 @@ public final class TaskViewModel {
             self.errorMessage = error.localizedDescription
         }
         self.isLoading = false
+    }
+
+    @MainActor
+    public func selectTask(byId id: Int64) async {
+        if selectedTaskForDetail != nil {
+            selectedTaskForDetail = nil
+            try? await Task.sleep(nanoseconds: 120_000_000)
+        }
+
+        if let existing = tasks.first(where: { $0.id == id }) {
+            self.selectedTaskForDetail = existing
+            return
+        }
+
+        if tasks.isEmpty {
+            await loadTasks()
+            if let existing = tasks.first(where: { $0.id == id }) {
+                self.selectedTaskForDetail = existing
+                return
+            }
+        }
+
+        do {
+            let task = try await apiClient.getTask(id: id)
+            self.selectedTaskForDetail = task
+        } catch {
+            AppLogger.error(
+                "Failed to fetch task by id for deep link",
+                error: error,
+                category: .task,
+                metadata: ["taskId": id]
+            )
+        }
     }
 
     @MainActor

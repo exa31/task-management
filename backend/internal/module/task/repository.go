@@ -691,9 +691,19 @@ func (r *repository) GetWidgetBundle(ctx context.Context, userID string) (*Widge
 		return nil, err
 	}
 	var activeFocus []TaskResponse
+	seen := make(map[int64]bool)
+	// 1. Prioritize Focus & Recurring tasks first
 	for _, t := range allTasks {
 		if (t.IsFocus && t.Status != "done") || t.IsRecurring {
 			activeFocus = append(activeFocus, t)
+			seen[t.ID] = true
+		}
+	}
+	// 2. Append remaining active tasks (in_progress, todo, review, backlog)
+	for _, t := range allTasks {
+		if t.Status != "done" && !seen[t.ID] {
+			activeFocus = append(activeFocus, t)
+			seen[t.ID] = true
 		}
 	}
 

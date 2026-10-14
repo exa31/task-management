@@ -401,6 +401,22 @@
         }
       }
     },
+    "widget.recurring.switch" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Switch"
+          }
+        },
+        "id" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ganti"
+          }
+        }
+      }
+    },
     "widget.custom.configName" : {
       "localizations" : {
         "en" : {

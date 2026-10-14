@@ -454,6 +454,7 @@ public enum Translations {
             "widget.recurring.emptyDesc": "Enable 'Repeat Automatically' on a task in the app.",
             "widget.recurring.configName": "Daily Recurring Tasks",
             "widget.recurring.configDesc": "Track and complete your daily recurring tasks directly from your home screen.",
+            "widget.recurring.switch": "Switch",
 
             // Widgets - Custom Task
             "widget.custom.badge": "SELECTED",
@@ -830,6 +831,7 @@ public enum Translations {
             "widget.recurring.emptyDesc": "Aktifkan 'Ulangi Otomatis' pada tugas di aplikasi.",
             "widget.recurring.configName": "Tugas Rutin Harian",
             "widget.recurring.configDesc": "Pantau checklist tugas berulang harianmu dan selesaikan langsung dari layar utama.",
+            "widget.recurring.switch": "Ganti",
 
             // Widgets - Custom Task
             "widget.custom.badge": "PILIHAN",

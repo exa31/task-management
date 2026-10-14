@@ -3,7 +3,6 @@ import SwiftUI
 public struct TaskListView: View {
     @Bindable var viewModel: TaskViewModel
     @State private var showCreateSheet = false
-    @State private var selectedTaskForDetail: TaskItem? = nil
 
     public init(viewModel: TaskViewModel) {
         self.viewModel = viewModel
@@ -262,7 +261,7 @@ public struct TaskListView: View {
                             viewModel.toggleTaskStatus(task: task)
                         },
                         onSelect: { task in
-                            selectedTaskForDetail = task
+                            viewModel.selectedTaskForDetail = task
                         }
                     )
                     .padding(.horizontal, 16)
@@ -349,7 +348,7 @@ public struct TaskListView: View {
                                     viewModel.toggleSubtask(taskId: task.id, subtaskId: subtaskId, currentCompleted: isDone)
                                 },
                                 onSelect: {
-                                    selectedTaskForDetail = task
+                                    viewModel.selectedTaskForDetail = task
                                 }
                             )
                             .swipeActions(edge: .leading) {
@@ -396,7 +395,7 @@ public struct TaskListView: View {
             .sheet(isPresented: $showCreateSheet) {
                 CreateTaskSheet(viewModel: viewModel)
             }
-            .sheet(item: $selectedTaskForDetail) { task in
+            .sheet(item: $viewModel.selectedTaskForDetail) { task in
                 TaskDetailSheet(task: task, viewModel: viewModel)
             }
         }

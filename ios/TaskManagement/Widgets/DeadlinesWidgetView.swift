@@ -82,6 +82,7 @@ public struct DeadlinesWidgetView: View {
         }
         .padding(12)
         .widgetBackground(accentColor: Color(red: 244/255, green: 63/255, blue: 94/255))
+        .widgetURL(entry.bundle.upcomingDeadlines.first.flatMap { URL(string: "taskhub://tasks/\($0.id)") })
     }
 
     // MARK: - Medium Family
@@ -115,7 +116,10 @@ public struct DeadlinesWidgetView: View {
             } else {
                 VStack(spacing: 5) {
                     ForEach(deadlines) { task in
-                        deadlineRow(task: task)
+                        Link(destination: URL(string: "taskhub://tasks/\(task.id)")!) {
+                            deadlineRow(task: task)
+                        }
+                        .buttonStyle(.plain)
                     }
                 }
             }
@@ -124,6 +128,7 @@ public struct DeadlinesWidgetView: View {
         }
         .padding(14)
         .widgetBackground(accentColor: Color(red: 244/255, green: 63/255, blue: 94/255))
+        .widgetURL(entry.bundle.upcomingDeadlines.first.flatMap { URL(string: "taskhub://tasks/\($0.id)") })
     }
 
     // MARK: - Large Family
@@ -157,7 +162,10 @@ public struct DeadlinesWidgetView: View {
             } else {
                 VStack(spacing: 6) {
                     ForEach(deadlines) { task in
-                        deadlineRow(task: task, showDetails: true)
+                        Link(destination: URL(string: "taskhub://tasks/\(task.id)")!) {
+                            deadlineRow(task: task, showDetails: true)
+                        }
+                        .buttonStyle(.plain)
                     }
                 }
             }
@@ -166,6 +174,7 @@ public struct DeadlinesWidgetView: View {
         }
         .padding(16)
         .widgetBackground(accentColor: Color(red: 244/255, green: 63/255, blue: 94/255))
+        .widgetURL(entry.bundle.upcomingDeadlines.first.flatMap { URL(string: "taskhub://tasks/\($0.id)") })
     }
 
     // MARK: - Deadline Row

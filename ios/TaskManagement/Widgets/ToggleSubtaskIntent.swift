@@ -94,6 +94,18 @@ public struct CycleNextTaskIntent: AppIntent {
     }
 }
 
+public struct CycleNextRecurringTaskIntent: AppIntent {
+    public static var title: LocalizedStringResource = "Next Recurring Task"
+    public static var description = IntentDescription("Switch to another recurring task on the widget.")
+
+    public init() {}
+
+    public func perform() async throws -> some IntentResult {
+        SharedWidgetDataManager.shared.cycleRecurringTaskIndex()
+        return .result()
+    }
+}
+
 public struct CycleSubtaskPageIntent: AppIntent {
     public static var title: LocalizedStringResource = "Cycle Subtask Page"
     public static var description = IntentDescription("Switch to the next or previous page of subtasks on the widget.")

@@ -133,7 +133,9 @@ public struct RecurringTaskWidgetView: View {
     }
 
     private var activeRecurringTask: TaskItem? {
-        allRecurringTasks.first { $0.status != "done" } ?? allRecurringTasks.first
+        guard !allRecurringTasks.isEmpty else { return nil }
+        let idx = SharedWidgetDataManager.shared.getRecurringTaskIndex() % allRecurringTasks.count
+        return allRecurringTasks[idx]
     }
 
     public var body: some View {
@@ -166,6 +168,18 @@ public struct RecurringTaskWidgetView: View {
                 .clipShape(Capsule())
 
                 Spacer()
+
+                if allRecurringTasks.count > 1 {
+                    Button(intent: CycleNextRecurringTaskIntent()) {
+                        Image(systemName: "arrow.triangle.2.circlepath")
+                            .font(.system(size: 10, weight: .bold))
+                            .foregroundStyle(.white.opacity(0.7))
+                            .padding(3)
+                            .background(Color.white.opacity(0.1))
+                            .clipShape(Circle())
+                    }
+                    .buttonStyle(.plain)
+                }
 
                 if let task = activeRecurringTask, let count = task.subtasksCount, count > 0 {
                     let done = task.subtasksCompleted ?? 0
@@ -224,6 +238,7 @@ public struct RecurringTaskWidgetView: View {
         }
         .padding(12)
         .widgetBackground(accentColor: Color(red: 56/255, green: 189/255, blue: 248/255))
+        .widgetURL(activeRecurringTask.flatMap { URL(string: "taskhub://tasks/\($0.id)") })
     }
 
     // MARK: - Medium Family
@@ -245,6 +260,23 @@ public struct RecurringTaskWidgetView: View {
                 .clipShape(Capsule())
 
                 Spacer()
+
+                if allRecurringTasks.count > 1 {
+                    Button(intent: CycleNextRecurringTaskIntent()) {
+                        HStack(spacing: 4) {
+                            Text(L10n.Widgets.recurringSwitch)
+                                .font(.system(size: 10, weight: .semibold))
+                            Image(systemName: "arrow.triangle.2.circlepath")
+                                .font(.system(size: 9, weight: .bold))
+                        }
+                        .foregroundStyle(.white.opacity(0.8))
+                        .padding(.horizontal, 7)
+                        .padding(.vertical, 3)
+                        .background(Color.white.opacity(0.08))
+                        .clipShape(Capsule())
+                    }
+                    .buttonStyle(.plain)
+                }
 
                 if let task = activeRecurringTask, let count = task.subtasksCount, count > 0 {
                     let done = task.subtasksCompleted ?? 0
@@ -321,6 +353,7 @@ public struct RecurringTaskWidgetView: View {
         }
         .padding(14)
         .widgetBackground(accentColor: Color(red: 56/255, green: 189/255, blue: 248/255))
+        .widgetURL(activeRecurringTask.flatMap { URL(string: "taskhub://tasks/\($0.id)") })
     }
 
     // MARK: - Large Family
@@ -342,6 +375,23 @@ public struct RecurringTaskWidgetView: View {
                 .clipShape(Capsule())
 
                 Spacer()
+
+                if allRecurringTasks.count > 1 {
+                    Button(intent: CycleNextRecurringTaskIntent()) {
+                        HStack(spacing: 4) {
+                            Text(L10n.Widgets.recurringSwitch)
+                                .font(.system(size: 11, weight: .semibold))
+                            Image(systemName: "arrow.triangle.2.circlepath")
+                                .font(.system(size: 10, weight: .bold))
+                        }
+                        .foregroundStyle(.white.opacity(0.9))
+                        .padding(.horizontal, 8)
+                        .padding(.vertical, 4)
+                        .background(Color.white.opacity(0.1))
+                        .clipShape(Capsule())
+                    }
+                    .buttonStyle(.plain)
+                }
 
                 if let task = activeRecurringTask, let count = task.subtasksCount, count > 0 {
                     let done = task.subtasksCompleted ?? 0
@@ -387,6 +437,7 @@ public struct RecurringTaskWidgetView: View {
         }
         .padding(16)
         .widgetBackground(accentColor: Color(red: 56/255, green: 189/255, blue: 248/255))
+        .widgetURL(activeRecurringTask.flatMap { URL(string: "taskhub://tasks/\($0.id)") })
     }
 
     // MARK: - Subcomponents
@@ -697,6 +748,7 @@ public struct CustomTaskWidgetView: View {
         }
         .padding(12)
         .widgetBackground(accentColor: Color(red: 168/255, green: 85/255, blue: 247/255))
+        .widgetURL(currentTask.flatMap { URL(string: "taskhub://tasks/\($0.id)") })
     }
 
     // MARK: - Medium Family
@@ -817,6 +869,7 @@ public struct CustomTaskWidgetView: View {
         }
         .padding(14)
         .widgetBackground(accentColor: Color(red: 168/255, green: 85/255, blue: 247/255))
+        .widgetURL(currentTask.flatMap { URL(string: "taskhub://tasks/\($0.id)") })
     }
 
     // MARK: - Large Family
@@ -900,6 +953,7 @@ public struct CustomTaskWidgetView: View {
         }
         .padding(16)
         .widgetBackground(accentColor: Color(red: 168/255, green: 85/255, blue: 247/255))
+        .widgetURL(currentTask.flatMap { URL(string: "taskhub://tasks/\($0.id)") })
     }
 
     // MARK: - Row & States

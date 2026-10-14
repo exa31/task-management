@@ -104,7 +104,9 @@ struct TaskManagementApp: App {
             .preferredColorScheme(colorScheme)
             .environment(\.locale, Locale(identifier: I18n.shared.currentLanguage.rawValue))
             .onOpenURL { url in
-                _ = GIDSignIn.sharedInstance.handle(url)
+                if url.scheme != "taskhub" {
+                    _ = GIDSignIn.sharedInstance.handle(url)
+                }
             }
             .onChange(of: authViewModel.isAuthenticated) { _, isAuthenticated in
                 if isAuthenticated {

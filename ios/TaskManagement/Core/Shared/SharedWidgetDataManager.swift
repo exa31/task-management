@@ -25,6 +25,7 @@ public final class SharedWidgetDataManager: @unchecked Sendable {
     private let pendingTogglesKey = "task_hub_pending_subtask_toggles"
     private let pendingStatusUpdatesKey = "task_hub_pending_status_updates"
     private let customTaskIndexKey = "task_hub_custom_task_index"
+    private let recurringTaskIndexKey = "task_hub_recurring_task_index"
     private let lastSyncKey = "task_hub_widget_last_sync"
     private let authTokenKey = "task_hub_shared_auth_token"
 
@@ -304,6 +305,25 @@ public final class SharedWidgetDataManager: @unchecked Sendable {
         lock.lock()
         defer { lock.unlock() }
         return defaults.integer(forKey: customTaskIndexKey)
+    }
+
+    // MARK: - Recurring Task Cycling
+
+    public func cycleRecurringTaskIndex() {
+        lock.lock()
+        defer { lock.unlock() }
+        let current = defaults.integer(forKey: recurringTaskIndexKey)
+        defaults.set(current + 1, forKey: recurringTaskIndexKey)
+
+        #if canImport(WidgetKit)
+        WidgetCenter.shared.reloadAllTimelines()
+        #endif
+    }
+
+    public func getRecurringTaskIndex() -> Int {
+        lock.lock()
+        defer { lock.unlock() }
+        return defaults.integer(forKey: recurringTaskIndexKey)
     }
 
     // MARK: - Subtask Pagination per Task

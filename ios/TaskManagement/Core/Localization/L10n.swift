@@ -401,6 +401,7 @@ public enum L10n {
         public static var recurringEmptyDesc: String { "widget.recurring.emptyDesc".localized }
         public static var recurringConfigName: String { "widget.recurring.configName".localized }
         public static var recurringConfigDesc: String { "widget.recurring.configDesc".localized }
+        public static var recurringSwitch: String { "widget.recurring.switch".localized }
 
         // Custom Task Widget Accessors
         public static var customBadge: String { "widget.custom.badge".localized }
