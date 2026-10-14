@@ -568,6 +568,20 @@ struct TaskRowView: View {
                             ProjectPill(name: projName, hexColor: task.projectColor)
                         }
 
+                        if task.isRecurring == true {
+                            HStack(spacing: 3) {
+                                Image(systemName: "repeat")
+                                    .font(.system(size: 9, weight: .bold))
+                                Text(task.recurrencePattern?.capitalized ?? L10n.Tasks.repeatBadge)
+                                    .font(.system(size: 10, weight: .semibold))
+                            }
+                            .padding(.horizontal, 6)
+                            .padding(.vertical, 2)
+                            .background(Color.purple.opacity(0.12))
+                            .foregroundColor(.purple)
+                            .clipShape(Capsule())
+                        }
+
                         if let tags = task.tags, !tags.isEmpty {
                             ForEach(tags.prefix(2), id: \.self) { tag in
                                 Text("#\(tag)")
@@ -704,6 +718,9 @@ public struct CreateTaskSheet: View {
     @State private var hasDueDate: Bool = false
     @State private var dueDate: Date = Date().addingTimeInterval(3600 * 24)
     @State private var isFocus: Bool = false
+    @State private var isRecurring: Bool = false
+    @State private var recurrencePattern: String = "daily"
+    @State private var recurrenceInterval: Int = 1
     @State private var tagsText: String = ""
     @State private var subtasks: [String] = []
     @State private var newSubtaskText: String = ""
@@ -796,6 +813,20 @@ public struct CreateTaskSheet: View {
                             Text(L10n.Tasks.focusToday)
                                 .font(.system(size: 15))
                         }
+                    }
+                }
+
+                Section(header: Text(L10n.Tasks.sectionRecurrence)) {
+                    Toggle(L10n.Tasks.repeatAuto, isOn: $isRecurring)
+                    if isRecurring {
+                        Picker(L10n.Tasks.repeatPattern, selection: $recurrencePattern) {
+                            Text(L10n.Tasks.patternDaily).tag("daily")
+                            Text(L10n.Tasks.patternWeekdays).tag("weekdays")
+                            Text(L10n.Tasks.patternWeekly).tag("weekly")
+                            Text(L10n.Tasks.patternMonthly).tag("monthly")
+                        }
+                        let unit = recurrencePattern == "monthly" ? L10n.Tasks.unitMonths : recurrencePattern == "weekly" ? L10n.Tasks.unitWeeks : L10n.Tasks.unitDays
+                        Stepper(L10n.Tasks.repeatInterval(interval: recurrenceInterval, unit: unit), value: $recurrenceInterval, in: 1...365)
                     }
                 }
 
@@ -942,7 +973,10 @@ public struct CreateTaskSheet: View {
                 isFocus: isFocus,
                 tags: parsedTags,
                 projectId: selectedProjectId,
-                subtasks: finalSubtasks
+                subtasks: finalSubtasks,
+                isRecurring: isRecurring,
+                recurrencePattern: isRecurring ? recurrencePattern : nil,
+                recurrenceInterval: isRecurring ? recurrenceInterval : nil
             )
             await MainActor.run {
                 isSubmitting = false

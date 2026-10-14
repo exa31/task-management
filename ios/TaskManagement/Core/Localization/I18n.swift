@@ -221,6 +221,7 @@ public enum Translations {
             "tasks.unitDays": "days",
             "tasks.unitWeeks": "weeks",
             "tasks.unitMonths": "months",
+            "tasks.repeatBadge": "Repeating",
 
             // Projects
             "projects.title": "Projects",
@@ -552,6 +553,7 @@ public enum Translations {
             "tasks.unitDays": "hari",
             "tasks.unitWeeks": "minggu",
             "tasks.unitMonths": "bulan",
+            "tasks.repeatBadge": "Berulang",
 
             // Projects
             "projects.title": "Proyek",

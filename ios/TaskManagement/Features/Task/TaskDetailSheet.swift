@@ -36,6 +36,19 @@ public struct TaskDetailSheet: View {
                                 }
                                 PriorityBadge(priority: currentTask.priority)
                                 StatusBadge(status: currentTask.status)
+                                if currentTask.isRecurring == true {
+                                    HStack(spacing: 4) {
+                                        Image(systemName: "repeat")
+                                            .font(.system(size: 10, weight: .semibold))
+                                        Text(currentTask.recurrencePattern?.capitalized ?? L10n.Tasks.repeatBadge)
+                                            .font(.system(size: 11, weight: .semibold))
+                                    }
+                                    .padding(.horizontal, 8)
+                                    .padding(.vertical, 3)
+                                    .background(Color.purple.opacity(0.12))
+                                    .foregroundColor(.purple)
+                                    .clipShape(Capsule())
+                                }
                             }
                         }
 
@@ -138,6 +151,34 @@ public struct TaskDetailSheet: View {
                             .background(Color(.secondarySystemGroupedBackground))
                             .clipShape(RoundedRectangle(cornerRadius: 10))
                         }
+                    }
+                }
+
+                // Recurrence Details (if recurring)
+                if currentTask.isRecurring == true {
+                    VStack(alignment: .leading, spacing: 6) {
+                        Text(L10n.Tasks.sectionRecurrence.uppercased())
+                            .font(.system(size: 11, weight: .bold))
+                            .foregroundColor(.secondary)
+
+                        HStack(spacing: 8) {
+                            Image(systemName: "repeat")
+                                .foregroundColor(.purple)
+                                .font(.system(size: 14, weight: .semibold))
+                            Text(currentTask.recurrencePattern?.capitalized ?? L10n.Tasks.repeatBadge)
+                                .font(.system(size: 13, weight: .medium))
+
+                            if let interval = currentTask.recurrenceInterval, interval > 1 {
+                                let unit = currentTask.recurrencePattern == "monthly" ? L10n.Tasks.unitMonths : currentTask.recurrencePattern == "weekly" ? L10n.Tasks.unitWeeks : L10n.Tasks.unitDays
+                                Text("(\(L10n.Tasks.repeatInterval(interval: interval, unit: unit)))")
+                                    .font(.system(size: 12))
+                                    .foregroundColor(.secondary)
+                            }
+                        }
+                        .padding(12)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .background(Color.purple.opacity(0.08))
+                        .clipShape(RoundedRectangle(cornerRadius: 10))
                     }
                 }
 

@@ -131,6 +131,7 @@ public enum L10n {
         public static var unitDays: String { "tasks.unitDays".localized }
         public static var unitWeeks: String { "tasks.unitWeeks".localized }
         public static var unitMonths: String { "tasks.unitMonths".localized }
+        public static var repeatBadge: String { "tasks.repeatBadge".localized }
     }
 
     public enum Projects {

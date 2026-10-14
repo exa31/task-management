@@ -761,6 +761,20 @@ private struct ProjectTaskRow: View {
                     PriorityBadge(priority: task.priority)
                     StatusBadge(status: task.status)
 
+                    if task.isRecurring == true {
+                        HStack(spacing: 3) {
+                            Image(systemName: "repeat")
+                                .font(.system(size: 8, weight: .bold))
+                            Text(task.recurrencePattern?.capitalized ?? L10n.Tasks.repeatBadge)
+                                .font(.system(size: 9, weight: .semibold))
+                        }
+                        .padding(.horizontal, 5)
+                        .padding(.vertical, 2)
+                        .background(Color.purple.opacity(0.12))
+                        .foregroundColor(.purple)
+                        .clipShape(Capsule())
+                    }
+
                     if let due = task.dueDate {
                         HStack(spacing: 3) {
                             Image(systemName: "calendar")
