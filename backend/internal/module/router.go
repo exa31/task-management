@@ -149,6 +149,8 @@ func (r *Router) registerNotesAndTasks(api fiber.Router) {
 	}
 	// External Asynq worker webhook trigger endpoint for task due warning (Public/Secret-protected)
 	api.Post("/tasks/due-warning/trigger", taskHandler.TriggerDueWarning(webhookSecret))
+	// External Asynq worker webhook trigger endpoint for recurring task midnight rollover (Public/Secret-protected)
+	api.Post("/tasks/recurrence/trigger", taskHandler.TriggerRecurrence(webhookSecret))
 
 	// Notes routes (Per-user isolated)
 	notes := api.Group("/notes")

@@ -332,7 +332,7 @@ public final class SharedWidgetDataManager: @unchecked Sendable {
         lock.lock()
         defer { lock.unlock() }
 
-        let focus = tasks.filter { ($0.isFocus == true || $0.isRecurring == true) && $0.status != "done" }
+        let focus = tasks.filter { ($0.isFocus == true && $0.status != "done") || ($0.isRecurring == true) }
         let deadlines = tasks
             .filter { $0.status != "done" && $0.dueDate != nil && !($0.dueDate?.isEmpty ?? true) }
             .sorted { ($0.dueDate ?? "") < ($1.dueDate ?? "") }

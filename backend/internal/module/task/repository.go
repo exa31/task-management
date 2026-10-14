@@ -684,16 +684,15 @@ func (r *repository) FindByIDSystem(ctx context.Context, id int64) (*TaskRespons
 }
 
 func (r *repository) GetWidgetBundle(ctx context.Context, userID string) (*WidgetBundleResponse, error) {
-	focusTasks, err := r.FindAll(ctx, userID, TaskFilter{
-		IsFocus: boolPtr(true),
-		Limit:   10,
+	allTasks, err := r.FindAll(ctx, userID, TaskFilter{
+		Limit: 20,
 	})
 	if err != nil {
 		return nil, err
 	}
 	var activeFocus []TaskResponse
-	for _, t := range focusTasks {
-		if t.Status != "done" {
+	for _, t := range allTasks {
+		if (t.IsFocus && t.Status != "done") || t.IsRecurring {
 			activeFocus = append(activeFocus, t)
 		}
 	}

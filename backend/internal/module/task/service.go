@@ -178,7 +178,6 @@ func (s *service) FindAll(ctx context.Context, userID string, filter TaskFilter)
 
 func (s *service) Update(ctx context.Context, userID string, id int64, req UpdateTaskRequest) (*TaskResponse, error) {
 	var res *TaskResponse
-	var oldStatus string
 	var userTimezone string
 	var dueChanged bool
 	var dueRemoved bool
@@ -192,7 +191,6 @@ func (s *service) Update(ctx context.Context, userID string, id int64, req Updat
 		if entity == nil {
 			return errors.TaskNotFound()
 		}
-		oldStatus = entity.Status
 
 		if req.DueDate != nil {
 			for _, st := range entity.Subtasks {
@@ -312,13 +310,6 @@ func (s *service) Update(ctx context.Context, userID string, id int64, req Updat
 	}
 
 	if res != nil {
-		// Check if recurring task transitioned to done
-		if oldStatus != "done" && res.Status == "done" && res.IsRecurring {
-			if _, err := s.cloneAndRollOverRecurringTask(ctx, res, userTimezone); err != nil && s.logger != nil {
-				s.logger.Error("failed to roll over recurring task on update", "task_id", res.ID, "error", err)
-			}
-		}
-
 		if dueChanged || urgentChanged {
 			s.notifyTaskDeadlineChanged(res.ID, res.Title, res.DueDate, urgentChanged, dueRemoved, userID)
 		}
