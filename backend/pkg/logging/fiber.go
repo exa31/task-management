@@ -69,23 +69,35 @@ func ContextFromFiber(c *fiber.Ctx) context.Context {
 	return c.UserContext()
 }
 
-// AccessLogMiddleware logs every HTTP request at Info level with structured
-// fields, including the request ID, path, status and latency.
+// AccessLogMiddleware logs every HTTP request with structured fields,
+// including the request ID, path, status, and latency.
+// Status >= 500 is logged at Error level, 4xx at Warn level, and 2xx/3xx at Info level.
 func AccessLogMiddleware() fiber.Handler {
 	return func(c *fiber.Ctx) error {
 		start := time.Now()
 
 		err := c.Next()
 
-		LoggerFromFiber(c).Info("http request",
+		status := effectiveStatus(c, err)
+		logger := LoggerFromFiber(c)
+		attrs := []any{
 			slog.String("method", c.Method()),
 			slog.String("path", c.Path()),
-			slog.Int("status", effectiveStatus(c, err)),
+			slog.Int("status", status),
 			slog.Duration("latency", time.Since(start)),
 			slog.String("ip", c.IP()),
 			slog.String("user_agent", string(c.Context().UserAgent())),
 			Err(err),
-		)
+		}
+
+		switch {
+		case status >= 500:
+			logger.Error("http request", attrs...)
+		case status >= 400:
+			logger.Warn("http request", attrs...)
+		default:
+			logger.Info("http request", attrs...)
+		}
 
 		return err
 	}
