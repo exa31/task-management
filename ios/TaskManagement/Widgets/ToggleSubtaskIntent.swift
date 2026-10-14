@@ -40,6 +40,8 @@ public struct ToggleSubtaskIntent: AppIntent {
         WidgetCenter.shared.reloadAllTimelines()
         #endif
 
+        await SharedWidgetDataManager.shared.syncWithBackend()
+
         return .result()
     }
 }
@@ -69,6 +71,13 @@ public struct UpdateTaskStatusIntent: AppIntent {
             taskId: Int64(taskId),
             status: newStatus
         )
+
+        #if canImport(WidgetKit)
+        WidgetCenter.shared.reloadAllTimelines()
+        #endif
+
+        await SharedWidgetDataManager.shared.syncWithBackend()
+
         return .result()
     }
 }

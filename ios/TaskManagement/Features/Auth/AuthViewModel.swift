@@ -31,14 +31,16 @@ public final class AuthViewModel {
     }
 
     public func checkSession() {
-        if keychain.get(key: "access_token") != nil {
+        if let token = keychain.get(key: "access_token") {
             isAuthenticated = true
+            SharedWidgetDataManager.shared.saveAuthToken(token)
             AppLogger.info("Active session token found in Keychain", category: .auth)
             Task {
                 await PushNotificationManager.shared.registerDeviceTokenWithBackend()
             }
         } else {
             isAuthenticated = false
+            SharedWidgetDataManager.shared.clearAuthToken()
         }
     }
 
@@ -159,6 +161,7 @@ public final class AuthViewModel {
     public func signOut(withMessage message: String? = nil) {
         GIDSignIn.sharedInstance.signOut()
         keychain.clearAll()
+        SharedWidgetDataManager.shared.clearAuthToken()
         isAuthenticated = false
         if let message {
             errorMessage = message

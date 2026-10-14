@@ -26,9 +26,30 @@ public final class SharedWidgetDataManager: @unchecked Sendable {
     private let pendingStatusUpdatesKey = "task_hub_pending_status_updates"
     private let customTaskIndexKey = "task_hub_custom_task_index"
     private let lastSyncKey = "task_hub_widget_last_sync"
+    private let authTokenKey = "task_hub_shared_auth_token"
 
     private let defaults: UserDefaults
     private let lock = NSLock()
+
+    // MARK: - Shared Auth Token Access
+
+    public func saveAuthToken(_ token: String) {
+        lock.lock()
+        defer { lock.unlock() }
+        defaults.set(token, forKey: authTokenKey)
+    }
+
+    public func getAuthToken() -> String? {
+        lock.lock()
+        defer { lock.unlock() }
+        return defaults.string(forKey: authTokenKey)
+    }
+
+    public func clearAuthToken() {
+        lock.lock()
+        defer { lock.unlock() }
+        defaults.removeObject(forKey: authTokenKey)
+    }
 
     public struct PendingStatusUpdate: Codable, Sendable {
         public let taskId: Int64
@@ -316,13 +337,37 @@ public final class SharedWidgetDataManager: @unchecked Sendable {
         #endif
     }
 
+    public func clearPendingToggles(matching items: [PendingSubtaskToggle]) {
+        lock.lock()
+        defer { lock.unlock() }
+        let set = Set(items.map { "\($0.taskId)_\($0.subtaskId)_\($0.isCompleted)_\($0.timestamp.timeIntervalSince1970)" })
+        let remaining = getPendingTogglesLocked().filter {
+            !set.contains("\($0.taskId)_\($0.subtaskId)_\($0.isCompleted)_\($0.timestamp.timeIntervalSince1970)")
+        }
+        if let encoded = try? JSONEncoder().encode(remaining) {
+            defaults.set(encoded, forKey: pendingTogglesKey)
+        }
+    }
+
+    public func clearPendingStatusUpdates(matching items: [PendingStatusUpdate]) {
+        lock.lock()
+        defer { lock.unlock() }
+        let set = Set(items.map { "\($0.taskId)_\($0.status)_\($0.timestamp.timeIntervalSince1970)" })
+        let remaining = getPendingStatusUpdatesLocked().filter {
+            !set.contains("\($0.taskId)_\($0.status)_\($0.timestamp.timeIntervalSince1970)")
+        }
+        if let encoded = try? JSONEncoder().encode(remaining) {
+            defaults.set(encoded, forKey: pendingStatusUpdatesKey)
+        }
+    }
+
     // MARK: - Online Sync
 
     public func syncWithBackend() async {
         let pending = getPendingToggles()
         if !pending.isEmpty {
             AppLogger.info("Flushing \(pending.count) offline widget subtask toggles to backend", category: .task)
-            let syncTime = Date()
+            var synced: [PendingSubtaskToggle] = []
             for item in pending {
                 do {
                     _ = try await APIClient.shared.updateSubtask(
@@ -330,28 +375,34 @@ public final class SharedWidgetDataManager: @unchecked Sendable {
                         subtaskId: item.subtaskId,
                         isCompleted: item.isCompleted
                     )
+                    synced.append(item)
                 } catch {
                     AppLogger.warn("Failed to sync subtask \(item.subtaskId) toggle: \(error.localizedDescription)", category: .task)
                 }
             }
-            clearPendingToggles(olderThan: syncTime)
+            if !synced.isEmpty {
+                clearPendingToggles(matching: synced)
+            }
         }
 
         let pendingStatuses = getPendingStatusUpdates()
         if !pendingStatuses.isEmpty {
             AppLogger.info("Flushing \(pendingStatuses.count) widget task status updates to backend", category: .task)
-            let syncTime = Date()
+            var syncedStatuses: [PendingStatusUpdate] = []
             for item in pendingStatuses {
                 do {
                     _ = try await APIClient.shared.updateTask(
                         id: item.taskId,
                         req: UpdateTaskRequest(status: item.status)
                     )
+                    syncedStatuses.append(item)
                 } catch {
                     AppLogger.warn("Failed to sync task \(item.taskId) status update: \(error.localizedDescription)", category: .task)
                 }
             }
-            clearPendingStatusUpdates(olderThan: syncTime)
+            if !syncedStatuses.isEmpty {
+                clearPendingStatusUpdates(matching: syncedStatuses)
+            }
         }
 
         do {

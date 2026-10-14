@@ -63,7 +63,7 @@ public actor APIClient {
             }
         }
 
-        if let token = keychain.get(key: "access_token") {
+        if let token = keychain.get(key: "access_token") ?? SharedWidgetDataManager.shared.getAuthToken() {
             req.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
         }
 
@@ -145,6 +145,7 @@ public actor APIClient {
     private func handleSessionExpired() async {
         AppLogger.warn("Token refresh failed. Clearing credentials and broadcasting session expiration", category: .auth)
         keychain.clearAll()
+        SharedWidgetDataManager.shared.clearAuthToken()
         await MainActor.run {
             NotificationCenter.default.post(name: .sessionExpired, object: nil)
         }
@@ -186,6 +187,7 @@ public actor APIClient {
 
             keychain.save(key: "access_token", value: tokens.accessToken)
             keychain.save(key: "refresh_token", value: tokens.refreshToken)
+            SharedWidgetDataManager.shared.saveAuthToken(tokens.accessToken)
             return true
         }
 
@@ -203,6 +205,7 @@ public actor APIClient {
         if let tokens = res.tokens {
             keychain.save(key: "access_token", value: tokens.accessToken)
             keychain.save(key: "refresh_token", value: tokens.refreshToken)
+            SharedWidgetDataManager.shared.saveAuthToken(tokens.accessToken)
         }
         keychain.save(key: "user_name", value: res.user.name)
         keychain.save(key: "user_email", value: res.user.email)
@@ -439,7 +442,7 @@ public actor APIClient {
         req.httpMethod = "POST"
         req.setValue("application/json", forHTTPHeaderField: "Content-Type")
 
-        if let token = keychain.get(key: "access_token") {
+        if let token = keychain.get(key: "access_token") ?? SharedWidgetDataManager.shared.getAuthToken() {
             req.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
         }
 
