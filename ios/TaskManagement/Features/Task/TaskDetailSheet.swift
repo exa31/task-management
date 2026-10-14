@@ -721,12 +721,15 @@ public struct EditTaskSheet: View {
                 status: status,
                 priority: priority,
                 dueDate: isoDate,
+                clearDueDate: !hasDueDate,
                 isFocus: isFocus,
                 tags: parsedTags,
                 projectId: selectedProjectId,
+                clearProjectId: selectedProjectId == nil,
                 isRecurring: isRecurring,
                 recurrencePattern: isRecurring ? recurrencePattern : nil,
-                recurrenceInterval: isRecurring ? recurrenceInterval : nil
+                recurrenceInterval: isRecurring ? recurrenceInterval : nil,
+                clearRecurrenceEndDate: !isRecurring
             )
             await MainActor.run {
                 isSubmitting = false

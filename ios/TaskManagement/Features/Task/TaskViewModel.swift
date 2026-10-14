@@ -188,13 +188,16 @@ public final class TaskViewModel {
         status: String? = nil,
         priority: String? = nil,
         dueDate: String? = nil,
+        clearDueDate: Bool = false,
         isFocus: Bool? = nil,
         tags: [String]? = nil,
         projectId: Int64? = nil,
+        clearProjectId: Bool = false,
         isRecurring: Bool? = nil,
         recurrencePattern: String? = nil,
         recurrenceInterval: Int? = nil,
-        recurrenceEndDate: String? = nil
+        recurrenceEndDate: String? = nil,
+        clearRecurrenceEndDate: Bool = false
     ) async -> Bool {
         do {
             let updated = try await apiClient.updateTask(
@@ -205,13 +208,16 @@ public final class TaskViewModel {
                     status: status,
                     priority: priority,
                     dueDate: dueDate,
+                    clearDueDate: clearDueDate,
                     isFocus: isFocus,
                     tags: tags,
                     projectId: projectId,
+                    clearProjectId: clearProjectId,
                     isRecurring: isRecurring,
                     recurrencePattern: recurrencePattern,
                     recurrenceInterval: recurrenceInterval,
-                    recurrenceEndDate: recurrenceEndDate
+                    recurrenceEndDate: recurrenceEndDate,
+                    clearRecurrenceEndDate: clearRecurrenceEndDate
                 )
             )
             if let idx = tasks.firstIndex(where: { $0.id == id }) {

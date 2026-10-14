@@ -268,13 +268,16 @@ public struct UpdateTaskRequest: Codable {
     public let status: String?
     public let priority: String?
     public let dueDate: String?
+    public let clearDueDate: Bool
     public let isFocus: Bool?
     public let tags: [String]?
     public let projectId: Int64?
+    public let clearProjectId: Bool
     public let isRecurring: Bool?
     public let recurrencePattern: String?
     public let recurrenceInterval: Int?
     public let recurrenceEndDate: String?
+    public let clearRecurrenceEndDate: Bool
 
     public init(
         title: String? = nil,
@@ -282,26 +285,32 @@ public struct UpdateTaskRequest: Codable {
         status: String? = nil,
         priority: String? = nil,
         dueDate: String? = nil,
+        clearDueDate: Bool = false,
         isFocus: Bool? = nil,
         tags: [String]? = nil,
         projectId: Int64? = nil,
+        clearProjectId: Bool = false,
         isRecurring: Bool? = nil,
         recurrencePattern: String? = nil,
         recurrenceInterval: Int? = nil,
-        recurrenceEndDate: String? = nil
+        recurrenceEndDate: String? = nil,
+        clearRecurrenceEndDate: Bool = false
     ) {
         self.title = title
         self.description = description
         self.status = status
         self.priority = priority
         self.dueDate = dueDate
+        self.clearDueDate = clearDueDate
         self.isFocus = isFocus
         self.tags = tags
         self.projectId = projectId
+        self.clearProjectId = clearProjectId
         self.isRecurring = isRecurring
         self.recurrencePattern = recurrencePattern
         self.recurrenceInterval = recurrenceInterval
         self.recurrenceEndDate = recurrenceEndDate
+        self.clearRecurrenceEndDate = clearRecurrenceEndDate
     }
 
     enum CodingKeys: String, CodingKey {
@@ -313,6 +322,56 @@ public struct UpdateTaskRequest: Codable {
         case recurrencePattern = "recurrence_pattern"
         case recurrenceInterval = "recurrence_interval"
         case recurrenceEndDate = "recurrence_end_date"
+    }
+
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encodeIfPresent(title, forKey: .title)
+        try container.encodeIfPresent(description, forKey: .description)
+        try container.encodeIfPresent(status, forKey: .status)
+        try container.encodeIfPresent(priority, forKey: .priority)
+        try container.encodeIfPresent(isFocus, forKey: .isFocus)
+        try container.encodeIfPresent(tags, forKey: .tags)
+        try container.encodeIfPresent(isRecurring, forKey: .isRecurring)
+        try container.encodeIfPresent(recurrencePattern, forKey: .recurrencePattern)
+        try container.encodeIfPresent(recurrenceInterval, forKey: .recurrenceInterval)
+
+        if clearDueDate {
+            try container.encodeNil(forKey: .dueDate)
+        } else {
+            try container.encodeIfPresent(dueDate, forKey: .dueDate)
+        }
+
+        if clearProjectId {
+            try container.encodeNil(forKey: .projectId)
+        } else {
+            try container.encodeIfPresent(projectId, forKey: .projectId)
+        }
+
+        if clearRecurrenceEndDate {
+            try container.encodeNil(forKey: .recurrenceEndDate)
+        } else {
+            try container.encodeIfPresent(recurrenceEndDate, forKey: .recurrenceEndDate)
+        }
+    }
+
+    public init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        title = try container.decodeIfPresent(String.self, forKey: .title)
+        description = try container.decodeIfPresent(String.self, forKey: .description)
+        status = try container.decodeIfPresent(String.self, forKey: .status)
+        priority = try container.decodeIfPresent(String.self, forKey: .priority)
+        dueDate = try container.decodeIfPresent(String.self, forKey: .dueDate)
+        clearDueDate = false
+        isFocus = try container.decodeIfPresent(Bool.self, forKey: .isFocus)
+        tags = try container.decodeIfPresent([String].self, forKey: .tags)
+        projectId = try container.decodeIfPresent(Int64.self, forKey: .projectId)
+        clearProjectId = false
+        isRecurring = try container.decodeIfPresent(Bool.self, forKey: .isRecurring)
+        recurrencePattern = try container.decodeIfPresent(String.self, forKey: .recurrencePattern)
+        recurrenceInterval = try container.decodeIfPresent(Int.self, forKey: .recurrenceInterval)
+        recurrenceEndDate = try container.decodeIfPresent(String.self, forKey: .recurrenceEndDate)
+        clearRecurrenceEndDate = false
     }
 }
 
