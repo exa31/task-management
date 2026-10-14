@@ -38,6 +38,7 @@
 		DD0102030405060708090002 /* TaskManagement/Features/Mcp/McpViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = DD0102030405060708090001 /* TaskManagement/Features/Mcp/McpViewModel.swift */; };
 		DD0102030405060708090004 /* TaskManagement/Features/Mcp/McpSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DD0102030405060708090003 /* TaskManagement/Features/Mcp/McpSettingsView.swift */; };
 		CA0102030405060708090002 /* TaskManagement/Features/Calendar/CalendarView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CA0102030405060708090001 /* TaskManagement/Features/Calendar/CalendarView.swift */; };
+		WW0102030405060708090002 /* TaskManagement/Core/Shared/SharedWidgetDataManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = WW0102030405060708090001 /* TaskManagement/Core/Shared/SharedWidgetDataManager.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -73,6 +74,7 @@
 		DD0102030405060708090001 /* TaskManagement/Features/Mcp/McpViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TaskManagement/Features/Mcp/McpViewModel.swift; sourceTree = "<group>"; };
 		DD0102030405060708090003 /* TaskManagement/Features/Mcp/McpSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TaskManagement/Features/Mcp/McpSettingsView.swift; sourceTree = "<group>"; };
 		CA0102030405060708090001 /* TaskManagement/Features/Calendar/CalendarView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TaskManagement/Features/Calendar/CalendarView.swift; sourceTree = "<group>"; };
+		WW0102030405060708090001 /* TaskManagement/Core/Shared/SharedWidgetDataManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TaskManagement/Core/Shared/SharedWidgetDataManager.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -123,6 +125,7 @@
 				DD0102030405060708090001 /* TaskManagement/Features/Mcp/McpViewModel.swift */,
 				DD0102030405060708090003 /* TaskManagement/Features/Mcp/McpSettingsView.swift */,
 				CA0102030405060708090001 /* TaskManagement/Features/Calendar/CalendarView.swift */,
+				WW0102030405060708090001 /* TaskManagement/Core/Shared/SharedWidgetDataManager.swift */,
 			);
 			sourceTree = "<group>";
 		};
@@ -230,6 +233,7 @@
 				DD0102030405060708090002 /* TaskManagement/Features/Mcp/McpViewModel.swift in Sources */,
 				DD0102030405060708090004 /* TaskManagement/Features/Mcp/McpSettingsView.swift in Sources */,
 				CA0102030405060708090002 /* TaskManagement/Features/Calendar/CalendarView.swift in Sources */,
+				WW0102030405060708090002 /* TaskManagement/Core/Shared/SharedWidgetDataManager.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

@@ -11,6 +11,7 @@ import (
 
 	"golang/database"
 	"golang/internal/module/note"
+	"golang/internal/module/project"
 	"golang/internal/module/reminder"
 	"golang/internal/module/task"
 
@@ -24,6 +25,7 @@ type Service interface {
 	ValidateToken(ctx context.Context, rawToken string) (string, error)
 	HandleJSONRPC(ctx context.Context, userID string, req JSONRPCRequest) JSONRPCResponse
 	SetReminderService(reminderService reminder.Service)
+	SetProjectService(projectService project.Service)
 }
 
 type service struct {
@@ -31,6 +33,7 @@ type service struct {
 	noteService     note.Service
 	taskService     task.Service
 	reminderService reminder.Service
+	projectService  project.Service
 	db              database.Transactor
 }
 
@@ -45,6 +48,10 @@ func NewService(tokenRepo TokenRepository, noteService note.Service, taskService
 
 func (s *service) SetReminderService(reminderService reminder.Service) {
 	s.reminderService = reminderService
+}
+
+func (s *service) SetProjectService(projectService project.Service) {
+	s.projectService = projectService
 }
 
 func (s *service) CreateToken(ctx context.Context, userID string, name string) (*GenerateTokenResponse, error) {
@@ -176,14 +183,23 @@ func (s *service) getToolDefinitions() []map[string]interface{} {
 			},
 		},
 		{
+			"name":        "list_projects",
+			"description": "List existing projects/modules with their IDs, names, colors, descriptions, and task counts.",
+			"inputSchema": map[string]interface{}{
+				"type":       "object",
+				"properties": map[string]interface{}{},
+			},
+		},
+		{
 			"name":        "convert_note_to_task",
 			"description": "Promote an existing idea note into an actionable task with optional subtasks.",
 			"inputSchema": map[string]interface{}{
 				"type": "object",
 				"properties": map[string]interface{}{
-					"note_id":  map[string]interface{}{"type": "number", "description": "ID of the note to convert"},
-					"priority": map[string]interface{}{"type": "string", "enum": []string{"low", "medium", "high", "urgent"}, "description": "Task priority"},
-					"subtasks": map[string]interface{}{"type": "array", "items": map[string]interface{}{"type": "string"}, "description": "Initial checklist steps"},
+					"note_id":    map[string]interface{}{"type": "number", "description": "ID of the note to convert"},
+					"priority":   map[string]interface{}{"type": "string", "enum": []string{"low", "medium", "high", "urgent"}, "description": "Task priority"},
+					"subtasks":   map[string]interface{}{"type": "array", "items": map[string]interface{}{"type": "string"}, "description": "Initial checklist steps"},
+					"project_id": map[string]interface{}{"type": "number", "description": "Optional Project ID to link the converted task to"},
 				},
 				"required": []string{"note_id"},
 			},
@@ -201,6 +217,7 @@ func (s *service) getToolDefinitions() []map[string]interface{} {
 					"is_focus":    map[string]interface{}{"type": "boolean", "description": "Pin to Today's Focus"},
 					"subtasks":    map[string]interface{}{"type": "array", "items": map[string]interface{}{"type": "string"}, "description": "Checklist subtasks"},
 					"tags":        map[string]interface{}{"type": "array", "items": map[string]interface{}{"type": "string"}, "description": "Category tags"},
+					"project_id":  map[string]interface{}{"type": "number", "description": "Optional Project ID to link this task to"},
 				},
 				"required": []string{"title"},
 			},
@@ -211,11 +228,12 @@ func (s *service) getToolDefinitions() []map[string]interface{} {
 			"inputSchema": map[string]interface{}{
 				"type": "object",
 				"properties": map[string]interface{}{
-					"status":   map[string]interface{}{"type": "string", "enum": []string{"backlog", "todo", "in_progress", "review", "done"}},
-					"priority": map[string]interface{}{"type": "string", "enum": []string{"low", "medium", "high", "urgent"}},
-					"is_focus": map[string]interface{}{"type": "boolean", "description": "Filter by pinned Today's Focus tasks"},
-					"search":   map[string]interface{}{"type": "string", "description": "Search keyword"},
-					"limit":    map[string]interface{}{"type": "number", "description": "Limit count"},
+					"status":     map[string]interface{}{"type": "string", "enum": []string{"backlog", "todo", "in_progress", "review", "done"}},
+					"priority":   map[string]interface{}{"type": "string", "enum": []string{"low", "medium", "high", "urgent"}},
+					"is_focus":   map[string]interface{}{"type": "boolean", "description": "Filter by pinned Today's Focus tasks"},
+					"search":     map[string]interface{}{"type": "string", "description": "Search keyword"},
+					"project_id": map[string]interface{}{"type": "number", "description": "Filter by Project ID"},
+					"limit":      map[string]interface{}{"type": "number", "description": "Limit count"},
 				},
 			},
 		},
@@ -245,6 +263,7 @@ func (s *service) getToolDefinitions() []map[string]interface{} {
 					"is_focus":    map[string]interface{}{"type": "boolean", "description": "Pin to Today's Focus"},
 					"due_date":    map[string]interface{}{"type": "string", "description": "Due date ISO-8601 string"},
 					"tags":        map[string]interface{}{"type": "array", "items": map[string]interface{}{"type": "string"}},
+					"project_id":  map[string]interface{}{"type": "number", "description": "Project ID to link this task to (pass 0 to unlink)"},
 				},
 				"required": []string{"task_id"},
 			},
@@ -389,14 +408,33 @@ func (s *service) callTool(ctx context.Context, userID string, name string, args
 			Content: []MCPToolContent{{Type: "text", Text: string(jsonStr)}},
 		}, nil
 
+	case "list_projects":
+		if s.projectService == nil {
+			return nil, errors.New("project service is not available")
+		}
+		projects, err := s.projectService.List(ctx, userID)
+		if err != nil {
+			return nil, err
+		}
+		jsonStr, _ := json.MarshalIndent(projects, "", "  ")
+		return &MCPToolResult{
+			Content: []MCPToolContent{{Type: "text", Text: string(jsonStr)}},
+		}, nil
+
 	case "convert_note_to_task":
 		noteID := int64(parseInt(args["note_id"], 0))
 		priority, _ := args["priority"].(string)
 		subtasks := parseStringSlice(args["subtasks"])
+		var projectIDPtr *int64
+		if pid := parseInt(args["project_id"], 0); pid > 0 {
+			p := int64(pid)
+			projectIDPtr = &p
+		}
 
 		n, taskID, err := s.noteService.ConvertToTask(ctx, userID, noteID, note.ConvertToTaskRequest{
-			Priority: priority,
-			Subtasks: subtasks,
+			Priority:  priority,
+			Subtasks:  subtasks,
+			ProjectID: projectIDPtr,
 		})
 		if err != nil {
 			return nil, err
@@ -419,6 +457,11 @@ func (s *service) callTool(ctx context.Context, userID string, name string, args
 		isFocus, _ := args["is_focus"].(bool)
 		subtasks := parseStringSlice(args["subtasks"])
 		tags := parseStringSlice(args["tags"])
+		var projectIDPtr *int64
+		if pid := parseInt(args["project_id"], 0); pid > 0 {
+			p := int64(pid)
+			projectIDPtr = &p
+		}
 
 		res, err := s.taskService.Create(ctx, userID, task.CreateTaskRequest{
 			Title:       title,
@@ -428,6 +471,7 @@ func (s *service) callTool(ctx context.Context, userID string, name string, args
 			IsFocus:     isFocus,
 			Subtasks:    subtasks,
 			Tags:        tags,
+			ProjectID:   projectIDPtr,
 		})
 		if err != nil {
 			return nil, err
@@ -446,13 +490,19 @@ func (s *service) callTool(ctx context.Context, userID string, name string, args
 		if f, ok := args["is_focus"].(bool); ok {
 			isFocus = &f
 		}
+		var projectIDPtr *int64
+		if pid := parseInt(args["project_id"], 0); pid > 0 {
+			p := int64(pid)
+			projectIDPtr = &p
+		}
 
 		res, err := s.taskService.FindAll(ctx, userID, task.TaskFilter{
-			Status:   status,
-			Priority: priority,
-			IsFocus:  isFocus,
-			Search:   search,
-			Limit:    limit,
+			Status:    status,
+			Priority:  priority,
+			IsFocus:   isFocus,
+			Search:    search,
+			ProjectID: projectIDPtr,
+			Limit:     limit,
 		})
 		if err != nil {
 			return nil, err
@@ -508,14 +558,28 @@ func (s *service) callTool(ctx context.Context, userID string, name string, args
 			tagsPtr = &parsed
 		}
 
+		var projectIDPtr *int64
+		hasProjectID := false
+		if rawPID, exists := args["project_id"]; exists {
+			hasProjectID = true
+			if rawPID != nil {
+				pid := int64(parseInt(rawPID, 0))
+				if pid > 0 {
+					projectIDPtr = &pid
+				}
+			}
+		}
+
 		res, err := s.taskService.Update(ctx, userID, taskID, task.UpdateTaskRequest{
-			Title:       titlePtr,
-			Description: descPtr,
-			Status:      statusPtr,
-			Priority:    priorityPtr,
-			DueDate:     dueTimePtr,
-			IsFocus:     isFocusPtr,
-			Tags:        tagsPtr,
+			Title:        titlePtr,
+			Description:  descPtr,
+			Status:       statusPtr,
+			Priority:     priorityPtr,
+			DueDate:      dueTimePtr,
+			IsFocus:      isFocusPtr,
+			Tags:         tagsPtr,
+			ProjectID:    projectIDPtr,
+			HasProjectID: hasProjectID,
 		})
 		if err != nil {
 			return nil, err
@@ -731,11 +795,19 @@ func parseStringSlice(v interface{}) []string {
 }
 
 func parseInt(v interface{}, defaultVal int) int {
-	if num, ok := v.(float64); ok {
-		return int(num)
-	}
-	if str, ok := v.(string); ok {
-		if n, err := strconv.Atoi(str); err == nil {
+	switch val := v.(type) {
+	case int:
+		return val
+	case int64:
+		return int(val)
+	case int32:
+		return int(val)
+	case float64:
+		return int(val)
+	case float32:
+		return int(val)
+	case string:
+		if n, err := strconv.Atoi(strings.TrimSpace(val)); err == nil {
 			return n
 		}
 	}

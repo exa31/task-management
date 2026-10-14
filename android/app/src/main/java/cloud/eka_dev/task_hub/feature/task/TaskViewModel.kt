@@ -71,10 +71,57 @@ class TaskViewModel(private val apiClient: ApiClient) : ViewModel() {
         viewModelScope.launch {
             val newStatus = if (task.status == "done") "todo" else "done"
             try {
-                apiClient.apiService.updateTask(task.id, UpdateTaskRequest(status = newStatus))
+                val res = apiClient.apiService.updateTask(task.id, UpdateTaskRequest(status = newStatus))
+                if (res.success && res.data != null) {
+                    if (_uiState.value.selectedTask?.id == task.id) {
+                        _uiState.value = _uiState.value.copy(selectedTask = res.data)
+                    }
+                }
                 loadTasks()
             } catch (e: Exception) {
                 // handle error
+            }
+        }
+    }
+
+    fun updateTask(
+        id: Long,
+        title: String? = null,
+        description: String? = null,
+        status: String? = null,
+        priority: String? = null,
+        dueDate: String? = null,
+        isFocus: Boolean? = null,
+        tags: List<String>? = null,
+        projectId: Long? = null,
+        onSuccess: (() -> Unit)? = null
+    ) {
+        viewModelScope.launch {
+            try {
+                val res = apiClient.apiService.updateTask(
+                    id,
+                    UpdateTaskRequest(
+                        title = title,
+                        description = description,
+                        status = status,
+                        priority = priority,
+                        dueDate = dueDate,
+                        isFocus = isFocus,
+                        tags = tags,
+                        projectId = projectId
+                    )
+                )
+                if (res.success && res.data != null) {
+                    if (_uiState.value.selectedTask?.id == id) {
+                        _uiState.value = _uiState.value.copy(selectedTask = res.data)
+                    }
+                    loadTasks()
+                    onSuccess?.invoke()
+                }
+            } catch (e: Exception) {
+                _uiState.value = _uiState.value.copy(
+                    error = e.localizedMessage ?: "Failed to update task"
+                )
             }
         }
     }

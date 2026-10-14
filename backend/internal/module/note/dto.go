@@ -25,9 +25,10 @@ type UpdateNoteRequest struct {
 
 // ConvertToTaskRequest payload for converting an idea into a task.
 type ConvertToTaskRequest struct {
-	Priority string     `json:"priority" validate:"omitempty,oneof=low medium high urgent"`
-	DueDate  *time.Time `json:"due_date"`
-	Subtasks []string   `json:"subtasks"`
+	Priority  string     `json:"priority" validate:"omitempty,oneof=low medium high urgent"`
+	DueDate   *time.Time `json:"due_date"`
+	Subtasks  []string   `json:"subtasks"`
+	ProjectID *int64     `json:"project_id"`
 }
 
 // NoteFilter parameters for filtering notes.

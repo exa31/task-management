@@ -400,8 +400,8 @@ struct ActivityTimelineItemView: View {
         guard let d = date else { return isoString }
         let diff = Int(Date().timeIntervalSince(d))
         if diff < 60 { return L10n.Tasks.relativeJustNow }
-        if diff < 3600 { return "\(diff / 60)m lalu" }
-        if diff < 86400 { return "\(diff / 3600)j lalu" }
+        if diff < 3600 { return L10n.Tasks.relativeMinutesAgo(count: diff / 60) }
+        if diff < 86400 { return L10n.Tasks.relativeHoursAgo(count: diff / 3600) }
         let dayFormat = DateFormatter()
         dayFormat.dateFormat = "dd MMM HH:mm"
         return dayFormat.string(from: d)
@@ -464,6 +464,9 @@ public struct EditTaskSheet: View {
     @State private var dueDate: Date
     @State private var isFocus: Bool
     @State private var tagsText: String
+    @State private var isRecurring: Bool
+    @State private var recurrencePattern: String
+    @State private var recurrenceInterval: Int
     @State private var isSubmitting: Bool = false
     @State private var errorMessage: String? = nil
 
@@ -483,6 +486,9 @@ public struct EditTaskSheet: View {
         _selectedProjectId = State(initialValue: task.projectId)
         _isFocus = State(initialValue: task.isFocus)
         _tagsText = State(initialValue: (task.tags ?? []).joined(separator: ", "))
+        _isRecurring = State(initialValue: task.isRecurring ?? false)
+        _recurrencePattern = State(initialValue: task.recurrencePattern ?? "daily")
+        _recurrenceInterval = State(initialValue: task.recurrenceInterval ?? 1)
 
         if let dueStr = task.dueDate, !dueStr.isEmpty {
             let formatter = ISO8601DateFormatter()
@@ -586,6 +592,20 @@ public struct EditTaskSheet: View {
                     }
                 }
 
+                Section(header: Text(L10n.Tasks.sectionRecurrence)) {
+                    Toggle(L10n.Tasks.repeatAuto, isOn: $isRecurring)
+                    if isRecurring {
+                        Picker(L10n.Tasks.repeatPattern, selection: $recurrencePattern) {
+                            Text(L10n.Tasks.patternDaily).tag("daily")
+                            Text(L10n.Tasks.patternWeekdays).tag("weekdays")
+                            Text(L10n.Tasks.patternWeekly).tag("weekly")
+                            Text(L10n.Tasks.patternMonthly).tag("monthly")
+                        }
+                        let unit = recurrencePattern == "monthly" ? L10n.Tasks.unitMonths : recurrencePattern == "weekly" ? L10n.Tasks.unitWeeks : L10n.Tasks.unitDays
+                        Stepper(L10n.Tasks.repeatInterval(interval: recurrenceInterval, unit: unit), value: $recurrenceInterval, in: 1...365)
+                    }
+                }
+
                 Section(header: Text(L10n.Tasks.sectionTags)) {
                     TextField(L10n.Tasks.tagsPlaceholder, text: $tagsText)
                         .font(.system(size: 14))
@@ -662,7 +682,10 @@ public struct EditTaskSheet: View {
                 dueDate: isoDate,
                 isFocus: isFocus,
                 tags: parsedTags,
-                projectId: selectedProjectId
+                projectId: selectedProjectId,
+                isRecurring: isRecurring,
+                recurrencePattern: isRecurring ? recurrencePattern : nil,
+                recurrenceInterval: isRecurring ? recurrenceInterval : nil
             )
             await MainActor.run {
                 isSubmitting = false

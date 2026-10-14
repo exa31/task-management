@@ -163,6 +163,8 @@ func (r *Router) registerNotesAndTasks(api fiber.Router) {
 	// Tasks routes (Per-user isolated)
 	tasks := api.Group("/tasks")
 	tasks.Use(authMiddleware.AuthMiddleware(r.JWTService))
+	tasks.Get("/widgets/bundle", taskHandler.GetWidgetBundle)
+	tasks.Get("/stats", taskHandler.GetWorkspaceStats)
 	tasks.Post("/", taskHandler.Create)
 	tasks.Get("/", taskHandler.List)
 	tasks.Get("/:id", taskHandler.GetByID)
@@ -176,10 +178,16 @@ func (r *Router) registerNotesAndTasks(api fiber.Router) {
 	tasks.Get("/:id/activities", taskHandler.GetActivities)
 	tasks.Post("/:id/activities", taskHandler.CreateActivity)
 
+	// Workspace routes (Per-user isolated)
+	workspace := api.Group("/workspace")
+	workspace.Use(authMiddleware.AuthMiddleware(r.JWTService))
+	workspace.Get("/stats", taskHandler.GetWorkspaceStats)
+
 	// Projects routes (Per-user isolated)
 	projectRepo := project.NewRepository(db)
 	projectService := project.NewService(projectRepo)
 	projectHandler := project.NewHandler(projectService)
+	mcpService.SetProjectService(projectService)
 
 	projects := api.Group("/projects")
 	projects.Use(authMiddleware.AuthMiddleware(r.JWTService))

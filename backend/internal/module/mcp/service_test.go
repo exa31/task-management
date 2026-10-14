@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"golang/internal/module/note"
+	"golang/internal/module/project"
 	"golang/internal/module/reminder"
 	"golang/internal/module/task"
 
@@ -273,5 +274,72 @@ func TestMCPService_ReminderTools(t *testing.T) {
 	})
 	if listResp.Error != nil {
 		t.Fatalf("list_reminders failed: %v", listResp.Error)
+	}
+}
+
+type dummyProjectService struct {
+	project.Service
+	listFunc func(ctx context.Context, userID string) ([]project.ProjectResponse, error)
+}
+
+func (d *dummyProjectService) List(ctx context.Context, userID string) ([]project.ProjectResponse, error) {
+	if d.listFunc != nil {
+		return d.listFunc(ctx, userID)
+	}
+	return []project.ProjectResponse{
+		{ID: 2, Name: "Task-management", Color: "#3b82f6", TaskCount: 5},
+	}, nil
+}
+
+func TestMCPService_ProjectTools(t *testing.T) {
+	ctx := context.Background()
+	testUserID := "user-uuid-123"
+
+	var capturedReq task.CreateTaskRequest
+	taskSvc := &dummyTaskService{
+		createFunc: func(ctx context.Context, userID string, req task.CreateTaskRequest) (*task.TaskResponse, error) {
+			capturedReq = req
+			return &task.TaskResponse{
+				ID:        55,
+				Title:     req.Title,
+				ProjectID: req.ProjectID,
+			}, nil
+		},
+	}
+
+	projSvc := &dummyProjectService{}
+	svc := NewService(&mockTokenRepository{}, &dummyNoteService{}, taskSvc, &mockTransactor{})
+	svc.SetProjectService(projSvc)
+
+	// 1. Test list_projects
+	listResp := svc.HandleJSONRPC(ctx, testUserID, JSONRPCRequest{
+		Method: "tools/call",
+		ID:     1,
+		Params: map[string]interface{}{
+			"name":      "list_projects",
+			"arguments": map[string]interface{}{},
+		},
+	})
+	if listResp.Error != nil {
+		t.Fatalf("list_projects failed: %v", listResp.Error)
+	}
+
+	// 2. Test create_task with project_id
+	createResp := svc.HandleJSONRPC(ctx, testUserID, JSONRPCRequest{
+		Method: "tools/call",
+		ID:     2,
+		Params: map[string]interface{}{
+			"name": "create_task",
+			"arguments": map[string]interface{}{
+				"title":      "MCP with Project Link",
+				"project_id": 2,
+			},
+		},
+	})
+	if createResp.Error != nil {
+		t.Fatalf("create_task with project_id failed: %v", createResp.Error)
+	}
+	if capturedReq.ProjectID == nil || *capturedReq.ProjectID != 2 {
+		t.Fatalf("expected project_id 2 to be linked, got %v", capturedReq.ProjectID)
 	}
 }

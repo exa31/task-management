@@ -89,6 +89,12 @@ interface ApiService {
     @DELETE("notes/{id}")
     suspend fun deleteNote(@Path("id") id: Long): BaseResponse<Unit>
 
+    @PUT("notes/{id}")
+    suspend fun updateNote(@Path("id") id: Long, @Body req: UpdateNoteRequest): BaseResponse<Note>
+
+    @POST("notes/{id}/convert-task")
+    suspend fun convertNoteToTask(@Path("id") id: Long, @Body req: ConvertToTaskRequest = ConvertToTaskRequest()): BaseResponse<ConvertNoteResponse>
+
     // Reminders
     @GET("reminders")
     suspend fun getReminders(@Query("status") status: String? = null): BaseResponse<List<Reminder>>

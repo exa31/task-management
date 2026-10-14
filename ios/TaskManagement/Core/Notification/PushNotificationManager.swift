@@ -17,15 +17,36 @@ public final class PushNotificationManager: NSObject, UNUserNotificationCenterDe
         self.deviceToken = UserDefaults.standard.string(forKey: tokenKey)
     }
 
-    /// Sets up notification center delegate and requests push permissions.
+    /// Sets up notification center delegate, alarm categories, and requests push permissions.
     public func configure() {
         UNUserNotificationCenter.current().delegate = self
+        setupNotificationCategories()
         requestAuthorizationAndRegister()
+    }
+
+    private func setupNotificationCategories() {
+        let snoozeAction = UNNotificationAction(
+            identifier: "SNOOZE_10_MIN",
+            title: "Tunda 10 Menit",
+            options: []
+        )
+        let dismissAction = UNNotificationAction(
+            identifier: "DISMISS_ALARM",
+            title: "Selesai / Matikan",
+            options: [.destructive]
+        )
+        let alarmCategory = UNNotificationCategory(
+            identifier: "ALARM_REMINDER",
+            actions: [snoozeAction, dismissAction],
+            intentIdentifiers: [],
+            options: [.customDismissAction]
+        )
+        UNUserNotificationCenter.current().setNotificationCategories([alarmCategory])
     }
 
     /// Requests user authorization for alerts, badges, and sounds, then registers for remote notifications.
     public func requestAuthorizationAndRegister() {
-        UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .badge, .sound]) { granted, error in
+        UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .badge, .sound, .criticalAlert]) { granted, error in
             Task { @MainActor in
                 if let error = error {
                     AppLogger.error("Authorization request failed", error: error, category: .push)
@@ -91,14 +112,37 @@ public final class PushNotificationManager: NSObject, UNUserNotificationCenterDe
         completionHandler([.banner, .badge, .sound])
     }
 
-    /// Handles user tapping on a received notification.
+    /// Handles user tapping on a received notification or interacting with action buttons.
     public nonisolated func userNotificationCenter(
         _ center: UNUserNotificationCenter,
         didReceive response: UNNotificationResponse,
         withCompletionHandler completionHandler: @escaping () -> Void
     ) {
         let userInfo = response.notification.request.content.userInfo
-        AppLogger.info("User tapped notification", category: .push, metadata: ["keys": userInfo.keys.map(String.init).joined(separator: ",")])
+        let actionId = response.actionIdentifier
+        AppLogger.info("Notification response received: \(actionId)", category: .push, metadata: ["action": actionId])
+
+        var reminderId: Int64?
+        if let idNum = userInfo["reminder_id"] as? NSNumber {
+            reminderId = idNum.int64Value
+        } else if let idStr = userInfo["reminder_id"] as? String, let parsed = Int64(idStr) {
+            reminderId = parsed
+        }
+
+        if let rid = reminderId {
+            if actionId == "SNOOZE_10_MIN" {
+                Task {
+                    _ = try? await APIClient.shared.snoozeReminder(id: rid, minutes: 10)
+                    AppLogger.success("Reminder \(rid) snoozed for 10 minutes via notification action", category: .push)
+                }
+            } else if actionId == "DISMISS_ALARM" {
+                Task {
+                    _ = try? await APIClient.shared.dismissReminder(id: rid)
+                    AppLogger.success("Reminder \(rid) dismissed via notification action", category: .push)
+                }
+            }
+        }
+
         completionHandler()
     }
 }

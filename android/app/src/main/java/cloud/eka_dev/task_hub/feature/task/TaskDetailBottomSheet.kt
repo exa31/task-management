@@ -4,8 +4,10 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
@@ -30,8 +32,10 @@ fun TaskDetailBottomSheet(
     onDismiss: () -> Unit
 ) {
     val uiState by viewModel.uiState.collectAsState()
+    val currentTask = if (uiState.selectedTask?.id == task.id) uiState.selectedTask!! else task
     var selectedTab by remember { mutableIntStateOf(0) }
     var newNoteText by remember { mutableStateOf("") }
+    var showEditDialog by remember { mutableStateOf(false) }
 
     ModalBottomSheet(
         onDismissRequest = onDismiss,
@@ -56,7 +60,7 @@ fun TaskDetailBottomSheet(
                 ) {
                     Column(modifier = Modifier.weight(1f)) {
                         Text(
-                            text = task.title,
+                            text = currentTask.title,
                             fontSize = 18.sp,
                             fontWeight = FontWeight.Bold,
                             color = MaterialTheme.colorScheme.onSurface
@@ -66,19 +70,27 @@ fun TaskDetailBottomSheet(
                             horizontalArrangement = Arrangement.spacedBy(8.dp),
                             verticalAlignment = Alignment.CenterVertically
                         ) {
-                            if (!task.projectName.isNullOrEmpty()) {
-                                ProjectPill(name = task.projectName, hexColor = task.projectColor)
+                            if (!currentTask.projectName.isNullOrEmpty()) {
+                                ProjectPill(name = currentTask.projectName, hexColor = currentTask.projectColor)
                             }
-                            PriorityBadge(priority = task.priority)
-                            StatusBadge(status = task.status)
+                            PriorityBadge(priority = currentTask.priority)
+                            StatusBadge(status = currentTask.status)
                         }
+                    }
+
+                    IconButton(onClick = { showEditDialog = true }) {
+                        Icon(
+                            imageVector = Icons.Default.Edit,
+                            contentDescription = "Edit Tugas",
+                            tint = BrandPrimary
+                        )
                     }
                 }
 
-                if (!task.description.isNullOrEmpty()) {
+                if (!currentTask.description.isNullOrEmpty()) {
                     Spacer(modifier = Modifier.height(8.dp))
                     Text(
-                        text = task.description,
+                        text = currentTask.description,
                         fontSize = 13.sp,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         maxLines = 3
@@ -136,21 +148,41 @@ fun TaskDetailBottomSheet(
 
             // Tab Content
             if (selectedTab == 0) {
-                DetailTabContent(task = task, viewModel = viewModel)
+                DetailTabContent(task = currentTask, viewModel = viewModel)
             } else {
                 ActivityLogsTabContent(
-                    task = task,
+                    task = currentTask,
                     activities = uiState.taskActivities,
                     isLoading = uiState.isLoadingActivities,
                     newNoteText = newNoteText,
                     onNoteChange = { newNoteText = it },
                     onPostNote = {
-                        viewModel.addActivityNote(task.id, newNoteText)
+                        viewModel.addActivityNote(currentTask.id, newNoteText)
                         newNoteText = ""
                     }
                 )
             }
         }
+    }
+
+    if (showEditDialog) {
+        EditTaskDialog(
+            task = currentTask,
+            onDismiss = { showEditDialog = false },
+            onSave = { updatedTitle, updatedDesc, updatedStatus, updatedPriority, updatedIsFocus ->
+                viewModel.updateTask(
+                    id = currentTask.id,
+                    title = updatedTitle,
+                    description = updatedDesc,
+                    status = updatedStatus,
+                    priority = updatedPriority,
+                    isFocus = updatedIsFocus,
+                    onSuccess = {
+                        showEditDialog = false
+                    }
+                )
+            }
+        )
     }
 }
 
@@ -392,3 +424,104 @@ private fun getActivityBadge(type: String): ActivityBadge {
         else -> ActivityBadge(Icons.Default.Comment, Color(0xFF64748B), "Catatan Log")
     }
 }
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun EditTaskDialog(
+    task: Task,
+    onDismiss: () -> Unit,
+    onSave: (String, String, String, String, Boolean) -> Unit
+) {
+    var title by remember { mutableStateOf(task.title) }
+    var description by remember { mutableStateOf(task.description ?: "") }
+    var status by remember { mutableStateOf(task.status) }
+    var priority by remember { mutableStateOf(task.priority) }
+    var isFocus by remember { mutableStateOf(task.isFocus) }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Edit Tugas", fontWeight = FontWeight.Bold) },
+        text = {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .verticalScroll(rememberScrollState()),
+                verticalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                OutlinedTextField(
+                    value = title,
+                    onValueChange = { title = it },
+                    label = { Text("Judul Tugas *") },
+                    modifier = Modifier.fillMaxWidth(),
+                    singleLine = true
+                )
+
+                OutlinedTextField(
+                    value = description,
+                    onValueChange = { description = it },
+                    label = { Text("Deskripsi") },
+                    modifier = Modifier.fillMaxWidth(),
+                    minLines = 3,
+                    maxLines = 5
+                )
+
+                Text("Status", fontWeight = FontWeight.SemiBold, fontSize = 13.sp)
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(6.dp)
+                ) {
+                    listOf("todo" to "To Do", "in_progress" to "In Progress", "done" to "Done").forEach { (st, label) ->
+                        FilterChip(
+                            selected = status == st,
+                            onClick = { status = st },
+                            label = { Text(label, fontSize = 11.sp) }
+                        )
+                    }
+                }
+
+                Text("Prioritas", fontWeight = FontWeight.SemiBold, fontSize = 13.sp)
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(6.dp)
+                ) {
+                    listOf("low" to "Low", "medium" to "Med", "high" to "High", "urgent" to "Urg").forEach { (pr, label) ->
+                        FilterChip(
+                            selected = priority == pr,
+                            onClick = { priority = pr },
+                            label = { Text(label, fontSize = 11.sp) }
+                        )
+                    }
+                }
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Text("Fokus Hari Ini", fontSize = 13.sp)
+                    Switch(
+                        checked = isFocus,
+                        onCheckedChange = { isFocus = it }
+                    )
+                }
+            }
+        },
+        confirmButton = {
+            AppButton(
+                text = "Simpan",
+                onClick = {
+                    if (title.isNotBlank()) {
+                        onSave(title.trim(), description.trim(), status, priority, isFocus)
+                    }
+                },
+                enabled = title.isNotBlank()
+            )
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text("Batal")
+            }
+        }
+    )
+}
+

@@ -31,7 +31,7 @@ type mockRepository struct {
 	logProgressFunc func(ctx context.Context, userID string, id int64, req LogProgressRequest) (*TaskResponse, error)
 	toggleFocusFunc func(ctx context.Context, userID string, id int64) (*TaskResponse, error)
 
-	createSubtaskFunc func(ctx context.Context, userID string, taskID int64, title string) (*SubtaskResponse, error)
+	createSubtaskFunc func(ctx context.Context, userID string, taskID int64, req CreateSubtaskRequest) (*SubtaskResponse, error)
 	updateSubtaskFunc func(ctx context.Context, userID string, taskID int64, subtaskID int64, req UpdateSubtaskRequest) (*SubtaskResponse, error)
 	deleteSubtaskFunc func(ctx context.Context, userID string, taskID int64, subtaskID int64) error
 
@@ -39,8 +39,12 @@ type mockRepository struct {
 	markDueWarningSentFunc func(ctx context.Context, id int64) error
 	getUserThresholdFunc   func(ctx context.Context, userID string) (int, string, error)
 
-	createActivityFunc func(ctx context.Context, taskID int64, userID string, activityType string, description string, changes []byte) (*TaskActivityResponse, error)
-	findActivitiesFunc func(ctx context.Context, userID string, taskID int64) ([]TaskActivityResponse, error)
+	getWidgetBundleFunc             func(ctx context.Context, userID string) (*WidgetBundleResponse, error)
+	getWorkspaceStatsFunc           func(ctx context.Context, userID string) (*WorkspaceStatsResponse, error)
+	updateRecurrenceGeneratedAtFunc func(ctx context.Context, id int64, t time.Time) error
+
+	createActivityFunc       func(ctx context.Context, taskID int64, userID string, activityType string, description string, changes []byte) (*TaskActivityResponse, error)
+	findActivitiesFunc       func(ctx context.Context, userID string, taskID int64) ([]TaskActivityResponse, error)
 	findActivitiesByUserFunc func(ctx context.Context, userID string, from, to *time.Time) ([]TaskActivityResponse, error)
 }
 
@@ -93,11 +97,32 @@ func (m *mockRepository) ToggleFocus(ctx context.Context, userID string, id int6
 	return nil, nil
 }
 
-func (m *mockRepository) CreateSubtask(ctx context.Context, userID string, taskID int64, title string) (*SubtaskResponse, error) {
+func (m *mockRepository) CreateSubtask(ctx context.Context, userID string, taskID int64, req CreateSubtaskRequest) (*SubtaskResponse, error) {
 	if m.createSubtaskFunc != nil {
-		return m.createSubtaskFunc(ctx, userID, taskID, title)
+		return m.createSubtaskFunc(ctx, userID, taskID, req)
 	}
 	return nil, nil
+}
+
+func (m *mockRepository) GetWidgetBundle(ctx context.Context, userID string) (*WidgetBundleResponse, error) {
+	if m.getWidgetBundleFunc != nil {
+		return m.getWidgetBundleFunc(ctx, userID)
+	}
+	return &WidgetBundleResponse{}, nil
+}
+
+func (m *mockRepository) GetWorkspaceStats(ctx context.Context, userID string) (*WorkspaceStatsResponse, error) {
+	if m.getWorkspaceStatsFunc != nil {
+		return m.getWorkspaceStatsFunc(ctx, userID)
+	}
+	return &WorkspaceStatsResponse{}, nil
+}
+
+func (m *mockRepository) UpdateRecurrenceGeneratedAt(ctx context.Context, id int64, t time.Time) error {
+	if m.updateRecurrenceGeneratedAtFunc != nil {
+		return m.updateRecurrenceGeneratedAtFunc(ctx, id, t)
+	}
+	return nil
 }
 
 func (m *mockRepository) UpdateSubtask(ctx context.Context, userID string, taskID int64, subtaskID int64, req UpdateSubtaskRequest) (*SubtaskResponse, error) {
@@ -399,3 +424,280 @@ func TestTaskService_Activities(t *testing.T) {
 		t.Fatalf("unexpected activity description: %s", activities[0].Description)
 	}
 }
+
+func TestTaskService_SubtaskDueDateValidation(t *testing.T) {
+	ctx := context.Background()
+	testUserID := "user-uuid-123"
+	taskDueDate := time.Now().Add(24 * time.Hour)
+	validSubtaskDueDate := taskDueDate.Add(-2 * time.Hour)
+	invalidSubtaskDueDate := taskDueDate.Add(2 * time.Hour)
+
+	mockRepo := &mockRepository{
+		findByIDFunc: func(ctx context.Context, userID string, id int64) (*TaskResponse, error) {
+			return &TaskResponse{
+				ID:      id,
+				UserID:  userID,
+				Title:   "Parent Task",
+				DueDate: &taskDueDate,
+				Subtasks: []SubtaskResponse{
+					{
+						ID:        10,
+						TaskID:    id,
+						Title:     "Existing Subtask",
+						DueDate:   &validSubtaskDueDate,
+					},
+				},
+			}, nil
+		},
+		createSubtaskFunc: func(ctx context.Context, userID string, taskID int64, req CreateSubtaskRequest) (*SubtaskResponse, error) {
+			return &SubtaskResponse{
+				ID:      11,
+				TaskID:  taskID,
+				Title:   req.Title,
+				DueDate: req.DueDate,
+			}, nil
+		},
+		updateSubtaskFunc: func(ctx context.Context, userID string, taskID int64, subtaskID int64, req UpdateSubtaskRequest) (*SubtaskResponse, error) {
+			return &SubtaskResponse{
+				ID:      subtaskID,
+				TaskID:  taskID,
+				Title:   "Updated Subtask",
+				DueDate: req.DueDate,
+			}, nil
+		},
+	}
+
+	svc := NewService(mockRepo, &mockTransactor{})
+
+	// 1. Create subtask exceeding parent due date should fail
+	_, err := svc.CreateSubtask(ctx, testUserID, 1, CreateSubtaskRequest{
+		Title:   "Too late subtask",
+		DueDate: &invalidSubtaskDueDate,
+	})
+	if err == nil {
+		t.Fatalf("expected error when subtask due date exceeds parent due date, got nil")
+	}
+
+	// 2. Create subtask within parent due date should succeed
+	sub, err := svc.CreateSubtask(ctx, testUserID, 1, CreateSubtaskRequest{
+		Title:   "Valid subtask",
+		DueDate: &validSubtaskDueDate,
+	})
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if sub == nil || sub.Title != "Valid subtask" {
+		t.Fatalf("unexpected subtask result: %+v", sub)
+	}
+
+	// 3. Update subtask exceeding parent due date should fail
+	_, err = svc.UpdateSubtask(ctx, testUserID, 1, 10, UpdateSubtaskRequest{
+		DueDate: &invalidSubtaskDueDate,
+	})
+	if err == nil {
+		t.Fatalf("expected error when updating subtask due date to exceed parent due date")
+	}
+
+	// 4. Update parent task due date earlier than existing subtask should fail
+	earlierParentDueDate := validSubtaskDueDate.Add(-1 * time.Hour)
+	_, err = svc.Update(ctx, testUserID, 1, UpdateTaskRequest{
+		DueDate: &earlierParentDueDate,
+	})
+	if err == nil {
+		t.Fatalf("expected error when setting task due date earlier than existing subtask due date")
+	}
+}
+
+func TestTaskService_GetWidgetBundle(t *testing.T) {
+	ctx := context.Background()
+	testUserID := "user-uuid-123"
+
+	mockRepo := &mockRepository{
+		getWidgetBundleFunc: func(ctx context.Context, userID string) (*WidgetBundleResponse, error) {
+			return &WidgetBundleResponse{
+				FocusTasks: []TaskResponse{
+					{ID: 1, Title: "Focus 1", IsFocus: true},
+				},
+				UpcomingDeadlines: []TaskResponse{
+					{ID: 2, Title: "Deadline 1"},
+				},
+				CompletedToday: 3,
+				TotalToday:     5,
+			}, nil
+		},
+	}
+
+	svc := NewService(mockRepo, &mockTransactor{})
+	bundle, err := svc.GetWidgetBundle(ctx, testUserID)
+	if err != nil {
+		t.Fatalf("unexpected error getting widget bundle: %v", err)
+	}
+	if bundle == nil {
+		t.Fatalf("expected non-nil widget bundle")
+	}
+	if len(bundle.FocusTasks) != 1 || len(bundle.UpcomingDeadlines) != 1 {
+		t.Fatalf("unexpected counts in bundle: %+v", bundle)
+	}
+	if bundle.CompletedToday != 3 || bundle.TotalToday != 5 {
+		t.Fatalf("unexpected today counts: %d / %d", bundle.CompletedToday, bundle.TotalToday)
+	}
+}
+
+func TestTaskService_GetWorkspaceStats(t *testing.T) {
+	ctx := context.Background()
+	testUserID := "user-uuid-123"
+
+	mockRepo := &mockRepository{
+		getWorkspaceStatsFunc: func(ctx context.Context, userID string) (*WorkspaceStatsResponse, error) {
+			return &WorkspaceStatsResponse{
+				TasksInProgress:  4,
+				TasksTodo:        7,
+				TasksTotal:       15,
+				TotalProjects:    3,
+				PendingReminders: 2,
+				TotalNotes:       6,
+			}, nil
+		},
+	}
+
+	svc := NewService(mockRepo, &mockTransactor{})
+	stats, err := svc.GetWorkspaceStats(ctx, testUserID)
+	if err != nil {
+		t.Fatalf("unexpected error getting workspace stats: %v", err)
+	}
+	if stats == nil {
+		t.Fatalf("expected non-nil workspace stats")
+	}
+	if stats.TasksInProgress != 4 || stats.TotalProjects != 3 || stats.PendingReminders != 2 || stats.TotalNotes != 6 {
+		t.Fatalf("unexpected stats: %+v", stats)
+	}
+}
+
+type mockTaskScheduler struct {
+	dueScheduled        map[int64]time.Time
+	recurrenceScheduled map[int64]time.Time
+}
+
+func newMockTaskScheduler() *mockTaskScheduler {
+	return &mockTaskScheduler{
+		dueScheduled:        make(map[int64]time.Time),
+		recurrenceScheduled: make(map[int64]time.Time),
+	}
+}
+
+func (m *mockTaskScheduler) ScheduleTaskDueAlert(ctx context.Context, taskID int64, remindAt time.Time) error {
+	m.dueScheduled[taskID] = remindAt
+	return nil
+}
+
+func (m *mockTaskScheduler) CancelTaskDueAlert(ctx context.Context, taskID int64) error {
+	delete(m.dueScheduled, taskID)
+	return nil
+}
+
+func (m *mockTaskScheduler) ScheduleTaskRecurrence(ctx context.Context, taskID int64, processAt time.Time) error {
+	m.recurrenceScheduled[taskID] = processAt
+	return nil
+}
+
+func (m *mockTaskScheduler) CancelTaskRecurrence(ctx context.Context, taskID int64) error {
+	delete(m.recurrenceScheduled, taskID)
+	return nil
+}
+
+func TestTaskService_Create_WithSchedulerInTransaction(t *testing.T) {
+	ctx := context.Background()
+	testUserID := "user-uuid-123"
+	due := time.Now().Add(2 * time.Hour)
+
+	mockRepo := &mockRepository{
+		createFunc: func(ctx context.Context, userID string, req CreateTaskRequest) (*TaskResponse, error) {
+			return &TaskResponse{
+				ID:          100,
+				UserID:      userID,
+				Title:       req.Title,
+				Priority:    req.Priority,
+				Status:      req.Status,
+				DueDate:     req.DueDate,
+				IsRecurring: req.IsRecurring,
+			}, nil
+		},
+		getUserThresholdFunc: func(ctx context.Context, userID string) (int, string, error) {
+			return 30, "Asia/Jakarta", nil
+		},
+	}
+
+	sched := newMockTaskScheduler()
+	svc := NewService(mockRepo, &mockTransactor{})
+	svc.SetNotificationDependencies(sched, nil, nil, nil, nil, nil)
+
+	res, err := svc.Create(ctx, testUserID, CreateTaskRequest{
+		Title:       "Recurring Task With Due Date",
+		Priority:    "high",
+		Status:      "todo",
+		DueDate:     &due,
+		IsRecurring: true,
+	})
+
+	if err != nil {
+		t.Fatalf("unexpected error creating task: %v", err)
+	}
+	if res.ID != 100 {
+		t.Fatalf("unexpected id: %d", res.ID)
+	}
+
+	if _, ok := sched.dueScheduled[100]; !ok {
+		t.Errorf("expected task 100 to be scheduled for due alert")
+	}
+	if _, ok := sched.recurrenceScheduled[100]; !ok {
+		t.Errorf("expected task 100 to be scheduled for recurrence")
+	}
+}
+
+func TestTaskService_ProcessTaskRecurrence_AtomicScheduling(t *testing.T) {
+	ctx := context.Background()
+	taskID := int64(200)
+	var timestampUpdated bool
+
+	mockRepo := &mockRepository{
+		findByIDSystemFunc: func(ctx context.Context, id int64) (*TaskResponse, string, string, int, bool, error) {
+			return &TaskResponse{
+				ID:                 taskID,
+				UserID:             "user-1",
+				Title:              "Daily Recurring Standup",
+				IsRecurring:        true,
+				RecurrencePattern:  "daily",
+				RecurrenceInterval: 1,
+			}, "test@example.com", "Asia/Jakarta", 15, true, nil
+		},
+		createFunc: func(ctx context.Context, userID string, req CreateTaskRequest) (*TaskResponse, error) {
+			return &TaskResponse{
+				ID:     201,
+				UserID: userID,
+				Title:  req.Title,
+			}, nil
+		},
+		updateRecurrenceGeneratedAtFunc: func(ctx context.Context, id int64, tm time.Time) error {
+			timestampUpdated = true
+			return nil
+		},
+	}
+
+	sched := newMockTaskScheduler()
+	svc := NewService(mockRepo, &mockTransactor{})
+	svc.SetNotificationDependencies(sched, nil, nil, nil, nil, nil)
+
+	err := svc.ProcessTaskRecurrence(ctx, taskID)
+	if err != nil {
+		t.Fatalf("unexpected error in ProcessTaskRecurrence: %v", err)
+	}
+
+	if !timestampUpdated {
+		t.Errorf("expected recurrence generated timestamp to be updated")
+	}
+	if _, ok := sched.recurrenceScheduled[taskID]; !ok {
+		t.Errorf("expected task %d to have its next recurrence scheduled", taskID)
+	}
+}
+
+

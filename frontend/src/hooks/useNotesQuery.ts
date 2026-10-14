@@ -48,6 +48,7 @@ export const useCreateNote = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: noteKeys.all })
+      queryClient.invalidateQueries({ queryKey: ['workspace-stats'] })
       toast.success(t('notes.createdSuccess'))
     },
     onError: (err) => {
@@ -68,6 +69,7 @@ export const useUpdateNote = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: noteKeys.all })
+      queryClient.invalidateQueries({ queryKey: ['workspace-stats'] })
       toast.success(t('notes.updatedSuccess'))
     },
     onError: (err) => {
@@ -87,6 +89,7 @@ export const useDeleteNote = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: noteKeys.all })
+      queryClient.invalidateQueries({ queryKey: ['workspace-stats'] })
       toast.success(t('notes.deletedSuccess'))
     },
     onError: (err) => {
@@ -108,6 +111,7 @@ export const useConvertToTask = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: noteKeys.all })
       queryClient.invalidateQueries({ queryKey: taskKeys.all })
+      queryClient.invalidateQueries({ queryKey: ['workspace-stats'] })
       toast.success(t('notes.convertedSuccess'))
     },
     onError: (err) => {

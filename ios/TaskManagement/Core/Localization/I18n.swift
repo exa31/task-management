@@ -1,4 +1,7 @@
 import SwiftUI
+#if canImport(WidgetKit)
+import WidgetKit
+#endif
 
 /// Supported Application Languages
 public enum AppLanguage: String, CaseIterable, Identifiable, Codable {
@@ -31,11 +34,19 @@ public final class I18n {
     public var currentLanguage: AppLanguage {
         didSet {
             UserDefaults.standard.set(currentLanguage.rawValue, forKey: "app_language")
+            if let group = UserDefaults(suiteName: "group.cloud.eka-dev.task-hub") {
+                group.set(currentLanguage.rawValue, forKey: "app_language")
+            }
+            #if canImport(WidgetKit)
+            WidgetCenter.shared.reloadAllTimelines()
+            #endif
         }
     }
 
     private init() {
-        let saved = UserDefaults.standard.string(forKey: "app_language") ?? "en"
+        let groupSaved = UserDefaults(suiteName: "group.cloud.eka-dev.task-hub")?.string(forKey: "app_language")
+        let standardSaved = UserDefaults.standard.string(forKey: "app_language")
+        let saved = groupSaved ?? standardSaved ?? "en"
         self.currentLanguage = AppLanguage(rawValue: saved) ?? .en
     }
 
@@ -197,6 +208,19 @@ public enum Translations {
             "tasks.activityFocusChanged": "Focus Toggled",
             "tasks.activityDefault": "Log Note",
             "tasks.relativeJustNow": "Just now",
+            "tasks.relativeMinutesAgo": "%lldm ago",
+            "tasks.relativeHoursAgo": "%lldh ago",
+            "tasks.sectionRecurrence": "Task Recurrence (Auto-Repeat)",
+            "tasks.repeatAuto": "Repeat Task Automatically",
+            "tasks.repeatPattern": "Recurrence Pattern",
+            "tasks.patternDaily": "Daily",
+            "tasks.patternWeekdays": "Weekdays (Mon-Fri)",
+            "tasks.patternWeekly": "Weekly",
+            "tasks.patternMonthly": "Monthly",
+            "tasks.repeatInterval": "Every %lld %@",
+            "tasks.unitDays": "days",
+            "tasks.unitWeeks": "weeks",
+            "tasks.unitMonths": "months",
 
             // Projects
             "projects.title": "Projects",
@@ -374,7 +398,36 @@ public enum Translations {
             "general.delete": "Delete",
             "general.close": "Close",
             "general.done": "Done",
-            "general.back": "Back"
+            "general.back": "Back",
+
+            // Widgets
+            "widget.checklist.allSubtasksDone": "All subtasks completed ✨",
+            "widget.checklist.focusToday": "TODAY'S FOCUS",
+            "widget.checklist.noActiveSubtasks": "No active subtasks for this task.",
+            "widget.checklist.interactiveTitle": "Interactive Subtask Checklist",
+            "widget.checklist.completedCount": "%lld of %lld completed",
+            "widget.checklist.allDone": "All tasks done!",
+            "widget.overview.todaySummary": "TODAY'S SUMMARY",
+            "widget.overview.done": "DONE",
+            "widget.overview.productivitySummary": "Productivity Summary",
+            "widget.overview.tasksDone": "%lld of %lld tasks completed",
+            "widget.overview.tasksInFocus": "%lld tasks in active focus",
+            "widget.overview.quoteAllDone": "Awesome! All done 🎉",
+            "widget.overview.quoteAlmost": "Almost there! Keep going 💪",
+            "widget.overview.quoteSteady": "Steady focus today ⚡",
+            "widget.overview.quoteStart": "Take your first step 🚀",
+            "widget.deadlines.badge": "DEADLINE",
+            "widget.deadlines.approachingHeader": "UPCOMING DEADLINES",
+            "widget.deadlines.tasksCount": "%lld tasks",
+            "widget.deadlines.activeTasksCount": "%lld active tasks",
+            "widget.deadlines.listTitle": "Deadlines & Priority List",
+            "widget.deadlines.todayAt": "Today %@",
+            "widget.deadlines.tomorrow": "Tomorrow",
+            "widget.deadlines.overdue": "Overdue",
+            "widget.deadlines.noUrgent": "No urgent deadlines!",
+            "widget.lockscreen.tasksDone": "%lld/%lld Tasks Done",
+            "widget.lockscreen.duePrefix": "Due: %@",
+            "widget.lockscreen.allDone": "All tasks done!"
         ],
         .id: [
             // Nav
@@ -486,6 +539,19 @@ public enum Translations {
             "tasks.activityFocusChanged": "Fokus Diubah",
             "tasks.activityDefault": "Catatan Log",
             "tasks.relativeJustNow": "Baru saja",
+            "tasks.relativeMinutesAgo": "%lldm lalu",
+            "tasks.relativeHoursAgo": "%lldj lalu",
+            "tasks.sectionRecurrence": "Perulangan Tugas (Auto-Repeat)",
+            "tasks.repeatAuto": "Ulangi Tugas Otomatis",
+            "tasks.repeatPattern": "Pola Pengulangan",
+            "tasks.patternDaily": "Harian",
+            "tasks.patternWeekdays": "Hari Kerja (Sen-Jum)",
+            "tasks.patternWeekly": "Mingguan",
+            "tasks.patternMonthly": "Bulanan",
+            "tasks.repeatInterval": "Setiap %lld %@",
+            "tasks.unitDays": "hari",
+            "tasks.unitWeeks": "minggu",
+            "tasks.unitMonths": "bulan",
 
             // Projects
             "projects.title": "Proyek",
@@ -663,7 +729,36 @@ public enum Translations {
             "general.delete": "Hapus",
             "general.close": "Tutup",
             "general.done": "Selesai",
-            "general.back": "Kembali"
+            "general.back": "Kembali",
+
+            // Widgets
+            "widget.checklist.allSubtasksDone": "Semua subtask selesai ✨",
+            "widget.checklist.focusToday": "FOKUS HARI INI",
+            "widget.checklist.noActiveSubtasks": "Tidak ada subtask aktif untuk tugas ini.",
+            "widget.checklist.interactiveTitle": "Checklist Subtask Interaktif",
+            "widget.checklist.completedCount": "%lld dari %lld selesai",
+            "widget.checklist.allDone": "Semua tugas beres!",
+            "widget.overview.todaySummary": "RINGKASAN HARI INI",
+            "widget.overview.done": "SELESAI",
+            "widget.overview.productivitySummary": "Ringkasan Produktivitas",
+            "widget.overview.tasksDone": "%lld dari %lld tugas beres",
+            "widget.overview.tasksInFocus": "%lld tugas dalam fokus aktif",
+            "widget.overview.quoteAllDone": "Luar biasa! Semua tuntas 🎉",
+            "widget.overview.quoteAlmost": "Sedikit lagi selesai! 💪",
+            "widget.overview.quoteSteady": "Fokus terjaga hari ini ⚡",
+            "widget.overview.quoteStart": "Mulai langkah pertamamu 🚀",
+            "widget.deadlines.badge": "DEADLINE",
+            "widget.deadlines.approachingHeader": "TENGGAT WAKTU MENDEKATI",
+            "widget.deadlines.tasksCount": "%lld tugas",
+            "widget.deadlines.activeTasksCount": "%lld tugas aktif",
+            "widget.deadlines.listTitle": "Daftar Deadline & Prioritas",
+            "widget.deadlines.todayAt": "Hari ini %@",
+            "widget.deadlines.tomorrow": "Besok",
+            "widget.deadlines.overdue": "Terlewat",
+            "widget.deadlines.noUrgent": "Tidak ada deadline mendesak!",
+            "widget.lockscreen.tasksDone": "%lld/%lld Tugas Selesai",
+            "widget.lockscreen.duePrefix": "Tenggat: %@",
+            "widget.lockscreen.allDone": "Semua tugas beres!"
         ]
     ]
 }

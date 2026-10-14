@@ -43,6 +43,7 @@ export const useCreateProject = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: projectKeys.all })
       queryClient.invalidateQueries({ queryKey: taskKeys.all })
+      queryClient.invalidateQueries({ queryKey: ['workspace-stats'] })
       toast.success(t('projects.createdSuccess'))
     },
     onError: (err) => {
@@ -64,6 +65,7 @@ export const useUpdateProject = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: projectKeys.all })
       queryClient.invalidateQueries({ queryKey: taskKeys.all })
+      queryClient.invalidateQueries({ queryKey: ['workspace-stats'] })
       toast.success(t('projects.updatedSuccess'))
     },
     onError: (err) => {
@@ -84,6 +86,7 @@ export const useDeleteProject = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: projectKeys.all })
       queryClient.invalidateQueries({ queryKey: taskKeys.all })
+      queryClient.invalidateQueries({ queryKey: ['workspace-stats'] })
       toast.success(t('projects.deletedSuccess'))
     },
     onError: (err) => {

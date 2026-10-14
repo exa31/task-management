@@ -56,6 +56,7 @@ export const useCreateReminder = () => {
     mutationFn: (payload: CreateReminderPayload) => reminderApi.create(payload),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: reminderKeys.all })
+      queryClient.invalidateQueries({ queryKey: ['workspace-stats'] })
       toast.success(t('reminders.createdSuccess'))
     },
     onError: (err) => {
@@ -74,6 +75,7 @@ export const useUpdateReminder = () => {
       reminderApi.update(id, payload),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: reminderKeys.all })
+      queryClient.invalidateQueries({ queryKey: ['workspace-stats'] })
       toast.success(t('reminders.updatedSuccess'))
     },
     onError: (err) => {
@@ -91,6 +93,7 @@ export const useDeleteReminder = () => {
     mutationFn: (id: number) => reminderApi.delete(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: reminderKeys.all })
+      queryClient.invalidateQueries({ queryKey: ['workspace-stats'] })
       toast.success(t('reminders.deletedSuccess'))
     },
     onError: (err) => {
@@ -109,6 +112,7 @@ export const useSnoozeReminder = () => {
       reminderApi.snooze(id, payload),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: reminderKeys.all })
+      queryClient.invalidateQueries({ queryKey: ['workspace-stats'] })
       toast.success(t('reminders.snoozedSuccess'))
     },
     onError: (err) => {
@@ -126,6 +130,7 @@ export const useDismissReminder = () => {
     mutationFn: (id: number) => reminderApi.dismiss(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: reminderKeys.all })
+      queryClient.invalidateQueries({ queryKey: ['workspace-stats'] })
       toast.success(t('reminders.dismissedSuccess'))
     },
     onError: (err) => {

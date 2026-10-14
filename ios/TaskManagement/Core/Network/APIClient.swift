@@ -310,6 +310,20 @@ public actor APIClient {
         return try await request(endpoint: "tasks/\(taskId)/subtasks/\(subtaskId)", method: "PUT", body: body)
     }
 
+    public func updateSubtask(taskId: Int64, subtaskId: Int64, req: UpdateSubtaskRequest) async throws -> Subtask {
+        let body = try encoder.encode(req)
+        return try await request(endpoint: "tasks/\(taskId)/subtasks/\(subtaskId)", method: "PUT", body: body)
+    }
+
+    public func createSubtask(taskId: Int64, req: CreateSubtaskRequest) async throws -> Subtask {
+        let body = try encoder.encode(req)
+        return try await request(endpoint: "tasks/\(taskId)/subtasks", method: "POST", body: body)
+    }
+
+    public func getWidgetBundle() async throws -> WidgetBundleResponse {
+        return try await request(endpoint: "tasks/widgets/bundle")
+    }
+
     public func getTaskActivities(taskId: Int64) async throws -> [TaskActivity] {
         return try await request(endpoint: "tasks/\(taskId)/activities")
     }

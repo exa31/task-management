@@ -345,3 +345,72 @@ func (h *Handler) TriggerDueWarning(webhookSecret string) fiber.Handler {
 		return response.SuccessMessageResponse(c, "Task due warning processed successfully")
 	}
 }
+
+// TriggerRecurrence is the webhook endpoint invoked by the external Asynq worker via HTTP POST at 00:00 midnight.
+func (h *Handler) TriggerRecurrence(webhookSecret string) fiber.Handler {
+	return func(c *fiber.Ctx) error {
+		incomingSecret := c.Get("X-Internal-Token")
+		if incomingSecret == "" {
+			incomingSecret = c.Get("X-Webhook-Secret")
+		}
+		if incomingSecret == "" {
+			incomingSecret = c.Get("X-Reminder-Secret")
+		}
+		if incomingSecret == "" {
+			authHeader := c.Get("Authorization")
+			if strings.HasPrefix(authHeader, "Bearer ") {
+				incomingSecret = strings.TrimPrefix(authHeader, "Bearer ")
+			} else {
+				incomingSecret = authHeader
+			}
+		}
+
+		if incomingSecret == "" || webhookSecret == "" || incomingSecret != webhookSecret {
+			return fiber.NewError(fiber.StatusUnauthorized, "Unauthorized: missing or invalid webhook secret")
+		}
+
+		var req TriggerRecurrenceRequest
+		_ = c.QueryParser(&req)
+		_ = c.BodyParser(&req)
+
+		targetID := req.TargetID()
+		if targetID <= 0 {
+			return fiber.NewError(fiber.StatusBadRequest, "task_id is required")
+		}
+
+		if err := h.service.ProcessTaskRecurrence(c.UserContext(), targetID); err != nil {
+			return err
+		}
+
+		return response.SuccessMessageResponse(c, "Task recurrence processed successfully")
+	}
+}
+
+func (h *Handler) GetWidgetBundle(c *fiber.Ctx) error {
+	userID, err := authMiddleware.GetUserID(c)
+	if err != nil {
+		return err
+	}
+
+	result, err := h.service.GetWidgetBundle(c.UserContext(), userID)
+	if err != nil {
+		return err
+	}
+
+	return response.SuccessResponse(c, result, "Widget bundle retrieved successfully")
+}
+
+func (h *Handler) GetWorkspaceStats(c *fiber.Ctx) error {
+	userID, err := authMiddleware.GetUserID(c)
+	if err != nil {
+		return err
+	}
+
+	result, err := h.service.GetWorkspaceStats(c.UserContext(), userID)
+	if err != nil {
+		return err
+	}
+
+	return response.SuccessResponse(c, result, "Workspace stats retrieved successfully")
+}
+

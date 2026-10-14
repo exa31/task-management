@@ -174,6 +174,29 @@ data class CreateNoteRequest(
 )
 
 @Serializable
+data class UpdateNoteRequest(
+    val title: String? = null,
+    val content: String? = null,
+    val type: String? = null,
+    val tags: List<String>? = null,
+    val color: String? = null,
+    @SerialName("is_pinned") val isPinned: Boolean? = null
+)
+
+@Serializable
+data class ConvertToTaskRequest(
+    val priority: String? = null,
+    @SerialName("project_id") val projectId: Long? = null,
+    @SerialName("due_date") val dueDate: String? = null
+)
+
+@Serializable
+data class ConvertNoteResponse(
+    val note: Note? = null,
+    @SerialName("task_id") val taskId: Long? = null
+)
+
+@Serializable
 data class Reminder(
     val id: Long,
     @SerialName("task_id") val taskId: Long? = null,

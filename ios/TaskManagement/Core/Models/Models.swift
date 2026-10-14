@@ -12,6 +12,7 @@ public struct User: Codable, Identifiable {
     public let timezone: String?
     public let dueDateWarningThreshold: Int
     public let emailNotificationsEnabled: Bool
+    public let reminderSound: String?
 
     enum CodingKeys: String, CodingKey {
         case id, name, email, provider, timezone
@@ -20,6 +21,7 @@ public struct User: Codable, Identifiable {
         case appleBound = "apple_bound"
         case dueDateWarningThreshold = "due_date_warning_threshold"
         case emailNotificationsEnabled = "email_notifications_enabled"
+        case reminderSound = "reminder_sound"
     }
 }
 
@@ -70,23 +72,27 @@ public struct UpdateProfileRequest: Codable {
     public let timezone: String?
     public let dueDateWarningThreshold: Int?
     public let emailNotificationsEnabled: Bool?
+    public let reminderSound: String?
 
     public init(
         name: String? = nil,
         timezone: String? = nil,
         dueDateWarningThreshold: Int? = nil,
-        emailNotificationsEnabled: Bool? = nil
+        emailNotificationsEnabled: Bool? = nil,
+        reminderSound: String? = nil
     ) {
         self.name = name
         self.timezone = timezone
         self.dueDateWarningThreshold = dueDateWarningThreshold
         self.emailNotificationsEnabled = emailNotificationsEnabled
+        self.reminderSound = reminderSound
     }
 
     enum CodingKeys: String, CodingKey {
         case name, timezone
         case dueDateWarningThreshold = "due_date_warning_threshold"
         case emailNotificationsEnabled = "email_notifications_enabled"
+        case reminderSound = "reminder_sound"
     }
 }
 
@@ -128,22 +134,33 @@ public struct DeleteAccountRequest: Codable {
 }
 
 // MARK: - Task & Subtask
-public struct Subtask: Codable, Identifiable {
+public struct Subtask: Codable, Identifiable, Sendable {
     public let id: Int64
     public let taskId: Int64
     public var title: String
     public var isCompleted: Bool
     public let orderIndex: Int
+    public let dueDate: String?
+
+    public init(id: Int64, taskId: Int64, title: String, isCompleted: Bool, orderIndex: Int, dueDate: String? = nil) {
+        self.id = id
+        self.taskId = taskId
+        self.title = title
+        self.isCompleted = isCompleted
+        self.orderIndex = orderIndex
+        self.dueDate = dueDate
+    }
 
     enum CodingKeys: String, CodingKey {
         case id, title
         case taskId = "task_id"
         case isCompleted = "is_completed"
         case orderIndex = "order_index"
+        case dueDate = "due_date"
     }
 }
 
-public struct TaskItem: Codable, Identifiable {
+public struct TaskItem: Codable, Identifiable, Sendable {
     public let id: Int64
     public let userId: String
     public var title: String
@@ -161,6 +178,11 @@ public struct TaskItem: Codable, Identifiable {
     public let subtasksCount: Int?
     public let subtasksCompleted: Int?
     public let progressPercent: Int?
+    public let isRecurring: Bool?
+    public let recurrencePattern: String?
+    public let recurrenceInterval: Int?
+    public let recurrenceEndDate: String?
+    public let recurrenceLastGeneratedAt: String?
 
     enum CodingKeys: String, CodingKey {
         case id, title, description, status, priority, tags
@@ -175,6 +197,11 @@ public struct TaskItem: Codable, Identifiable {
         case subtasksCount = "subtasks_count"
         case subtasksCompleted = "subtasks_completed"
         case progressPercent = "progress_percent"
+        case isRecurring = "is_recurring"
+        case recurrencePattern = "recurrence_pattern"
+        case recurrenceInterval = "recurrence_interval"
+        case recurrenceEndDate = "recurrence_end_date"
+        case recurrenceLastGeneratedAt = "recurrence_last_generated_at"
     }
 }
 
@@ -188,6 +215,10 @@ public struct CreateTaskRequest: Codable {
     public let tags: [String]
     public let projectId: Int64?
     public let subtasks: [String]
+    public let isRecurring: Bool
+    public let recurrencePattern: String?
+    public let recurrenceInterval: Int?
+    public let recurrenceEndDate: String?
 
     public init(
         title: String,
@@ -198,7 +229,11 @@ public struct CreateTaskRequest: Codable {
         isFocus: Bool = false,
         tags: [String] = [],
         projectId: Int64? = nil,
-        subtasks: [String] = []
+        subtasks: [String] = [],
+        isRecurring: Bool = false,
+        recurrencePattern: String? = nil,
+        recurrenceInterval: Int? = nil,
+        recurrenceEndDate: String? = nil
     ) {
         self.title = title
         self.description = description
@@ -209,6 +244,10 @@ public struct CreateTaskRequest: Codable {
         self.tags = tags
         self.projectId = projectId
         self.subtasks = subtasks
+        self.isRecurring = isRecurring
+        self.recurrencePattern = recurrencePattern
+        self.recurrenceInterval = recurrenceInterval
+        self.recurrenceEndDate = recurrenceEndDate
     }
 
     enum CodingKeys: String, CodingKey {
@@ -216,6 +255,10 @@ public struct CreateTaskRequest: Codable {
         case dueDate = "due_date"
         case isFocus = "is_focus"
         case projectId = "project_id"
+        case isRecurring = "is_recurring"
+        case recurrencePattern = "recurrence_pattern"
+        case recurrenceInterval = "recurrence_interval"
+        case recurrenceEndDate = "recurrence_end_date"
     }
 }
 
@@ -228,6 +271,10 @@ public struct UpdateTaskRequest: Codable {
     public let isFocus: Bool?
     public let tags: [String]?
     public let projectId: Int64?
+    public let isRecurring: Bool?
+    public let recurrencePattern: String?
+    public let recurrenceInterval: Int?
+    public let recurrenceEndDate: String?
 
     public init(
         title: String? = nil,
@@ -237,7 +284,11 @@ public struct UpdateTaskRequest: Codable {
         dueDate: String? = nil,
         isFocus: Bool? = nil,
         tags: [String]? = nil,
-        projectId: Int64? = nil
+        projectId: Int64? = nil,
+        isRecurring: Bool? = nil,
+        recurrencePattern: String? = nil,
+        recurrenceInterval: Int? = nil,
+        recurrenceEndDate: String? = nil
     ) {
         self.title = title
         self.description = description
@@ -247,6 +298,10 @@ public struct UpdateTaskRequest: Codable {
         self.isFocus = isFocus
         self.tags = tags
         self.projectId = projectId
+        self.isRecurring = isRecurring
+        self.recurrencePattern = recurrencePattern
+        self.recurrenceInterval = recurrenceInterval
+        self.recurrenceEndDate = recurrenceEndDate
     }
 
     enum CodingKeys: String, CodingKey {
@@ -254,16 +309,57 @@ public struct UpdateTaskRequest: Codable {
         case dueDate = "due_date"
         case isFocus = "is_focus"
         case projectId = "project_id"
+        case isRecurring = "is_recurring"
+        case recurrencePattern = "recurrence_pattern"
+        case recurrenceInterval = "recurrence_interval"
+        case recurrenceEndDate = "recurrence_end_date"
+    }
+}
+
+public struct CreateSubtaskRequest: Codable {
+    public let title: String
+    public let dueDate: String?
+
+    public init(title: String, dueDate: String? = nil) {
+        self.title = title
+        self.dueDate = dueDate
+    }
+
+    enum CodingKeys: String, CodingKey {
+        case title
+        case dueDate = "due_date"
     }
 }
 
 public struct UpdateSubtaskRequest: Codable {
     public let title: String?
     public let isCompleted: Bool?
+    public let dueDate: String?
+
+    public init(title: String? = nil, isCompleted: Bool? = nil, dueDate: String? = nil) {
+        self.title = title
+        self.isCompleted = isCompleted
+        self.dueDate = dueDate
+    }
 
     enum CodingKeys: String, CodingKey {
         case title
         case isCompleted = "is_completed"
+        case dueDate = "due_date"
+    }
+}
+
+public struct WidgetBundleResponse: Codable, Sendable {
+    public let focusTasks: [TaskItem]
+    public let upcomingDeadlines: [TaskItem]
+    public let completedToday: Int
+    public let totalToday: Int
+
+    enum CodingKeys: String, CodingKey {
+        case focusTasks = "focus_tasks"
+        case upcomingDeadlines = "upcoming_deadlines"
+        case completedToday = "completed_today"
+        case totalToday = "total_today"
     }
 }
 

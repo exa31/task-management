@@ -38,6 +38,11 @@ type TaskDueScheduler interface {
 	CancelTaskDueAlert(ctx context.Context, taskID int64) error
 }
 
+type TaskRecurrenceScheduler interface {
+	ScheduleTaskRecurrence(ctx context.Context, taskID int64, processAt time.Time) error
+	CancelTaskRecurrence(ctx context.Context, taskID int64) error
+}
+
 type AsynqScheduler struct {
 	client        *asynq.Client
 	inspector     *asynq.Inspector
@@ -234,3 +239,73 @@ func (s *AsynqScheduler) CancelTaskDueAlert(ctx context.Context, taskID int64) e
 	}
 	return nil
 }
+
+func (s *AsynqScheduler) ScheduleTaskRecurrence(ctx context.Context, taskID int64, processAt time.Time) error {
+	triggerURL := fmt.Sprintf("%s/api/v1/tasks/recurrence/trigger", s.baseURL)
+	headers := map[string]string{
+		"Content-Type":     "application/json",
+		"X-Internal-Token": s.webhookSecret,
+		"X-Webhook-Secret": s.webhookSecret,
+	}
+
+	bodyJSON := fmt.Sprintf(`{"task_id":%d,"id":%d}`, taskID, taskID)
+
+	payloadObj := WorkerAsynqHTTPPayload{
+		URL:     triggerURL,
+		Method:  "POST",
+		Headers: headers,
+		Body:    bodyJSON,
+		TaskID:  taskID,
+	}
+
+	payload, err := json.Marshal(payloadObj)
+	if err != nil {
+		return fmt.Errorf("failed to serialize task recurrence payload: %w", err)
+	}
+
+	taskIDStr := fmt.Sprintf("task_recurrence:%d", taskID)
+	_ = s.inspector.DeleteTask(s.queue, taskIDStr)
+
+	task := asynq.NewTask(
+		s.taskType,
+		payload,
+		asynq.TaskID(taskIDStr),
+		asynq.MaxRetry(3),
+		asynq.Retention(24*time.Hour),
+	)
+
+	info, err := s.client.EnqueueContext(ctx, task, asynq.ProcessAt(processAt), asynq.Queue(s.queue))
+	if err != nil {
+		s.logger.Error("failed to enqueue task recurrence to asynq",
+			slog.Int64("task_id", taskID),
+			slog.Time("process_at", processAt),
+			slog.String("task_type", s.taskType),
+			slog.String("queue", s.queue),
+			slog.String("target_url", triggerURL),
+			slog.String("error", err.Error()),
+		)
+		return fmt.Errorf("failed to enqueue task recurrence: %w", err)
+	}
+
+	s.logger.Info("task recurrence successfully scheduled in asynq",
+		slog.Int64("task_id", taskID),
+		slog.String("asynq_id", info.ID),
+		slog.String("target_url", triggerURL),
+		slog.Time("process_at", processAt),
+	)
+	return nil
+}
+
+func (s *AsynqScheduler) CancelTaskRecurrence(ctx context.Context, taskID int64) error {
+	taskIDStr := fmt.Sprintf("task_recurrence:%d", taskID)
+	err := s.inspector.DeleteTask(s.queue, taskIDStr)
+	if err != nil {
+		s.logger.Debug("asynq task deletion error for task recurrence",
+			slog.Int64("task_id", taskID),
+			slog.String("queue", s.queue),
+			slog.String("error", err.Error()),
+		)
+	}
+	return nil
+}
+

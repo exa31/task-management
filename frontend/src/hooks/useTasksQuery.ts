@@ -247,6 +247,7 @@ export const useCreateTask = () => {
       }
       queryClient.invalidateQueries({ queryKey: taskKeys.all, refetchType: 'all' })
       queryClient.invalidateQueries({ queryKey: ['projects'], refetchType: 'all' })
+      queryClient.invalidateQueries({ queryKey: ['workspace-stats'] })
       toast.success(t('tasks.createdSuccess'))
     },
     onError: (err) => {
@@ -271,6 +272,7 @@ export const useUpdateTask = () => {
       }
       queryClient.invalidateQueries({ queryKey: taskKeys.all, refetchType: 'all' })
       queryClient.invalidateQueries({ queryKey: ['projects'], refetchType: 'all' })
+      queryClient.invalidateQueries({ queryKey: ['workspace-stats'] })
       toast.success(t('tasks.updatedSuccess'))
     },
     onError: (err) => {
@@ -293,6 +295,7 @@ export const useDeleteTask = () => {
       removeTaskFromQueryCache(queryClient, id)
       queryClient.invalidateQueries({ queryKey: taskKeys.all, refetchType: 'all' })
       queryClient.invalidateQueries({ queryKey: ['projects'], refetchType: 'all' })
+      queryClient.invalidateQueries({ queryKey: ['workspace-stats'] })
       toast.success(t('tasks.deletedSuccess'))
     },
     onError: (err) => {
@@ -316,6 +319,7 @@ export const useLogProgress = () => {
         updateTaskInQueryCache(queryClient, updatedTask)
       }
       queryClient.invalidateQueries({ queryKey: taskKeys.all, refetchType: 'all' })
+      queryClient.invalidateQueries({ queryKey: ['workspace-stats'] })
       toast.success(t('tasks.progressLoggedSuccess'))
     },
     onError: (err) => {

@@ -7,41 +7,50 @@ import (
 
 // SubtaskResponse represents a checklist item in a task.
 type SubtaskResponse struct {
-	ID          int64     `json:"id" db:"id"`
-	TaskID      int64     `json:"task_id" db:"task_id"`
-	Title       string    `json:"title" db:"title"`
-	IsCompleted bool      `json:"is_completed" db:"is_completed"`
-	OrderIndex  int       `json:"order_index" db:"order_index"`
-	CreatedAt   time.Time `json:"created_at" db:"created_at"`
-	UpdatedAt   time.Time `json:"updated_at" db:"updated_at"`
+	ID          int64      `json:"id" db:"id"`
+	TaskID      int64      `json:"task_id" db:"task_id"`
+	Title       string     `json:"title" db:"title"`
+	IsCompleted bool       `json:"is_completed" db:"is_completed"`
+	OrderIndex  int        `json:"order_index" db:"order_index"`
+	DueDate     *time.Time `json:"due_date" db:"due_date"`
+	CreatedAt   time.Time  `json:"created_at" db:"created_at"`
+	UpdatedAt   time.Time  `json:"updated_at" db:"updated_at"`
 }
 
 // CreateTaskRequest payload for creating a new task.
 type CreateTaskRequest struct {
-	Title        string     `json:"title" validate:"required,min=1,max=255"`
-	Description  string     `json:"description"`
-	Status       string     `json:"status" validate:"omitempty,oneof=backlog todo in_progress review done"`
-	Priority     string     `json:"priority" validate:"omitempty,oneof=low medium high urgent"`
-	DueDate      *time.Time `json:"due_date"`
-	IsFocus      bool       `json:"is_focus"`
-	Tags         []string   `json:"tags"`
-	ProjectID    *int64     `json:"project_id"`
-	SourceNoteID *int64     `json:"source_note_id"`
-	Subtasks     []string   `json:"subtasks"`
+	Title              string     `json:"title" validate:"required,min=1,max=255"`
+	Description        string     `json:"description"`
+	Status             string     `json:"status" validate:"omitempty,oneof=backlog todo in_progress review done"`
+	Priority           string     `json:"priority" validate:"omitempty,oneof=low medium high urgent"`
+	DueDate            *time.Time `json:"due_date"`
+	IsFocus            bool       `json:"is_focus"`
+	Tags               []string   `json:"tags"`
+	ProjectID          *int64     `json:"project_id"`
+	SourceNoteID       *int64     `json:"source_note_id"`
+	Subtasks           []string   `json:"subtasks"`
+	IsRecurring        bool       `json:"is_recurring"`
+	RecurrencePattern  string     `json:"recurrence_pattern" validate:"omitempty,oneof=daily weekdays weekly monthly"`
+	RecurrenceInterval int        `json:"recurrence_interval" validate:"omitempty,min=1,max=365"`
+	RecurrenceEndDate  *time.Time `json:"recurrence_end_date"`
 }
 
 // UpdateTaskRequest payload for updating an existing task.
 type UpdateTaskRequest struct {
-	Title            *string    `json:"title" validate:"omitempty,min=1,max=255"`
-	Description      *string    `json:"description"`
-	Status           *string    `json:"status" validate:"omitempty,oneof=backlog todo in_progress review done"`
-	Priority         *string    `json:"priority" validate:"omitempty,oneof=low medium high urgent"`
-	DueDate          *time.Time `json:"due_date"`
-	IsFocus          *bool      `json:"is_focus"`
-	Tags             *[]string  `json:"tags"`
-	ProjectID        *int64     `json:"project_id"`
-	HasProjectID     bool       `json:"-"`
-	LastProgressNote *string    `json:"last_progress_note"`
+	Title              *string    `json:"title" validate:"omitempty,min=1,max=255"`
+	Description        *string    `json:"description"`
+	Status             *string    `json:"status" validate:"omitempty,oneof=backlog todo in_progress review done"`
+	Priority           *string    `json:"priority" validate:"omitempty,oneof=low medium high urgent"`
+	DueDate            *time.Time `json:"due_date"`
+	IsFocus            *bool      `json:"is_focus"`
+	Tags               *[]string  `json:"tags"`
+	ProjectID          *int64     `json:"project_id"`
+	HasProjectID       bool       `json:"-"`
+	LastProgressNote   *string    `json:"last_progress_note"`
+	IsRecurring        *bool      `json:"is_recurring"`
+	RecurrencePattern  *string    `json:"recurrence_pattern" validate:"omitempty,oneof=daily weekdays weekly monthly"`
+	RecurrenceInterval *int       `json:"recurrence_interval" validate:"omitempty,min=1,max=365"`
+	RecurrenceEndDate  *time.Time `json:"recurrence_end_date"`
 }
 
 // UnmarshalJSON detects if project_id was explicitly provided in JSON (including null).
@@ -73,13 +82,15 @@ type LogProgressRequest struct {
 
 // CreateSubtaskRequest payload for adding a subtask checklist item.
 type CreateSubtaskRequest struct {
-	Title string `json:"title" validate:"required,min=1,max=255"`
+	Title   string     `json:"title" validate:"required,min=1,max=255"`
+	DueDate *time.Time `json:"due_date"`
 }
 
 // UpdateSubtaskRequest payload for modifying a subtask checklist item.
 type UpdateSubtaskRequest struct {
-	Title       *string `json:"title"`
-	IsCompleted *bool   `json:"is_completed"`
+	Title       *string    `json:"title"`
+	IsCompleted *bool      `json:"is_completed"`
+	DueDate     *time.Time `json:"due_date"`
 }
 
 // TaskFilter parameters for querying tasks.
@@ -105,28 +116,46 @@ type TaskCursorResponse struct {
 
 // TaskResponse represents a detailed task object.
 type TaskResponse struct {
-	ID                   int64             `json:"id" db:"id"`
-	UserID               string            `json:"user_id" db:"user_id"`
-	Title                string            `json:"title" db:"title"`
-	Description          string            `json:"description" db:"description"`
-	Status               string            `json:"status" db:"status"`
-	Priority             string            `json:"priority" db:"priority"`
-	DueDate              *time.Time        `json:"due_date" db:"due_date"`
-	DueDateWarningSentAt *time.Time        `json:"due_date_warning_sent_at" db:"due_date_warning_sent_at"`
-	IsFocus              bool              `json:"is_focus" db:"is_focus"`
-	Tags                 []string          `json:"tags"`
-	ProjectID            *int64            `json:"project_id" db:"project_id"`
-	ProjectName          *string           `json:"project_name" db:"project_name"`
-	ProjectColor         *string           `json:"project_color" db:"project_color"`
-	LastProgressNote     string            `json:"last_progress_note" db:"last_progress_note"`
-	LastProgressAt       *time.Time        `json:"last_progress_at" db:"last_progress_at"`
-	SourceNoteID         *int64            `json:"source_note_id" db:"source_note_id"`
-	Subtasks             []SubtaskResponse `json:"subtasks"`
-	SubtasksCount        int               `json:"subtasks_count"`
-	SubtasksCompleted    int               `json:"subtasks_completed"`
-	ProgressPercent      int               `json:"progress_percent"`
-	CreatedAt            time.Time         `json:"created_at" db:"created_at"`
-	UpdatedAt            time.Time         `json:"updated_at" db:"updated_at"`
+	ID                        int64             `json:"id" db:"id"`
+	UserID                    string            `json:"user_id" db:"user_id"`
+	Title                     string            `json:"title" db:"title"`
+	Description               string            `json:"description" db:"description"`
+	Status                    string            `json:"status" db:"status"`
+	Priority                  string            `json:"priority" db:"priority"`
+	DueDate                   *time.Time        `json:"due_date" db:"due_date"`
+	DueDateWarningSentAt      *time.Time        `json:"due_date_warning_sent_at" db:"due_date_warning_sent_at"`
+	IsFocus                   bool              `json:"is_focus" db:"is_focus"`
+	Tags                      []string          `json:"tags"`
+	ProjectID                 *int64            `json:"project_id" db:"project_id"`
+	ProjectName               *string           `json:"project_name" db:"project_name"`
+	ProjectColor              *string           `json:"project_color" db:"project_color"`
+	LastProgressNote          string            `json:"last_progress_note" db:"last_progress_note"`
+	LastProgressAt            *time.Time        `json:"last_progress_at" db:"last_progress_at"`
+	SourceNoteID              *int64            `json:"source_note_id" db:"source_note_id"`
+	Subtasks                  []SubtaskResponse `json:"subtasks"`
+	SubtasksCount             int               `json:"subtasks_count"`
+	SubtasksCompleted         int               `json:"subtasks_completed"`
+	ProgressPercent           int               `json:"progress_percent"`
+	IsRecurring               bool              `json:"is_recurring" db:"is_recurring"`
+	RecurrencePattern         string            `json:"recurrence_pattern" db:"recurrence_pattern"`
+	RecurrenceInterval        int               `json:"recurrence_interval" db:"recurrence_interval"`
+	RecurrenceEndDate         *time.Time        `json:"recurrence_end_date" db:"recurrence_end_date"`
+	RecurrenceLastGeneratedAt *time.Time        `json:"recurrence_last_generated_at" db:"recurrence_last_generated_at"`
+	CreatedAt                 time.Time         `json:"created_at" db:"created_at"`
+	UpdatedAt                 time.Time         `json:"updated_at" db:"updated_at"`
+}
+
+// TriggerRecurrenceRequest payload for Asynq worker rollover trigger.
+type TriggerRecurrenceRequest struct {
+	TaskID int64 `json:"task_id" query:"task_id"`
+	ID     int64 `json:"id" query:"id"`
+}
+
+func (r *TriggerRecurrenceRequest) TargetID() int64 {
+	if r.TaskID != 0 {
+		return r.TaskID
+	}
+	return r.ID
 }
 
 // TriggerDueWarningRequest payload for external worker HTTP POST trigger.
@@ -159,3 +188,22 @@ type CreateTaskActivityRequest struct {
 	ActivityType string `json:"activity_type" validate:"omitempty,max=50"`
 	Description  string `json:"description" validate:"required,min=1"`
 }
+
+// WidgetBundleResponse aggregates data for iOS Home Screen & Lock Screen widgets.
+type WidgetBundleResponse struct {
+	FocusTasks        []TaskResponse `json:"focus_tasks"`
+	UpcomingDeadlines []TaskResponse `json:"upcoming_deadlines"`
+	CompletedToday    int            `json:"completed_today"`
+	TotalToday        int            `json:"total_today"`
+}
+
+// WorkspaceStatsResponse provides lightweight counts for the navigation sidebar and dashboard badges.
+type WorkspaceStatsResponse struct {
+	TasksInProgress  int `json:"tasks_in_progress" db:"tasks_in_progress"`
+	TasksTodo        int `json:"tasks_todo" db:"tasks_todo"`
+	TasksTotal       int `json:"tasks_total" db:"tasks_total"`
+	TotalProjects    int `json:"total_projects" db:"total_projects"`
+	PendingReminders int `json:"pending_reminders" db:"pending_reminders"`
+	TotalNotes       int `json:"total_notes" db:"total_notes"`
+}
+

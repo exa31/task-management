@@ -1,7 +1,7 @@
 import { Link, useLocation } from 'react-router-dom'
 
 import { BrandLogo } from '@/components'
-import { useNotes, useProjects, useReminders, useTasks } from '@/hooks'
+import { useWorkspaceStats } from '@/hooks'
 import { useTranslation } from '@/i18n'
 import { useUIStore } from '@/stores'
 
@@ -12,19 +12,14 @@ interface SidebarProps {
 export default function Sidebar({ isSidebarOpen }: SidebarProps) {
   const location = useLocation()
   const { t } = useTranslation()
-  const { data: rawTasks } = useTasks()
-  const { data: rawNotes } = useNotes()
-  const { data: rawProjects } = useProjects()
-  const { data: reminderData } = useReminders({ status: 'pending' })
-  const tasks = Array.isArray(rawTasks) ? rawTasks : []
-  const notes = Array.isArray(rawNotes) ? rawNotes : []
-  const projects = Array.isArray(rawProjects) ? rawProjects : []
-  const reminderCount = reminderData?.items?.length || 0
+  const { data: stats } = useWorkspaceStats()
+  const inProgressCount = stats?.tasks_in_progress ?? 0
+  const projectsCount = stats?.total_projects ?? 0
+  const reminderCount = stats?.pending_reminders ?? 0
+  const notesCount = stats?.total_notes ?? 0
   const { openCommandPalette } = useUIStore()
 
   const isActive = (path: string) => location.pathname === path
-
-  const inProgressCount = tasks.filter((t) => t?.status === 'in_progress').length
 
   return (
     <aside
@@ -100,9 +95,9 @@ export default function Sidebar({ isSidebarOpen }: SidebarProps) {
             <i className="pi pi-folder text-sm" />
             {isSidebarOpen && <span>{t('nav.projects')}</span>}
           </div>
-          {isSidebarOpen && projects.length > 0 && (
+          {isSidebarOpen && projectsCount > 0 && (
             <span className="px-1.5 py-0.2 rounded-full text-[10px] font-mono bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400">
-              {projects.length}
+              {projectsCount}
             </span>
           )}
         </Link>
@@ -155,9 +150,9 @@ export default function Sidebar({ isSidebarOpen }: SidebarProps) {
             <i className="pi pi-lightbulb text-sm" />
             {isSidebarOpen && <span>{t('nav.notes')}</span>}
           </div>
-          {isSidebarOpen && notes.length > 0 && (
+          {isSidebarOpen && notesCount > 0 && (
             <span className="px-1.5 py-0.2 rounded-full text-[10px] font-mono bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400">
-              {notes.length}
+              {notesCount}
             </span>
           )}
         </Link>

@@ -30,6 +30,9 @@ public final class TaskViewModel {
         do {
             self.tasks = try await apiClient.getTasks()
             AppLogger.info("Tasks loaded successfully", category: .task, metadata: ["count": tasks.count])
+            Task {
+                await SharedWidgetDataManager.shared.syncWithBackend()
+            }
         } catch {
             AppLogger.error("Failed to load tasks", error: error, category: .task)
             self.errorMessage = error.localizedDescription
@@ -159,7 +162,11 @@ public final class TaskViewModel {
         dueDate: String? = nil,
         isFocus: Bool? = nil,
         tags: [String]? = nil,
-        projectId: Int64? = nil
+        projectId: Int64? = nil,
+        isRecurring: Bool? = nil,
+        recurrencePattern: String? = nil,
+        recurrenceInterval: Int? = nil,
+        recurrenceEndDate: String? = nil
     ) async -> Bool {
         do {
             let updated = try await apiClient.updateTask(
@@ -172,7 +179,11 @@ public final class TaskViewModel {
                     dueDate: dueDate,
                     isFocus: isFocus,
                     tags: tags,
-                    projectId: projectId
+                    projectId: projectId,
+                    isRecurring: isRecurring,
+                    recurrencePattern: recurrencePattern,
+                    recurrenceInterval: recurrenceInterval,
+                    recurrenceEndDate: recurrenceEndDate
                 )
             )
             if let idx = tasks.firstIndex(where: { $0.id == id }) {
@@ -198,7 +209,11 @@ public final class TaskViewModel {
         isFocus: Bool = false,
         tags: [String] = [],
         projectId: Int64? = nil,
-        subtasks: [String] = []
+        subtasks: [String] = [],
+        isRecurring: Bool = false,
+        recurrencePattern: String? = nil,
+        recurrenceInterval: Int? = nil,
+        recurrenceEndDate: String? = nil
     ) async -> Bool {
         do {
             _ = try await apiClient.createTask(
@@ -211,7 +226,11 @@ public final class TaskViewModel {
                     isFocus: isFocus,
                     tags: tags,
                     projectId: projectId,
-                    subtasks: subtasks
+                    subtasks: subtasks,
+                    isRecurring: isRecurring,
+                    recurrencePattern: recurrencePattern,
+                    recurrenceInterval: recurrenceInterval,
+                    recurrenceEndDate: recurrenceEndDate
                 )
             )
             AppLogger.success("Task created successfully", category: .task, metadata: ["title": title])
@@ -251,6 +270,13 @@ public final class TaskViewModel {
 
     @MainActor
     public func toggleSubtask(taskId: Int64, subtaskId: Int64, currentCompleted: Bool) {
+        // Immediate local mutation for offline widget and instant response
+        SharedWidgetDataManager.shared.toggleSubtaskLocally(
+            taskId: taskId,
+            subtaskId: subtaskId,
+            isCompleted: !currentCompleted
+        )
+
         Task {
             do {
                 _ = try await apiClient.updateSubtask(

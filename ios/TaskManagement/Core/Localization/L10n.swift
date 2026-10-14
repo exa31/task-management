@@ -116,6 +116,21 @@ public enum L10n {
         public static var activityFocusChanged: String { "tasks.activityFocusChanged".localized }
         public static var activityDefault: String { "tasks.activityDefault".localized }
         public static var relativeJustNow: String { "tasks.relativeJustNow".localized }
+        public static func relativeMinutesAgo(count: Int) -> String { "tasks.relativeMinutesAgo".localized(with: count) }
+        public static func relativeHoursAgo(count: Int) -> String { "tasks.relativeHoursAgo".localized(with: count) }
+        public static var sectionRecurrence: String { "tasks.sectionRecurrence".localized }
+        public static var repeatAuto: String { "tasks.repeatAuto".localized }
+        public static var repeatPattern: String { "tasks.repeatPattern".localized }
+        public static var patternDaily: String { "tasks.patternDaily".localized }
+        public static var patternWeekdays: String { "tasks.patternWeekdays".localized }
+        public static var patternWeekly: String { "tasks.patternWeekly".localized }
+        public static var patternMonthly: String { "tasks.patternMonthly".localized }
+        public static func repeatInterval(interval: Int, unit: String) -> String {
+            "tasks.repeatInterval".localized(with: interval, unit)
+        }
+        public static var unitDays: String { "tasks.unitDays".localized }
+        public static var unitWeeks: String { "tasks.unitWeeks".localized }
+        public static var unitMonths: String { "tasks.unitMonths".localized }
     }
 
     public enum Projects {
@@ -314,5 +329,48 @@ public enum L10n {
         public static var close: String { "general.close".localized }
         public static var done: String { "general.done".localized }
         public static var back: String { "general.back".localized }
+    }
+
+    public enum Widgets {
+        public static var allSubtasksDone: String { "widget.checklist.allSubtasksDone".localized }
+        public static var focusToday: String { "widget.checklist.focusToday".localized }
+        public static var noActiveSubtasks: String { "widget.checklist.noActiveSubtasks".localized }
+        public static var interactiveTitle: String { "widget.checklist.interactiveTitle".localized }
+        public static func completedCount(done: Int, total: Int) -> String {
+            "widget.checklist.completedCount".localized(with: done, total)
+        }
+        public static var allDone: String { "widget.checklist.allDone".localized }
+
+        public static var todaySummary: String { "widget.overview.todaySummary".localized }
+        public static var doneBadge: String { "widget.overview.done".localized }
+        public static var productivitySummary: String { "widget.overview.productivitySummary".localized }
+        public static func tasksDone(completed: Int, total: Int) -> String {
+            "widget.overview.tasksDone".localized(with: completed, total)
+        }
+        public static func tasksInFocus(count: Int) -> String {
+            "widget.overview.tasksInFocus".localized(with: count)
+        }
+        public static var quoteAllDone: String { "widget.overview.quoteAllDone".localized }
+        public static var quoteAlmost: String { "widget.overview.quoteAlmost".localized }
+        public static var quoteSteady: String { "widget.overview.quoteSteady".localized }
+        public static var quoteStart: String { "widget.overview.quoteStart".localized }
+
+        public static var deadlineBadge: String { "widget.deadlines.badge".localized }
+        public static var upcomingHeader: String { "widget.deadlines.approachingHeader".localized }
+        public static func tasksCount(count: Int) -> String { "widget.deadlines.tasksCount".localized(with: count) }
+        public static func activeTasksCount(count: Int) -> String { "widget.deadlines.activeTasksCount".localized(with: count) }
+        public static var listTitle: String { "widget.deadlines.listTitle".localized }
+        public static func todayAt(time: String) -> String { "widget.deadlines.todayAt".localized(with: time) }
+        public static var tomorrow: String { "widget.deadlines.tomorrow".localized }
+        public static var overdue: String { "widget.deadlines.overdue".localized }
+        public static var noUrgent: String { "widget.deadlines.noUrgent".localized }
+
+        public static func lockscreenTasksDone(completed: Int, total: Int) -> String {
+            "widget.lockscreen.tasksDone".localized(with: completed, total)
+        }
+        public static func duePrefix(time: String) -> String {
+            "widget.lockscreen.duePrefix".localized(with: time)
+        }
+        public static var lockscreenAllDone: String { "widget.lockscreen.allDone".localized }
     }
 }
