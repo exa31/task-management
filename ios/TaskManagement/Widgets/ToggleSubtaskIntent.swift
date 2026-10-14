@@ -93,3 +93,39 @@ public struct CycleNextTaskIntent: AppIntent {
         return .result()
     }
 }
+
+public struct CycleSubtaskPageIntent: AppIntent {
+    public static var title: LocalizedStringResource = "Cycle Subtask Page"
+    public static var description = IntentDescription("Switch to the next or previous page of subtasks on the widget.")
+
+    @Parameter(title: "Task ID")
+    public var taskId: Int
+
+    @Parameter(title: "Delta")
+    public var delta: Int
+
+    @Parameter(title: "Total Pages")
+    public var totalPages: Int
+
+    public init() {
+        self.taskId = 0
+        self.delta = 1
+        self.totalPages = 1
+    }
+
+    public init(taskId: Int64, delta: Int = 1, totalPages: Int = 1) {
+        self.taskId = Int(taskId)
+        self.delta = delta
+        self.totalPages = max(1, totalPages)
+    }
+
+    public func perform() async throws -> some IntentResult {
+        SharedWidgetDataManager.shared.stepSubtaskPage(taskId: Int64(taskId), delta: delta, totalPages: totalPages)
+
+        #if canImport(WidgetKit)
+        WidgetCenter.shared.reloadAllTimelines()
+        #endif
+
+        return .result()
+    }
+}

@@ -341,6 +341,15 @@ public enum L10n {
             "widget.checklist.completedCount".localized(with: done, total)
         }
         public static var allDone: String { "widget.checklist.allDone".localized }
+        public static func subtasksCount(count: Int) -> String {
+            "widget.checklist.subtasksCount".localized(with: count)
+        }
+        public static func pageIndicator(page: Int, total: Int) -> String {
+            "widget.checklist.page".localized(with: page, total)
+        }
+        public static func moreRemaining(count: Int) -> String {
+            "widget.checklist.moreRemaining".localized(with: count)
+        }
 
         public static var todaySummary: String { "widget.overview.todaySummary".localized }
         public static var doneBadge: String { "widget.overview.done".localized }

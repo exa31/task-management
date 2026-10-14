@@ -306,6 +306,26 @@ public final class SharedWidgetDataManager: @unchecked Sendable {
         return defaults.integer(forKey: customTaskIndexKey)
     }
 
+    // MARK: - Subtask Pagination per Task
+
+    public func getSubtaskPage(for taskId: Int64, totalPages: Int) -> Int {
+        lock.lock()
+        defer { lock.unlock() }
+        guard totalPages > 1 else { return 0 }
+        let page = defaults.integer(forKey: "task_hub_subtask_page_\(taskId)")
+        return (page % totalPages + totalPages) % totalPages
+    }
+
+    public func stepSubtaskPage(taskId: Int64, delta: Int, totalPages: Int) {
+        lock.lock()
+        defer { lock.unlock() }
+        guard totalPages > 1 else { return }
+        let key = "task_hub_subtask_page_\(taskId)"
+        let current = defaults.integer(forKey: key)
+        let next = ((current + delta) % totalPages + totalPages) % totalPages
+        defaults.set(next, forKey: key)
+    }
+
     // MARK: - Synchronous Task List Sync (Instant Local Sync)
 
     public func syncWithTaskList(_ tasks: [TaskItem]) {
