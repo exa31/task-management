@@ -1,4 +1,5 @@
 import { login } from './auth'
+import { calendar } from './calendar'
 import { commandPalette } from './command'
 import { common } from './common'
 import { dashboard, focus } from './dashboard'
@@ -9,7 +10,6 @@ import { nav } from './nav'
 import { convertModal, noteModal, notes } from './notes'
 import { projects } from './projects'
 import { reminders } from './reminders'
-import { calendar } from './calendar'
 import { settings } from './settings'
 import { taskDrawer, taskModal, tasks } from './tasks'
 

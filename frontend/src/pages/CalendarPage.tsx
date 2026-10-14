@@ -225,21 +225,17 @@ export const CalendarPage: React.FC = () => {
   const todayKey = formatDateKey(new Date())
 
   // Formatting helpers
-  const monthTitle = useMemo(() => {
-    return currentDate.toLocaleDateString(locale === 'id' ? 'id-ID' : 'en-US', {
+  const monthTitle = useMemo(() => currentDate.toLocaleDateString(locale === 'id' ? 'id-ID' : 'en-US', {
       month: 'long',
       year: 'numeric'
-    })
-  }, [currentDate, locale])
+    }), [currentDate, locale])
 
-  const selectedDateTitle = useMemo(() => {
-    return selectedDate.toLocaleDateString(locale === 'id' ? 'id-ID' : 'en-US', {
+  const selectedDateTitle = useMemo(() => selectedDate.toLocaleDateString(locale === 'id' ? 'id-ID' : 'en-US', {
       weekday: 'long',
       day: 'numeric',
       month: 'long',
       year: 'numeric'
-    })
-  }, [selectedDate, locale])
+    }), [selectedDate, locale])
 
   // Snooze reminder handler
   const handleSnooze = async (id: number, minutes: number) => {

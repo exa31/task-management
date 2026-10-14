@@ -11,6 +11,7 @@ import type {
   Task,
   TaskCursorResponse,
   TaskFilterParams,
+  TaskStatus,
   UpdateTaskPayload
 } from '@/types'
 
@@ -266,6 +267,90 @@ export const useUpdateTask = () => {
       const res = await taskApi.update(id, payload)
       return res.data
     },
+    onMutate: async ({ id, payload }) => {
+      await queryClient.cancelQueries({ queryKey: taskKeys.all })
+      const previousDetail = queryClient.getQueryData<Task>(taskKeys.detail(id))
+
+      const isBecomingDone = payload.status === 'done'
+      const nextFocus =
+        payload.is_focus !== undefined ? payload.is_focus : isBecomingDone ? false : undefined
+
+      // 1. Update task detail query
+      queryClient.setQueryData<Task>(taskKeys.detail(id), (old) => {
+        if (!old) return old
+        const updatedSubtasks =
+          isBecomingDone && old.subtasks
+            ? old.subtasks.map((st) => ({ ...st, is_completed: true }))
+            : old.subtasks
+        const subtasksCompleted = isBecomingDone ? (old.subtasks_count ?? 0) : old.subtasks_completed
+        const progressPercent = isBecomingDone ? 100 : old.progress_percent
+
+        return {
+          ...old,
+          ...payload,
+          is_focus: nextFocus !== undefined ? nextFocus : old.is_focus,
+          subtasks: updatedSubtasks,
+          subtasks_completed: subtasksCompleted,
+          progress_percent: progressPercent
+        }
+      })
+
+      // 2. Update infinite queries
+      queryClient.setQueriesData<InfiniteData<TaskCursorResponse>>(
+        { queryKey: ['tasks', 'infinite'] },
+        (old) => {
+          if (!old || !Array.isArray(old.pages)) return old
+          return {
+            ...old,
+            pages: old.pages.map((page) => ({
+              ...page,
+              items: (page.items || []).map((item) => {
+                if (item.id !== id) return item
+                return {
+                  ...item,
+                  ...payload,
+                  is_focus: nextFocus !== undefined ? nextFocus : item.is_focus,
+                  subtasks_completed: isBecomingDone ? item.subtasks_count : item.subtasks_completed,
+                  progress_percent: isBecomingDone ? 100 : item.progress_percent
+                }
+              })
+            }))
+          }
+        }
+      )
+
+      // 3. Update list queries
+      queryClient.setQueriesData<Task[]>(
+        { queryKey: ['tasks', 'list'] },
+        (old) => {
+          if (!Array.isArray(old)) return old
+          return old.map((item) => {
+            if (item.id !== id) return item
+            return {
+              ...item,
+              ...payload,
+              is_focus: nextFocus !== undefined ? nextFocus : item.is_focus,
+              subtasks_completed: isBecomingDone ? item.subtasks_count : item.subtasks_completed,
+              progress_percent: isBecomingDone ? 100 : item.progress_percent
+            }
+          })
+        }
+      )
+
+      // 4. Update Zustand store
+      const store = useTaskStore.getState()
+      if (store.selectedTask?.id === id) {
+        store.setSelectedTask({
+          ...store.selectedTask,
+          ...payload,
+          is_focus: nextFocus !== undefined ? nextFocus : store.selectedTask.is_focus,
+          subtasks_completed: isBecomingDone ? store.selectedTask.subtasks_count : store.selectedTask.subtasks_completed,
+          progress_percent: isBecomingDone ? 100 : store.selectedTask.progress_percent
+        })
+      }
+
+      return { previousDetail }
+    },
     onSuccess: (updatedTask) => {
       if (updatedTask) {
         updateTaskInQueryCache(queryClient, updatedTask)
@@ -275,7 +360,12 @@ export const useUpdateTask = () => {
       queryClient.invalidateQueries({ queryKey: ['workspace-stats'] })
       toast.success(t('tasks.updatedSuccess'))
     },
-    onError: (err) => {
+    onError: (err, variables, context) => {
+      void variables
+      if (context?.previousDetail) {
+        queryClient.setQueryData(taskKeys.detail(context.previousDetail.id), context.previousDetail)
+      }
+      queryClient.invalidateQueries({ queryKey: taskKeys.all })
       toast.error(err)
     }
   })
@@ -361,6 +451,8 @@ export const useAddSubtask = () => {
       return { taskId, subtask: res.data }
     },
     onSuccess: ({ taskId, subtask }) => {
+      let isRevertedToInProgress = false
+
       // 1. Update detail cache
       queryClient.setQueryData<Task>(taskKeys.detail(taskId), (old) => {
         if (!old) return old
@@ -368,15 +460,22 @@ export const useAddSubtask = () => {
         const total = subtasks.length
         const completed = subtasks.filter((s) => s.is_completed).length
         const percent = total > 0 ? Math.round((completed / total) * 100) : 0
+        const status: TaskStatus = old.status === 'done' ? 'in_progress' : old.status
+        if (old.status === 'done') {
+          isRevertedToInProgress = true
+        }
+
         return {
           ...old,
+          status,
           subtasks,
           subtasks_count: total,
           subtasks_completed: completed,
           progress_percent: percent
         }
       })
-      // 2. Update infinite query counts
+
+      // 2. Update infinite query counts and status
       queryClient.setQueriesData<InfiniteData<TaskCursorResponse>>(
         { queryKey: ['tasks', 'infinite'] },
         (old) => {
@@ -389,8 +488,11 @@ export const useAddSubtask = () => {
                 if (item.id !== taskId) return item
                 const total = item.subtasks_count + 1
                 const percent = Math.round((item.subtasks_completed / total) * 100)
+                const status: TaskStatus =
+                  isRevertedToInProgress || item.status === 'done' ? 'in_progress' : item.status
                 return {
                   ...item,
+                  status,
                   subtasks_count: total,
                   progress_percent: percent
                 }
@@ -399,6 +501,7 @@ export const useAddSubtask = () => {
           }
         }
       )
+
       // 3. Update list queries
       queryClient.setQueriesData<Task[]>(
         { queryKey: ['tasks', 'list'] },
@@ -408,14 +511,27 @@ export const useAddSubtask = () => {
             if (item.id !== taskId) return item
             const total = item.subtasks_count + 1
             const percent = Math.round((item.subtasks_completed / total) * 100)
+            const status: TaskStatus =
+              isRevertedToInProgress || item.status === 'done' ? 'in_progress' : item.status
             return {
               ...item,
+              status,
               subtasks_count: total,
               progress_percent: percent
             }
           })
         }
       )
+
+      // 4. Update Zustand store
+      const store = useTaskStore.getState()
+      if (store.selectedTask?.id === taskId) {
+        store.setSelectedTask({
+          ...store.selectedTask,
+          status: isRevertedToInProgress ? 'in_progress' : store.selectedTask.status
+        })
+      }
+
       queryClient.invalidateQueries({ queryKey: taskKeys.detail(taskId), refetchType: 'all' })
       queryClient.invalidateQueries({ queryKey: taskKeys.all, refetchType: 'all' })
     },
@@ -443,6 +559,9 @@ export const useToggleSubtask = () => {
       return { taskId, subtaskId, isCompleted }
     },
     onMutate: async ({ taskId, subtaskId, isCompleted }) => {
+      let nextStatus: TaskStatus | undefined
+      let nextIsFocus: boolean | undefined
+
       // Optimistically update subtask in task detail
       queryClient.setQueryData<Task>(taskKeys.detail(taskId), (old) => {
         if (!old) return old
@@ -452,15 +571,32 @@ export const useToggleSubtask = () => {
         const completedCount = updatedSubtasks.filter((st) => st.is_completed).length
         const totalCount = updatedSubtasks.length
         const percent = totalCount > 0 ? Math.round((completedCount / totalCount) * 100) : 0
+        const allCompleted = totalCount > 0 && completedCount === totalCount
+
+        let {status} = old
+        let isFocus = old.is_focus
+        if (allCompleted) {
+          status = 'done'
+          isFocus = false
+        } else if (!isCompleted && old.status === 'done') {
+          status = 'in_progress'
+        }
+
+        nextStatus = status
+        nextIsFocus = isFocus
+
         return {
           ...old,
+          status,
+          is_focus: isFocus,
           subtasks: updatedSubtasks,
           subtasks_completed: completedCount,
           subtasks_count: totalCount,
           progress_percent: percent
         }
       })
-      // Optimistically update counts in infinite queries
+
+      // Optimistically update counts and status in infinite queries
       queryClient.setQueriesData<InfiniteData<TaskCursorResponse>>(
         { queryKey: ['tasks', 'infinite'] },
         (old) => {
@@ -480,8 +616,21 @@ export const useToggleSubtask = () => {
                   item.subtasks_count > 0
                     ? Math.round((newCompleted / item.subtasks_count) * 100)
                     : 0
+                const allCompleted = item.subtasks_count > 0 && newCompleted === item.subtasks_count
+
+                let itemStatus = item.status
+                let itemIsFocus = item.is_focus
+                if (allCompleted) {
+                  itemStatus = 'done'
+                  itemIsFocus = false
+                } else if (!isCompleted && item.status === 'done') {
+                  itemStatus = 'in_progress'
+                }
+
                 return {
                   ...item,
+                  status: nextStatus || itemStatus,
+                  is_focus: nextIsFocus !== undefined ? nextIsFocus : itemIsFocus,
                   subtasks_completed: newCompleted,
                   progress_percent: newPercent
                 }
@@ -490,7 +639,8 @@ export const useToggleSubtask = () => {
           }
         }
       )
-      // Optimistically update counts in regular lists
+
+      // Optimistically update counts and status in regular lists
       queryClient.setQueriesData<Task[]>(
         { queryKey: ['tasks', 'list'] },
         (old) => {
@@ -506,20 +656,44 @@ export const useToggleSubtask = () => {
               item.subtasks_count > 0
                 ? Math.round((newCompleted / item.subtasks_count) * 100)
                 : 0
+            const allCompleted = item.subtasks_count > 0 && newCompleted === item.subtasks_count
+
+            let itemStatus = item.status
+            let itemIsFocus = item.is_focus
+            if (allCompleted) {
+              itemStatus = 'done'
+              itemIsFocus = false
+            } else if (!isCompleted && item.status === 'done') {
+              itemStatus = 'in_progress'
+            }
+
             return {
               ...item,
+              status: nextStatus || itemStatus,
+              is_focus: nextIsFocus !== undefined ? nextIsFocus : itemIsFocus,
               subtasks_completed: newCompleted,
               progress_percent: newPercent
             }
           })
         }
       )
+
+      // Update Zustand taskStore
+      const store = useTaskStore.getState()
+      if (store.selectedTask?.id === taskId) {
+        store.setSelectedTask({
+          ...store.selectedTask,
+          status: nextStatus || store.selectedTask.status,
+          is_focus: nextIsFocus !== undefined ? nextIsFocus : store.selectedTask.is_focus
+        })
+      }
     },
     onSuccess: ({ taskId }) => {
       queryClient.invalidateQueries({ queryKey: taskKeys.detail(taskId), refetchType: 'all' })
       queryClient.invalidateQueries({ queryKey: taskKeys.all, refetchType: 'all' })
     },
     onError: (err) => {
+      queryClient.invalidateQueries({ queryKey: taskKeys.all })
       toast.error(err)
     }
   })
@@ -535,6 +709,8 @@ export const useDeleteSubtask = () => {
       return { taskId, subtaskId }
     },
     onSuccess: ({ taskId, subtaskId }) => {
+      let isAutoCompleted = false
+
       // 1. Update detail query cache
       queryClient.setQueryData<Task>(taskKeys.detail(taskId), (old) => {
         if (!old) return old
@@ -542,14 +718,75 @@ export const useDeleteSubtask = () => {
         const total = remaining.length
         const completed = remaining.filter((s) => s.is_completed).length
         const percent = total > 0 ? Math.round((completed / total) * 100) : 0
+        const allCompleted = total > 0 && completed === total
+        let {status} = old
+        let isFocus = old.is_focus
+        if (allCompleted) {
+          status = 'done'
+          isFocus = false
+          isAutoCompleted = true
+        }
         return {
           ...old,
+          status,
+          is_focus: isFocus,
           subtasks: remaining,
           subtasks_count: total,
           subtasks_completed: completed,
           progress_percent: percent
         }
       })
+
+      if (isAutoCompleted) {
+        // Update infinite queries
+        queryClient.setQueriesData<InfiniteData<TaskCursorResponse>>(
+          { queryKey: ['tasks', 'infinite'] },
+          (old) => {
+            if (!old || !Array.isArray(old.pages)) return old
+            return {
+              ...old,
+              pages: old.pages.map((page) => ({
+                ...page,
+                items: (page.items || []).map((item) => {
+                  if (item.id !== taskId) return item
+                  return {
+                    ...item,
+                    status: 'done',
+                    is_focus: false
+                  }
+                })
+              }))
+            }
+          }
+        )
+
+        // Update list queries
+        queryClient.setQueriesData<Task[]>(
+          { queryKey: ['tasks', 'list'] },
+          (old) => {
+            if (!Array.isArray(old)) return old
+            return old.map((item) => {
+              if (item.id !== taskId) return item
+              return {
+                ...item,
+                status: 'done',
+                is_focus: false
+              }
+            })
+          }
+        )
+
+        // Update Zustand store
+        const store = useTaskStore.getState()
+        if (store.selectedTask?.id === taskId) {
+          store.setSelectedTask({
+            ...store.selectedTask,
+            status: 'done',
+            is_focus: false
+          })
+        }
+      }
+
       queryClient.invalidateQueries({ queryKey: taskKeys.detail(taskId), refetchType: 'all' })
       queryClient.invalidateQueries({ queryKey: taskKeys.all, refetchType: 'all' })
     },
