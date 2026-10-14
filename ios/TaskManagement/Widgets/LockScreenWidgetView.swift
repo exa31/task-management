@@ -22,7 +22,7 @@ public struct LockScreenWidgetView: View {
 
     public var body: some View {
         switch family {
-        #if canImport(WidgetKit)
+        #if canImport(WidgetKit) && os(iOS)
         case .accessoryInline:
             inlineView
         case .accessoryCircular:

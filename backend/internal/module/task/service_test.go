@@ -6,6 +6,9 @@ import (
 	"time"
 
 	"github.com/jmoiron/sqlx"
+
+	"golang/internal/module/reminder"
+	"golang/pkg/notification"
 )
 
 type mockTransactor struct{}
@@ -830,6 +833,97 @@ func TestTaskService_AutoCompletionAndUnfocus(t *testing.T) {
 			t.Errorf("expected parent task status to revert to 'in_progress'")
 		}
 	})
+}
+
+type mockTaskPushSender struct {
+	sentCh chan map[string]string
+}
+
+func (m *mockTaskPushSender) SendPushNotification(ctx context.Context, tokens []string, title, body string, data map[string]string) error {
+	if m.sentCh != nil {
+		m.sentCh <- data
+	}
+	return nil
+}
+
+func (m *mockTaskPushSender) SendPushNotificationWithResult(ctx context.Context, tokens []string, title, body string, data map[string]string) (*notification.PushResult, error) {
+	if m.sentCh != nil {
+		m.sentCh <- data
+	}
+	return &notification.PushResult{SuccessCount: len(tokens), TotalTokens: len(tokens)}, nil
+}
+
+type mockTaskReminderRepo struct {
+	reminder.Repository
+	tokens []string
+}
+
+func (m *mockTaskReminderRepo) GetUserDeviceTokens(ctx context.Context, userID string) ([]string, error) {
+	return m.tokens, nil
+}
+
+func TestTaskService_DeadlineChangePushNotification(t *testing.T) {
+	ctx := context.Background()
+	userID := "user-push-test"
+	taskID := int64(101)
+
+	now := time.Now()
+	newDue := now.Add(24 * time.Hour)
+
+	mockRepo := &mockRepository{
+		findByIDFunc: func(ctx context.Context, uID string, id int64) (*TaskResponse, error) {
+			return &TaskResponse{
+				ID:       id,
+				UserID:   uID,
+				Title:    "Push Deadline Task",
+				Status:   "todo",
+				Priority: "medium",
+				DueDate:  nil,
+			}, nil
+		},
+		updateFunc: func(ctx context.Context, uID string, id int64, req UpdateTaskRequest) (*TaskResponse, error) {
+			return &TaskResponse{
+				ID:       id,
+				UserID:   uID,
+				Title:    "Push Deadline Task",
+				Status:   "todo",
+				Priority: "medium",
+				DueDate:  req.DueDate,
+			}, nil
+		},
+		createActivityFunc: func(ctx context.Context, tID int64, uID string, actType string, desc string, ch []byte) (*TaskActivityResponse, error) {
+			return &TaskActivityResponse{ID: 1}, nil
+		},
+		getUserThresholdFunc: func(ctx context.Context, uID string) (int, string, error) {
+			return 15, "Asia/Jakarta", nil
+		},
+	}
+
+	pushCh := make(chan map[string]string, 1)
+	pushSender := &mockTaskPushSender{sentCh: pushCh}
+	reminderRepo := &mockTaskReminderRepo{tokens: []string{"fcm-device-token-abc"}}
+
+	svc := NewService(mockRepo, &mockTransactor{})
+	svc.SetNotificationDependencies(nil, nil, pushSender, reminderRepo, nil, nil)
+
+	_, err := svc.Update(ctx, userID, taskID, UpdateTaskRequest{
+		DueDate: &newDue,
+	})
+	if err != nil {
+		t.Fatalf("unexpected error updating task: %v", err)
+	}
+
+	select {
+	case payload := <-pushCh:
+		if payload["type"] != "task_deadline_updated" {
+			t.Errorf("expected type 'task_deadline_updated', got '%s'", payload["type"])
+		}
+		if payload["task_id"] != "101" {
+			t.Errorf("expected task_id '101', got '%s'", payload["task_id"])
+		}
+	case <-time.After(2 * time.Second):
+		t.Errorf("timed out waiting for push notification to be dispatched")
+	}
 }
 
 

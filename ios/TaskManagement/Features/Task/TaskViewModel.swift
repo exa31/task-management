@@ -29,11 +29,13 @@ public final class TaskViewModel {
         errorMessage = nil
         do {
             self.tasks = try await apiClient.getTasks()
-            AppLogger.info("Tasks loaded successfully", category: .task, metadata: ["count": tasks.count])
+            AppLogger.info(
+                "Tasks loaded successfully", category: .task, metadata: ["count": tasks.count])
             SharedWidgetDataManager.shared.syncWithTaskList(self.tasks)
             Task {
                 await SharedWidgetDataManager.shared.syncWithBackend()
             }
+
         } catch {
             AppLogger.error("Failed to load tasks", error: error, category: .task)
             self.errorMessage = error.localizedDescription
@@ -45,9 +47,13 @@ public final class TaskViewModel {
     public func loadProjects() async {
         do {
             self.projects = try await apiClient.getProjects()
-            AppLogger.debug("Projects loaded for tasks filter", category: .task, metadata: ["count": projects.count])
+            AppLogger.debug(
+                "Projects loaded for tasks filter", category: .task,
+                metadata: ["count": projects.count])
         } catch {
-            AppLogger.warn("Failed to load projects for task association", category: .task, metadata: ["error": error.localizedDescription])
+            AppLogger.warn(
+                "Failed to load projects for task association", category: .task,
+                metadata: ["error": error.localizedDescription])
         }
     }
 
@@ -58,10 +64,9 @@ public final class TaskViewModel {
         let q = searchQuery.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
         if !q.isEmpty {
             result = result.filter { task in
-                task.title.lowercased().contains(q) ||
-                task.description.lowercased().contains(q) ||
-                (task.tags?.contains(where: { $0.lowercased().contains(q) }) ?? false) ||
-                (task.projectName?.lowercased().contains(q) ?? false)
+                task.title.lowercased().contains(q) || task.description.lowercased().contains(q)
+                    || (task.tags?.contains(where: { $0.lowercased().contains(q) }) ?? false)
+                    || (task.projectName?.lowercased().contains(q) ?? false)
             }
         }
 
@@ -90,13 +95,13 @@ public final class TaskViewModel {
             "todo": 2,
             "review": 3,
             "backlog": 4,
-            "done": 5
+            "done": 5,
         ]
         let priorityOrder: [String: Int] = [
             "urgent": 1,
             "high": 2,
             "medium": 3,
-            "low": 4
+            "low": 4,
         ]
 
         return result.sorted { a, b in
@@ -121,11 +126,9 @@ public final class TaskViewModel {
     }
 
     public var hasActiveFilters: Bool {
-        selectedStatus != nil ||
-        selectedProjectId != nil ||
-        selectedPriority != nil ||
-        filterFocusOnly ||
-        !searchQuery.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+        selectedStatus != nil || selectedProjectId != nil || selectedPriority != nil
+            || filterFocusOnly
+            || !searchQuery.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
     }
 
     public var activeFiltersCount: Int {
@@ -275,7 +278,8 @@ public final class TaskViewModel {
                     recurrenceEndDate: recurrenceEndDate
                 )
             )
-            AppLogger.success("Task created successfully", category: .task, metadata: ["title": title])
+            AppLogger.success(
+                "Task created successfully", category: .task, metadata: ["title": title])
             await loadTasks()
             return true
         } catch {
@@ -286,7 +290,9 @@ public final class TaskViewModel {
     }
 
     @MainActor
-    public func createTask(title: String, description: String, priority: String, projectId: Int64? = nil) {
+    public func createTask(
+        title: String, description: String, priority: String, projectId: Int64? = nil
+    ) {
         Task {
             _ = await createTask(
                 title: title,
@@ -307,7 +313,8 @@ public final class TaskViewModel {
             AppLogger.success("Task deleted successfully", category: .task, metadata: ["id": id])
             await loadTasks()
         } catch {
-            AppLogger.error("Failed to delete task", error: error, category: .task, metadata: ["id": id])
+            AppLogger.error(
+                "Failed to delete task", error: error, category: .task, metadata: ["id": id])
             self.errorMessage = error.localizedDescription
         }
     }
@@ -328,7 +335,9 @@ public final class TaskViewModel {
                     subtaskId: subtaskId,
                     isCompleted: !currentCompleted
                 )
-                AppLogger.success("Subtask completion toggled", category: .task, metadata: ["taskId": taskId, "subtaskId": subtaskId])
+                AppLogger.success(
+                    "Subtask completion toggled", category: .task,
+                    metadata: ["taskId": taskId, "subtaskId": subtaskId])
                 await loadTasks()
             } catch {
                 AppLogger.error("Failed to toggle subtask", error: error, category: .task)
@@ -342,9 +351,13 @@ public final class TaskViewModel {
         isLoadingActivities = true
         do {
             self.taskActivities = try await apiClient.getTaskActivities(taskId: taskId)
-            AppLogger.debug("Task activities loaded", category: .task, metadata: ["taskId": taskId, "count": taskActivities.count])
+            AppLogger.debug(
+                "Task activities loaded", category: .task,
+                metadata: ["taskId": taskId, "count": taskActivities.count])
         } catch {
-            AppLogger.error("Failed to load task activities", error: error, category: .task, metadata: ["taskId": taskId])
+            AppLogger.error(
+                "Failed to load task activities", error: error, category: .task,
+                metadata: ["taskId": taskId])
             self.errorMessage = error.localizedDescription
         }
         isLoadingActivities = false
@@ -356,12 +369,16 @@ public final class TaskViewModel {
         do {
             let newActivity = try await apiClient.createTaskActivity(
                 taskId: taskId,
-                req: CreateTaskActivityRequest(description: note.trimmingCharacters(in: .whitespacesAndNewlines))
+                req: CreateTaskActivityRequest(
+                    description: note.trimmingCharacters(in: .whitespacesAndNewlines))
             )
-            AppLogger.success("Task activity note appended", category: .task, metadata: ["taskId": taskId])
+            AppLogger.success(
+                "Task activity note appended", category: .task, metadata: ["taskId": taskId])
             self.taskActivities.insert(newActivity, at: 0)
         } catch {
-            AppLogger.error("Failed to add task activity note", error: error, category: .task, metadata: ["taskId": taskId])
+            AppLogger.error(
+                "Failed to add task activity note", error: error, category: .task,
+                metadata: ["taskId": taskId])
             self.errorMessage = error.localizedDescription
         }
     }

@@ -116,7 +116,8 @@ func (s *FCMPushSender) SendPushNotificationWithResult(ctx context.Context, toke
 		APNS: &messaging.APNSConfig{
 			Payload: &messaging.APNSPayload{
 				Aps: &messaging.Aps{
-					Sound: "default",
+					Sound:            "default",
+					ContentAvailable: true,
 				},
 			},
 		},

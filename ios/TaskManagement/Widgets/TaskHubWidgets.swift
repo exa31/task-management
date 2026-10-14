@@ -66,6 +66,7 @@ public struct DailyOverviewWidget: Widget {
     }
 }
 
+#if os(iOS)
 // MARK: - 5. Lock Screen & StandBy Widget
 public struct LockScreenWidget: Widget {
     public static let kind: String = "LockScreenWidget"
@@ -81,6 +82,7 @@ public struct LockScreenWidget: Widget {
         .supportedFamilies([.accessoryInline, .accessoryCircular, .accessoryRectangular])
     }
 }
+#endif
 
 // MARK: - Widget Bundle
 #if WIDGET_EXTENSION
@@ -93,7 +95,9 @@ public struct TaskHubWidgetBundle: WidgetBundle {
         TaskCustomChecklistWidget()
         TaskDeadlinesWidget()
         DailyOverviewWidget()
+        #if os(iOS)
         LockScreenWidget()
+        #endif
     }
 }
 #else
@@ -105,7 +109,9 @@ public struct TaskHubWidgetBundle: WidgetBundle {
         TaskCustomChecklistWidget()
         TaskDeadlinesWidget()
         DailyOverviewWidget()
+        #if os(iOS)
         LockScreenWidget()
+        #endif
     }
 }
 #endif

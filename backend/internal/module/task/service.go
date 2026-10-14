@@ -180,6 +180,9 @@ func (s *service) Update(ctx context.Context, userID string, id int64, req Updat
 	var res *TaskResponse
 	var oldStatus string
 	var userTimezone string
+	var dueChanged bool
+	var dueRemoved bool
+	var urgentChanged bool
 	err := s.db.WithTransactionCtx(ctx, func(tx *sqlx.Tx) error {
 		txCtx := database.ContextWithTx(ctx, tx)
 		entity, err := s.repo.FindByID(txCtx, userID, id)
@@ -218,8 +221,15 @@ func (s *service) Update(ctx context.Context, userID string, id int64, req Updat
 			if entity.Priority != res.Priority {
 				diffs["priority"] = map[string]any{"old": entity.Priority, "new": res.Priority}
 				changeDescs = append(changeDescs, fmt.Sprintf("Priority changed from '%s' to '%s'", entity.Priority, res.Priority))
+				if res.Priority == "urgent" {
+					urgentChanged = true
+				}
 			}
 			if (entity.DueDate == nil && res.DueDate != nil) || (entity.DueDate != nil && res.DueDate == nil) || (entity.DueDate != nil && res.DueDate != nil && !entity.DueDate.Equal(*res.DueDate)) {
+				dueChanged = true
+				if res.DueDate == nil {
+					dueRemoved = true
+				}
 				diffs["due_date"] = map[string]any{"old": entity.DueDate, "new": res.DueDate}
 				if res.DueDate != nil {
 					changeDescs = append(changeDescs, fmt.Sprintf("Due date set to %s", res.DueDate.Format("02 Jan 2006 15:04")))
@@ -308,13 +318,18 @@ func (s *service) Update(ctx context.Context, userID string, id int64, req Updat
 				s.logger.Error("failed to roll over recurring task on update", "task_id", res.ID, "error", err)
 			}
 		}
+
+		if dueChanged || urgentChanged {
+			s.notifyTaskDeadlineChanged(res.ID, res.Title, res.DueDate, urgentChanged, dueRemoved, userID)
+		}
 	}
 
 	return res, nil
 }
 
 func (s *service) Delete(ctx context.Context, userID string, id int64) error {
-	return s.db.WithTransactionCtx(ctx, func(tx *sqlx.Tx) error {
+	var deletedEntity *TaskResponse
+	err := s.db.WithTransactionCtx(ctx, func(tx *sqlx.Tx) error {
 		txCtx := database.ContextWithTx(ctx, tx)
 		entity, err := s.repo.FindByID(txCtx, userID, id)
 		if err != nil {
@@ -323,6 +338,7 @@ func (s *service) Delete(ctx context.Context, userID string, id int64) error {
 		if entity == nil {
 			return errors.TaskNotFound()
 		}
+		deletedEntity = entity
 		if err := s.repo.Delete(txCtx, userID, id); err != nil {
 			return err
 		}
@@ -339,6 +355,15 @@ func (s *service) Delete(ctx context.Context, userID string, id int64) error {
 		}
 		return nil
 	})
+	if err != nil {
+		return err
+	}
+
+	if deletedEntity != nil && deletedEntity.DueDate != nil {
+		s.notifyTaskDeadlineChanged(id, deletedEntity.Title, nil, false, true, userID)
+	}
+
+	return nil
 }
 
 func (s *service) LogProgress(ctx context.Context, userID string, id int64, req LogProgressRequest) (*TaskResponse, error) {
@@ -1009,4 +1034,40 @@ func getNextMidnightInUserTimezone(userTimezone string) time.Time {
 	nextMidnight := time.Date(nowInLoc.Year(), nowInLoc.Month(), nowInLoc.Day()+1, 0, 0, 0, 0, loc).UTC()
 	return nextMidnight
 }
+
+func (s *service) notifyTaskDeadlineChanged(taskID int64, title string, dueDate *time.Time, isUrgent bool, isRemoved bool, userID string) {
+	if s.pushSender == nil || s.reminderRepo == nil {
+		return
+	}
+	go func() {
+		bgCtx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+		defer cancel()
+
+		tokens, err := s.reminderRepo.GetUserDeviceTokens(bgCtx, userID)
+		if err != nil || len(tokens) == 0 {
+			return
+		}
+
+		var body string
+		if isRemoved {
+			body = fmt.Sprintf("Batas waktu '%s' telah dihapus", title)
+		} else if dueDate != nil {
+			body = fmt.Sprintf("Batas waktu '%s' diatur ke %s", title, dueDate.Format("02 Jan 15:04"))
+		} else if isUrgent {
+			body = fmt.Sprintf("Tugas '%s' ditandai sebagai mendesak", title)
+		} else {
+			body = fmt.Sprintf("Tugas '%s' telah diperbarui", title)
+		}
+
+		pushData := map[string]string{
+			"type":    "task_deadline_updated",
+			"task_id": fmt.Sprintf("%d", taskID),
+			"title":   title,
+		}
+		if err := s.pushSender.SendPushNotification(bgCtx, tokens, "Pembaruan Batas Waktu", body, pushData); err != nil && s.logger != nil {
+			s.logger.WarnContext(bgCtx, "failed to dispatch task deadline push notification", "task_id", taskID, "error", err)
+		}
+	}()
+}
+
 

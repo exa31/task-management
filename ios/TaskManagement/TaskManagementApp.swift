@@ -30,6 +30,18 @@ final class AppDelegate: NSObject, UIApplicationDelegate {
     ) {
         AppLogger.warn("Failed to register for remote notifications", category: .push, metadata: ["error": error.localizedDescription])
     }
+
+    func application(
+        _ application: UIApplication,
+        didReceiveRemoteNotification userInfo: [AnyHashable: Any],
+        fetchCompletionHandler completionHandler: @escaping (UIBackgroundFetchResult) -> Void
+    ) {
+        Task {
+            AppLogger.info("Remote notification received in background; syncing widget data", category: .push)
+            await SharedWidgetDataManager.shared.syncWithBackend()
+            completionHandler(.newData)
+        }
+    }
 }
 #elseif canImport(AppKit)
 import AppKit
@@ -63,6 +75,7 @@ struct TaskManagementApp: App {
     #elseif canImport(AppKit)
     @NSApplicationDelegateAdaptor(AppDelegate.self) private var appDelegate
     #endif
+    @Environment(\.scenePhase) private var scenePhase
     @State private var authViewModel = AuthViewModel()
     @AppStorage("app_appearance") private var appAppearance: String = "system"
 
@@ -97,6 +110,13 @@ struct TaskManagementApp: App {
                 if isAuthenticated {
                     Task {
                         await PushNotificationManager.shared.registerDeviceTokenWithBackend()
+                    }
+                }
+            }
+            .onChange(of: scenePhase) { _, newPhase in
+                if newPhase == .active && authViewModel.isAuthenticated {
+                    Task {
+                        await SharedWidgetDataManager.shared.syncWithBackend()
                     }
                 }
             }

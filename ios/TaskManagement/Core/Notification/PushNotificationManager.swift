@@ -109,6 +109,9 @@ public final class PushNotificationManager: NSObject, UNUserNotificationCenterDe
         willPresent notification: UNNotification,
         withCompletionHandler completionHandler: @escaping (UNNotificationPresentationOptions) -> Void
     ) {
+        Task {
+            await SharedWidgetDataManager.shared.syncWithBackend()
+        }
         completionHandler([.banner, .badge, .sound])
     }
 
@@ -118,6 +121,9 @@ public final class PushNotificationManager: NSObject, UNUserNotificationCenterDe
         didReceive response: UNNotificationResponse,
         withCompletionHandler completionHandler: @escaping () -> Void
     ) {
+        Task {
+            await SharedWidgetDataManager.shared.syncWithBackend()
+        }
         let userInfo = response.notification.request.content.userInfo
         let actionId = response.actionIdentifier
         AppLogger.info("Notification response received: \(actionId)", category: .push, metadata: ["action": actionId])
