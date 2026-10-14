@@ -372,7 +372,7 @@ public struct CalendarView: View {
         NavigationStack {
             ScrollView {
                 VStack(spacing: 16) {
-                    // Header Banner with Single-Query GraphQL indicator
+                    // Header Card
                     headerCard
 
                     // Graphical Calendar Picker
@@ -422,24 +422,9 @@ public struct CalendarView: View {
                 .clipShape(RoundedRectangle(cornerRadius: 12))
 
             VStack(alignment: .leading, spacing: 2) {
-                HStack(spacing: 6) {
-                    Text(L10n.Calendar.title)
-                        .font(.headline)
-                        .foregroundStyle(Color.primary)
-
-                    HStack(spacing: 3) {
-                        Circle()
-                            .fill(Color.green)
-                            .frame(width: 6, height: 6)
-                        Text(L10n.Calendar.graphqlPowered)
-                            .font(.system(size: 9, weight: .semibold, design: .monospaced))
-                            .foregroundStyle(Color.green)
-                    }
-                    .padding(.horizontal, 6)
-                    .padding(.vertical, 2)
-                    .background(Color.green.opacity(0.1))
-                    .clipShape(Capsule())
-                }
+                Text(L10n.Calendar.title)
+                    .font(.headline)
+                    .foregroundStyle(Color.primary)
 
                 Text(L10n.Calendar.subtitle)
                     .font(.caption)

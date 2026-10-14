@@ -266,13 +266,6 @@ export const CalendarPage: React.FC = () => {
               <i className="pi pi-calendar text-indigo-500 dark:text-indigo-400" />
               {t('calendar.title')}
             </h1>
-            <span
-              className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-mono font-medium bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20"
-              title="Queries tasks, reminders, and activity history in a single roundtrip via /api/graphql"
-            >
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-              {t('calendar.graphqlBadge')}
-            </span>
           </div>
           <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
             {t('calendar.subtitle')}

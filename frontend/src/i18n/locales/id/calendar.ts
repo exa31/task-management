@@ -1,6 +1,6 @@
 export const calendar = {
   title: 'Kalender & Riwayat Kerja',
-  subtitle: 'Tampilan terpadu tugas, pengingat, dan riwayat aktivitas bertenaga GraphQL',
+  subtitle: 'Tampilan terpadu tugas, pengingat, dan riwayat aktivitas',
   monthView: 'Bulan',
   weekView: 'Minggu',
   today: 'Hari Ini',

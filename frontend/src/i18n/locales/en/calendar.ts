@@ -1,6 +1,6 @@
 export const calendar = {
   title: 'Calendar & Work Log',
-  subtitle: 'Unified view of tasks, reminders, and activity history powered by GraphQL',
+  subtitle: 'Unified view of tasks, reminders, and activity history',
   monthView: 'Month',
   weekView: 'Week',
   today: 'Today',
