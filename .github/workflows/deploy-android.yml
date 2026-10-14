@@ -26,6 +26,9 @@ permissions:
 jobs:
   deploy-android:
     name: Build & Deploy Android (Manual)
+    concurrency:
+      group: release-pipeline-${{ github.repository }}
+      cancel-in-progress: false
     uses: exa31/github-workflows/.github/workflows/compose-android.yml@v1.0.0
     with:
       app_name: task-hub-android
