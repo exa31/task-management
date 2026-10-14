@@ -39,6 +39,15 @@
 		DD0102030405060708090004 /* TaskManagement/Features/Mcp/McpSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DD0102030405060708090003 /* TaskManagement/Features/Mcp/McpSettingsView.swift */; };
 		CA0102030405060708090002 /* TaskManagement/Features/Calendar/CalendarView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CA0102030405060708090001 /* TaskManagement/Features/Calendar/CalendarView.swift */; };
 		WW0102030405060708090002 /* TaskManagement/Core/Shared/SharedWidgetDataManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = WW0102030405060708090001 /* TaskManagement/Core/Shared/SharedWidgetDataManager.swift */; };
+		SN0102030405060708090002 /* TaskManagement/Core/Notification/SoundManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = SN0102030405060708090001 /* TaskManagement/Core/Notification/SoundManager.swift */; };
+		WI0102030405060708090002 /* TaskManagement/Widgets/QuickCreateTaskIntent.swift in Sources */ = {isa = PBXBuildFile; fileRef = WI0102030405060708090001 /* TaskManagement/Widgets/QuickCreateTaskIntent.swift */; };
+		WI0102030405060708090004 /* TaskManagement/Widgets/ToggleSubtaskIntent.swift in Sources */ = {isa = PBXBuildFile; fileRef = WI0102030405060708090003 /* TaskManagement/Widgets/ToggleSubtaskIntent.swift */; };
+		WI0102030405060708090006 /* TaskManagement/Widgets/TaskWidgetTimelineProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = WI0102030405060708090005 /* TaskManagement/Widgets/TaskWidgetTimelineProvider.swift */; };
+		WI0102030405060708090008 /* TaskManagement/Widgets/DailyOverviewWidgetView.swift in Sources */ = {isa = PBXBuildFile; fileRef = WI0102030405060708090007 /* TaskManagement/Widgets/DailyOverviewWidgetView.swift */; };
+		WI0102030405060708090010 /* TaskManagement/Widgets/DeadlinesWidgetView.swift in Sources */ = {isa = PBXBuildFile; fileRef = WI0102030405060708090009 /* TaskManagement/Widgets/DeadlinesWidgetView.swift */; };
+		WI0102030405060708090012 /* TaskManagement/Widgets/TaskHubWidgets.swift in Sources */ = {isa = PBXBuildFile; fileRef = WI0102030405060708090011 /* TaskManagement/Widgets/TaskHubWidgets.swift */; };
+		WI0102030405060708090014 /* TaskManagement/Widgets/ChecklistWidgetView.swift in Sources */ = {isa = PBXBuildFile; fileRef = WI0102030405060708090013 /* TaskManagement/Widgets/ChecklistWidgetView.swift */; };
+		WI0102030405060708090016 /* TaskManagement/Widgets/LockScreenWidgetView.swift in Sources */ = {isa = PBXBuildFile; fileRef = WI0102030405060708090015 /* TaskManagement/Widgets/LockScreenWidgetView.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -75,6 +84,15 @@
 		DD0102030405060708090003 /* TaskManagement/Features/Mcp/McpSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TaskManagement/Features/Mcp/McpSettingsView.swift; sourceTree = "<group>"; };
 		CA0102030405060708090001 /* TaskManagement/Features/Calendar/CalendarView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TaskManagement/Features/Calendar/CalendarView.swift; sourceTree = "<group>"; };
 		WW0102030405060708090001 /* TaskManagement/Core/Shared/SharedWidgetDataManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TaskManagement/Core/Shared/SharedWidgetDataManager.swift; sourceTree = "<group>"; };
+		SN0102030405060708090001 /* TaskManagement/Core/Notification/SoundManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TaskManagement/Core/Notification/SoundManager.swift; sourceTree = "<group>"; };
+		WI0102030405060708090001 /* TaskManagement/Widgets/QuickCreateTaskIntent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TaskManagement/Widgets/QuickCreateTaskIntent.swift; sourceTree = "<group>"; };
+		WI0102030405060708090003 /* TaskManagement/Widgets/ToggleSubtaskIntent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TaskManagement/Widgets/ToggleSubtaskIntent.swift; sourceTree = "<group>"; };
+		WI0102030405060708090005 /* TaskManagement/Widgets/TaskWidgetTimelineProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TaskManagement/Widgets/TaskWidgetTimelineProvider.swift; sourceTree = "<group>"; };
+		WI0102030405060708090007 /* TaskManagement/Widgets/DailyOverviewWidgetView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TaskManagement/Widgets/DailyOverviewWidgetView.swift; sourceTree = "<group>"; };
+		WI0102030405060708090009 /* TaskManagement/Widgets/DeadlinesWidgetView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TaskManagement/Widgets/DeadlinesWidgetView.swift; sourceTree = "<group>"; };
+		WI0102030405060708090011 /* TaskManagement/Widgets/TaskHubWidgets.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TaskManagement/Widgets/TaskHubWidgets.swift; sourceTree = "<group>"; };
+		WI0102030405060708090013 /* TaskManagement/Widgets/ChecklistWidgetView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TaskManagement/Widgets/ChecklistWidgetView.swift; sourceTree = "<group>"; };
+		WI0102030405060708090015 /* TaskManagement/Widgets/LockScreenWidgetView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TaskManagement/Widgets/LockScreenWidgetView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -126,6 +144,15 @@
 				DD0102030405060708090003 /* TaskManagement/Features/Mcp/McpSettingsView.swift */,
 				CA0102030405060708090001 /* TaskManagement/Features/Calendar/CalendarView.swift */,
 				WW0102030405060708090001 /* TaskManagement/Core/Shared/SharedWidgetDataManager.swift */,
+				SN0102030405060708090001 /* TaskManagement/Core/Notification/SoundManager.swift */,
+				WI0102030405060708090001 /* TaskManagement/Widgets/QuickCreateTaskIntent.swift */,
+				WI0102030405060708090003 /* TaskManagement/Widgets/ToggleSubtaskIntent.swift */,
+				WI0102030405060708090005 /* TaskManagement/Widgets/TaskWidgetTimelineProvider.swift */,
+				WI0102030405060708090007 /* TaskManagement/Widgets/DailyOverviewWidgetView.swift */,
+				WI0102030405060708090009 /* TaskManagement/Widgets/DeadlinesWidgetView.swift */,
+				WI0102030405060708090011 /* TaskManagement/Widgets/TaskHubWidgets.swift */,
+				WI0102030405060708090013 /* TaskManagement/Widgets/ChecklistWidgetView.swift */,
+				WI0102030405060708090015 /* TaskManagement/Widgets/LockScreenWidgetView.swift */,
 			);
 			sourceTree = "<group>";
 		};
@@ -234,6 +261,15 @@
 				DD0102030405060708090004 /* TaskManagement/Features/Mcp/McpSettingsView.swift in Sources */,
 				CA0102030405060708090002 /* TaskManagement/Features/Calendar/CalendarView.swift in Sources */,
 				WW0102030405060708090002 /* TaskManagement/Core/Shared/SharedWidgetDataManager.swift in Sources */,
+				SN0102030405060708090002 /* TaskManagement/Core/Notification/SoundManager.swift in Sources */,
+				WI0102030405060708090002 /* TaskManagement/Widgets/QuickCreateTaskIntent.swift in Sources */,
+				WI0102030405060708090004 /* TaskManagement/Widgets/ToggleSubtaskIntent.swift in Sources */,
+				WI0102030405060708090006 /* TaskManagement/Widgets/TaskWidgetTimelineProvider.swift in Sources */,
+				WI0102030405060708090008 /* TaskManagement/Widgets/DailyOverviewWidgetView.swift in Sources */,
+				WI0102030405060708090010 /* TaskManagement/Widgets/DeadlinesWidgetView.swift in Sources */,
+				WI0102030405060708090012 /* TaskManagement/Widgets/TaskHubWidgets.swift in Sources */,
+				WI0102030405060708090014 /* TaskManagement/Widgets/ChecklistWidgetView.swift in Sources */,
+				WI0102030405060708090016 /* TaskManagement/Widgets/LockScreenWidgetView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

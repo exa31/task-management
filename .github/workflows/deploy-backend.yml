@@ -57,9 +57,6 @@ jobs:
     name: Build & Deploy Backend
     needs: test
     if: (github.event_name == 'push' || github.event_name == 'workflow_dispatch') && github.ref == 'refs/heads/main'
-    concurrency:
-      group: production-release
-      cancel-in-progress: false
     uses: exa31/github-workflows/.github/workflows/backend.yml@v1.0.0
     with:
       app_name: task-hub-backend

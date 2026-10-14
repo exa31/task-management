@@ -5,10 +5,14 @@ public struct QuickCreateTaskIntent: AppIntent {
     public static var title: LocalizedStringResource = "Buat Tugas Cepat"
     public static var description = IntentDescription("Buat tugas baru secara instan dari Pintasan (Shortcuts), Pusat Kontrol, atau Otomasi.")
 
-    @Parameter(title: "Judul Tugas")
+    public static var parameterSummary: some ParameterSummary {
+        Summary("Catat \(\.$title)")
+    }
+
+    @Parameter(title: "Judul Tugas", requestValueDialog: IntentDialog("Apa judul tugas yang ingin Anda catat?"))
     public var title: String
 
-    @Parameter(title: "Fokus Hari Ini", default: true)
+    @Parameter(title: "Jadikan Fokus Hari Ini", default: true)
     public var isFocus: Bool
 
     public init() {

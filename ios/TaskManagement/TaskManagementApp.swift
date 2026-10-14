@@ -10,6 +10,7 @@ final class AppDelegate: NSObject, UIApplicationDelegate {
     ) -> Bool {
         Task { @MainActor in
             PushNotificationManager.shared.configure()
+            TaskHubShortcutsProvider.updateAppShortcutParameters()
         }
         return true
     }
