@@ -30,6 +30,7 @@ public final class TaskViewModel {
         do {
             self.tasks = try await apiClient.getTasks()
             AppLogger.info("Tasks loaded successfully", category: .task, metadata: ["count": tasks.count])
+            SharedWidgetDataManager.shared.syncWithTaskList(self.tasks)
             Task {
                 await SharedWidgetDataManager.shared.syncWithBackend()
             }
@@ -167,6 +168,12 @@ public final class TaskViewModel {
     @MainActor
     public func toggleTaskStatus(task: TaskItem) {
         let newStatus = task.status == "done" ? "todo" : "done"
+        if let idx = tasks.firstIndex(where: { $0.id == task.id }) {
+            var copy = tasks[idx]
+            copy.status = newStatus
+            tasks[idx] = copy
+            SharedWidgetDataManager.shared.syncWithTaskList(self.tasks)
+        }
         Task {
             do {
                 _ = try await apiClient.updateTask(
@@ -222,6 +229,7 @@ public final class TaskViewModel {
             )
             if let idx = tasks.firstIndex(where: { $0.id == id }) {
                 tasks[idx] = updated
+                SharedWidgetDataManager.shared.syncWithTaskList(self.tasks)
             }
             AppLogger.success("Task updated successfully", category: .task, metadata: ["id": id])
             await loadTasks()
@@ -294,6 +302,8 @@ public final class TaskViewModel {
     public func deleteTask(id: Int64) async {
         do {
             try await apiClient.deleteTask(id: id)
+            tasks.removeAll { $0.id == id }
+            SharedWidgetDataManager.shared.syncWithTaskList(self.tasks)
             AppLogger.success("Task deleted successfully", category: .task, metadata: ["id": id])
             await loadTasks()
         } catch {

@@ -27,67 +27,93 @@ public struct DeadlinesWidgetView: View {
     private var smallView: some View {
         VStack(alignment: .leading, spacing: 6) {
             HStack {
-                Image(systemName: "clock.badge.exclamationmark")
-                    .font(.system(size: 13, weight: .bold))
-                    .foregroundStyle(AppColors.priorityUrgent)
-                Text(L10n.Widgets.deadlineBadge)
-                    .font(.system(size: 10, weight: .black))
-                    .tracking(1)
-                    .foregroundStyle(AppColors.priorityUrgent)
+                HStack(spacing: 3) {
+                    Image(systemName: "flame.fill")
+                        .font(.system(size: 10, weight: .bold))
+                    Text("TENGGAT")
+                        .font(.system(size: 9, weight: .black))
+                        .tracking(0.5)
+                }
+                .foregroundStyle(Color(red: 244/255, green: 63/255, blue: 94/255))
+                .padding(.horizontal, 6)
+                .padding(.vertical, 2)
+                .background(Color(red: 244/255, green: 63/255, blue: 94/255).opacity(0.18))
+                .clipShape(Capsule())
+
                 Spacer()
+
+                if !entry.bundle.upcomingDeadlines.isEmpty {
+                    Text("\(entry.bundle.upcomingDeadlines.count)")
+                        .font(.system(size: 10, weight: .bold))
+                        .foregroundStyle(Color(red: 244/255, green: 63/255, blue: 94/255))
+                        .padding(.horizontal, 5)
+                        .padding(.vertical, 1.5)
+                        .background(Color.white.opacity(0.08))
+                        .clipShape(Capsule())
+                }
             }
 
             if let top = entry.bundle.upcomingDeadlines.first {
                 VStack(alignment: .leading, spacing: 4) {
                     Text(top.title)
-                        .font(.system(size: 13, weight: .bold))
+                        .font(.system(size: 12, weight: .bold))
                         .lineLimit(2)
-                        .foregroundStyle(.primary)
+                        .foregroundStyle(.white)
 
                     deadlineBadge(for: top.dueDate)
 
                     if let proj = top.projectName {
-                        Text(proj)
-                            .font(.system(size: 10, weight: .medium))
-                            .foregroundStyle(.secondary)
+                        HStack(spacing: 4) {
+                            Circle()
+                                .fill(Color(hex: top.projectColor ?? "#3b82f6") ?? AppColors.primary)
+                                .frame(width: 5, height: 5)
+                            Text(proj)
+                                .font(.system(size: 9, weight: .medium))
+                                .foregroundStyle(.white.opacity(0.6))
+                                .lineLimit(1)
+                        }
                     }
                 }
             } else {
-                noDeadlinesView
+                noDeadlinesView(isCompact: true)
             }
+
             Spacer(minLength: 0)
         }
         .padding(12)
-        .widgetBackground()
+        .widgetBackground(accentColor: Color(red: 244/255, green: 63/255, blue: 94/255))
     }
 
     // MARK: - Medium Family
 
     private var mediumView: some View {
         VStack(alignment: .leading, spacing: 8) {
-            HStack {
-                HStack(spacing: 6) {
-                    Image(systemName: "calendar.badge.clock")
-                        .font(.system(size: 14, weight: .bold))
-                        .foregroundStyle(AppColors.priorityUrgent)
-                    Text(L10n.Widgets.upcomingHeader)
-                        .font(.system(size: 10, weight: .black))
-                        .tracking(1)
-                        .foregroundStyle(AppColors.priorityUrgent)
+            HStack(spacing: 8) {
+                HStack(spacing: 4) {
+                    Image(systemName: "flame.fill")
+                        .font(.system(size: 11, weight: .bold))
+                    Text("TENGGAT WAKTU")
+                        .font(.system(size: 9, weight: .black))
+                        .tracking(0.8)
                 }
-                Spacer()
-                Text(L10n.Widgets.tasksCount(count: entry.bundle.upcomingDeadlines.count))
-                    .font(.system(size: 11, weight: .semibold))
-                    .foregroundStyle(.secondary)
-            }
+                .foregroundStyle(Color(red: 244/255, green: 63/255, blue: 94/255))
+                .padding(.horizontal, 7)
+                .padding(.vertical, 3)
+                .background(Color(red: 244/255, green: 63/255, blue: 94/255).opacity(0.18))
+                .clipShape(Capsule())
 
-            Divider().opacity(0.3)
+                Spacer()
+
+                Text("\(entry.bundle.upcomingDeadlines.count) tugas aktif")
+                    .font(.system(size: 10, weight: .semibold))
+                    .foregroundStyle(.white.opacity(0.6))
+            }
 
             let deadlines = entry.bundle.upcomingDeadlines.prefix(3)
             if deadlines.isEmpty {
-                noDeadlinesView
+                noDeadlinesView(isCompact: false)
             } else {
-                VStack(spacing: 6) {
+                VStack(spacing: 5) {
                     ForEach(deadlines) { task in
                         deadlineRow(task: task)
                     }
@@ -97,30 +123,39 @@ public struct DeadlinesWidgetView: View {
             Spacer(minLength: 0)
         }
         .padding(14)
-        .widgetBackground()
+        .widgetBackground(accentColor: Color(red: 244/255, green: 63/255, blue: 94/255))
     }
 
     // MARK: - Large Family
 
     private var largeView: some View {
         VStack(alignment: .leading, spacing: 10) {
-            HStack {
-                BrandLogoView(size: 22)
-                Text(L10n.Widgets.listTitle)
-                    .font(.system(size: 15, weight: .bold))
-                Spacer()
-                Text(L10n.Widgets.activeTasksCount(count: entry.bundle.upcomingDeadlines.count))
-                    .font(.system(size: 11, weight: .semibold))
-                    .foregroundStyle(.secondary)
-            }
+            HStack(spacing: 8) {
+                HStack(spacing: 4) {
+                    Image(systemName: "flame.fill")
+                        .font(.system(size: 13, weight: .bold))
+                    Text("TENGGAT WAKTU MENDATANG")
+                        .font(.system(size: 11, weight: .black))
+                        .tracking(1)
+                }
+                .foregroundStyle(Color(red: 244/255, green: 63/255, blue: 94/255))
+                .padding(.horizontal, 8)
+                .padding(.vertical, 4)
+                .background(Color(red: 244/255, green: 63/255, blue: 94/255).opacity(0.18))
+                .clipShape(Capsule())
 
-            Divider().opacity(0.3)
+                Spacer()
+
+                Text("\(entry.bundle.upcomingDeadlines.count) tugas terdekat")
+                    .font(.system(size: 11, weight: .semibold))
+                    .foregroundStyle(.white.opacity(0.7))
+            }
 
             let deadlines = entry.bundle.upcomingDeadlines.prefix(5)
             if deadlines.isEmpty {
-                noDeadlinesView
+                noDeadlinesView(isCompact: false)
             } else {
-                VStack(spacing: 8) {
+                VStack(spacing: 6) {
                     ForEach(deadlines) { task in
                         deadlineRow(task: task, showDetails: true)
                     }
@@ -129,8 +164,8 @@ public struct DeadlinesWidgetView: View {
 
             Spacer(minLength: 0)
         }
-        .padding(14)
-        .widgetBackground()
+        .padding(16)
+        .widgetBackground(accentColor: Color(red: 244/255, green: 63/255, blue: 94/255))
     }
 
     // MARK: - Deadline Row
@@ -138,20 +173,25 @@ public struct DeadlinesWidgetView: View {
     @ViewBuilder
     private func deadlineRow(task: TaskItem, showDetails: Bool = false) -> some View {
         HStack(spacing: 8) {
-            Circle()
+            RoundedRectangle(cornerRadius: 2)
                 .fill(priorityColor(task.priority))
-                .frame(width: 8, height: 8)
+                .frame(width: 3, height: showDetails ? 28 : 20)
 
             VStack(alignment: .leading, spacing: 2) {
                 Text(task.title)
                     .font(.system(size: 12, weight: .semibold))
                     .lineLimit(1)
-                    .foregroundStyle(.primary)
+                    .foregroundStyle(.white)
 
-                if showDetails, let desc = task.projectName {
-                    Text(desc)
-                        .font(.system(size: 10))
-                        .foregroundStyle(.secondary)
+                if let proj = task.projectName {
+                    HStack(spacing: 3) {
+                        Circle()
+                            .fill(Color(hex: task.projectColor ?? "#3b82f6") ?? AppColors.primary)
+                            .frame(width: 4, height: 4)
+                        Text(proj)
+                            .font(.system(size: 9))
+                            .foregroundStyle(.white.opacity(0.55))
+                    }
                 }
             }
 
@@ -159,9 +199,10 @@ public struct DeadlinesWidgetView: View {
 
             deadlineBadge(for: task.dueDate)
         }
-        .padding(showDetails ? 8 : 4)
-        .background(Color.primary.opacity(0.04))
-        .clipShape(RoundedRectangle(cornerRadius: 6, style: .continuous))
+        .padding(.horizontal, 8)
+        .padding(.vertical, showDetails ? 6 : 5)
+        .background(Color.white.opacity(0.04))
+        .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
     }
 
     @ViewBuilder
@@ -170,54 +211,60 @@ public struct DeadlinesWidgetView: View {
             let info = formatDeadlineUrgency(date)
             HStack(spacing: 3) {
                 Image(systemName: info.icon)
-                    .font(.system(size: 9))
+                    .font(.system(size: 8, weight: .bold))
                 Text(info.label)
-                    .font(.system(size: 10, weight: .bold))
+                    .font(.system(size: 9, weight: .bold))
             }
             .padding(.horizontal, 6)
-            .padding(.vertical, 2)
+            .padding(.vertical, 2.5)
             .background(info.color.opacity(0.18))
             .foregroundStyle(info.color)
             .clipShape(Capsule())
-        } else {
-            EmptyView()
         }
     }
 
     private func formatDeadlineUrgency(_ date: Date) -> (label: String, color: Color, icon: String) {
         let calendar = Calendar.current
-        if calendar.isDateInToday(date) {
+        if date < Date() {
+            return ("Terlewat", Color(red: 239/255, green: 68/255, blue: 68/255), "exclamationmark.circle.fill")
+        } else if calendar.isDateInToday(date) {
             let f = DateFormatter()
             f.dateFormat = "HH:mm"
-            return (L10n.Widgets.todayAt(time: f.string(from: date)), AppColors.priorityUrgent, "flame.fill")
+            return ("Hari Ini \(f.string(from: date))", Color(red: 244/255, green: 63/255, blue: 94/255), "flame.fill")
         } else if calendar.isDateInTomorrow(date) {
-            return (L10n.Widgets.tomorrow, AppColors.priorityHigh, "clock.fill")
-        } else if date < Date() {
-            return (L10n.Widgets.overdue, AppColors.priorityUrgent, "exclamationmark.triangle.fill")
+            return ("Besok", Color(red: 245/255, green: 158/255, blue: 11/255), "clock.fill")
         } else {
             let f = DateFormatter()
-            f.dateFormat = "dd MMM"
-            return (f.string(from: date), AppColors.primary, "calendar")
+            f.dateFormat = "d MMM"
+            return (f.string(from: date), Color(red: 56/255, green: 189/255, blue: 248/255), "calendar")
         }
     }
 
     private func priorityColor(_ priority: String) -> Color {
         switch priority.lowercased() {
-        case "urgent": return AppColors.priorityUrgent
-        case "high": return AppColors.priorityHigh
-        case "medium": return AppColors.priorityMedium
-        default: return AppColors.priorityLow
+        case "urgent": return Color(red: 239/255, green: 68/255, blue: 68/255)
+        case "high": return Color(red: 245/255, green: 158/255, blue: 11/255)
+        case "medium": return Color(red: 59/255, green: 130/255, blue: 246/255)
+        default: return Color(red: 148/255, green: 163/255, blue: 184/255)
         }
     }
 
-    private var noDeadlinesView: some View {
-        VStack(spacing: 4) {
-            Image(systemName: "checkmark.circle.fill")
-                .font(.system(size: 20))
-                .foregroundStyle(AppColors.statusDone)
-            Text(L10n.Widgets.noUrgent)
-                .font(.system(size: 12, weight: .semibold))
-                .foregroundStyle(.primary)
+    @ViewBuilder
+    private func noDeadlinesView(isCompact: Bool) -> some View {
+        VStack(spacing: isCompact ? 4 : 6) {
+            Image(systemName: "checkmark.shield.fill")
+                .font(.system(size: isCompact ? 20 : 24))
+                .foregroundStyle(Color(red: 52/255, green: 211/255, blue: 153/255))
+
+            Text("Tidak Ada Tenggat Mendekat")
+                .font(.system(size: isCompact ? 11 : 12, weight: .semibold))
+                .foregroundStyle(.white)
+
+            if !isCompact {
+                Text("Semua tugas terjadwal aman.")
+                    .font(.system(size: 9))
+                    .foregroundStyle(.white.opacity(0.5))
+            }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
     }

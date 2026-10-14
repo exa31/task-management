@@ -43,3 +43,44 @@ public struct ToggleSubtaskIntent: AppIntent {
         return .result()
     }
 }
+
+public struct UpdateTaskStatusIntent: AppIntent {
+    public static var title: LocalizedStringResource = "Ubah Status Tugas"
+    public static var description = IntentDescription("Ubah status tugas secara instan langsung dari widget.")
+
+    @Parameter(title: "Task ID")
+    public var taskId: Int
+
+    @Parameter(title: "New Status")
+    public var newStatus: String
+
+    public init() {
+        self.taskId = 0
+        self.newStatus = "done"
+    }
+
+    public init(taskId: Int64, newStatus: String) {
+        self.taskId = Int(taskId)
+        self.newStatus = newStatus
+    }
+
+    public func perform() async throws -> some IntentResult {
+        SharedWidgetDataManager.shared.updateTaskStatusLocally(
+            taskId: Int64(taskId),
+            status: newStatus
+        )
+        return .result()
+    }
+}
+
+public struct CycleNextTaskIntent: AppIntent {
+    public static var title: LocalizedStringResource = "Tugas Berikutnya"
+    public static var description = IntentDescription("Beralih ke tugas aktif lainnya pada widget.")
+
+    public init() {}
+
+    public func perform() async throws -> some IntentResult {
+        SharedWidgetDataManager.shared.cycleCustomTaskIndex()
+        return .result()
+    }
+}

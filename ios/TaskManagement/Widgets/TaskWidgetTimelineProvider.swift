@@ -82,6 +82,19 @@ public struct TaskWidgetEntry: TimelineEntry, Sendable {
 
         return TaskWidgetEntry(date: Date(), bundle: bundle, isOffline: false)
     }
+
+    public static var empty: TaskWidgetEntry {
+        TaskWidgetEntry(
+            date: Date(),
+            bundle: WidgetBundleResponse(
+                focusTasks: [],
+                upcomingDeadlines: [],
+                completedToday: 0,
+                totalToday: 0
+            ),
+            isOffline: false
+        )
+    }
 }
 
 #if canImport(WidgetKit)
@@ -103,7 +116,7 @@ public struct TaskWidgetTimelineProvider: TimelineProvider {
     }
 
     public func getTimeline(in context: Context, completion: @escaping (Timeline<TaskWidgetEntry>) -> Void) {
-        let bundle = SharedWidgetDataManager.shared.loadWidgetBundle() ?? TaskWidgetEntry.sample.bundle
+        let bundle = SharedWidgetDataManager.shared.loadWidgetBundle() ?? TaskWidgetEntry.empty.bundle
         let entry = TaskWidgetEntry(date: Date(), bundle: bundle, isOffline: false)
 
         // Reload timeline every 15 minutes

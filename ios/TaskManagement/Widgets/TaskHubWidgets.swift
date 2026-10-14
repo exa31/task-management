@@ -2,23 +2,39 @@ import SwiftUI
 #if canImport(WidgetKit)
 import WidgetKit
 
-// MARK: - 1. Interactive Checklist Widget
-public struct TaskChecklistWidget: Widget {
-    public static let kind: String = "TaskChecklistWidget"
+// MARK: - 1. Recurring Task Checklist Widget
+public struct TaskRecurringWidget: Widget {
+    public static let kind: String = "TaskRecurringWidget"
 
     public init() {}
 
     public var body: some WidgetConfiguration {
         StaticConfiguration(kind: Self.kind, provider: TaskWidgetTimelineProvider()) { entry in
-            ChecklistWidgetView(entry: entry)
+            RecurringTaskWidgetView(entry: entry)
         }
-        .configurationDisplayName("Checklist Subtask")
-        .description("Centang subtask fokus hari ini secara instan langsung dari layar utama tanpa membuka aplikasi.")
+        .configurationDisplayName("Tugas Rutin Harian")
+        .description("Pantau checklist tugas berulang harianmu dan selesaikan langsung dari layar utama.")
         .supportedFamilies([.systemSmall, .systemMedium, .systemLarge])
     }
 }
 
-// MARK: - 2. Upcoming Deadlines Widget
+// MARK: - 2. Custom Selected Task Checklist Widget
+public struct TaskCustomChecklistWidget: Widget {
+    public static let kind: String = "TaskCustomChecklistWidget"
+
+    public init() {}
+
+    public var body: some WidgetConfiguration {
+        StaticConfiguration(kind: Self.kind, provider: TaskWidgetTimelineProvider()) { entry in
+            CustomTaskWidgetView(entry: entry)
+        }
+        .configurationDisplayName("Checklist Tugas Pilihan")
+        .description("Pantau subtask dan progres tugas pilihan aktifmu langsung dari layar utama.")
+        .supportedFamilies([.systemSmall, .systemMedium, .systemLarge])
+    }
+}
+
+// MARK: - 3. Upcoming Deadlines Widget
 public struct TaskDeadlinesWidget: Widget {
     public static let kind: String = "TaskDeadlinesWidget"
 
@@ -34,7 +50,7 @@ public struct TaskDeadlinesWidget: Widget {
     }
 }
 
-// MARK: - 3. Daily Overview & Productivity Ring
+// MARK: - 4. Daily Overview & Productivity Ring
 public struct DailyOverviewWidget: Widget {
     public static let kind: String = "DailyOverviewWidget"
 
@@ -50,7 +66,7 @@ public struct DailyOverviewWidget: Widget {
     }
 }
 
-// MARK: - 4. Lock Screen & StandBy Widget
+// MARK: - 5. Lock Screen & StandBy Widget
 public struct LockScreenWidget: Widget {
     public static let kind: String = "LockScreenWidget"
 
@@ -73,7 +89,8 @@ public struct TaskHubWidgetBundle: WidgetBundle {
     public init() {}
 
     public var body: some Widget {
-        TaskChecklistWidget()
+        TaskRecurringWidget()
+        TaskCustomChecklistWidget()
         TaskDeadlinesWidget()
         DailyOverviewWidget()
         LockScreenWidget()
@@ -84,7 +101,8 @@ public struct TaskHubWidgetBundle: WidgetBundle {
     public init() {}
 
     public var body: some Widget {
-        TaskChecklistWidget()
+        TaskRecurringWidget()
+        TaskCustomChecklistWidget()
         TaskDeadlinesWidget()
         DailyOverviewWidget()
         LockScreenWidget()
