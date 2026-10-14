@@ -48,7 +48,7 @@ jobs:
     name: Build & Deploy iOS to TestFlight
     needs: test
     if: (github.event_name == 'push' || github.event_name == 'workflow_dispatch') && github.ref == 'refs/heads/main'
-    uses: exa31/github-workflows/.github/workflows/swiftui-ios.yml@v1.0.0
+    uses: exa31/github-workflows/.github/workflows/swiftui-ios-multimodule.yml@v1.0.0
     with:
       app_name: task-hub
       workspace_or_project: ./ios/TaskManagement.xcodeproj
@@ -65,6 +65,7 @@ jobs:
       APPLE_CERTIFICATE_BASE64: ${{ secrets.APPLE_CERTIFICATE_BASE64 }}
       APPLE_CERTIFICATE_PASSWORD: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
       APPLE_PROVISIONING_PROFILE_BASE64: ${{ secrets.APPLE_PROVISIONING_PROFILE_BASE64 }}
+      APPLE_PROVISIONING_PROFILE_WIDGET_BASE64: ${{ secrets.APPLE_PROVISIONING_PROFILE_WIDGET_BASE64 }}
       APP_STORE_CONNECT_API_KEY_BASE64: ${{ secrets.APP_STORE_CONNECT_API_KEY_BASE64 }}
       APP_STORE_CONNECT_KEY_ID: ${{ secrets.APP_STORE_CONNECT_KEY_ID }}
       APP_STORE_CONNECT_ISSUER_ID: ${{ secrets.APP_STORE_CONNECT_ISSUER_ID }}
