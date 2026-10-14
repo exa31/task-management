@@ -368,6 +368,166 @@
     },
     "UTC (UTC+0)" : {
 
+    },
+    "widget.recurring.configName" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Daily Recurring Tasks"
+          }
+        },
+        "id" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tugas Rutin Harian"
+          }
+        }
+      }
+    },
+    "widget.recurring.configDesc" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Track and complete your daily recurring tasks directly from your home screen."
+          }
+        },
+        "id" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pantau checklist tugas berulang harianmu dan selesaikan langsung dari layar utama."
+          }
+        }
+      }
+    },
+    "widget.custom.configName" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Custom Task Checklist"
+          }
+        },
+        "id" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Checklist Tugas Pilihan"
+          }
+        }
+      }
+    },
+    "widget.custom.configDesc" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Track subtasks and progress for your active tasks directly from your home screen."
+          }
+        },
+        "id" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pantau subtask dan progres tugas pilihan aktifmu langsung dari layar utama."
+          }
+        }
+      }
+    },
+    "widget.deadlines.configName" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Upcoming Deadlines"
+          }
+        },
+        "id" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tenggat Waktu"
+          }
+        }
+      }
+    },
+    "widget.deadlines.configDesc" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Monitor upcoming task deadlines with color-coded urgency indicators."
+          }
+        },
+        "id" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pantau tugas-tugas penting yang mendekati batas waktu dengan penanda urgensi warna."
+          }
+        }
+      }
+    },
+    "widget.overview.configName" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Daily Overview"
+          }
+        },
+        "id" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ringkasan Harian"
+          }
+        }
+      }
+    },
+    "widget.overview.configDesc" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Track your daily completion ratio with a motivational progress ring."
+          }
+        },
+        "id" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Lihat rasio penyelesaian tugas harianmu dengan progress ring yang memotivasi."
+          }
+        }
+      }
+    },
+    "widget.lockscreen.configName" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Task Hub Lock Screen"
+          }
+        },
+        "id" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Layar Kunci Task Hub"
+          }
+        }
+      }
+    },
+    "widget.lockscreen.configDesc" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Monitor progress and urgent tasks directly on your Lock Screen or StandBy mode."
+          }
+        },
+        "id" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pantau progres dan tugas terdekatmu langsung di Lock Screen atau StandBy Mode."
+          }
+        }
+      }
     }
   },
   "version" : "1.0"

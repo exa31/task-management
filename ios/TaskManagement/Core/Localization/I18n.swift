@@ -421,6 +421,8 @@ public enum Translations {
             "widget.overview.quoteAlmost": "Almost there! Keep going 💪",
             "widget.overview.quoteSteady": "Steady focus today ⚡",
             "widget.overview.quoteStart": "Take your first step 🚀",
+            "widget.overview.configName": "Daily Overview",
+            "widget.overview.configDesc": "Track your daily completion ratio with a motivational progress ring.",
             "widget.deadlines.badge": "DEADLINE",
             "widget.deadlines.approachingHeader": "UPCOMING DEADLINES",
             "widget.deadlines.tasksCount": "%lld tasks",
@@ -470,7 +472,9 @@ public enum Translations {
 
             "widget.lockscreen.tasksDone": "%lld/%lld Tasks Done",
             "widget.lockscreen.duePrefix": "Due: %@",
-            "widget.lockscreen.allDone": "All tasks done!"
+            "widget.lockscreen.allDone": "All tasks done!",
+            "widget.lockscreen.configName": "Task Hub Lock Screen",
+            "widget.lockscreen.configDesc": "Monitor progress and urgent tasks directly on your Lock Screen or StandBy mode."
         ],
         .id: [
             // Nav
@@ -844,7 +848,11 @@ public enum Translations {
 
             "widget.lockscreen.tasksDone": "%lld/%lld Tugas Selesai",
             "widget.lockscreen.duePrefix": "Tenggat: %@",
-            "widget.lockscreen.allDone": "Semua tugas beres!"
+            "widget.lockscreen.allDone": "Semua tugas beres!",
+            "widget.overview.configName": "Ringkasan Harian",
+            "widget.overview.configDesc": "Lihat rasio penyelesaian tugas harianmu dengan progress ring yang memotivasi.",
+            "widget.lockscreen.configName": "Layar Kunci Task Hub",
+            "widget.lockscreen.configDesc": "Pantau progres dan tugas terdekatmu langsung di Lock Screen atau StandBy Mode."
         ]
     ]
 }

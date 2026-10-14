@@ -365,6 +365,8 @@ public enum L10n {
         public static var quoteAlmost: String { "widget.overview.quoteAlmost".localized }
         public static var quoteSteady: String { "widget.overview.quoteSteady".localized }
         public static var quoteStart: String { "widget.overview.quoteStart".localized }
+        public static var overviewConfigName: String { "widget.overview.configName".localized }
+        public static var overviewConfigDesc: String { "widget.overview.configDesc".localized }
 
         public static var deadlineBadge: String { "widget.deadlines.badge".localized }
         public static var upcomingHeader: String { "widget.deadlines.approachingHeader".localized }
@@ -422,5 +424,7 @@ public enum L10n {
             "widget.lockscreen.duePrefix".localized(with: time)
         }
         public static var lockscreenAllDone: String { "widget.lockscreen.allDone".localized }
+        public static var lockscreenConfigName: String { "widget.lockscreen.configName".localized }
+        public static var lockscreenConfigDesc: String { "widget.lockscreen.configDesc".localized }
     }
 }

@@ -60,8 +60,8 @@ public struct DailyOverviewWidget: Widget {
         StaticConfiguration(kind: Self.kind, provider: TaskWidgetTimelineProvider()) { entry in
             DailyOverviewWidgetView(entry: entry)
         }
-        .configurationDisplayName("Ringkasan Harian")
-        .description("Lihat rasio penyelesaian tugas harianmu dengan progress ring yang memotivasi.")
+        .configurationDisplayName(LocalizedStringKey("widget.overview.configName"))
+        .description(LocalizedStringKey("widget.overview.configDesc"))
         .supportedFamilies([.systemSmall, .systemMedium])
     }
 }
@@ -77,8 +77,8 @@ public struct LockScreenWidget: Widget {
         StaticConfiguration(kind: Self.kind, provider: TaskWidgetTimelineProvider()) { entry in
             LockScreenWidgetView(entry: entry)
         }
-        .configurationDisplayName("Layar Kunci Task Hub")
-        .description("Pantau progres dan tugas terdekatmu langsung di Lock Screen atau StandBy Mode.")
+        .configurationDisplayName(LocalizedStringKey("widget.lockscreen.configName"))
+        .description(LocalizedStringKey("widget.lockscreen.configDesc"))
         .supportedFamilies([.accessoryInline, .accessoryCircular, .accessoryRectangular])
     }
 }
