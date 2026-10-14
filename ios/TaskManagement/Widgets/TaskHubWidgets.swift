@@ -12,8 +12,8 @@ public struct TaskRecurringWidget: Widget {
         StaticConfiguration(kind: Self.kind, provider: TaskWidgetTimelineProvider()) { entry in
             RecurringTaskWidgetView(entry: entry)
         }
-        .configurationDisplayName("Tugas Rutin Harian")
-        .description("Pantau checklist tugas berulang harianmu dan selesaikan langsung dari layar utama.")
+        .configurationDisplayName(LocalizedStringKey("widget.recurring.configName"))
+        .description(LocalizedStringKey("widget.recurring.configDesc"))
         .supportedFamilies([.systemSmall, .systemMedium, .systemLarge])
     }
 }
@@ -28,8 +28,8 @@ public struct TaskCustomChecklistWidget: Widget {
         StaticConfiguration(kind: Self.kind, provider: TaskWidgetTimelineProvider()) { entry in
             CustomTaskWidgetView(entry: entry)
         }
-        .configurationDisplayName("Checklist Tugas Pilihan")
-        .description("Pantau subtask dan progres tugas pilihan aktifmu langsung dari layar utama.")
+        .configurationDisplayName(LocalizedStringKey("widget.custom.configName"))
+        .description(LocalizedStringKey("widget.custom.configDesc"))
         .supportedFamilies([.systemSmall, .systemMedium, .systemLarge])
     }
 }
@@ -44,8 +44,8 @@ public struct TaskDeadlinesWidget: Widget {
         StaticConfiguration(kind: Self.kind, provider: TaskWidgetTimelineProvider()) { entry in
             DeadlinesWidgetView(entry: entry)
         }
-        .configurationDisplayName("Tenggat Waktu")
-        .description("Pantau tugas-tugas penting yang mendekati batas waktu dengan penanda urgensi warna.")
+        .configurationDisplayName(LocalizedStringKey("widget.deadlines.configName"))
+        .description(LocalizedStringKey("widget.deadlines.configDesc"))
         .supportedFamilies([.systemSmall, .systemMedium, .systemLarge])
     }
 }

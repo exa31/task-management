@@ -30,7 +30,7 @@ public struct DeadlinesWidgetView: View {
                 HStack(spacing: 3) {
                     Image(systemName: "flame.fill")
                         .font(.system(size: 10, weight: .bold))
-                    Text("TENGGAT")
+                    Text(L10n.Widgets.deadlineBadge)
                         .font(.system(size: 9, weight: .black))
                         .tracking(0.5)
                 }
@@ -92,7 +92,7 @@ public struct DeadlinesWidgetView: View {
                 HStack(spacing: 4) {
                     Image(systemName: "flame.fill")
                         .font(.system(size: 11, weight: .bold))
-                    Text("TENGGAT WAKTU")
+                    Text(L10n.Widgets.upcomingHeader)
                         .font(.system(size: 9, weight: .black))
                         .tracking(0.8)
                 }
@@ -104,7 +104,7 @@ public struct DeadlinesWidgetView: View {
 
                 Spacer()
 
-                Text("\(entry.bundle.upcomingDeadlines.count) tugas aktif")
+                Text(L10n.Widgets.activeTasksCount(count: entry.bundle.upcomingDeadlines.count))
                     .font(.system(size: 10, weight: .semibold))
                     .foregroundStyle(.white.opacity(0.6))
             }
@@ -134,7 +134,7 @@ public struct DeadlinesWidgetView: View {
                 HStack(spacing: 4) {
                     Image(systemName: "flame.fill")
                         .font(.system(size: 13, weight: .bold))
-                    Text("TENGGAT WAKTU MENDATANG")
+                    Text(L10n.Widgets.deadlinesTitleLarge)
                         .font(.system(size: 11, weight: .black))
                         .tracking(1)
                 }
@@ -146,7 +146,7 @@ public struct DeadlinesWidgetView: View {
 
                 Spacer()
 
-                Text("\(entry.bundle.upcomingDeadlines.count) tugas terdekat")
+                Text(L10n.Widgets.upcomingTasksCount(count: entry.bundle.upcomingDeadlines.count))
                     .font(.system(size: 11, weight: .semibold))
                     .foregroundStyle(.white.opacity(0.7))
             }
@@ -226,13 +226,13 @@ public struct DeadlinesWidgetView: View {
     private func formatDeadlineUrgency(_ date: Date) -> (label: String, color: Color, icon: String) {
         let calendar = Calendar.current
         if date < Date() {
-            return ("Terlewat", Color(red: 239/255, green: 68/255, blue: 68/255), "exclamationmark.circle.fill")
+            return (L10n.Widgets.overdue, Color(red: 239/255, green: 68/255, blue: 68/255), "exclamationmark.circle.fill")
         } else if calendar.isDateInToday(date) {
             let f = DateFormatter()
             f.dateFormat = "HH:mm"
-            return ("Hari Ini \(f.string(from: date))", Color(red: 244/255, green: 63/255, blue: 94/255), "flame.fill")
+            return (L10n.Widgets.todayAt(time: f.string(from: date)), Color(red: 244/255, green: 63/255, blue: 94/255), "flame.fill")
         } else if calendar.isDateInTomorrow(date) {
-            return ("Besok", Color(red: 245/255, green: 158/255, blue: 11/255), "clock.fill")
+            return (L10n.Widgets.tomorrow, Color(red: 245/255, green: 158/255, blue: 11/255), "clock.fill")
         } else {
             let f = DateFormatter()
             f.dateFormat = "d MMM"
@@ -256,12 +256,12 @@ public struct DeadlinesWidgetView: View {
                 .font(.system(size: isCompact ? 20 : 24))
                 .foregroundStyle(Color(red: 52/255, green: 211/255, blue: 153/255))
 
-            Text("Tidak Ada Tenggat Mendekat")
+            Text(L10n.Widgets.noUrgentTitle)
                 .font(.system(size: isCompact ? 11 : 12, weight: .semibold))
                 .foregroundStyle(.white)
 
             if !isCompact {
-                Text("Semua tugas terjadwal aman.")
+                Text(L10n.Widgets.noUrgentDesc)
                     .font(.system(size: 9))
                     .foregroundStyle(.white.opacity(0.5))
             }

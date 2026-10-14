@@ -27,7 +27,6 @@ public struct RecurringTaskWidgetView: View {
     }
 
     private var activeRecurringTask: TaskItem? {
-        // Prioritize recurring task that is not done yet
         allRecurringTasks.first { $0.status != "done" } ?? allRecurringTasks.first
     }
 
@@ -46,12 +45,11 @@ public struct RecurringTaskWidgetView: View {
 
     private var smallView: some View {
         VStack(alignment: .leading, spacing: 6) {
-            // Header Pill & Ratio
             HStack(spacing: 4) {
                 HStack(spacing: 3) {
                     Image(systemName: "repeat.circle.fill")
                         .font(.system(size: 11, weight: .bold))
-                    Text("RUTIN")
+                    Text(L10n.Widgets.recurringBadge)
                         .font(.system(size: 9, weight: .black))
                         .tracking(0.5)
                 }
@@ -92,7 +90,7 @@ public struct RecurringTaskWidgetView: View {
                     if allChecked {
                         smallActionsBar(taskId: task.id)
                     } else if subtasks.isEmpty {
-                        Text("Tidak ada subtask")
+                        Text(L10n.Widgets.recurringNoSubtasks)
                             .font(.system(size: 10))
                             .foregroundStyle(.white.opacity(0.6))
                     } else {
@@ -117,12 +115,11 @@ public struct RecurringTaskWidgetView: View {
 
     private var mediumView: some View {
         VStack(alignment: .leading, spacing: 8) {
-            // Header Bar
             HStack(spacing: 8) {
                 HStack(spacing: 4) {
                     Image(systemName: "repeat.circle.fill")
                         .font(.system(size: 12, weight: .bold))
-                    Text("TUGAS RUTIN HARIAN")
+                    Text(L10n.Widgets.recurringTitle)
                         .font(.system(size: 9, weight: .black))
                         .tracking(0.8)
                 }
@@ -139,7 +136,7 @@ public struct RecurringTaskWidgetView: View {
                     HStack(spacing: 4) {
                         Image(systemName: done == count ? "checkmark.seal.fill" : "circle.dashed")
                             .font(.system(size: 11))
-                        Text("\(done)/\(count) selesai")
+                        Text(L10n.Widgets.recurringSubtasksDone(done: done, total: count))
                             .font(.system(size: 11, weight: .bold))
                     }
                     .foregroundStyle(done == count ? Color(red: 52/255, green: 211/255, blue: 153/255) : Color(red: 56/255, green: 189/255, blue: 248/255))
@@ -181,7 +178,7 @@ public struct RecurringTaskWidgetView: View {
                     if allChecked {
                         statusActionBar(taskId: task.id)
                     } else if subtasks.isEmpty {
-                        Text("Belum ada subtask untuk tugas ini")
+                        Text(L10n.Widgets.recurringNoSubtasks)
                             .font(.system(size: 11))
                             .foregroundStyle(.white.opacity(0.6))
                             .padding(.vertical, 4)
@@ -211,7 +208,7 @@ public struct RecurringTaskWidgetView: View {
                 HStack(spacing: 4) {
                     Image(systemName: "repeat.circle.fill")
                         .font(.system(size: 14, weight: .bold))
-                    Text("TUGAS RUTIN HARIAN")
+                    Text(L10n.Widgets.recurringTitle)
                         .font(.system(size: 11, weight: .black))
                         .tracking(1)
                 }
@@ -225,7 +222,7 @@ public struct RecurringTaskWidgetView: View {
 
                 if let task = activeRecurringTask, let count = task.subtasksCount, count > 0 {
                     let done = task.subtasksCompleted ?? 0
-                    Text("\(done) dari \(count) Subtask")
+                    Text(L10n.Widgets.recurringSubtasksDone(done: done, total: count))
                         .font(.system(size: 12, weight: .bold))
                         .foregroundStyle(Color(red: 52/255, green: 211/255, blue: 153/255))
                 }
@@ -320,14 +317,13 @@ public struct RecurringTaskWidgetView: View {
         .clipShape(RoundedRectangle(cornerRadius: 7, style: .continuous))
     }
 
-    // Action buttons bar when all subtasks completed
     @ViewBuilder
     private func statusActionBar(taskId: Int64) -> some View {
         VStack(spacing: 6) {
             HStack(spacing: 4) {
                 Image(systemName: "sparkles")
                     .font(.system(size: 10, weight: .bold))
-                Text("Semua subtask selesai! Pilih tindakan:")
+                Text(L10n.Widgets.recurringAllSubtasksComplete)
                     .font(.system(size: 10, weight: .semibold))
             }
             .foregroundStyle(Color(red: 52/255, green: 211/255, blue: 153/255))
@@ -337,7 +333,7 @@ public struct RecurringTaskWidgetView: View {
                     HStack(spacing: 4) {
                         Image(systemName: "checkmark.circle.fill")
                             .font(.system(size: 11, weight: .bold))
-                        Text("Selesaikan")
+                        Text(L10n.Widgets.recurringActionDone)
                             .font(.system(size: 11, weight: .bold))
                     }
                     .frame(maxWidth: .infinity)
@@ -358,7 +354,7 @@ public struct RecurringTaskWidgetView: View {
                     HStack(spacing: 4) {
                         Image(systemName: "eye.fill")
                             .font(.system(size: 11, weight: .bold))
-                        Text("Review")
+                        Text(L10n.Widgets.recurringActionReview)
                             .font(.system(size: 11, weight: .bold))
                     }
                     .frame(maxWidth: .infinity)
@@ -381,7 +377,7 @@ public struct RecurringTaskWidgetView: View {
             HStack(spacing: 4) {
                 Image(systemName: "checkmark.circle.fill")
                     .font(.system(size: 10, weight: .bold))
-                Text("Tandai Selesai")
+                Text(L10n.Widgets.recurringActionDoneShort)
                     .font(.system(size: 10, weight: .bold))
             }
             .frame(maxWidth: .infinity)
@@ -393,7 +389,6 @@ public struct RecurringTaskWidgetView: View {
         .buttonStyle(.plain)
     }
 
-    // Done state view
     @ViewBuilder
     private func doneStateView(isCompact: Bool) -> some View {
         VStack(spacing: isCompact ? 4 : 6) {
@@ -407,11 +402,11 @@ public struct RecurringTaskWidgetView: View {
                     )
                 )
 
-            Text("Rutin Hari Ini Selesai!")
+            Text(L10n.Widgets.recurringDoneTitle)
                 .font(.system(size: isCompact ? 12 : 13, weight: .bold))
                 .foregroundStyle(.white)
 
-            Text("Istirahat dulu, tugas akan muncul kembali besok.")
+            Text(L10n.Widgets.recurringDoneDesc)
                 .font(.system(size: isCompact ? 9 : 10))
                 .foregroundStyle(.white.opacity(0.6))
                 .multilineTextAlignment(.center)
@@ -419,7 +414,6 @@ public struct RecurringTaskWidgetView: View {
         .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 
-    // Empty state view
     @ViewBuilder
     private func emptyRecurringView(isCompact: Bool) -> some View {
         VStack(spacing: isCompact ? 4 : 6) {
@@ -427,12 +421,12 @@ public struct RecurringTaskWidgetView: View {
                 .font(.system(size: isCompact ? 20 : 24))
                 .foregroundStyle(Color(red: 56/255, green: 189/255, blue: 248/255).opacity(0.6))
 
-            Text("Tidak Ada Tugas Rutin")
+            Text(L10n.Widgets.recurringEmptyTitle)
                 .font(.system(size: isCompact ? 11 : 12, weight: .semibold))
                 .foregroundStyle(.white.opacity(0.8))
 
             if !isCompact {
-                Text("Aktifkan 'Ulangi Otomatis' pada tugas di aplikasi.")
+                Text(L10n.Widgets.recurringEmptyDesc)
                     .font(.system(size: 9))
                     .foregroundStyle(.white.opacity(0.5))
                     .multilineTextAlignment(.center)
@@ -443,9 +437,9 @@ public struct RecurringTaskWidgetView: View {
 
     private func formatPattern(_ p: String) -> String {
         switch p.lowercased() {
-        case "daily": return "Harian"
-        case "weekly": return "Mingguan"
-        case "monthly": return "Bulanan"
+        case "daily": return "pattern.daily".localized
+        case "weekly": return "pattern.weekly".localized
+        case "monthly": return "pattern.monthly".localized
         default: return p.capitalized
         }
     }
@@ -498,7 +492,7 @@ public struct CustomTaskWidgetView: View {
                 HStack(spacing: 3) {
                     Image(systemName: "checklist.checked")
                         .font(.system(size: 11, weight: .bold))
-                    Text("PILIHAN")
+                    Text(L10n.Widgets.customBadge)
                         .font(.system(size: 9, weight: .black))
                         .tracking(0.5)
                 }
@@ -537,7 +531,7 @@ public struct CustomTaskWidgetView: View {
                         HStack(spacing: 4) {
                             Image(systemName: "checkmark.circle.fill")
                                 .font(.system(size: 10, weight: .bold))
-                            Text("Selesaikan")
+                            Text(L10n.Widgets.recurringActionDone)
                                 .font(.system(size: 10, weight: .bold))
                         }
                         .frame(maxWidth: .infinity)
@@ -548,7 +542,7 @@ public struct CustomTaskWidgetView: View {
                     }
                     .buttonStyle(.plain)
                 } else if subtasks.isEmpty {
-                    Text("Tidak ada subtask")
+                    Text(L10n.Widgets.customNoSubtasks)
                         .font(.system(size: 10))
                         .foregroundStyle(.white.opacity(0.6))
                 } else {
@@ -576,7 +570,7 @@ public struct CustomTaskWidgetView: View {
                 HStack(spacing: 4) {
                     Image(systemName: "checklist.checked")
                         .font(.system(size: 12, weight: .bold))
-                    Text("CHECKLIST TUGAS")
+                    Text(L10n.Widgets.customTitle)
                         .font(.system(size: 9, weight: .black))
                         .tracking(0.8)
                 }
@@ -591,7 +585,7 @@ public struct CustomTaskWidgetView: View {
                 if activeTasks.count > 1 {
                     Button(intent: CycleNextTaskIntent()) {
                         HStack(spacing: 4) {
-                            Text("Ganti")
+                            Text(L10n.Widgets.customSwitch)
                                 .font(.system(size: 10, weight: .semibold))
                             Image(systemName: "arrow.triangle.2.circlepath")
                                 .font(.system(size: 9, weight: .bold))
@@ -634,7 +628,7 @@ public struct CustomTaskWidgetView: View {
                             HStack(spacing: 4) {
                                 Image(systemName: "checkmark.circle.fill")
                                     .font(.system(size: 11, weight: .bold))
-                                Text("Selesaikan Tugas")
+                                Text(L10n.Widgets.customCompleteTask)
                                     .font(.system(size: 11, weight: .bold))
                             }
                             .frame(maxWidth: .infinity)
@@ -647,7 +641,7 @@ public struct CustomTaskWidgetView: View {
 
                         if activeTasks.count > 1 {
                             Button(intent: CycleNextTaskIntent()) {
-                                Text("Tugas Lain")
+                                Text(L10n.Widgets.customOtherTask)
                                     .font(.system(size: 11, weight: .semibold))
                                     .padding(.horizontal, 10)
                                     .padding(.vertical, 6)
@@ -662,7 +656,7 @@ public struct CustomTaskWidgetView: View {
                     .background(Color(red: 16/255, green: 185/255, blue: 129/255).opacity(0.12))
                     .clipShape(RoundedRectangle(cornerRadius: 10))
                 } else if subtasks.isEmpty {
-                    Text("Tugas ini tidak memiliki subtask.")
+                    Text(L10n.Widgets.customNoSubtasks)
                         .font(.system(size: 11))
                         .foregroundStyle(.white.opacity(0.6))
                         .padding(.vertical, 4)
@@ -691,7 +685,7 @@ public struct CustomTaskWidgetView: View {
                 HStack(spacing: 4) {
                     Image(systemName: "checklist.checked")
                         .font(.system(size: 14, weight: .bold))
-                    Text("CHECKLIST TUGAS PILIHAN")
+                    Text(L10n.Widgets.customTitleLarge)
                         .font(.system(size: 11, weight: .black))
                         .tracking(1)
                 }
@@ -706,7 +700,7 @@ public struct CustomTaskWidgetView: View {
                 if activeTasks.count > 1 {
                     Button(intent: CycleNextTaskIntent()) {
                         HStack(spacing: 4) {
-                            Text("Tugas Lainnya")
+                            Text(L10n.Widgets.customOtherTasks)
                                 .font(.system(size: 11, weight: .semibold))
                             Image(systemName: "arrow.triangle.2.circlepath")
                                 .font(.system(size: 10, weight: .bold))
@@ -741,7 +735,7 @@ public struct CustomTaskWidgetView: View {
                         HStack(spacing: 4) {
                             Image(systemName: "checkmark.circle.fill")
                                 .font(.system(size: 12, weight: .bold))
-                            Text("Selesaikan Tugas Sekarang")
+                            Text(L10n.Widgets.customCompleteNow)
                                 .font(.system(size: 12, weight: .bold))
                         }
                         .frame(maxWidth: .infinity)
@@ -795,12 +789,12 @@ public struct CustomTaskWidgetView: View {
                 .font(.system(size: isCompact ? 20 : 26))
                 .foregroundStyle(Color(red: 52/255, green: 211/255, blue: 153/255))
 
-            Text("Semua Tugas Selesai!")
+            Text(L10n.Widgets.customAllTasksDone)
                 .font(.system(size: isCompact ? 11 : 12, weight: .semibold))
                 .foregroundStyle(.white)
 
             if !isCompact {
-                Text("Tambahkan tugas baru melalui aplikasi.")
+                Text(L10n.Widgets.customAddNewTask)
                     .font(.system(size: 9))
                     .foregroundStyle(.white.opacity(0.5))
             }
@@ -833,7 +827,6 @@ public struct ChecklistWidgetView: View {
 public extension View {
     func widgetBackground(accentColor: Color = Color(red: 56/255, green: 189/255, blue: 248/255)) -> some View {
         let content = ZStack {
-            // Deep obsidian gradient base
             LinearGradient(
                 colors: [
                     Color(red: 11/255, green: 17/255, blue: 32/255),
@@ -844,7 +837,6 @@ public extension View {
                 endPoint: .bottomTrailing
             )
 
-            // Subtle ambient neon glow at top right
             GeometryReader { geo in
                 Circle()
                     .fill(accentColor.opacity(0.12))

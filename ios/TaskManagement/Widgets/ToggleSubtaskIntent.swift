@@ -5,8 +5,8 @@ import WidgetKit
 #endif
 
 public struct ToggleSubtaskIntent: AppIntent {
-    public static var title: LocalizedStringResource = "Centang Subtask"
-    public static var description = IntentDescription("Tandai subtask selesai atau belum selesai secara instan langsung dari widget.")
+    public static var title: LocalizedStringResource = "Toggle Subtask"
+    public static var description = IntentDescription("Check or uncheck subtasks instantly from the widget.")
 
     @Parameter(title: "Task ID")
     public var taskId: Int
@@ -45,8 +45,8 @@ public struct ToggleSubtaskIntent: AppIntent {
 }
 
 public struct UpdateTaskStatusIntent: AppIntent {
-    public static var title: LocalizedStringResource = "Ubah Status Tugas"
-    public static var description = IntentDescription("Ubah status tugas secara instan langsung dari widget.")
+    public static var title: LocalizedStringResource = "Update Task Status"
+    public static var description = IntentDescription("Update task status directly from the widget.")
 
     @Parameter(title: "Task ID")
     public var taskId: Int
@@ -74,8 +74,8 @@ public struct UpdateTaskStatusIntent: AppIntent {
 }
 
 public struct CycleNextTaskIntent: AppIntent {
-    public static var title: LocalizedStringResource = "Tugas Berikutnya"
-    public static var description = IntentDescription("Beralih ke tugas aktif lainnya pada widget.")
+    public static var title: LocalizedStringResource = "Next Task"
+    public static var description = IntentDescription("Switch to another active task on the widget.")
 
     public init() {}
 

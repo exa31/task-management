@@ -365,6 +365,45 @@ public enum L10n {
         public static var tomorrow: String { "widget.deadlines.tomorrow".localized }
         public static var overdue: String { "widget.deadlines.overdue".localized }
         public static var noUrgent: String { "widget.deadlines.noUrgent".localized }
+        public static var deadlinesTitleLarge: String { "widget.deadlines.titleLarge".localized }
+        public static func upcomingTasksCount(count: Int) -> String { "widget.deadlines.upcomingTasksCount".localized(with: count) }
+        public static var noUrgentTitle: String { "widget.deadlines.noUrgentTitle".localized }
+        public static var noUrgentDesc: String { "widget.deadlines.noUrgentDesc".localized }
+        public static var deadlinesConfigName: String { "widget.deadlines.configName".localized }
+        public static var deadlinesConfigDesc: String { "widget.deadlines.configDesc".localized }
+
+        // Recurring Widget Accessors
+        public static var recurringBadge: String { "widget.recurring.badge".localized }
+        public static var recurringTitle: String { "widget.recurring.title".localized }
+        public static func recurringSubtasksDone(done: Int, total: Int) -> String {
+            "widget.recurring.subtasksDone".localized(with: done, total)
+        }
+        public static var recurringNoSubtasks: String { "widget.recurring.noSubtasks".localized }
+        public static var recurringAllSubtasksComplete: String { "widget.recurring.allSubtasksComplete".localized }
+        public static var recurringActionDone: String { "widget.recurring.actionDone".localized }
+        public static var recurringActionReview: String { "widget.recurring.actionReview".localized }
+        public static var recurringActionDoneShort: String { "widget.recurring.actionDoneShort".localized }
+        public static var recurringDoneTitle: String { "widget.recurring.doneTitle".localized }
+        public static var recurringDoneDesc: String { "widget.recurring.doneDesc".localized }
+        public static var recurringEmptyTitle: String { "widget.recurring.emptyTitle".localized }
+        public static var recurringEmptyDesc: String { "widget.recurring.emptyDesc".localized }
+        public static var recurringConfigName: String { "widget.recurring.configName".localized }
+        public static var recurringConfigDesc: String { "widget.recurring.configDesc".localized }
+
+        // Custom Task Widget Accessors
+        public static var customBadge: String { "widget.custom.badge".localized }
+        public static var customTitle: String { "widget.custom.title".localized }
+        public static var customTitleLarge: String { "widget.custom.titleLarge".localized }
+        public static var customSwitch: String { "widget.custom.switch".localized }
+        public static var customOtherTask: String { "widget.custom.otherTask".localized }
+        public static var customOtherTasks: String { "widget.custom.otherTasks".localized }
+        public static var customCompleteTask: String { "widget.custom.completeTask".localized }
+        public static var customCompleteNow: String { "widget.custom.completeNow".localized }
+        public static var customAllTasksDone: String { "widget.custom.allTasksDone".localized }
+        public static var customAddNewTask: String { "widget.custom.addNewTask".localized }
+        public static var customNoSubtasks: String { "widget.custom.noSubtasks".localized }
+        public static var customConfigName: String { "widget.custom.configName".localized }
+        public static var customConfigDesc: String { "widget.custom.configDesc".localized }
 
         public static func lockscreenTasksDone(completed: Int, total: Int) -> String {
             "widget.lockscreen.tasksDone".localized(with: completed, total)
