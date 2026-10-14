@@ -3,6 +3,7 @@ package notification
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"log/slog"
 	"strings"
@@ -131,6 +132,17 @@ func (s *AsynqScheduler) ScheduleReminder(ctx context.Context, reminderID int64,
 	)
 
 	info, err := s.client.EnqueueContext(ctx, task, asynq.ProcessAt(remindAt), asynq.Queue(s.queue))
+	if err != nil && errors.Is(err, asynq.ErrTaskIDConflict) {
+		fallbackID := fmt.Sprintf("reminder:%d_%d", reminderID, time.Now().UnixNano())
+		fallbackTask := asynq.NewTask(
+			s.taskType,
+			payload,
+			asynq.TaskID(fallbackID),
+			asynq.MaxRetry(3),
+			asynq.Retention(24*time.Hour),
+		)
+		info, err = s.client.EnqueueContext(ctx, fallbackTask, asynq.ProcessAt(remindAt), asynq.Queue(s.queue))
+	}
 	if err != nil {
 		s.logger.Error("failed to enqueue http task to asynq",
 			slog.Int64("reminder_id", reminderID),
@@ -204,6 +216,17 @@ func (s *AsynqScheduler) ScheduleTaskDueAlert(ctx context.Context, taskID int64,
 	)
 
 	info, err := s.client.EnqueueContext(ctx, task, asynq.ProcessAt(remindAt), asynq.Queue(s.queue))
+	if err != nil && errors.Is(err, asynq.ErrTaskIDConflict) {
+		fallbackID := fmt.Sprintf("task_due:%d_%d", taskID, time.Now().UnixNano())
+		fallbackTask := asynq.NewTask(
+			s.taskType,
+			payload,
+			asynq.TaskID(fallbackID),
+			asynq.MaxRetry(3),
+			asynq.Retention(24*time.Hour),
+		)
+		info, err = s.client.EnqueueContext(ctx, fallbackTask, asynq.ProcessAt(remindAt), asynq.Queue(s.queue))
+	}
 	if err != nil {
 		s.logger.Error("failed to enqueue task due alert to asynq",
 			slog.Int64("task_id", taskID),
@@ -263,9 +286,18 @@ func (s *AsynqScheduler) ScheduleTaskRecurrence(ctx context.Context, taskID int6
 		return fmt.Errorf("failed to serialize task recurrence payload: %w", err)
 	}
 
-	taskIDStr := fmt.Sprintf("task_recurrence:%d", taskID)
-	_ = s.inspector.DeleteTask(s.queue, taskIDStr)
+	// Delete any existing scheduled tasks for this taskID in the scheduled set
+	prefix := fmt.Sprintf("task_recurrence:%d", taskID)
+	if scheduled, lErr := s.inspector.ListScheduledTasks(s.queue); lErr == nil {
+		for _, t := range scheduled {
+			if t.ID == prefix || strings.HasPrefix(t.ID, prefix+":") {
+				_ = s.inspector.DeleteTask(s.queue, t.ID)
+			}
+		}
+	}
+	_ = s.inspector.DeleteTask(s.queue, prefix)
 
+	taskIDStr := fmt.Sprintf("task_recurrence:%d:%d", taskID, processAt.Unix())
 	task := asynq.NewTask(
 		s.taskType,
 		payload,
@@ -275,6 +307,18 @@ func (s *AsynqScheduler) ScheduleTaskRecurrence(ctx context.Context, taskID int6
 	)
 
 	info, err := s.client.EnqueueContext(ctx, task, asynq.ProcessAt(processAt), asynq.Queue(s.queue))
+	if err != nil && errors.Is(err, asynq.ErrTaskIDConflict) {
+		fallbackID := fmt.Sprintf("task_recurrence:%d:%d_%d", taskID, processAt.Unix(), time.Now().UnixNano())
+		fallbackTask := asynq.NewTask(
+			s.taskType,
+			payload,
+			asynq.TaskID(fallbackID),
+			asynq.MaxRetry(3),
+			asynq.Retention(24*time.Hour),
+		)
+		info, err = s.client.EnqueueContext(ctx, fallbackTask, asynq.ProcessAt(processAt), asynq.Queue(s.queue))
+	}
+
 	if err != nil {
 		s.logger.Error("failed to enqueue task recurrence to asynq",
 			slog.Int64("task_id", taskID),
@@ -297,8 +341,15 @@ func (s *AsynqScheduler) ScheduleTaskRecurrence(ctx context.Context, taskID int6
 }
 
 func (s *AsynqScheduler) CancelTaskRecurrence(ctx context.Context, taskID int64) error {
-	taskIDStr := fmt.Sprintf("task_recurrence:%d", taskID)
-	err := s.inspector.DeleteTask(s.queue, taskIDStr)
+	prefix := fmt.Sprintf("task_recurrence:%d", taskID)
+	if scheduled, lErr := s.inspector.ListScheduledTasks(s.queue); lErr == nil {
+		for _, t := range scheduled {
+			if t.ID == prefix || strings.HasPrefix(t.ID, prefix+":") {
+				_ = s.inspector.DeleteTask(s.queue, t.ID)
+			}
+		}
+	}
+	err := s.inspector.DeleteTask(s.queue, prefix)
 	if err != nil {
 		s.logger.Debug("asynq task deletion error for task recurrence",
 			slog.Int64("task_id", taskID),
