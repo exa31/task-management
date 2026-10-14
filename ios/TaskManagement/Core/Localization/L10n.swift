@@ -325,6 +325,7 @@ public enum L10n {
     public enum General {
         public static var create: String { "general.create".localized }
         public static var save: String { "general.save".localized }
+        public static var saving: String { "general.saving".localized }
         public static var cancel: String { "general.cancel".localized }
         public static var delete: String { "general.delete".localized }
         public static var close: String { "general.close".localized }

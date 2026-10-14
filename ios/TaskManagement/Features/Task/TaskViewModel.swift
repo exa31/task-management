@@ -347,6 +347,36 @@ public final class TaskViewModel {
     }
 
     @MainActor
+    public func addSubtask(taskId: Int64, title: String) async -> Bool {
+        let trimmed = title.trimmingCharacters(in: .whitespaces)
+        guard !trimmed.isEmpty else { return false }
+        do {
+            _ = try await apiClient.createSubtask(taskId: taskId, req: CreateSubtaskRequest(title: trimmed))
+            AppLogger.success("Subtask created", category: .task, metadata: ["taskId": taskId, "title": trimmed])
+            await loadTasks()
+            return true
+        } catch {
+            AppLogger.error("Failed to create subtask", error: error, category: .task)
+            self.errorMessage = error.localizedDescription
+            return false
+        }
+    }
+
+    @MainActor
+    public func deleteSubtask(taskId: Int64, subtaskId: Int64) async -> Bool {
+        do {
+            try await apiClient.deleteSubtask(taskId: taskId, subtaskId: subtaskId)
+            AppLogger.success("Subtask deleted", category: .task, metadata: ["taskId": taskId, "subtaskId": subtaskId])
+            await loadTasks()
+            return true
+        } catch {
+            AppLogger.error("Failed to delete subtask", error: error, category: .task)
+            self.errorMessage = error.localizedDescription
+            return false
+        }
+    }
+
+    @MainActor
     public func loadActivities(for taskId: Int64) async {
         isLoadingActivities = true
         do {

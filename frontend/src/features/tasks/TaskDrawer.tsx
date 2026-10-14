@@ -853,7 +853,7 @@ export const TaskDrawer: React.FC = () => {
                 onClick={() => handleSubmitMain()}
                 disabled={updateTaskMutation.isPending || !isDirty}
                 data-pr-tooltip={t('taskDrawer.saveTaskTooltip')}
-                className="px-4 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-500 active:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed text-xs font-semibold text-white shadow-sm flex items-center gap-1.5 transition-colors cursor-pointer"
+                className="min-w-[145px] justify-center px-4 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-500 active:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed text-xs font-semibold text-white shadow-sm flex items-center gap-1.5 transition-colors cursor-pointer"
               >
                 {updateTaskMutation.isPending && (
                   <i className="pi pi-spin pi-spinner text-[10px]" />

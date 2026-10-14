@@ -395,6 +395,7 @@ public enum Translations {
             // General
             "general.create": "Create",
             "general.save": "Save",
+            "general.saving": "Saving...",
             "general.cancel": "Cancel",
             "general.delete": "Delete",
             "general.close": "Close",
@@ -768,6 +769,7 @@ public enum Translations {
             // General
             "general.create": "Simpan",
             "general.save": "Simpan",
+            "general.saving": "Menyimpan...",
             "general.cancel": "Batal",
             "general.delete": "Hapus",
             "general.close": "Tutup",

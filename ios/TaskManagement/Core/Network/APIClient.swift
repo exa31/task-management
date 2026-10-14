@@ -323,6 +323,10 @@ public actor APIClient {
         return try await request(endpoint: "tasks/\(taskId)/subtasks", method: "POST", body: body)
     }
 
+    public func deleteSubtask(taskId: Int64, subtaskId: Int64) async throws {
+        let _: EmptyResponse = try await request(endpoint: "tasks/\(taskId)/subtasks/\(subtaskId)", method: "DELETE")
+    }
+
     public func getWidgetBundle() async throws -> WidgetBundleResponse {
         return try await request(endpoint: "tasks/widgets/bundle")
     }

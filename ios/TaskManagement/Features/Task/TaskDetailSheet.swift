@@ -9,6 +9,8 @@ public struct TaskDetailSheet: View {
     @State private var newNoteText = ""
     @State private var isPostingNote = false
     @State private var showEditSheet = false
+    @State private var newSubtaskTitle = ""
+    @State private var isAddingSubtask = false
 
     private var currentTask: TaskItem {
         viewModel.tasks.first(where: { $0.id == task.id }) ?? task
@@ -224,6 +226,17 @@ public struct TaskDetailSheet: View {
                                         .foregroundColor(subtask.isCompleted ? .secondary : .primary)
 
                                     Spacer()
+
+                                    Button(action: {
+                                        Task {
+                                            _ = await viewModel.deleteSubtask(taskId: currentTask.id, subtaskId: subtask.id)
+                                        }
+                                    }) {
+                                        Image(systemName: "trash")
+                                            .font(.system(size: 12))
+                                            .foregroundColor(Color.secondary.opacity(0.6))
+                                    }
+                                    .buttonStyle(.plain)
                                 }
                                 .padding(10)
                                 .background(Color(.secondarySystemGroupedBackground))
@@ -234,7 +247,38 @@ public struct TaskDetailSheet: View {
                         Text(L10n.Tasks.noSubtasks)
                             .font(.system(size: 13))
                             .foregroundColor(.secondary)
-                            .padding(.vertical, 8)
+                            .padding(.vertical, 4)
+                    }
+
+                    // Add Subtask Row
+                    HStack(spacing: 8) {
+                        TextField(L10n.Tasks.addSubtaskPlaceholder, text: $newSubtaskTitle)
+                            .font(.system(size: 13))
+                            .textFieldStyle(.plain)
+                            .padding(9)
+                            .background(Color(.secondarySystemGroupedBackground))
+                            .clipShape(RoundedRectangle(cornerRadius: 8))
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 8)
+                                    .stroke(Color.secondary.opacity(0.15), lineWidth: 1)
+                            )
+                            .onSubmit {
+                                handleAddSubtask()
+                            }
+
+                        Button(action: handleAddSubtask) {
+                            if isAddingSubtask {
+                                ProgressView()
+                                    .scaleEffect(0.8)
+                                    .frame(width: 32, height: 32)
+                            } else {
+                                Image(systemName: "plus.circle.fill")
+                                    .font(.system(size: 24))
+                                    .foregroundColor(newSubtaskTitle.trimmingCharacters(in: .whitespaces).isEmpty ? Color.secondary.opacity(0.3) : AppColors.primary)
+                                    .frame(width: 32, height: 32)
+                            }
+                        }
+                        .disabled(newSubtaskTitle.trimmingCharacters(in: .whitespaces).isEmpty || isAddingSubtask)
                     }
                 }
 
@@ -348,6 +392,21 @@ public struct TaskDetailSheet: View {
             await viewModel.addActivityNote(taskId: task.id, note: note)
             newNoteText = ""
             isPostingNote = false
+        }
+    }
+
+    private func handleAddSubtask() {
+        let trimmed = newSubtaskTitle.trimmingCharacters(in: .whitespaces)
+        guard !trimmed.isEmpty else { return }
+        isAddingSubtask = true
+        Task {
+            let success = await viewModel.addSubtask(taskId: currentTask.id, title: trimmed)
+            await MainActor.run {
+                isAddingSubtask = false
+                if success {
+                    newSubtaskTitle = ""
+                }
+            }
         }
     }
 }
@@ -510,6 +569,12 @@ public struct EditTaskSheet: View {
     @State private var recurrenceInterval: Int
     @State private var isSubmitting: Bool = false
     @State private var errorMessage: String? = nil
+    @State private var newSubtaskTitle: String = ""
+    @State private var isAddingSubtask: Bool = false
+
+    private var currentTask: TaskItem {
+        viewModel.tasks.first(where: { $0.id == task.id }) ?? task
+    }
 
     public init(
         task: TaskItem,
@@ -647,6 +712,61 @@ public struct EditTaskSheet: View {
                     }
                 }
 
+                Section(header: Text(L10n.Tasks.sectionSubtasks)) {
+                    if let subtasks = currentTask.subtasks, !subtasks.isEmpty {
+                        ForEach(subtasks) { subtask in
+                            HStack(spacing: 10) {
+                                Button(action: {
+                                    viewModel.toggleSubtask(taskId: task.id, subtaskId: subtask.id, currentCompleted: subtask.isCompleted)
+                                }) {
+                                    Image(systemName: subtask.isCompleted ? "checkmark.square.fill" : "square")
+                                        .font(.system(size: 16))
+                                        .foregroundColor(subtask.isCompleted ? AppColors.statusDone : .secondary)
+                                }
+                                .buttonStyle(.plain)
+
+                                Text(subtask.title)
+                                    .font(.system(size: 14))
+                                    .strikethrough(subtask.isCompleted)
+                                    .foregroundColor(subtask.isCompleted ? .secondary : .primary)
+
+                                Spacer()
+
+                                Button(action: {
+                                    Task {
+                                        _ = await viewModel.deleteSubtask(taskId: task.id, subtaskId: subtask.id)
+                                    }
+                                }) {
+                                    Image(systemName: "trash")
+                                        .font(.system(size: 13))
+                                        .foregroundColor(AppColors.priorityUrgent.opacity(0.8))
+                                }
+                                .buttonStyle(.plain)
+                            }
+                        }
+                    }
+
+                    HStack(spacing: 8) {
+                        TextField(L10n.Tasks.addSubtaskPlaceholder, text: $newSubtaskTitle)
+                            .font(.system(size: 14))
+                            .onSubmit {
+                                handleAddEditSubtask()
+                            }
+
+                        Button(action: handleAddEditSubtask) {
+                            if isAddingSubtask {
+                                ProgressView()
+                                    .scaleEffect(0.8)
+                            } else {
+                                Image(systemName: "plus.circle.fill")
+                                    .font(.system(size: 20))
+                                    .foregroundColor(newSubtaskTitle.trimmingCharacters(in: .whitespaces).isEmpty ? Color.secondary.opacity(0.3) : AppColors.primary)
+                            }
+                        }
+                        .disabled(newSubtaskTitle.trimmingCharacters(in: .whitespaces).isEmpty || isAddingSubtask)
+                    }
+                }
+
                 Section(header: Text(L10n.Tasks.sectionTags)) {
                     TextField(L10n.Tasks.tagsPlaceholder, text: $tagsText)
                         .font(.system(size: 14))
@@ -678,11 +798,12 @@ public struct EditTaskSheet: View {
                 }
                 ToolbarItem(placement: .confirmationAction) {
                     Button(action: handleSave) {
-                        if isSubmitting {
-                            ProgressView()
-                                .scaleEffect(0.8)
-                        } else {
-                            Text(L10n.General.save)
+                        HStack(spacing: 6) {
+                            if isSubmitting {
+                                ProgressView()
+                                    .scaleEffect(0.8)
+                            }
+                            Text(isSubmitting ? L10n.General.saving : L10n.General.save)
                                 .fontWeight(.semibold)
                         }
                     }
@@ -738,6 +859,21 @@ public struct EditTaskSheet: View {
                     dismiss()
                 } else {
                     errorMessage = viewModel.errorMessage ?? "Gagal menyimpan perubahan tugas"
+                }
+            }
+        }
+    }
+
+    private func handleAddEditSubtask() {
+        let trimmed = newSubtaskTitle.trimmingCharacters(in: .whitespaces)
+        guard !trimmed.isEmpty else { return }
+        isAddingSubtask = true
+        Task {
+            let success = await viewModel.addSubtask(taskId: task.id, title: trimmed)
+            await MainActor.run {
+                isAddingSubtask = false
+                if success {
+                    newSubtaskTitle = ""
                 }
             }
         }
