@@ -24,6 +24,46 @@ export const STATUS_COLORS: Record<TaskStatus, { badge: string; dot: string }> =
   }
 }
 
+export const STATUS_SORT_ORDER: Record<TaskStatus, number> = {
+  in_progress: 1,
+  todo: 2,
+  review: 3,
+  backlog: 4,
+  done: 5
+}
+
+export const PRIORITY_SORT_ORDER: Record<TaskPriority, number> = {
+  urgent: 1,
+  high: 2,
+  medium: 3,
+  low: 4
+}
+
+export const compareTasks = (a: Task, b: Task): number => {
+  // 1. Focus first (only for active tasks that are not done)
+  const aFocus = a.is_focus && a.status !== 'done' ? 1 : 0
+  const bFocus = b.is_focus && b.status !== 'done' ? 1 : 0
+  if (aFocus !== bFocus) return bFocus - aFocus
+
+  // 2. Status ordering: in_progress -> todo -> review -> backlog -> done
+  const aStatus = STATUS_SORT_ORDER[a.status] ?? 99
+  const bStatus = STATUS_SORT_ORDER[b.status] ?? 99
+  if (aStatus !== bStatus) return aStatus - bStatus
+
+  // 3. Priority ordering within same status: urgent -> high -> medium -> low
+  const aPriority = PRIORITY_SORT_ORDER[a.priority] ?? 99
+  const bPriority = PRIORITY_SORT_ORDER[b.priority] ?? 99
+  if (aPriority !== bPriority) return aPriority - bPriority
+
+  // 4. Recently updated first
+  const aTime = a.updated_at ? new Date(a.updated_at).getTime() : 0
+  const bTime = b.updated_at ? new Date(b.updated_at).getTime() : 0
+  if (aTime !== bTime) return bTime - aTime
+
+  // 5. Higher ID as tiebreaker
+  return b.id - a.id
+}
+
 export interface Subtask {
   id: number
   task_id: number

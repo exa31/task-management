@@ -84,7 +84,35 @@ public final class TaskViewModel {
             result = result.filter { $0.isFocus }
         }
 
-        return result
+        let statusOrder: [String: Int] = [
+            "in_progress": 1,
+            "todo": 2,
+            "review": 3,
+            "backlog": 4,
+            "done": 5
+        ]
+        let priorityOrder: [String: Int] = [
+            "urgent": 1,
+            "high": 2,
+            "medium": 3,
+            "low": 4
+        ]
+
+        return result.sorted { a, b in
+            let aFocus = a.isFocus && a.status != "done" ? 1 : 0
+            let bFocus = b.isFocus && b.status != "done" ? 1 : 0
+            if aFocus != bFocus { return aFocus > bFocus }
+
+            let aStatus = statusOrder[a.status] ?? 99
+            let bStatus = statusOrder[b.status] ?? 99
+            if aStatus != bStatus { return aStatus < bStatus }
+
+            let aPriority = priorityOrder[a.priority.lowercased()] ?? 99
+            let bPriority = priorityOrder[b.priority.lowercased()] ?? 99
+            if aPriority != bPriority { return aPriority < bPriority }
+
+            return a.id > b.id
+        }
     }
 
     public var focusTasks: [TaskItem] {

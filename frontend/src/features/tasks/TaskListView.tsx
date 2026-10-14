@@ -3,7 +3,7 @@ import React, { useEffect, useMemo, useRef } from 'react'
 import { useInfiniteTasks, useToggleFocus, useUpdateTask } from '@/hooks'
 import { useTranslation } from '@/i18n'
 import { useTaskStore } from '@/stores'
-import type { TaskFilterParams, TaskPriority, TaskStatus } from '@/types'
+import { compareTasks, type TaskFilterParams, type TaskPriority, type TaskStatus } from '@/types'
 
 const STATUS_CLASSES: Record<TaskStatus, string> = {
   backlog:
@@ -58,10 +58,10 @@ export const TaskListView: React.FC = () => {
     fetchNextPage
   } = useInfiniteTasks(filterParams)
 
-  const tasks = useMemo(
-    () => data?.pages.flatMap((page) => (Array.isArray(page?.items) ? page.items : [])) || [],
-    [data]
-  )
+  const tasks = useMemo(() => {
+    const raw = data?.pages.flatMap((page) => (Array.isArray(page?.items) ? page.items : [])) || []
+    return [...raw].sort(compareTasks)
+  }, [data])
 
   const sentinelRef = useRef<HTMLDivElement | null>(null)
 

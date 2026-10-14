@@ -4,9 +4,16 @@ import { confirmDialog } from '@/components'
 import { useDeleteProject, useTasks, useToggleFocus, useUpdateTask } from '@/hooks'
 import { useTranslation } from '@/i18n'
 import { useTaskStore, useUIStore } from '@/stores'
-import { type Project, STATUS_COLORS, type Task, type TaskPriority, type TaskStatus } from '@/types'
+import {
+  compareTasks,
+  type Project,
+  STATUS_COLORS,
+  type Task,
+  type TaskPriority,
+  type TaskStatus
+} from '@/types'
 
-const STATUS_KEYS: TaskStatus[] = ['backlog', 'todo', 'in_progress', 'review', 'done']
+const STATUS_KEYS: TaskStatus[] = ['in_progress', 'todo', 'review', 'backlog', 'done']
 
 const PRIORITY_ICONS: Record<TaskPriority, { icon: string; class: string }> = {
   urgent: { icon: 'pi-exclamation-triangle', class: 'text-rose-500' },
@@ -45,19 +52,22 @@ export const ProjectAccordionItem: React.FC<ProjectAccordionItemProps> = ({
     [rawTasks, project.id]
   )
 
-  // Filter tasks by status
+  // Filter tasks by status and sort
   const tasksByStatus = useMemo(() => {
     const map: Record<TaskStatus, Task[]> = {
-      backlog: [],
-      todo: [],
       in_progress: [],
+      todo: [],
       review: [],
+      backlog: [],
       done: []
     }
     for (const task of tasks) {
       if (task.status in map) {
         map[task.status].push(task)
       }
+    }
+    for (const status of Object.keys(map) as TaskStatus[]) {
+      map[status].sort(compareTasks)
     }
     return map
   }, [tasks])
