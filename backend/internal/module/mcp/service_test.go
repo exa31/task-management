@@ -69,6 +69,7 @@ type dummyNoteService struct {
 type dummyTaskService struct {
 	task.Service
 	createFunc func(ctx context.Context, userID string, req task.CreateTaskRequest) (*task.TaskResponse, error)
+	updateFunc func(ctx context.Context, userID string, taskID int64, req task.UpdateTaskRequest) (*task.TaskResponse, error)
 }
 
 func (d *dummyTaskService) Create(ctx context.Context, userID string, req task.CreateTaskRequest) (*task.TaskResponse, error) {
@@ -76,6 +77,17 @@ func (d *dummyTaskService) Create(ctx context.Context, userID string, req task.C
 		return d.createFunc(ctx, userID, req)
 	}
 	return &task.TaskResponse{ID: 10, Title: req.Title}, nil
+}
+
+func (d *dummyTaskService) Update(ctx context.Context, userID string, taskID int64, req task.UpdateTaskRequest) (*task.TaskResponse, error) {
+	if d.updateFunc != nil {
+		return d.updateFunc(ctx, userID, taskID, req)
+	}
+	title := "Updated"
+	if req.Title != nil {
+		title = *req.Title
+	}
+	return &task.TaskResponse{ID: taskID, Title: title}, nil
 }
 
 func TestMCPService_CreateToken(t *testing.T) {
@@ -201,19 +213,67 @@ func TestMCPService_HandleJSONRPC(t *testing.T) {
 		t.Fatalf("tools/list failed: %v", listResp.Error)
 	}
 
-	// 3. Tool call - create_task
+	var capturedCreateReq task.CreateTaskRequest
+	taskSvc.createFunc = func(ctx context.Context, userID string, req task.CreateTaskRequest) (*task.TaskResponse, error) {
+		capturedCreateReq = req
+		return &task.TaskResponse{
+			ID:    42,
+			Title: req.Title,
+		}, nil
+	}
+
+	// 3. Tool call - create_task with due date & recurrence
 	callResp := svc.HandleJSONRPC(ctx, testUserID, JSONRPCRequest{
 		Method: "tools/call",
 		ID:     3,
 		Params: map[string]interface{}{
 			"name": "create_task",
 			"arguments": map[string]interface{}{
-				"title": "Build MCP Client",
+				"title":               "Build MCP Client",
+				"due_date":            "2026-10-15T18:00:00Z",
+				"is_recurring":        true,
+				"recurrence_pattern":  "weekly",
+				"recurrence_interval": 2,
 			},
 		},
 	})
 	if callResp.Error != nil {
 		t.Fatalf("tool call failed: %v", callResp.Error)
+	}
+	if capturedCreateReq.DueDate == nil {
+		t.Fatalf("expected DueDate to be parsed, got nil")
+	}
+	if !capturedCreateReq.IsRecurring || capturedCreateReq.RecurrencePattern != "weekly" || capturedCreateReq.RecurrenceInterval != 2 {
+		t.Errorf("unexpected recurrence params: %+v", capturedCreateReq)
+	}
+
+	// 4. Tool call - update_task with recurrence
+	var capturedUpdateReq task.UpdateTaskRequest
+	taskSvc.updateFunc = func(ctx context.Context, userID string, taskID int64, req task.UpdateTaskRequest) (*task.TaskResponse, error) {
+		capturedUpdateReq = req
+		return &task.TaskResponse{ID: taskID, Title: "Updated Task"}, nil
+	}
+	updateResp := svc.HandleJSONRPC(ctx, testUserID, JSONRPCRequest{
+		Method: "tools/call",
+		ID:     4,
+		Params: map[string]interface{}{
+			"name": "update_task",
+			"arguments": map[string]interface{}{
+				"task_id":            42,
+				"due_date":           "2026-10-20T10:00:00Z",
+				"is_recurring":       true,
+				"recurrence_pattern": "daily",
+			},
+		},
+	})
+	if updateResp.Error != nil {
+		t.Fatalf("update_task failed: %v", updateResp.Error)
+	}
+	if capturedUpdateReq.DueDate == nil {
+		t.Fatalf("expected DueDate in update, got nil")
+	}
+	if capturedUpdateReq.IsRecurring == nil || !*capturedUpdateReq.IsRecurring || capturedUpdateReq.RecurrencePattern == nil || *capturedUpdateReq.RecurrencePattern != "daily" {
+		t.Errorf("unexpected update recurrence params: %+v", capturedUpdateReq)
 	}
 }
 

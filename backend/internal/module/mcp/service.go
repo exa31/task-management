@@ -198,6 +198,7 @@ func (s *service) getToolDefinitions() []map[string]interface{} {
 				"properties": map[string]interface{}{
 					"note_id":    map[string]interface{}{"type": "number", "description": "ID of the note to convert"},
 					"priority":   map[string]interface{}{"type": "string", "enum": []string{"low", "medium", "high", "urgent"}, "description": "Task priority"},
+					"due_date":   map[string]interface{}{"type": "string", "description": "Optional deadline (ISO-8601 string, e.g. '2026-10-15T18:00:00Z' or '2026-10-15')"},
 					"subtasks":   map[string]interface{}{"type": "array", "items": map[string]interface{}{"type": "string"}, "description": "Initial checklist steps"},
 					"project_id": map[string]interface{}{"type": "number", "description": "Optional Project ID to link the converted task to"},
 				},
@@ -210,14 +211,19 @@ func (s *service) getToolDefinitions() []map[string]interface{} {
 			"inputSchema": map[string]interface{}{
 				"type": "object",
 				"properties": map[string]interface{}{
-					"title":       map[string]interface{}{"type": "string", "description": "Task title"},
-					"description": map[string]interface{}{"type": "string", "description": "Detailed description or markdown"},
-					"status":      map[string]interface{}{"type": "string", "enum": []string{"backlog", "todo", "in_progress", "review", "done"}, "description": "Initial status"},
-					"priority":    map[string]interface{}{"type": "string", "enum": []string{"low", "medium", "high", "urgent"}, "description": "Priority level"},
-					"is_focus":    map[string]interface{}{"type": "boolean", "description": "Pin to Today's Focus"},
-					"subtasks":    map[string]interface{}{"type": "array", "items": map[string]interface{}{"type": "string"}, "description": "Checklist subtasks"},
-					"tags":        map[string]interface{}{"type": "array", "items": map[string]interface{}{"type": "string"}, "description": "Category tags"},
-					"project_id":  map[string]interface{}{"type": "number", "description": "Optional Project ID to link this task to"},
+					"title":               map[string]interface{}{"type": "string", "description": "Task title"},
+					"description":         map[string]interface{}{"type": "string", "description": "Detailed description or markdown"},
+					"status":              map[string]interface{}{"type": "string", "enum": []string{"backlog", "todo", "in_progress", "review", "done"}, "description": "Initial status"},
+					"priority":            map[string]interface{}{"type": "string", "enum": []string{"low", "medium", "high", "urgent"}, "description": "Priority level"},
+					"due_date":            map[string]interface{}{"type": "string", "description": "Due date/deadline ISO-8601 string (e.g. '2026-10-15T18:00:00Z' or '2026-10-15')"},
+					"is_focus":            map[string]interface{}{"type": "boolean", "description": "Pin to Today's Focus"},
+					"subtasks":            map[string]interface{}{"type": "array", "items": map[string]interface{}{"type": "string"}, "description": "Checklist subtasks"},
+					"tags":                map[string]interface{}{"type": "array", "items": map[string]interface{}{"type": "string"}, "description": "Category tags"},
+					"project_id":          map[string]interface{}{"type": "number", "description": "Optional Project ID to link this task to"},
+					"is_recurring":        map[string]interface{}{"type": "boolean", "description": "Set whether this task automatically recurs after completion"},
+					"recurrence_pattern":  map[string]interface{}{"type": "string", "enum": []string{"daily", "weekdays", "weekly", "monthly"}, "description": "Frequency of recurrence"},
+					"recurrence_interval": map[string]interface{}{"type": "number", "description": "Interval between recurrences (default: 1)"},
+					"recurrence_end_date": map[string]interface{}{"type": "string", "description": "Optional end date for recurring cycle (ISO-8601)"},
 				},
 				"required": []string{"title"},
 			},
@@ -251,19 +257,23 @@ func (s *service) getToolDefinitions() []map[string]interface{} {
 		},
 		{
 			"name":        "update_task",
-			"description": "Update task details such as title, description, priority, due date, focus, and tags.",
+			"description": "Update task details such as title, description, priority, due date, focus, tags, and recurrence.",
 			"inputSchema": map[string]interface{}{
 				"type": "object",
 				"properties": map[string]interface{}{
-					"task_id":     map[string]interface{}{"type": "number", "description": "Task ID to update"},
-					"title":       map[string]interface{}{"type": "string", "description": "New title"},
-					"description": map[string]interface{}{"type": "string", "description": "New description"},
-					"status":      map[string]interface{}{"type": "string", "enum": []string{"backlog", "todo", "in_progress", "review", "done"}},
-					"priority":    map[string]interface{}{"type": "string", "enum": []string{"low", "medium", "high", "urgent"}},
-					"is_focus":    map[string]interface{}{"type": "boolean", "description": "Pin to Today's Focus"},
-					"due_date":    map[string]interface{}{"type": "string", "description": "Due date ISO-8601 string"},
-					"tags":        map[string]interface{}{"type": "array", "items": map[string]interface{}{"type": "string"}},
-					"project_id":  map[string]interface{}{"type": "number", "description": "Project ID to link this task to (pass 0 to unlink)"},
+					"task_id":             map[string]interface{}{"type": "number", "description": "Task ID to update"},
+					"title":               map[string]interface{}{"type": "string", "description": "New title"},
+					"description":         map[string]interface{}{"type": "string", "description": "New description"},
+					"status":              map[string]interface{}{"type": "string", "enum": []string{"backlog", "todo", "in_progress", "review", "done"}},
+					"priority":            map[string]interface{}{"type": "string", "enum": []string{"low", "medium", "high", "urgent"}},
+					"is_focus":            map[string]interface{}{"type": "boolean", "description": "Pin to Today's Focus"},
+					"due_date":            map[string]interface{}{"type": "string", "description": "Due date ISO-8601 string"},
+					"tags":                map[string]interface{}{"type": "array", "items": map[string]interface{}{"type": "string"}},
+					"project_id":          map[string]interface{}{"type": "number", "description": "Project ID to link this task to (pass 0 to unlink)"},
+					"is_recurring":        map[string]interface{}{"type": "boolean", "description": "Update recurring status"},
+					"recurrence_pattern":  map[string]interface{}{"type": "string", "enum": []string{"daily", "weekdays", "weekly", "monthly"}, "description": "Frequency of recurrence"},
+					"recurrence_interval": map[string]interface{}{"type": "number", "description": "Interval between recurrences"},
+					"recurrence_end_date": map[string]interface{}{"type": "string", "description": "End date for recurring cycle (ISO-8601)"},
 				},
 				"required": []string{"task_id"},
 			},
@@ -430,9 +440,16 @@ func (s *service) callTool(ctx context.Context, userID string, name string, args
 			p := int64(pid)
 			projectIDPtr = &p
 		}
+		var dueTimePtr *time.Time
+		if dd, ok := args["due_date"].(string); ok && strings.TrimSpace(dd) != "" {
+			if t, err := parseDateTime(dd); err == nil {
+				dueTimePtr = &t
+			}
+		}
 
 		n, taskID, err := s.noteService.ConvertToTask(ctx, userID, noteID, note.ConvertToTaskRequest{
 			Priority:  priority,
+			DueDate:   dueTimePtr,
 			Subtasks:  subtasks,
 			ProjectID: projectIDPtr,
 		})
@@ -462,16 +479,36 @@ func (s *service) callTool(ctx context.Context, userID string, name string, args
 			p := int64(pid)
 			projectIDPtr = &p
 		}
+		var dueTimePtr *time.Time
+		if dd, ok := args["due_date"].(string); ok && strings.TrimSpace(dd) != "" {
+			if t, err := parseDateTime(dd); err == nil {
+				dueTimePtr = &t
+			}
+		}
+		isRecurring, _ := args["is_recurring"].(bool)
+		recurrencePattern, _ := args["recurrence_pattern"].(string)
+		recurrenceInterval := parseInt(args["recurrence_interval"], 1)
+		var recurrenceEndDatePtr *time.Time
+		if red, ok := args["recurrence_end_date"].(string); ok && strings.TrimSpace(red) != "" {
+			if t, err := parseDateTime(red); err == nil {
+				recurrenceEndDatePtr = &t
+			}
+		}
 
 		res, err := s.taskService.Create(ctx, userID, task.CreateTaskRequest{
-			Title:       title,
-			Description: desc,
-			Status:      status,
-			Priority:    priority,
-			IsFocus:     isFocus,
-			Subtasks:    subtasks,
-			Tags:        tags,
-			ProjectID:   projectIDPtr,
+			Title:              title,
+			Description:        desc,
+			Status:             status,
+			Priority:           priority,
+			DueDate:            dueTimePtr,
+			IsFocus:            isFocus,
+			Subtasks:           subtasks,
+			Tags:               tags,
+			ProjectID:          projectIDPtr,
+			IsRecurring:        isRecurring,
+			RecurrencePattern:  recurrencePattern,
+			RecurrenceInterval: recurrenceInterval,
+			RecurrenceEndDate:  recurrenceEndDatePtr,
 		})
 		if err != nil {
 			return nil, err
@@ -570,16 +607,40 @@ func (s *service) callTool(ctx context.Context, userID string, name string, args
 			}
 		}
 
+		var isRecurringPtr *bool
+		if ir, ok := args["is_recurring"].(bool); ok {
+			isRecurringPtr = &ir
+		}
+		var recurrencePatternPtr *string
+		if rp, ok := args["recurrence_pattern"].(string); ok && rp != "" {
+			recurrencePatternPtr = &rp
+		}
+		var recurrenceIntervalPtr *int
+		if rawRI, exists := args["recurrence_interval"]; exists && rawRI != nil {
+			ri := parseInt(rawRI, 1)
+			recurrenceIntervalPtr = &ri
+		}
+		var recurrenceEndDatePtr *time.Time
+		if red, ok := args["recurrence_end_date"].(string); ok && strings.TrimSpace(red) != "" {
+			if t, err := parseDateTime(red); err == nil {
+				recurrenceEndDatePtr = &t
+			}
+		}
+
 		res, err := s.taskService.Update(ctx, userID, taskID, task.UpdateTaskRequest{
-			Title:        titlePtr,
-			Description:  descPtr,
-			Status:       statusPtr,
-			Priority:     priorityPtr,
-			DueDate:      dueTimePtr,
-			IsFocus:      isFocusPtr,
-			Tags:         tagsPtr,
-			ProjectID:    projectIDPtr,
-			HasProjectID: hasProjectID,
+			Title:              titlePtr,
+			Description:        descPtr,
+			Status:             statusPtr,
+			Priority:           priorityPtr,
+			DueDate:            dueTimePtr,
+			IsFocus:            isFocusPtr,
+			Tags:               tagsPtr,
+			ProjectID:          projectIDPtr,
+			HasProjectID:       hasProjectID,
+			IsRecurring:        isRecurringPtr,
+			RecurrencePattern:  recurrencePatternPtr,
+			RecurrenceInterval: recurrenceIntervalPtr,
+			RecurrenceEndDate:  recurrenceEndDatePtr,
 		})
 		if err != nil {
 			return nil, err
