@@ -33,7 +33,9 @@ export const tasks = {
   progressLoggedSuccess: 'Progress note saved',
   focusToggledSuccess: 'Task focus state updated',
   allProjects: 'All Project Modules',
-  allTasksLoaded: '✓ All tasks loaded'
+  allTasksLoaded: '✓ All tasks loaded',
+  recurringBadge: 'Repeating',
+  recurringTooltip: 'Repeats {pattern}'
 }
 
 export const taskModal = {
@@ -55,7 +57,19 @@ export const taskModal = {
   createNewProject: 'New Project',
   cancel: 'Cancel',
   submit: 'Create Task',
-  titleRequired: 'Task title is required'
+  titleRequired: 'Task title is required',
+  repeatTaskLabel: 'Repeat Task (Routine)',
+  repeatTaskHelp: 'Automatically generates a fresh task instance according to this recurrence schedule',
+  repeatPatternLabel: 'Repeat Pattern',
+  patterns: {
+    daily: 'Daily',
+    weekdays: 'Weekdays (Mon - Fri)',
+    weekly: 'Weekly',
+    monthly: 'Monthly'
+  },
+  repeatIntervalLabel: 'Interval',
+  repeatIntervalHelp: 'Repeats every {count} period(s)',
+  repeatEndDateLabel: 'End Repeat On (Optional)'
 }
 
 export const taskDrawer = {
@@ -63,6 +77,16 @@ export const taskDrawer = {
   status: 'Status',
   priority: 'Priority',
   dueDate: 'Due Date',
+  repeatTaskLabel: 'Repeat Task (Routine)',
+  repeatPatternLabel: 'Repeat Pattern',
+  patterns: {
+    daily: 'Daily',
+    weekdays: 'Weekdays (Mon - Fri)',
+    weekly: 'Weekly',
+    monthly: 'Monthly'
+  },
+  repeatIntervalLabel: 'Interval',
+  repeatEndDateLabel: 'End Repeat On',
   titleLabel: 'Task Title',
   titleRequired: 'Task title is required',
   descriptionPlaceholder: 'Add detailed description or notes...',

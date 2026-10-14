@@ -205,6 +205,19 @@ export const TaskListView: React.FC = () => {
                       {task.project_name}
                     </span>
                   )}
+                  {task.is_recurring && (
+                    <span
+                      title={t('tasks.recurringTooltip', {
+                        pattern: task.recurrence_pattern
+                          ? t(`taskModal.patterns.${task.recurrence_pattern}`)
+                          : ''
+                      })}
+                      className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-medium bg-purple-50 dark:bg-purple-950/40 text-purple-600 dark:text-purple-300 border border-purple-200 dark:border-purple-800/60 shrink-0"
+                    >
+                      <i className="pi pi-sync text-[9px]" />
+                      <span>{t('tasks.recurringBadge')}</span>
+                    </span>
+                  )}
                   {task.tags && task.tags.length > 0 && (
                     <span className="hidden md:inline-flex items-center gap-1 text-[10px] font-mono text-slate-500">
                       {task.tags.map((t) => `#${t}`).join(' ')}

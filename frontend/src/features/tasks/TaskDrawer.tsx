@@ -18,7 +18,7 @@ import {
 } from '@/hooks'
 import { useTranslation } from '@/i18n'
 import { useTaskStore } from '@/stores'
-import type { TaskPriority, TaskStatus } from '@/types'
+import type { RecurrencePattern, TaskPriority, TaskStatus } from '@/types'
 
 export const TaskDrawer: React.FC = () => {
   const { selectedTask, isDrawerOpen, closeDrawer } = useTaskStore()
@@ -47,6 +47,10 @@ export const TaskDrawer: React.FC = () => {
   const [projectId, setProjectId] = useState<number | null>(null)
   const [newSubtaskTitle, setNewSubtaskTitle] = useState('')
   const [newProgressNote, setNewProgressNote] = useState('')
+  const [isRecurring, setIsRecurring] = useState(false)
+  const [recurrencePattern, setRecurrencePattern] = useState<RecurrencePattern>('daily')
+  const [recurrenceInterval, setRecurrenceInterval] = useState<number>(1)
+  const [recurrenceEndDate, setRecurrenceEndDate] = useState<Date | null>(null)
   const [errorMsg, setErrorMsg] = useState<string | null>(null)
 
   const prevTaskIdRef = useRef<number | null>(null)
@@ -62,6 +66,10 @@ export const TaskDrawer: React.FC = () => {
       setPriority(task.priority)
       setDueDate(task.due_date ? new Date(task.due_date) : null)
       setProjectId(task.project_id ?? null)
+      setIsRecurring(task.is_recurring ?? false)
+      setRecurrencePattern(task.recurrence_pattern || 'daily')
+      setRecurrenceInterval(task.recurrence_interval || 1)
+      setRecurrenceEndDate(task.recurrence_end_date ? new Date(task.recurrence_end_date) : null)
       setNewProgressNote('')
     }
   }, [task])
@@ -70,13 +78,30 @@ export const TaskDrawer: React.FC = () => {
   const taskPriority = task?.priority
   const taskDueDate = task?.due_date
   const taskProjectId = task?.project_id
+  const taskIsRecurring = task?.is_recurring
+  const taskRecurrencePattern = task?.recurrence_pattern
+  const taskRecurrenceInterval = task?.recurrence_interval
+  const taskRecurrenceEndDate = task?.recurrence_end_date
 
   useEffect(() => {
     if (taskStatus !== undefined) setStatus(taskStatus)
     if (taskPriority !== undefined) setPriority(taskPriority)
     setDueDate(taskDueDate ? new Date(taskDueDate) : null)
     setProjectId(taskProjectId ?? null)
-  }, [taskStatus, taskPriority, taskDueDate, taskProjectId])
+    setIsRecurring(taskIsRecurring ?? false)
+    if (taskRecurrencePattern) setRecurrencePattern(taskRecurrencePattern)
+    if (taskRecurrenceInterval) setRecurrenceInterval(taskRecurrenceInterval)
+    setRecurrenceEndDate(taskRecurrenceEndDate ? new Date(taskRecurrenceEndDate) : null)
+  }, [
+    taskStatus,
+    taskPriority,
+    taskDueDate,
+    taskProjectId,
+    taskIsRecurring,
+    taskRecurrencePattern,
+    taskRecurrenceInterval,
+    taskRecurrenceEndDate
+  ])
 
   const isDirty =
     Boolean(task) &&
@@ -86,7 +111,13 @@ export const TaskDrawer: React.FC = () => {
       priority !== task!.priority ||
       (dueDate ? dueDate.toISOString() : null) !==
         (task!.due_date ? new Date(task!.due_date).toISOString() : null) ||
-      projectId !== (task!.project_id ?? null))
+      projectId !== (task!.project_id ?? null) ||
+      isRecurring !== (task!.is_recurring ?? false) ||
+      (isRecurring && recurrencePattern !== (task!.recurrence_pattern || 'daily')) ||
+      (isRecurring && recurrenceInterval !== (task!.recurrence_interval || 1)) ||
+      (isRecurring &&
+        (recurrenceEndDate ? recurrenceEndDate.toISOString() : null) !==
+          (task!.recurrence_end_date ? new Date(task!.recurrence_end_date).toISOString() : null)))
 
   const handleResetMain = () => {
     if (!task) return
@@ -98,6 +129,10 @@ export const TaskDrawer: React.FC = () => {
     setPriority(task.priority)
     setDueDate(task.due_date ? new Date(task.due_date) : null)
     setProjectId(task.project_id ?? null)
+    setIsRecurring(task.is_recurring ?? false)
+    setRecurrencePattern(task.recurrence_pattern || 'daily')
+    setRecurrenceInterval(task.recurrence_interval || 1)
+    setRecurrenceEndDate(task.recurrence_end_date ? new Date(task.recurrence_end_date) : null)
   }
 
   const handleStatusChange = async (newStatus: TaskStatus) => {
@@ -254,7 +289,12 @@ export const TaskDrawer: React.FC = () => {
           status,
           priority,
           due_date: dueDate ? dueDate.toISOString() : null,
-          project_id: projectId
+          project_id: projectId,
+          is_recurring: isRecurring,
+          recurrence_pattern: isRecurring ? recurrencePattern : null,
+          recurrence_interval: isRecurring ? recurrenceInterval : null,
+          recurrence_end_date:
+            isRecurring && recurrenceEndDate ? recurrenceEndDate.toISOString() : null
         }
       })
     } catch (err) {
@@ -557,6 +597,105 @@ export const TaskDrawer: React.FC = () => {
                       ))}
                     </select>
                   </div>
+                </div>
+
+                {/* Repeat Task Section */}
+                <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-950/40 p-3 transition-all">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <div
+                        className={`w-6 h-6 rounded-lg flex items-center justify-center transition-colors ${
+                          isRecurring
+                            ? 'bg-indigo-600 text-white shadow-xs'
+                            : 'bg-slate-200 dark:bg-slate-800 text-slate-500 dark:text-slate-400'
+                        }`}
+                      >
+                        <i className="pi pi-sync text-[11px]" />
+                      </div>
+                      <span className="text-xs font-semibold text-slate-800 dark:text-slate-200">
+                        {t('taskDrawer.repeatTaskLabel')}
+                      </span>
+                    </div>
+
+                    <button
+                      type="button"
+                      role="switch"
+                      aria-checked={isRecurring}
+                      onClick={() => setIsRecurring(!isRecurring)}
+                      className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
+                        isRecurring ? 'bg-indigo-600' : 'bg-slate-300 dark:bg-slate-700'
+                      }`}
+                    >
+                      <span
+                        className={`pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow-md ring-0 transition duration-200 ease-in-out ${
+                          isRecurring ? 'translate-x-4' : 'translate-x-0'
+                        }`}
+                      />
+                    </button>
+                  </div>
+
+                  {isRecurring && (
+                    <div className="mt-3 pt-3 border-t border-slate-200/80 dark:border-slate-800/80 space-y-3 animate-fade-in">
+                      {/* Pattern Selector */}
+                      <div>
+                        <label className="block text-[11px] font-medium text-slate-600 dark:text-slate-400 mb-1">
+                          {t('taskDrawer.repeatPatternLabel')}
+                        </label>
+                        <div className="grid grid-cols-4 gap-1.5">
+                          {(['daily', 'weekdays', 'weekly', 'monthly'] as const).map((pat) => (
+                            <button
+                              key={pat}
+                              type="button"
+                              onClick={() => setRecurrencePattern(pat)}
+                              className={`px-2 py-1 rounded-lg text-xs font-medium transition-all text-center cursor-pointer ${
+                                recurrencePattern === pat
+                                  ? 'bg-indigo-600 text-white shadow-xs'
+                                  : 'bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-800 hover:bg-slate-100 dark:hover:bg-slate-800'
+                              }`}
+                            >
+                              {t(`taskDrawer.patterns.${pat}`)}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+
+                      {/* Interval & End Date */}
+                      <div className="grid grid-cols-2 gap-2.5">
+                        <div>
+                          <label className="block text-[11px] font-medium text-slate-600 dark:text-slate-400 mb-1">
+                            {t('taskDrawer.repeatIntervalLabel')}
+                          </label>
+                          <input
+                            type="number"
+                            min={1}
+                            max={365}
+                            value={recurrenceInterval}
+                            onChange={(e) =>
+                              setRecurrenceInterval(Math.max(1, parseInt(e.target.value, 10) || 1))
+                            }
+                            className="w-full rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-2.5 py-1.5 text-xs text-slate-800 dark:text-slate-200 focus:border-indigo-500 focus:outline-none"
+                          />
+                        </div>
+
+                        <div>
+                          <label className="block text-[11px] font-medium text-slate-600 dark:text-slate-400 mb-1">
+                            {t('taskDrawer.repeatEndDateLabel')}
+                          </label>
+                          <Calendar
+                            value={recurrenceEndDate}
+                            onChange={(e) => setRecurrenceEndDate((e.value as Date) || null)}
+                            showIcon
+                            showButtonBar
+                            dateFormat="dd/mm/yy"
+                            locale={locale}
+                            placeholder="DD/MM/YYYY"
+                            className="w-full text-xs"
+                            inputClassName="w-full rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-2.5 py-1.5 text-xs text-slate-800 dark:text-slate-200 focus:border-indigo-500 focus:outline-none"
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  )}
                 </div>
 
                 {/* Title & Description */}

@@ -6,7 +6,7 @@ import { ProjectModal } from '@/features/projects'
 import { useCreateTask, useProjects } from '@/hooks'
 import { useTranslation } from '@/i18n'
 import { useUIStore } from '@/stores'
-import type { TaskPriority, TaskStatus } from '@/types'
+import type { RecurrencePattern, TaskPriority, TaskStatus } from '@/types'
 
 interface LocalSubtask {
   id: string
@@ -30,6 +30,10 @@ export const TaskModal: React.FC = () => {
   const [tagsInput, setTagsInput] = useState('')
   const [subtasks, setSubtasks] = useState<LocalSubtask[]>([])
   const [newSubtaskTitle, setNewSubtaskTitle] = useState('')
+  const [isRecurring, setIsRecurring] = useState(false)
+  const [recurrencePattern, setRecurrencePattern] = useState<RecurrencePattern>('daily')
+  const [recurrenceInterval, setRecurrenceInterval] = useState<number>(1)
+  const [recurrenceEndDate, setRecurrenceEndDate] = useState<Date | null>(null)
   const [touched, setTouched] = useState(false)
   const [errorMsg, setErrorMsg] = useState<string | null>(null)
 
@@ -54,6 +58,10 @@ export const TaskModal: React.FC = () => {
     setTagsInput('')
     setSubtasks([])
     setNewSubtaskTitle('')
+    setIsRecurring(false)
+    setRecurrencePattern('daily')
+    setRecurrenceInterval(1)
+    setRecurrenceEndDate(null)
     setTouched(false)
     setErrorMsg(null)
     closeCreateTaskModal()
@@ -98,7 +106,11 @@ export const TaskModal: React.FC = () => {
         due_date: dueDate ? dueDate.toISOString() : undefined,
         is_focus: isFocus,
         tags,
-        subtasks: finalSubtasks
+        subtasks: finalSubtasks,
+        is_recurring: isRecurring,
+        recurrence_pattern: isRecurring ? recurrencePattern : undefined,
+        recurrence_interval: isRecurring ? recurrenceInterval : undefined,
+        recurrence_end_date: isRecurring && recurrenceEndDate ? recurrenceEndDate.toISOString() : undefined
       })
 
       handleClose()
@@ -321,6 +333,110 @@ export const TaskModal: React.FC = () => {
                 ))}
               </select>
             </div>
+          </div>
+
+          {/* Repeat / Recurrence Task Section */}
+          <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-950/40 p-3 transition-all duration-200">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2.5">
+                <div
+                  className={`w-7 h-7 rounded-lg flex items-center justify-center transition-colors ${
+                    isRecurring
+                      ? 'bg-indigo-600 text-white shadow-xs'
+                      : 'bg-slate-200 dark:bg-slate-800 text-slate-500 dark:text-slate-400'
+                  }`}
+                >
+                  <i className="pi pi-sync text-xs" />
+                </div>
+                <div>
+                  <span className="text-xs font-semibold text-slate-900 dark:text-slate-100 block">
+                    {t('taskModal.repeatTaskLabel')}
+                  </span>
+                  <span className="text-[10px] text-slate-500 dark:text-slate-400 block">
+                    {t('taskModal.repeatTaskHelp')}
+                  </span>
+                </div>
+              </div>
+
+              <button
+                type="button"
+                role="switch"
+                aria-checked={isRecurring}
+                onClick={() => setIsRecurring(!isRecurring)}
+                className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
+                  isRecurring ? 'bg-indigo-600' : 'bg-slate-300 dark:bg-slate-700'
+                }`}
+              >
+                <span
+                  className={`pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow-md ring-0 transition duration-200 ease-in-out ${
+                    isRecurring ? 'translate-x-4' : 'translate-x-0'
+                  }`}
+                />
+              </button>
+            </div>
+
+            {isRecurring && (
+              <div className="mt-3 pt-3 border-t border-slate-200/80 dark:border-slate-800/80 space-y-3 animate-fade-in">
+                {/* Pattern selector */}
+                <div>
+                  <label className="block text-[11px] font-medium text-slate-600 dark:text-slate-400 mb-1.5">
+                    {t('taskModal.repeatPatternLabel')}
+                  </label>
+                  <div className="grid grid-cols-4 gap-1.5">
+                    {(['daily', 'weekdays', 'weekly', 'monthly'] as const).map((pat) => (
+                      <button
+                        key={pat}
+                        type="button"
+                        onClick={() => setRecurrencePattern(pat)}
+                        className={`px-2 py-1.5 rounded-lg text-xs font-medium transition-all text-center cursor-pointer ${
+                          recurrencePattern === pat
+                            ? 'bg-indigo-600 text-white shadow-xs'
+                            : 'bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-800 hover:bg-slate-100 dark:hover:bg-slate-800'
+                        }`}
+                      >
+                        {t(`taskModal.patterns.${pat}`)}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Interval & End Date */}
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-[11px] font-medium text-slate-600 dark:text-slate-400 mb-1">
+                      {t('taskModal.repeatIntervalLabel')}
+                    </label>
+                    <input
+                      type="number"
+                      min={1}
+                      max={365}
+                      value={recurrenceInterval}
+                      onChange={(e) =>
+                        setRecurrenceInterval(Math.max(1, parseInt(e.target.value, 10) || 1))
+                      }
+                      className="w-full rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-2.5 py-1.5 text-xs text-slate-900 dark:text-slate-200 focus:border-indigo-500 focus:outline-none"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-[11px] font-medium text-slate-600 dark:text-slate-400 mb-1">
+                      {t('taskModal.repeatEndDateLabel')}
+                    </label>
+                    <Calendar
+                      value={recurrenceEndDate}
+                      onChange={(e) => setRecurrenceEndDate((e.value as Date) || null)}
+                      showIcon
+                      showButtonBar
+                      dateFormat="dd/mm/yy"
+                      locale={locale}
+                      placeholder="DD/MM/YYYY"
+                      className="w-full text-xs"
+                      inputClassName="w-full rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-2.5 py-1.5 text-xs text-slate-900 dark:text-slate-200 focus:border-indigo-500 focus:outline-none"
+                    />
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Checklist Subtasks */}

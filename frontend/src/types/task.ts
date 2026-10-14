@@ -74,6 +74,8 @@ export interface Subtask {
   updated_at: string
 }
 
+export type RecurrencePattern = 'daily' | 'weekdays' | 'weekly' | 'monthly'
+
 export interface Task {
   id: number
   user_id: string
@@ -95,6 +97,11 @@ export interface Task {
   subtasks_count: number
   subtasks_completed: number
   progress_percent: number
+  is_recurring?: boolean
+  recurrence_pattern?: RecurrencePattern | null
+  recurrence_interval?: number | null
+  recurrence_end_date?: string | null
+  recurrence_last_generated_at?: string | null
   created_at: string
   updated_at: string
 }
@@ -110,6 +117,10 @@ export interface CreateTaskPayload {
   project_id?: number | null
   source_note_id?: number
   subtasks?: string[]
+  is_recurring?: boolean
+  recurrence_pattern?: RecurrencePattern
+  recurrence_interval?: number
+  recurrence_end_date?: string
 }
 
 export interface UpdateTaskPayload {
@@ -122,6 +133,10 @@ export interface UpdateTaskPayload {
   tags?: string[]
   project_id?: number | null
   last_progress_note?: string
+  is_recurring?: boolean
+  recurrence_pattern?: RecurrencePattern | null
+  recurrence_interval?: number | null
+  recurrence_end_date?: string | null
 }
 
 export interface LogProgressPayload {

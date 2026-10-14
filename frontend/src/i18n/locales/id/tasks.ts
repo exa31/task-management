@@ -33,7 +33,9 @@ export const tasks = {
   progressLoggedSuccess: 'Catatan progres berhasil disimpan',
   focusToggledSuccess: 'Status fokus tugas berhasil diperbarui',
   allProjects: 'Semua Modul Project',
-  allTasksLoaded: '✓ Semua tugas telah dimuat'
+  allTasksLoaded: '✓ Semua tugas telah dimuat',
+  recurringBadge: 'Berulang',
+  recurringTooltip: 'Berulang {pattern}'
 }
 
 export const taskModal = {
@@ -55,7 +57,19 @@ export const taskModal = {
   createNewProject: 'Project Baru',
   cancel: 'Batal',
   submit: 'Buat Tugas',
-  titleRequired: 'Judul tugas wajib diisi'
+  titleRequired: 'Judul tugas wajib diisi',
+  repeatTaskLabel: 'Tugas Berulang (Rutin)',
+  repeatTaskHelp: 'Otomatis membuat salinan tugas baru sesuai jadwal perulangan',
+  repeatPatternLabel: 'Pola Perulangan',
+  patterns: {
+    daily: 'Harian',
+    weekdays: 'Hari Kerja (Sen - Jum)',
+    weekly: 'Mingguan',
+    monthly: 'Bulanan'
+  },
+  repeatIntervalLabel: 'Interval',
+  repeatIntervalHelp: 'Berulang setiap {count} periode',
+  repeatEndDateLabel: 'Selesai Berulang (Opsional)'
 }
 
 export const taskDrawer = {
@@ -63,6 +77,16 @@ export const taskDrawer = {
   status: 'Status',
   priority: 'Prioritas',
   dueDate: 'Tenggat Waktu',
+  repeatTaskLabel: 'Tugas Berulang (Rutin)',
+  repeatPatternLabel: 'Pola Perulangan',
+  patterns: {
+    daily: 'Harian',
+    weekdays: 'Hari Kerja (Sen - Jum)',
+    weekly: 'Mingguan',
+    monthly: 'Bulanan'
+  },
+  repeatIntervalLabel: 'Interval',
+  repeatEndDateLabel: 'Selesai Berulang',
   titleLabel: 'Judul Tugas',
   titleRequired: 'Judul tugas wajib diisi',
   descriptionPlaceholder: 'Tambahkan deskripsi atau catatan tambahan...',
