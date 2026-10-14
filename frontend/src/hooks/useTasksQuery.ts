@@ -53,15 +53,10 @@ export const updateTaskInQueryCache = (queryClient: QueryClient, updatedTask: Ta
   )
 
   // 3. Update all regular list queries (TaskBoardView, Dashboard, Today's Focus Horizon, etc.)
-  queryClient.setQueriesData<Task[]>(
-    { queryKey: ['tasks', 'list'] },
-    (old) => {
-      if (!Array.isArray(old)) return old
-      return old.map((item) =>
-        item.id === updatedTask.id ? { ...item, ...updatedTask } : item
-      )
-    }
-  )
+  queryClient.setQueriesData<Task[]>({ queryKey: ['tasks', 'list'] }, (old) => {
+    if (!Array.isArray(old)) return old
+    return old.map((item) => (item.id === updatedTask.id ? { ...item, ...updatedTask } : item))
+  })
 
   // 4. Update Zustand taskStore selectedTask if active
   const store = useTaskStore.getState()
@@ -86,22 +81,17 @@ export const removeTaskFromQueryCache = (queryClient: QueryClient, taskId: numbe
         ...old,
         pages: old.pages.map((page) => ({
           ...page,
-          items: Array.isArray(page.items)
-            ? page.items.filter((item) => item.id !== taskId)
-            : []
+          items: Array.isArray(page.items) ? page.items.filter((item) => item.id !== taskId) : []
         }))
       }
     }
   )
 
   // 3. Remove from regular list queries
-  queryClient.setQueriesData<Task[]>(
-    { queryKey: ['tasks', 'list'] },
-    (old) => {
-      if (!Array.isArray(old)) return old
-      return old.filter((item) => item.id !== taskId)
-    }
-  )
+  queryClient.setQueriesData<Task[]>({ queryKey: ['tasks', 'list'] }, (old) => {
+    if (!Array.isArray(old)) return old
+    return old.filter((item) => item.id !== taskId)
+  })
 
   // 4. Close drawer or clear selectedTask in store
   const store = useTaskStore.getState()
@@ -139,14 +129,11 @@ export const addTaskToQueryCache = (queryClient: QueryClient, newTask: Task) => 
   )
 
   // 3. Prepend to regular list queries
-  queryClient.setQueriesData<Task[]>(
-    { queryKey: ['tasks', 'list'] },
-    (old) => {
-      if (!Array.isArray(old)) return old
-      if (old.some((item) => item.id === newTask.id)) return old
-      return [newTask, ...old]
-    }
-  )
+  queryClient.setQueriesData<Task[]>({ queryKey: ['tasks', 'list'] }, (old) => {
+    if (!Array.isArray(old)) return old
+    if (old.some((item) => item.id === newTask.id)) return old
+    return [newTask, ...old]
+  })
 }
 
 const cleanParams = (params?: TaskFilterParams): TaskFilterParams | undefined => {
@@ -282,7 +269,9 @@ export const useUpdateTask = () => {
           isBecomingDone && old.subtasks
             ? old.subtasks.map((st) => ({ ...st, is_completed: true }))
             : old.subtasks
-        const subtasksCompleted = isBecomingDone ? (old.subtasks_count ?? 0) : old.subtasks_completed
+        const subtasksCompleted = isBecomingDone
+          ? (old.subtasks_count ?? 0)
+          : old.subtasks_completed
         const progressPercent = isBecomingDone ? 100 : old.progress_percent
 
         return {
@@ -310,7 +299,9 @@ export const useUpdateTask = () => {
                   ...item,
                   ...payload,
                   is_focus: nextFocus !== undefined ? nextFocus : item.is_focus,
-                  subtasks_completed: isBecomingDone ? item.subtasks_count : item.subtasks_completed,
+                  subtasks_completed: isBecomingDone
+                    ? item.subtasks_count
+                    : item.subtasks_completed,
                   progress_percent: isBecomingDone ? 100 : item.progress_percent
                 }
               })
@@ -320,22 +311,19 @@ export const useUpdateTask = () => {
       )
 
       // 3. Update list queries
-      queryClient.setQueriesData<Task[]>(
-        { queryKey: ['tasks', 'list'] },
-        (old) => {
-          if (!Array.isArray(old)) return old
-          return old.map((item) => {
-            if (item.id !== id) return item
-            return {
-              ...item,
-              ...payload,
-              is_focus: nextFocus !== undefined ? nextFocus : item.is_focus,
-              subtasks_completed: isBecomingDone ? item.subtasks_count : item.subtasks_completed,
-              progress_percent: isBecomingDone ? 100 : item.progress_percent
-            }
-          })
-        }
-      )
+      queryClient.setQueriesData<Task[]>({ queryKey: ['tasks', 'list'] }, (old) => {
+        if (!Array.isArray(old)) return old
+        return old.map((item) => {
+          if (item.id !== id) return item
+          return {
+            ...item,
+            ...payload,
+            is_focus: nextFocus !== undefined ? nextFocus : item.is_focus,
+            subtasks_completed: isBecomingDone ? item.subtasks_count : item.subtasks_completed,
+            progress_percent: isBecomingDone ? 100 : item.progress_percent
+          }
+        })
+      })
 
       // 4. Update Zustand store
       const store = useTaskStore.getState()
@@ -344,7 +332,9 @@ export const useUpdateTask = () => {
           ...store.selectedTask,
           ...payload,
           is_focus: nextFocus !== undefined ? nextFocus : store.selectedTask.is_focus,
-          subtasks_completed: isBecomingDone ? store.selectedTask.subtasks_count : store.selectedTask.subtasks_completed,
+          subtasks_completed: isBecomingDone
+            ? store.selectedTask.subtasks_count
+            : store.selectedTask.subtasks_completed,
           progress_percent: isBecomingDone ? 100 : store.selectedTask.progress_percent
         })
       }
@@ -503,25 +493,22 @@ export const useAddSubtask = () => {
       )
 
       // 3. Update list queries
-      queryClient.setQueriesData<Task[]>(
-        { queryKey: ['tasks', 'list'] },
-        (old) => {
-          if (!Array.isArray(old)) return old
-          return old.map((item) => {
-            if (item.id !== taskId) return item
-            const total = item.subtasks_count + 1
-            const percent = Math.round((item.subtasks_completed / total) * 100)
-            const status: TaskStatus =
-              isRevertedToInProgress || item.status === 'done' ? 'in_progress' : item.status
-            return {
-              ...item,
-              status,
-              subtasks_count: total,
-              progress_percent: percent
-            }
-          })
-        }
-      )
+      queryClient.setQueriesData<Task[]>({ queryKey: ['tasks', 'list'] }, (old) => {
+        if (!Array.isArray(old)) return old
+        return old.map((item) => {
+          if (item.id !== taskId) return item
+          const total = item.subtasks_count + 1
+          const percent = Math.round((item.subtasks_completed / total) * 100)
+          const status: TaskStatus =
+            isRevertedToInProgress || item.status === 'done' ? 'in_progress' : item.status
+          return {
+            ...item,
+            status,
+            subtasks_count: total,
+            progress_percent: percent
+          }
+        })
+      })
 
       // 4. Update Zustand store
       const store = useTaskStore.getState()
@@ -573,7 +560,7 @@ export const useToggleSubtask = () => {
         const percent = totalCount > 0 ? Math.round((completedCount / totalCount) * 100) : 0
         const allCompleted = totalCount > 0 && completedCount === totalCount
 
-        let {status} = old
+        let { status } = old
         let isFocus = old.is_focus
         if (allCompleted) {
           status = 'done'
@@ -641,42 +628,37 @@ export const useToggleSubtask = () => {
       )
 
       // Optimistically update counts and status in regular lists
-      queryClient.setQueriesData<Task[]>(
-        { queryKey: ['tasks', 'list'] },
-        (old) => {
-          if (!Array.isArray(old)) return old
-          return old.map((item) => {
-            if (item.id !== taskId) return item
-            const completedDelta = isCompleted ? 1 : -1
-            const newCompleted = Math.max(
-              0,
-              Math.min(item.subtasks_count, item.subtasks_completed + completedDelta)
-            )
-            const newPercent =
-              item.subtasks_count > 0
-                ? Math.round((newCompleted / item.subtasks_count) * 100)
-                : 0
-            const allCompleted = item.subtasks_count > 0 && newCompleted === item.subtasks_count
+      queryClient.setQueriesData<Task[]>({ queryKey: ['tasks', 'list'] }, (old) => {
+        if (!Array.isArray(old)) return old
+        return old.map((item) => {
+          if (item.id !== taskId) return item
+          const completedDelta = isCompleted ? 1 : -1
+          const newCompleted = Math.max(
+            0,
+            Math.min(item.subtasks_count, item.subtasks_completed + completedDelta)
+          )
+          const newPercent =
+            item.subtasks_count > 0 ? Math.round((newCompleted / item.subtasks_count) * 100) : 0
+          const allCompleted = item.subtasks_count > 0 && newCompleted === item.subtasks_count
 
-            let itemStatus = item.status
-            let itemIsFocus = item.is_focus
-            if (allCompleted) {
-              itemStatus = 'done'
-              itemIsFocus = false
-            } else if (!isCompleted && item.status === 'done') {
-              itemStatus = 'in_progress'
-            }
+          let itemStatus = item.status
+          let itemIsFocus = item.is_focus
+          if (allCompleted) {
+            itemStatus = 'done'
+            itemIsFocus = false
+          } else if (!isCompleted && item.status === 'done') {
+            itemStatus = 'in_progress'
+          }
 
-            return {
-              ...item,
-              status: nextStatus || itemStatus,
-              is_focus: nextIsFocus !== undefined ? nextIsFocus : itemIsFocus,
-              subtasks_completed: newCompleted,
-              progress_percent: newPercent
-            }
-          })
-        }
-      )
+          return {
+            ...item,
+            status: nextStatus || itemStatus,
+            is_focus: nextIsFocus !== undefined ? nextIsFocus : itemIsFocus,
+            subtasks_completed: newCompleted,
+            progress_percent: newPercent
+          }
+        })
+      })
 
       // Update Zustand taskStore
       const store = useTaskStore.getState()
@@ -719,7 +701,7 @@ export const useDeleteSubtask = () => {
         const completed = remaining.filter((s) => s.is_completed).length
         const percent = total > 0 ? Math.round((completed / total) * 100) : 0
         const allCompleted = total > 0 && completed === total
-        let {status} = old
+        let { status } = old
         let isFocus = old.is_focus
         if (allCompleted) {
           status = 'done'
@@ -761,20 +743,17 @@ export const useDeleteSubtask = () => {
         )
 
         // Update list queries
-        queryClient.setQueriesData<Task[]>(
-          { queryKey: ['tasks', 'list'] },
-          (old) => {
-            if (!Array.isArray(old)) return old
-            return old.map((item) => {
-              if (item.id !== taskId) return item
-              return {
-                ...item,
-                status: 'done',
-                is_focus: false
-              }
-            })
-          }
-        )
+        queryClient.setQueriesData<Task[]>({ queryKey: ['tasks', 'list'] }, (old) => {
+          if (!Array.isArray(old)) return old
+          return old.map((item) => {
+            if (item.id !== taskId) return item
+            return {
+              ...item,
+              status: 'done',
+              is_focus: false
+            }
+          })
+        })
 
         // Update Zustand store
         const store = useTaskStore.getState()

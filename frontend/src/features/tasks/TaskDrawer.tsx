@@ -74,35 +74,6 @@ export const TaskDrawer: React.FC = () => {
     }
   }, [task])
 
-  const taskStatus = task?.status
-  const taskPriority = task?.priority
-  const taskDueDate = task?.due_date
-  const taskProjectId = task?.project_id
-  const taskIsRecurring = task?.is_recurring
-  const taskRecurrencePattern = task?.recurrence_pattern
-  const taskRecurrenceInterval = task?.recurrence_interval
-  const taskRecurrenceEndDate = task?.recurrence_end_date
-
-  useEffect(() => {
-    if (taskStatus !== undefined) setStatus(taskStatus)
-    if (taskPriority !== undefined) setPriority(taskPriority)
-    setDueDate(taskDueDate ? new Date(taskDueDate) : null)
-    setProjectId(taskProjectId ?? null)
-    setIsRecurring(taskIsRecurring ?? false)
-    if (taskRecurrencePattern) setRecurrencePattern(taskRecurrencePattern)
-    if (taskRecurrenceInterval) setRecurrenceInterval(taskRecurrenceInterval)
-    setRecurrenceEndDate(taskRecurrenceEndDate ? new Date(taskRecurrenceEndDate) : null)
-  }, [
-    taskStatus,
-    taskPriority,
-    taskDueDate,
-    taskProjectId,
-    taskIsRecurring,
-    taskRecurrencePattern,
-    taskRecurrenceInterval,
-    taskRecurrenceEndDate
-  ])
-
   const isDirty =
     Boolean(task) &&
     (title.trim() !== task!.title ||
@@ -135,131 +106,38 @@ export const TaskDrawer: React.FC = () => {
     setRecurrenceEndDate(task.recurrence_end_date ? new Date(task.recurrence_end_date) : null)
   }
 
-  const handleStatusChange = async (newStatus: TaskStatus) => {
-    if (!task) return
+  const handleStatusChange = (newStatus: TaskStatus) => {
     setStatus(newStatus)
     setErrorMsg(null)
-    try {
-      await updateTaskMutation.mutateAsync({
-        id: task.id,
-        payload: { status: newStatus }
-      })
-    } catch (err) {
-      setErrorMsg(getLocalizedErrorMessage(err, t))
-      setStatus(task.status)
-    }
   }
 
-  const handlePriorityChange = async (newPriority: TaskPriority) => {
-    if (!task) return
+  const handlePriorityChange = (newPriority: TaskPriority) => {
     setPriority(newPriority)
     setErrorMsg(null)
-    try {
-      await updateTaskMutation.mutateAsync({
-        id: task.id,
-        payload: { priority: newPriority }
-      })
-    } catch (err) {
-      setErrorMsg(getLocalizedErrorMessage(err, t))
-      setPriority(task.priority)
-    }
   }
 
-  const handleProjectChange = async (newProjectId: number | null) => {
-    if (!task) return
+  const handleProjectChange = (newProjectId: number | null) => {
     setProjectId(newProjectId)
     setErrorMsg(null)
-    try {
-      await updateTaskMutation.mutateAsync({
-        id: task.id,
-        payload: { project_id: newProjectId }
-      })
-    } catch (err) {
-      setErrorMsg(getLocalizedErrorMessage(err, t))
-      setProjectId(task.project_id ?? null)
-    }
   }
 
-  const handleDueDateChange = async (newDate: Date | null) => {
-    if (!task) return
+  const handleDueDateChange = (newDate: Date | null) => {
     setDueDate(newDate)
     setErrorMsg(null)
-    try {
-      await updateTaskMutation.mutateAsync({
-        id: task.id,
-        payload: { due_date: newDate ? newDate.toISOString() : null }
-      })
-    } catch (err) {
-      setErrorMsg(getLocalizedErrorMessage(err, t))
-      setDueDate(task.due_date ? new Date(task.due_date) : null)
-    }
   }
 
-  const handleTitleBlur = async () => {
-    if (!task) return
+  const handleTitleBlur = () => {
     const trimmed = title.trim()
     if (!trimmed) {
       setTitleError(t('taskDrawer.titleRequired'))
-      return
-    }
-    setTitleError(null)
-    if (trimmed === task.title) return
-    setErrorMsg(null)
-    try {
-      await updateTaskMutation.mutateAsync({
-        id: task.id,
-        payload: { title: trimmed }
-      })
-    } catch (err) {
-      setErrorMsg(getLocalizedErrorMessage(err, t))
+    } else {
+      setTitleError(null)
     }
   }
 
-  const handleDescriptionBlur = async () => {
-    if (!task) return
-    if (description === (task.description || '')) return
-    setErrorMsg(null)
-    try {
-      await updateTaskMutation.mutateAsync({
-        id: task.id,
-        payload: { description }
-      })
-    } catch (err) {
-      setErrorMsg(getLocalizedErrorMessage(err, t))
-    }
-  }
-
-  const handleClose = useCallback(async () => {
-    if (task && isDirty && title.trim()) {
-      try {
-        await updateTaskMutation.mutateAsync({
-          id: task.id,
-          payload: {
-            title: title.trim(),
-            description,
-            status,
-            priority,
-            due_date: dueDate ? dueDate.toISOString() : null,
-            project_id: projectId
-          }
-        })
-      } catch {
-        // Continue closing drawer even if auto-save fails
-      }
-    }
+  const handleClose = useCallback(() => {
     closeDrawer()
-  }, [
-    task,
-    isDirty,
-    title,
-    description,
-    status,
-    priority,
-    dueDate,
-    projectId,
-    updateTaskMutation,
-    closeDrawer
-  ])
+  }, [closeDrawer])
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -281,7 +159,7 @@ export const TaskDrawer: React.FC = () => {
     setTitleError(null)
     setErrorMsg(null)
     try {
-      await updateTaskMutation.mutateAsync({
+      const updated = await updateTaskMutation.mutateAsync({
         id: task.id,
         payload: {
           title: title.trim(),
@@ -297,6 +175,20 @@ export const TaskDrawer: React.FC = () => {
             isRecurring && recurrenceEndDate ? recurrenceEndDate.toISOString() : null
         }
       })
+      if (updated) {
+        setTitle(updated.title)
+        setDescription(updated.description || '')
+        setStatus(updated.status)
+        setPriority(updated.priority)
+        setDueDate(updated.due_date ? new Date(updated.due_date) : null)
+        setProjectId(updated.project_id ?? null)
+        setIsRecurring(updated.is_recurring ?? false)
+        setRecurrencePattern(updated.recurrence_pattern || 'daily')
+        setRecurrenceInterval(updated.recurrence_interval || 1)
+        setRecurrenceEndDate(
+          updated.recurrence_end_date ? new Date(updated.recurrence_end_date) : null
+        )
+      }
     } catch (err) {
       setErrorMsg(getLocalizedErrorMessage(err, t))
     }
@@ -549,9 +441,22 @@ export const TaskDrawer: React.FC = () => {
                   </div>
 
                   <div>
-                    <label className="block text-[11px] font-medium text-slate-600 dark:text-slate-400 mb-1">
-                      {t('taskDrawer.dueDate')}
-                    </label>
+                    <div className="flex items-center justify-between mb-1">
+                      <label className="block text-[11px] font-medium text-slate-600 dark:text-slate-400">
+                        {t('taskDrawer.dueDate')}
+                      </label>
+                      {dueDate && (
+                        <button
+                          type="button"
+                          onClick={() => handleDueDateChange(null)}
+                          className="text-[10px] text-slate-400 hover:text-rose-500 flex items-center gap-1 transition-colors cursor-pointer"
+                          title={t('common.clear') || 'Clear'}
+                        >
+                          <i className="pi pi-times text-[9px]" />
+                          <span>{t('common.clear') || 'Hapus'}</span>
+                        </button>
+                      )}
+                    </div>
                     <Calendar
                       value={dueDate}
                       onChange={(e) => handleDueDateChange((e.value as Date) || null)}
@@ -678,9 +583,22 @@ export const TaskDrawer: React.FC = () => {
                         </div>
 
                         <div>
-                          <label className="block text-[11px] font-medium text-slate-600 dark:text-slate-400 mb-1">
-                            {t('taskDrawer.repeatEndDateLabel')}
-                          </label>
+                          <div className="flex items-center justify-between mb-1">
+                            <label className="block text-[11px] font-medium text-slate-600 dark:text-slate-400">
+                              {t('taskDrawer.repeatEndDateLabel')}
+                            </label>
+                            {recurrenceEndDate && (
+                              <button
+                                type="button"
+                                onClick={() => setRecurrenceEndDate(null)}
+                                className="text-[10px] text-slate-400 hover:text-rose-500 flex items-center gap-1 transition-colors cursor-pointer"
+                                title={t('common.clear') || 'Clear'}
+                              >
+                                <i className="pi pi-times text-[9px]" />
+                                <span>{t('common.clear') || 'Hapus'}</span>
+                              </button>
+                            )}
+                          </div>
                           <Calendar
                             value={recurrenceEndDate}
                             onChange={(e) => setRecurrenceEndDate((e.value as Date) || null)}
@@ -733,7 +651,6 @@ export const TaskDrawer: React.FC = () => {
                     rows={3}
                     value={description}
                     onChange={(e) => setDescription(e.target.value)}
-                    onBlur={handleDescriptionBlur}
                     placeholder={t('taskDrawer.descriptionPlaceholder')}
                     className="w-full mt-2 text-xs text-slate-700 dark:text-slate-300 bg-transparent border-none focus:ring-0 p-0 placeholder-slate-400 dark:placeholder-slate-600 resize-none focus:outline-none"
                   />

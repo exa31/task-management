@@ -360,7 +360,14 @@ func (r *repository) Update(ctx context.Context, userID string, id int64, req Up
 
 	dueDate := existing.DueDate
 	var dueDateWarningSentAt = existing.DueDateWarningSentAt
-	if req.DueDate != nil {
+	if req.HasDueDate {
+		dueDate = req.DueDate
+		if (existing.DueDate == nil && req.DueDate != nil) ||
+			(existing.DueDate != nil && req.DueDate == nil) ||
+			(existing.DueDate != nil && req.DueDate != nil && !existing.DueDate.Equal(*req.DueDate)) {
+			dueDateWarningSentAt = nil
+		}
+	} else if req.DueDate != nil {
 		dueDate = req.DueDate
 		if (existing.DueDate == nil && req.DueDate != nil) ||
 			(existing.DueDate != nil && req.DueDate == nil) ||
@@ -420,7 +427,9 @@ func (r *repository) Update(ctx context.Context, userID string, id int64, req Up
 		recurrenceInterval = 1
 	}
 	recurrenceEndDate := existing.RecurrenceEndDate
-	if req.RecurrenceEndDate != nil {
+	if req.HasRecurrenceEndDate {
+		recurrenceEndDate = req.RecurrenceEndDate
+	} else if req.RecurrenceEndDate != nil {
 		recurrenceEndDate = req.RecurrenceEndDate
 	}
 
@@ -584,7 +593,9 @@ func (r *repository) UpdateSubtask(ctx context.Context, userID string, taskID in
 		isCompleted = *req.IsCompleted
 	}
 	dueDate := existing.DueDate
-	if req.DueDate != nil {
+	if req.HasDueDate {
+		dueDate = req.DueDate
+	} else if req.DueDate != nil {
 		dueDate = req.DueDate
 	}
 

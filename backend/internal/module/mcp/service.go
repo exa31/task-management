@@ -580,9 +580,13 @@ func (s *service) callTool(ctx context.Context, userID string, name string, args
 			priorityPtr = &p
 		}
 		var dueTimePtr *time.Time
-		if dd, ok := args["due_date"].(string); ok && strings.TrimSpace(dd) != "" {
-			if t, err := parseDateTime(dd); err == nil {
-				dueTimePtr = &t
+		hasDueDate := false
+		if rawDD, exists := args["due_date"]; exists {
+			hasDueDate = true
+			if dd, ok := rawDD.(string); ok && strings.TrimSpace(dd) != "" {
+				if t, err := parseDateTime(dd); err == nil {
+					dueTimePtr = &t
+				}
 			}
 		}
 		var isFocusPtr *bool
@@ -621,26 +625,32 @@ func (s *service) callTool(ctx context.Context, userID string, name string, args
 			recurrenceIntervalPtr = &ri
 		}
 		var recurrenceEndDatePtr *time.Time
-		if red, ok := args["recurrence_end_date"].(string); ok && strings.TrimSpace(red) != "" {
-			if t, err := parseDateTime(red); err == nil {
-				recurrenceEndDatePtr = &t
+		hasRecurrenceEndDate := false
+		if rawRED, exists := args["recurrence_end_date"]; exists {
+			hasRecurrenceEndDate = true
+			if red, ok := rawRED.(string); ok && strings.TrimSpace(red) != "" {
+				if t, err := parseDateTime(red); err == nil {
+					recurrenceEndDatePtr = &t
+				}
 			}
 		}
 
 		res, err := s.taskService.Update(ctx, userID, taskID, task.UpdateTaskRequest{
-			Title:              titlePtr,
-			Description:        descPtr,
-			Status:             statusPtr,
-			Priority:           priorityPtr,
-			DueDate:            dueTimePtr,
-			IsFocus:            isFocusPtr,
-			Tags:               tagsPtr,
-			ProjectID:          projectIDPtr,
-			HasProjectID:       hasProjectID,
-			IsRecurring:        isRecurringPtr,
-			RecurrencePattern:  recurrencePatternPtr,
-			RecurrenceInterval: recurrenceIntervalPtr,
-			RecurrenceEndDate:  recurrenceEndDatePtr,
+			Title:                titlePtr,
+			Description:          descPtr,
+			Status:               statusPtr,
+			Priority:             priorityPtr,
+			DueDate:              dueTimePtr,
+			HasDueDate:           hasDueDate,
+			IsFocus:              isFocusPtr,
+			Tags:                 tagsPtr,
+			ProjectID:            projectIDPtr,
+			HasProjectID:         hasProjectID,
+			IsRecurring:          isRecurringPtr,
+			RecurrencePattern:    recurrencePatternPtr,
+			RecurrenceInterval:   recurrenceIntervalPtr,
+			RecurrenceEndDate:    recurrenceEndDatePtr,
+			HasRecurrenceEndDate: hasRecurrenceEndDate,
 		})
 		if err != nil {
 			return nil, err

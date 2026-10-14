@@ -110,7 +110,8 @@ export const TaskModal: React.FC = () => {
         is_recurring: isRecurring,
         recurrence_pattern: isRecurring ? recurrencePattern : undefined,
         recurrence_interval: isRecurring ? recurrenceInterval : undefined,
-        recurrence_end_date: isRecurring && recurrenceEndDate ? recurrenceEndDate.toISOString() : undefined
+        recurrence_end_date:
+          isRecurring && recurrenceEndDate ? recurrenceEndDate.toISOString() : undefined
       })
 
       handleClose()
@@ -277,12 +278,25 @@ export const TaskModal: React.FC = () => {
           {/* Due Date & Project */}
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1">
-                {t('taskModal.dueDateLabel')}
-              </label>
+              <div className="flex items-center justify-between mb-1">
+                <label className="block text-xs font-medium text-slate-700 dark:text-slate-300">
+                  {t('taskModal.dueDateLabel')}
+                </label>
+                {dueDate && (
+                  <button
+                    type="button"
+                    onClick={() => setDueDate(null)}
+                    className="text-[10px] text-slate-400 hover:text-rose-500 flex items-center gap-1 transition-colors cursor-pointer"
+                    title={t('common.clear') || 'Clear'}
+                  >
+                    <i className="pi pi-times text-[9px]" />
+                    <span>{t('common.clear') || 'Hapus'}</span>
+                  </button>
+                )}
+              </div>
               <Calendar
                 value={dueDate}
-                onChange={(e) => setDueDate(e.value as Date | null)}
+                onChange={(e) => setDueDate((e.value as Date) || null)}
                 showTime
                 hourFormat="24"
                 dateFormat="dd/mm/yy"
@@ -419,9 +433,22 @@ export const TaskModal: React.FC = () => {
                   </div>
 
                   <div>
-                    <label className="block text-[11px] font-medium text-slate-600 dark:text-slate-400 mb-1">
-                      {t('taskModal.repeatEndDateLabel')}
-                    </label>
+                    <div className="flex items-center justify-between mb-1">
+                      <label className="block text-[11px] font-medium text-slate-600 dark:text-slate-400">
+                        {t('taskModal.repeatEndDateLabel')}
+                      </label>
+                      {recurrenceEndDate && (
+                        <button
+                          type="button"
+                          onClick={() => setRecurrenceEndDate(null)}
+                          className="text-[10px] text-slate-400 hover:text-rose-500 flex items-center gap-1 transition-colors cursor-pointer"
+                          title={t('common.clear') || 'Clear'}
+                        >
+                          <i className="pi pi-times text-[9px]" />
+                          <span>{t('common.clear') || 'Hapus'}</span>
+                        </button>
+                      )}
+                    </div>
                     <Calendar
                       value={recurrenceEndDate}
                       onChange={(e) => setRecurrenceEndDate((e.value as Date) || null)}

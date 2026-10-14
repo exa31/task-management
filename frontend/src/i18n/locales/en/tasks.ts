@@ -59,7 +59,8 @@ export const taskModal = {
   submit: 'Create Task',
   titleRequired: 'Task title is required',
   repeatTaskLabel: 'Repeat Task (Routine)',
-  repeatTaskHelp: 'Automatically generates a fresh task instance according to this recurrence schedule',
+  repeatTaskHelp:
+    'Automatically generates a fresh task instance according to this recurrence schedule',
   repeatPatternLabel: 'Repeat Pattern',
   patterns: {
     daily: 'Daily',

@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query'
 
-import { type CalendarGraphQLResponse,fetchCalendarData } from '@/api/graphql'
+import { type CalendarGraphQLResponse, fetchCalendarData } from '@/api/graphql'
 
 export const calendarKeys = {
   all: ['calendar-graphql'] as const,

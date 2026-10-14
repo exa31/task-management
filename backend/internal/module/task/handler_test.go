@@ -283,6 +283,72 @@ func TestTaskAPI_Update_Fields(t *testing.T) {
 	}
 }
 
+func TestTaskAPI_Update_ClearDueDate(t *testing.T) {
+	const testUser = "user-task-clear-due"
+	initialDue := time.Now().Add(24 * time.Hour)
+
+	var receivedReq UpdateTaskRequest
+
+	repo := &mockRepository{
+		findByIDFunc: func(ctx context.Context, userID string, id int64) (*TaskResponse, error) {
+			now := time.Now()
+			return &TaskResponse{
+				ID:        id,
+				UserID:    userID,
+				Title:     "Task With Due Date",
+				Status:    "todo",
+				Priority:  "medium",
+				DueDate:   &initialDue,
+				CreatedAt: now,
+				UpdatedAt: now,
+			}, nil
+		},
+		updateFunc: func(ctx context.Context, userID string, id int64, req UpdateTaskRequest) (*TaskResponse, error) {
+			receivedReq = req
+			now := time.Now()
+			res := &TaskResponse{
+				ID:        id,
+				UserID:    userID,
+				Title:     "Task With Due Date",
+				Status:    "todo",
+				Priority:  "medium",
+				CreatedAt: now,
+				UpdatedAt: now,
+			}
+			if req.HasDueDate {
+				res.DueDate = req.DueDate
+			} else {
+				res.DueDate = &initialDue
+			}
+			return res, nil
+		},
+	}
+
+	app := setupTaskTestApp(repo, testUser)
+
+	payload := map[string]interface{}{
+		"due_date": nil,
+	}
+
+	resp := doJSONTaskRequest(t, app, http.MethodPut, "/api/v1/tasks/1", payload)
+	if resp.StatusCode != http.StatusOK {
+		t.Fatalf("expected status 200 OK, got %d", resp.StatusCode)
+	}
+
+	if !receivedReq.HasDueDate {
+		t.Errorf("expected HasDueDate to be true when due_date is null in JSON")
+	}
+	if receivedReq.DueDate != nil {
+		t.Errorf("expected DueDate to be nil when cleared, got %v", receivedReq.DueDate)
+	}
+
+	res := parseJSONTaskResponse(t, resp)
+	data := res["data"].(map[string]interface{})
+	if data["due_date"] != nil {
+		t.Errorf("expected due_date in response to be nil, got %v", data["due_date"])
+	}
+}
+
 func TestTaskAPI_GetByID_And_NotFound(t *testing.T) {
 	const testUser = "user-task-4"
 

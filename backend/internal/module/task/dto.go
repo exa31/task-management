@@ -41,19 +41,21 @@ type UpdateTaskRequest struct {
 	Description        *string    `json:"description"`
 	Status             *string    `json:"status" validate:"omitempty,oneof=backlog todo in_progress review done"`
 	Priority           *string    `json:"priority" validate:"omitempty,oneof=low medium high urgent"`
-	DueDate            *time.Time `json:"due_date"`
-	IsFocus            *bool      `json:"is_focus"`
-	Tags               *[]string  `json:"tags"`
-	ProjectID          *int64     `json:"project_id"`
-	HasProjectID       bool       `json:"-"`
-	LastProgressNote   *string    `json:"last_progress_note"`
-	IsRecurring        *bool      `json:"is_recurring"`
-	RecurrencePattern  *string    `json:"recurrence_pattern" validate:"omitempty,oneof=daily weekdays weekly monthly"`
-	RecurrenceInterval *int       `json:"recurrence_interval" validate:"omitempty,min=1,max=365"`
-	RecurrenceEndDate  *time.Time `json:"recurrence_end_date"`
+	DueDate              *time.Time `json:"due_date"`
+	HasDueDate           bool       `json:"-"`
+	IsFocus              *bool      `json:"is_focus"`
+	Tags                 *[]string  `json:"tags"`
+	ProjectID            *int64     `json:"project_id"`
+	HasProjectID         bool       `json:"-"`
+	LastProgressNote     *string    `json:"last_progress_note"`
+	IsRecurring          *bool      `json:"is_recurring"`
+	RecurrencePattern    *string    `json:"recurrence_pattern" validate:"omitempty,oneof=daily weekdays weekly monthly"`
+	RecurrenceInterval   *int       `json:"recurrence_interval" validate:"omitempty,min=1,max=365"`
+	RecurrenceEndDate    *time.Time `json:"recurrence_end_date"`
+	HasRecurrenceEndDate bool       `json:"-"`
 }
 
-// UnmarshalJSON detects if project_id was explicitly provided in JSON (including null).
+// UnmarshalJSON detects if project_id, due_date, or recurrence_end_date was explicitly provided in JSON (including null).
 func (u *UpdateTaskRequest) UnmarshalJSON(data []byte) error {
 	type Alias UpdateTaskRequest
 	aux := &struct {
@@ -68,6 +70,12 @@ func (u *UpdateTaskRequest) UnmarshalJSON(data []byte) error {
 	if err := json.Unmarshal(data, &raw); err == nil {
 		if _, exists := raw["project_id"]; exists {
 			u.HasProjectID = true
+		}
+		if _, exists := raw["due_date"]; exists {
+			u.HasDueDate = true
+		}
+		if _, exists := raw["recurrence_end_date"]; exists {
+			u.HasRecurrenceEndDate = true
 		}
 	}
 	return nil
@@ -91,6 +99,27 @@ type UpdateSubtaskRequest struct {
 	Title       *string    `json:"title"`
 	IsCompleted *bool      `json:"is_completed"`
 	DueDate     *time.Time `json:"due_date"`
+	HasDueDate  bool       `json:"-"`
+}
+
+// UnmarshalJSON detects if due_date was explicitly provided in JSON (including null).
+func (u *UpdateSubtaskRequest) UnmarshalJSON(data []byte) error {
+	type Alias UpdateSubtaskRequest
+	aux := &struct {
+		*Alias
+	}{
+		Alias: (*Alias)(u),
+	}
+	if err := json.Unmarshal(data, &aux); err != nil {
+		return err
+	}
+	var raw map[string]interface{}
+	if err := json.Unmarshal(data, &raw); err == nil {
+		if _, exists := raw["due_date"]; exists {
+			u.HasDueDate = true
+		}
+	}
+	return nil
 }
 
 // TaskFilter parameters for querying tasks.

@@ -45,10 +45,7 @@ export const CalendarPage: React.FC = () => {
   // Debounce rapid month/week navigation (250ms), combined with AbortController for in-flight cancellation
   const debouncedRange = useDebounce(queryRange, 250)
 
-  const { data, isFetching, refetch } = useCalendarGraphQL(
-    debouncedRange.from,
-    debouncedRange.to
-  )
+  const { data, isFetching, refetch } = useCalendarGraphQL(debouncedRange.from, debouncedRange.to)
 
   const snoozeMutation = useSnoozeReminder()
   const dismissMutation = useDismissReminder()
@@ -225,17 +222,25 @@ export const CalendarPage: React.FC = () => {
   const todayKey = formatDateKey(new Date())
 
   // Formatting helpers
-  const monthTitle = useMemo(() => currentDate.toLocaleDateString(locale === 'id' ? 'id-ID' : 'en-US', {
-      month: 'long',
-      year: 'numeric'
-    }), [currentDate, locale])
+  const monthTitle = useMemo(
+    () =>
+      currentDate.toLocaleDateString(locale === 'id' ? 'id-ID' : 'en-US', {
+        month: 'long',
+        year: 'numeric'
+      }),
+    [currentDate, locale]
+  )
 
-  const selectedDateTitle = useMemo(() => selectedDate.toLocaleDateString(locale === 'id' ? 'id-ID' : 'en-US', {
-      weekday: 'long',
-      day: 'numeric',
-      month: 'long',
-      year: 'numeric'
-    }), [selectedDate, locale])
+  const selectedDateTitle = useMemo(
+    () =>
+      selectedDate.toLocaleDateString(locale === 'id' ? 'id-ID' : 'en-US', {
+        weekday: 'long',
+        day: 'numeric',
+        month: 'long',
+        year: 'numeric'
+      }),
+    [selectedDate, locale]
+  )
 
   // Snooze reminder handler
   const handleSnooze = async (id: number, minutes: number) => {
@@ -494,7 +499,9 @@ export const CalendarPage: React.FC = () => {
                           <div
                             key={`act-${a.id}`}
                             className="px-1.5 py-0.5 rounded text-[10px] font-medium bg-emerald-50 dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-300 border border-emerald-200/60 dark:border-emerald-800/60 truncate flex items-center gap-1"
-                            title={t('calendar.activityTitlePrefix', { description: a.description })}
+                            title={t('calendar.activityTitlePrefix', {
+                              description: a.description
+                            })}
                           >
                             <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0" />
                             <span className="truncate">{a.task_title || a.description}</span>
