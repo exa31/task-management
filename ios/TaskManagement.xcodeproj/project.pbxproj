@@ -48,7 +48,60 @@
 		WI0102030405060708090012 /* TaskManagement/Widgets/TaskHubWidgets.swift in Sources */ = {isa = PBXBuildFile; fileRef = WI0102030405060708090011 /* TaskManagement/Widgets/TaskHubWidgets.swift */; };
 		WI0102030405060708090014 /* TaskManagement/Widgets/ChecklistWidgetView.swift in Sources */ = {isa = PBXBuildFile; fileRef = WI0102030405060708090013 /* TaskManagement/Widgets/ChecklistWidgetView.swift */; };
 		WI0102030405060708090016 /* TaskManagement/Widgets/LockScreenWidgetView.swift in Sources */ = {isa = PBXBuildFile; fileRef = WI0102030405060708090015 /* TaskManagement/Widgets/LockScreenWidgetView.swift */; };
+		BF0102030405060708090001 /* TaskManagementWidgets.appex in PlugIns */ = {isa = PBXBuildFile; fileRef = PR0102030405060708090001 /* TaskManagementWidgets.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		WB0102030405060708090001 /* TaskManagement/Widgets/TaskHubWidgets.swift in Sources */ = {isa = PBXBuildFile; fileRef = WI0102030405060708090011 /* TaskManagement/Widgets/TaskHubWidgets.swift */; };
+		WB0102030405060708090002 /* TaskManagement/Widgets/ChecklistWidgetView.swift in Sources */ = {isa = PBXBuildFile; fileRef = WI0102030405060708090013 /* TaskManagement/Widgets/ChecklistWidgetView.swift */; };
+		WB0102030405060708090003 /* TaskManagement/Widgets/DailyOverviewWidgetView.swift in Sources */ = {isa = PBXBuildFile; fileRef = WI0102030405060708090007 /* TaskManagement/Widgets/DailyOverviewWidgetView.swift */; };
+		WB0102030405060708090004 /* TaskManagement/Widgets/DeadlinesWidgetView.swift in Sources */ = {isa = PBXBuildFile; fileRef = WI0102030405060708090009 /* TaskManagement/Widgets/DeadlinesWidgetView.swift */; };
+		WB0102030405060708090005 /* TaskManagement/Widgets/LockScreenWidgetView.swift in Sources */ = {isa = PBXBuildFile; fileRef = WI0102030405060708090015 /* TaskManagement/Widgets/LockScreenWidgetView.swift */; };
+		WB0102030405060708090006 /* TaskManagement/Widgets/TaskWidgetTimelineProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = WI0102030405060708090005 /* TaskManagement/Widgets/TaskWidgetTimelineProvider.swift */; };
+		WB0102030405060708090007 /* TaskManagement/Widgets/ToggleSubtaskIntent.swift in Sources */ = {isa = PBXBuildFile; fileRef = WI0102030405060708090003 /* TaskManagement/Widgets/ToggleSubtaskIntent.swift */; };
+		WB0102030405060708090008 /* TaskManagement/Core/Shared/SharedWidgetDataManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = WW0102030405060708090001 /* TaskManagement/Core/Shared/SharedWidgetDataManager.swift */; };
+		WB0102030405060708090009 /* TaskManagement/Core/Models/Models.swift in Sources */ = {isa = PBXBuildFile; fileRef = B333900B01AC551774C3B528 /* TaskManagement/Core/Models/Models.swift */; };
+		WB0102030405060708090010 /* TaskManagement/Core/DesignSystem/Theme.swift in Sources */ = {isa = PBXBuildFile; fileRef = 872A024F9D6FECF71AFADA06 /* TaskManagement/Core/DesignSystem/Theme.swift */; };
+		WB0102030405060708090011 /* TaskManagement/Core/DesignSystem/Components.swift in Sources */ = {isa = PBXBuildFile; fileRef = D727559B70DECCA78B55B808 /* TaskManagement/Core/DesignSystem/Components.swift */; };
+		WB0102030405060708090012 /* TaskManagement/Core/Config/AppConfig.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2FC46F07B554A2D92069E721 /* TaskManagement/Core/Config/AppConfig.swift */; };
+		WB0102030405060708090013 /* TaskManagement/Core/Localization/I18n.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB0102030405060708090001 /* TaskManagement/Core/Localization/I18n.swift */; };
+		WB0102030405060708090014 /* TaskManagement/Core/Localization/L10n.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB0102030405060708090003 /* TaskManagement/Core/Localization/L10n.swift */; };
+		WB0102030405060708090015 /* TaskManagement/Resources/Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = AA0102030405060708090001 /* TaskManagement/Resources/Assets.xcassets */; };
+		WB0102030405060708090016 /* TaskManagement/Resources/Localizable.xcstrings in Resources */ = {isa = PBXBuildFile; fileRef = A6CDDC706174452C338C472C /* TaskManagement/Resources/Localizable.xcstrings */; };
+		WB0102030405060708090017 /* TaskManagement/Core/Logger/AppLogger.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB0102030405060708090021 /* TaskManagement/Core/Logger/AppLogger.swift */; };
+		WB0102030405060708090018 /* TaskManagement/Core/Network/APIClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = ECD9BA6A132A72063EE28259 /* TaskManagement/Core/Network/APIClient.swift */; };
+		WB0102030405060708090019 /* TaskManagement/Core/Network/NetworkLogger.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6DE12D7279FE4F14230F285D /* TaskManagement/Core/Network/NetworkLogger.swift */; };
+		WB0102030405060708090020 /* TaskManagement/Core/Security/KeychainManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5DD760D112150DABFD231E73 /* TaskManagement/Core/Security/KeychainManager.swift */; };
 /* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		PX0102030405060708090001 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 46F86FAA6BBF9AC94A7E4595 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = TG0102030405060708090001;
+			remoteInfo = TaskManagementWidgets;
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXCopyFilesBuildPhase section */
+		CP0102030405060708090001 /* Embed App Extensions */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 13;
+			files = (
+				BF0102030405060708090001 /* TaskManagementWidgets.appex in PlugIns */,
+			);
+			name = "Embed App Extensions";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXCopyFilesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		TD0102030405060708090001 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = TG0102030405060708090001 /* TaskManagementWidgets */;
+			targetProxy = PX0102030405060708090001 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
 
 /* Begin PBXFileReference section */
 		03E7717D2FB69CCCEBE2BADE /* TaskManagement/Core/Network/SSEClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TaskManagement/Core/Network/SSEClient.swift; sourceTree = "<group>"; };
@@ -93,6 +146,9 @@
 		WI0102030405060708090011 /* TaskManagement/Widgets/TaskHubWidgets.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TaskManagement/Widgets/TaskHubWidgets.swift; sourceTree = "<group>"; };
 		WI0102030405060708090013 /* TaskManagement/Widgets/ChecklistWidgetView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TaskManagement/Widgets/ChecklistWidgetView.swift; sourceTree = "<group>"; };
 		WI0102030405060708090015 /* TaskManagement/Widgets/LockScreenWidgetView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TaskManagement/Widgets/LockScreenWidgetView.swift; sourceTree = "<group>"; };
+		PR0102030405060708090001 /* TaskManagementWidgets.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = TaskManagementWidgets.appex; sourceTree = BUILT_PRODUCTS_DIR; };
+		IN0102030405060708090001 /* TaskManagementWidgets/Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = TaskManagementWidgets/Info.plist; sourceTree = "<group>"; };
+		EN0102030405060708090001 /* TaskManagementWidgets/TaskManagementWidgets.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = TaskManagementWidgets/TaskManagementWidgets.entitlements; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -144,6 +200,9 @@
 				DD0102030405060708090003 /* TaskManagement/Features/Mcp/McpSettingsView.swift */,
 				CA0102030405060708090001 /* TaskManagement/Features/Calendar/CalendarView.swift */,
 				WW0102030405060708090001 /* TaskManagement/Core/Shared/SharedWidgetDataManager.swift */,
+				IN0102030405060708090001 /* TaskManagementWidgets/Info.plist */,
+				EN0102030405060708090001 /* TaskManagementWidgets/TaskManagementWidgets.entitlements */,
+				PR0102030405060708090001 /* TaskManagementWidgets.appex */,
 				SN0102030405060708090001 /* TaskManagement/Core/Notification/SoundManager.swift */,
 				WI0102030405060708090001 /* TaskManagement/Widgets/QuickCreateTaskIntent.swift */,
 				WI0102030405060708090003 /* TaskManagement/Widgets/ToggleSubtaskIntent.swift */,
@@ -166,10 +225,12 @@
 				E7209FB05162B7572F88D05E /* Sources */,
 				29B2D46AA747A59804D46E1F /* Frameworks */,
 				66F8606E9F0A136E2228EBCB /* Resources */,
+				CP0102030405060708090001 /* Embed App Extensions */,
 			);
 			buildRules = (
 			);
 			dependencies = (
+				TD0102030405060708090001 /* PBXTargetDependency */,
 			);
 			name = TaskManagement;
 			packageProductDependencies = (
@@ -179,6 +240,24 @@
 			productName = TaskManagement;
 			productReference = 8BEFD367C4AB92E0F59B0B1F /* TaskManagement.app */;
 			productType = "com.apple.product-type.application";
+		};
+		TG0102030405060708090001 /* TaskManagementWidgets */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = CL0102030405060708090001 /* Build configuration list for PBXNativeTarget "TaskManagementWidgets" */;
+			buildPhases = (
+				PH0102030405060708090001 /* Sources */,
+				PH0102030405060708090002 /* Frameworks */,
+				PH0102030405060708090003 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				TD0102030405060708090001 /* PBXTargetDependency */,
+			);
+			name = TaskManagementWidgets;
+			productName = TaskManagementWidgets;
+			productReference = PR0102030405060708090001 /* TaskManagementWidgets.appex */;
+			productType = "com.apple.product-type.app-extension";
 		};
 /* End PBXNativeTarget section */
 
@@ -190,6 +269,9 @@
 				LastUpgradeCheck = 1600;
 				TargetAttributes = {
 					42AEFBAE01D2DFD981F7DA7D = {
+						CreatedOnToolsVersion = 16.0;
+					};
+					TG0102030405060708090001 = {
 						CreatedOnToolsVersion = 16.0;
 					};
 				};
@@ -212,6 +294,7 @@
 			);
 			targets = (
 				42AEFBAE01D2DFD981F7DA7D /* TaskManagement */,
+				TG0102030405060708090001 /* TaskManagementWidgets */,
 			);
 		};
 /* End PBXProject section */
@@ -267,9 +350,49 @@
 				WI0102030405060708090006 /* TaskManagement/Widgets/TaskWidgetTimelineProvider.swift in Sources */,
 				WI0102030405060708090008 /* TaskManagement/Widgets/DailyOverviewWidgetView.swift in Sources */,
 				WI0102030405060708090010 /* TaskManagement/Widgets/DeadlinesWidgetView.swift in Sources */,
-				WI0102030405060708090012 /* TaskManagement/Widgets/TaskHubWidgets.swift in Sources */,
 				WI0102030405060708090014 /* TaskManagement/Widgets/ChecklistWidgetView.swift in Sources */,
 				WI0102030405060708090016 /* TaskManagement/Widgets/LockScreenWidgetView.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		PH0102030405060708090001 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				WB0102030405060708090001 /* TaskManagement/Widgets/TaskHubWidgets.swift in Sources */,
+				WB0102030405060708090002 /* TaskManagement/Widgets/ChecklistWidgetView.swift in Sources */,
+				WB0102030405060708090003 /* TaskManagement/Widgets/DailyOverviewWidgetView.swift in Sources */,
+				WB0102030405060708090004 /* TaskManagement/Widgets/DeadlinesWidgetView.swift in Sources */,
+				WB0102030405060708090005 /* TaskManagement/Widgets/LockScreenWidgetView.swift in Sources */,
+				WB0102030405060708090006 /* TaskManagement/Widgets/TaskWidgetTimelineProvider.swift in Sources */,
+				WB0102030405060708090007 /* TaskManagement/Widgets/ToggleSubtaskIntent.swift in Sources */,
+				WB0102030405060708090008 /* TaskManagement/Core/Shared/SharedWidgetDataManager.swift in Sources */,
+				WB0102030405060708090009 /* TaskManagement/Core/Models/Models.swift in Sources */,
+				WB0102030405060708090010 /* TaskManagement/Core/DesignSystem/Theme.swift in Sources */,
+				WB0102030405060708090011 /* TaskManagement/Core/DesignSystem/Components.swift in Sources */,
+				WB0102030405060708090012 /* TaskManagement/Core/Config/AppConfig.swift in Sources */,
+				WB0102030405060708090013 /* TaskManagement/Core/Localization/I18n.swift in Sources */,
+				WB0102030405060708090014 /* TaskManagement/Core/Localization/L10n.swift in Sources */,
+				WB0102030405060708090017 /* TaskManagement/Core/Logger/AppLogger.swift in Sources */,
+				WB0102030405060708090018 /* TaskManagement/Core/Network/APIClient.swift in Sources */,
+				WB0102030405060708090019 /* TaskManagement/Core/Network/NetworkLogger.swift in Sources */,
+				WB0102030405060708090020 /* TaskManagement/Core/Security/KeychainManager.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		PH0102030405060708090002 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		PH0102030405060708090003 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				WB0102030405060708090015 /* TaskManagement/Resources/Assets.xcassets in Resources */,
+				WB0102030405060708090016 /* TaskManagement/Resources/Localizable.xcstrings in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -385,6 +508,70 @@
 			};
 			name = Release;
 		};
+		CF0102030405060708090001 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ENABLE_MODULES = YES;
+				CODE_SIGN_ENTITLEMENTS = TaskManagementWidgets/TaskManagementWidgets.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 9;
+				DEVELOPMENT_TEAM = A2594AY3N9;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "WIDGET_EXTENSION $(inherited)";
+				ENABLE_USER_SCRIPT_SANDBOXING = NO;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = TaskManagementWidgets/Info.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 1.4.0;
+				PRODUCT_BUNDLE_IDENTIFIER = "cloud.eka-dev.task-hub.TaskManagementWidgets";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		CF0102030405060708090002 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ENABLE_MODULES = YES;
+				CODE_SIGN_ENTITLEMENTS = TaskManagementWidgets/TaskManagementWidgets.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 9;
+				DEVELOPMENT_TEAM = A2594AY3N9;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "WIDGET_EXTENSION $(inherited)";
+				ENABLE_USER_SCRIPT_SANDBOXING = NO;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = TaskManagementWidgets/Info.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 1.4.0;
+				PRODUCT_BUNDLE_IDENTIFIER = "cloud.eka-dev.task-hub.TaskManagementWidgets";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_OPTIMIZATION_LEVEL = "-O";
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Release;
+		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
@@ -402,6 +589,15 @@
 			buildConfigurations = (
 				683105B965893FCC643C4ECF /* Debug */,
 				4DC7B479A29173674AFD7BAC /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		CL0102030405060708090001 /* Build configuration list for PBXNativeTarget "TaskManagementWidgets" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				CF0102030405060708090001 /* Debug */,
+				CF0102030405060708090002 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;

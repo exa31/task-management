@@ -67,6 +67,8 @@ public struct LockScreenWidget: Widget {
 }
 
 // MARK: - Widget Bundle
+#if WIDGET_EXTENSION
+@main
 public struct TaskHubWidgetBundle: WidgetBundle {
     public init() {}
 
@@ -77,4 +79,16 @@ public struct TaskHubWidgetBundle: WidgetBundle {
         LockScreenWidget()
     }
 }
+#else
+public struct TaskHubWidgetBundle: WidgetBundle {
+    public init() {}
+
+    public var body: some Widget {
+        TaskChecklistWidget()
+        TaskDeadlinesWidget()
+        DailyOverviewWidget()
+        LockScreenWidget()
+    }
+}
+#endif
 #endif
