@@ -11,6 +11,10 @@ public struct DeadlinesWidgetView: View {
         self.entry = entry
     }
 
+    private var activeDeadlines: [TaskItem] {
+        entry.bundle.upcomingDeadlines.filter { $0.status != "done" }
+    }
+
     public var body: some View {
         switch family {
         case .systemSmall:
@@ -42,8 +46,8 @@ public struct DeadlinesWidgetView: View {
 
                 Spacer()
 
-                if !entry.bundle.upcomingDeadlines.isEmpty {
-                    Text("\(entry.bundle.upcomingDeadlines.count)")
+                if !activeDeadlines.isEmpty {
+                    Text("\(activeDeadlines.count)")
                         .font(.system(size: 10, weight: .bold))
                         .foregroundStyle(Color(red: 244/255, green: 63/255, blue: 94/255))
                         .padding(.horizontal, 5)
@@ -53,7 +57,7 @@ public struct DeadlinesWidgetView: View {
                 }
             }
 
-            if let top = entry.bundle.upcomingDeadlines.first {
+            if let top = activeDeadlines.first {
                 VStack(alignment: .leading, spacing: 4) {
                     Text(top.title)
                         .font(.system(size: 12, weight: .bold))
@@ -82,7 +86,7 @@ public struct DeadlinesWidgetView: View {
         }
         .padding(12)
         .widgetBackground(accentColor: Color(red: 244/255, green: 63/255, blue: 94/255))
-        .widgetURL(entry.bundle.upcomingDeadlines.first.flatMap { URL(string: "taskhub://tasks/\($0.id)") })
+        .widgetURL(activeDeadlines.first.flatMap { URL(string: "taskhub://tasks/\($0.id)") })
     }
 
     // MARK: - Medium Family
@@ -105,12 +109,12 @@ public struct DeadlinesWidgetView: View {
 
                 Spacer()
 
-                Text(L10n.Widgets.activeTasksCount(count: entry.bundle.upcomingDeadlines.count))
+                Text(L10n.Widgets.activeTasksCount(count: activeDeadlines.count))
                     .font(.system(size: 10, weight: .semibold))
                     .foregroundStyle(.white.opacity(0.6))
             }
 
-            let deadlines = entry.bundle.upcomingDeadlines.prefix(3)
+            let deadlines = activeDeadlines.prefix(3)
             if deadlines.isEmpty {
                 noDeadlinesView(isCompact: false)
             } else {
@@ -128,7 +132,7 @@ public struct DeadlinesWidgetView: View {
         }
         .padding(14)
         .widgetBackground(accentColor: Color(red: 244/255, green: 63/255, blue: 94/255))
-        .widgetURL(entry.bundle.upcomingDeadlines.first.flatMap { URL(string: "taskhub://tasks/\($0.id)") })
+        .widgetURL(activeDeadlines.first.flatMap { URL(string: "taskhub://tasks/\($0.id)") })
     }
 
     // MARK: - Large Family
@@ -151,12 +155,12 @@ public struct DeadlinesWidgetView: View {
 
                 Spacer()
 
-                Text(L10n.Widgets.upcomingTasksCount(count: entry.bundle.upcomingDeadlines.count))
+                Text(L10n.Widgets.upcomingTasksCount(count: activeDeadlines.count))
                     .font(.system(size: 11, weight: .semibold))
                     .foregroundStyle(.white.opacity(0.7))
             }
 
-            let deadlines = entry.bundle.upcomingDeadlines.prefix(5)
+            let deadlines = activeDeadlines.prefix(5)
             if deadlines.isEmpty {
                 noDeadlinesView(isCompact: false)
             } else {
@@ -174,7 +178,7 @@ public struct DeadlinesWidgetView: View {
         }
         .padding(16)
         .widgetBackground(accentColor: Color(red: 244/255, green: 63/255, blue: 94/255))
-        .widgetURL(entry.bundle.upcomingDeadlines.first.flatMap { URL(string: "taskhub://tasks/\($0.id)") })
+        .widgetURL(activeDeadlines.first.flatMap { URL(string: "taskhub://tasks/\($0.id)") })
     }
 
     // MARK: - Deadline Row

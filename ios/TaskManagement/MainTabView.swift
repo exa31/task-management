@@ -64,6 +64,11 @@ public struct MainTabView: View {
 
         var targetTaskId: Int64?
         let host = url.host?.lowercased()
+        if host == "settings" || host == "profile" || host == "widget" || host == "widget-settings" {
+            selectedTab = 5
+            return
+        }
+
         if host == "tasks" || host == "task" {
             let path = url.path.trimmingCharacters(in: CharacterSet(charactersIn: "/"))
             if let id = Int64(path) {

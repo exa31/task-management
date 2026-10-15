@@ -177,9 +177,9 @@ public struct TaskItem: Codable, Identifiable, Sendable {
     public let projectColor: String?
     public let lastProgressNote: String?
     public var subtasks: [Subtask]?
-    public let subtasksCount: Int?
-    public let subtasksCompleted: Int?
-    public let progressPercent: Int?
+    public var subtasksCount: Int?
+    public var subtasksCompleted: Int?
+    public var progressPercent: Int?
     public let isRecurring: Bool?
     public let recurrencePattern: String?
     public let recurrenceInterval: Int?

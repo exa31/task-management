@@ -9,6 +9,7 @@
 /* Begin PBXBuildFile section */
 		11884657C1D60D442A3541EE /* TaskManagement/Features/Project/ProjectListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3BF1EF28A3057A17EB955052 /* TaskManagement/Features/Project/ProjectListView.swift */; };
 		2054F9B03DB5EA80AE7C94F6 /* TaskManagement/Features/Profile/ProfileView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BC3039634E97F8DBCBC0D815 /* TaskManagement/Features/Profile/ProfileView.swift */; };
+		WS0102030405060708090002 /* TaskManagement/Features/Profile/WidgetSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = WS0102030405060708090001 /* TaskManagement/Features/Profile/WidgetSettingsView.swift */; };
 		2F757B17CAA7CFFE77E83B4B /* TaskManagement/Features/Reminder/ReminderListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F632BF827046290DAFA5743D /* TaskManagement/Features/Reminder/ReminderListView.swift */; };
 		39B426E772CAA58A96E370FB /* TaskManagement/Features/Note/NoteListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 80D785A1586EACE603EE4AF9 /* TaskManagement/Features/Note/NoteListView.swift */; };
 		3E7E1AB89BE89DD2BDE8D69B /* TaskManagement/Resources/Localizable.xcstrings in Resources */ = {isa = PBXBuildFile; fileRef = A6CDDC706174452C338C472C /* TaskManagement/Resources/Localizable.xcstrings */; };
@@ -121,6 +122,7 @@
 		B333900B01AC551774C3B528 /* TaskManagement/Core/Models/Models.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TaskManagement/Core/Models/Models.swift; sourceTree = "<group>"; };
 		B5406E3780D4D69BC8DE1AF6 /* TaskManagement/Features/Task/TaskViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TaskManagement/Features/Task/TaskViewModel.swift; sourceTree = "<group>"; };
 		BC3039634E97F8DBCBC0D815 /* TaskManagement/Features/Profile/ProfileView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TaskManagement/Features/Profile/ProfileView.swift; sourceTree = "<group>"; };
+		WS0102030405060708090001 /* TaskManagement/Features/Profile/WidgetSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TaskManagement/Features/Profile/WidgetSettingsView.swift; sourceTree = "<group>"; };
 		C87A59A2BEBD351712627D39 /* TaskManagement/Features/Task/TaskListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TaskManagement/Features/Task/TaskListView.swift; sourceTree = "<group>"; };
 		D0332929307D1A7A0036AE15 /* TaskManagement.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; name = TaskManagement.entitlements; path = TaskManagement/TaskManagement.entitlements; sourceTree = "<group>"; };
 		D727559B70DECCA78B55B808 /* TaskManagement/Core/DesignSystem/Components.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TaskManagement/Core/DesignSystem/Components.swift; sourceTree = "<group>"; };
@@ -185,6 +187,7 @@
 				F632BF827046290DAFA5743D /* TaskManagement/Features/Reminder/ReminderListView.swift */,
 				3BF1EF28A3057A17EB955052 /* TaskManagement/Features/Project/ProjectListView.swift */,
 				BC3039634E97F8DBCBC0D815 /* TaskManagement/Features/Profile/ProfileView.swift */,
+				WS0102030405060708090001 /* TaskManagement/Features/Profile/WidgetSettingsView.swift */,
 				C87A59A2BEBD351712627D39 /* TaskManagement/Features/Task/TaskListView.swift */,
 				12F4F50122E1528AE74D806D /* TaskManagement/Features/Task/TaskDetailSheet.swift */,
 				B5406E3780D4D69BC8DE1AF6 /* TaskManagement/Features/Task/TaskViewModel.swift */,
@@ -334,6 +337,7 @@
 				2F757B17CAA7CFFE77E83B4B /* TaskManagement/Features/Reminder/ReminderListView.swift in Sources */,
 				11884657C1D60D442A3541EE /* TaskManagement/Features/Project/ProjectListView.swift in Sources */,
 				2054F9B03DB5EA80AE7C94F6 /* TaskManagement/Features/Profile/ProfileView.swift in Sources */,
+				WS0102030405060708090002 /* TaskManagement/Features/Profile/WidgetSettingsView.swift in Sources */,
 				9272ACA4FBD5E2DCEEE1B76B /* TaskManagement/Features/Task/TaskListView.swift in Sources */,
 				C545EBEC9823415F2A5D82A8 /* TaskManagement/Features/Task/TaskDetailSheet.swift in Sources */,
 				CBD9DAE4F0BC2EE4A9446086 /* TaskManagement/Features/Task/TaskViewModel.swift in Sources */,

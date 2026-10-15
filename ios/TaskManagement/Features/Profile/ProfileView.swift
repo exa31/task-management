@@ -274,10 +274,13 @@ public struct ProfileView: View {
                     // 4. Appearance & Language (Dark Mode & Locale)
                     appearanceAndLanguageSection
 
-                    // 5. AI & MCP Integration
+                    // 5. Widget Configuration (BCA-Style Task Hub Widgets)
+                    widgetConfigurationSection
+
+                    // 6. AI & MCP Integration
                     mcpIntegrationSection
 
-                    // 6. Danger Zone (Permanent Account Deletion)
+                    // 7. Danger Zone (Permanent Account Deletion)
                     dangerZoneSection
 
                     // 7. Sign Out Button
@@ -806,7 +809,71 @@ public struct ProfileView: View {
         )
     }
 
-    // MARK: - Section 5: AI & MCP Integration
+    // MARK: - Section 5: Widget Configuration (BCA-Style Task Hub Widgets)
+    private var widgetConfigurationSection: some View {
+        NavigationLink(destination: WidgetSettingsView()) {
+            HStack(spacing: 14) {
+                ZStack {
+                    RoundedRectangle(cornerRadius: 12, style: .continuous)
+                        .fill(
+                            LinearGradient(
+                                colors: [
+                                    Color(red: 56/255, green: 189/255, blue: 248/255),
+                                    Color(red: 168/255, green: 85/255, blue: 247/255)
+                                ],
+                                startPoint: .topLeading,
+                                endPoint: .bottomTrailing
+                            )
+                        )
+                        .frame(width: 42, height: 42)
+                        .shadow(color: Color(red: 56/255, green: 189/255, blue: 248/255).opacity(0.3), radius: 4, x: 0, y: 2)
+
+                    Image(systemName: "slider.horizontal.2.square.stack")
+                        .font(.system(size: 18, weight: .semibold))
+                        .foregroundColor(.white)
+                }
+
+                VStack(alignment: .leading, spacing: 3) {
+                    Text(L10n.Settings.widgetSettings)
+                        .font(.system(size: 15, weight: .bold))
+                        .foregroundColor(.primary)
+
+                    Text(L10n.Settings.widgetSettingsDesc)
+                        .font(.system(size: 12))
+                        .foregroundColor(.secondary)
+                        .lineLimit(2)
+                }
+
+                Spacer()
+
+                let totalSelected = SharedWidgetDataManager.shared.getSelectedRecurringTaskIds().count
+                    + SharedWidgetDataManager.shared.getSelectedCustomTaskIds().count
+                if totalSelected > 0 {
+                    Text("\(totalSelected)")
+                        .font(.system(size: 12, weight: .bold, design: .rounded))
+                        .foregroundColor(.white)
+                        .padding(.horizontal, 8)
+                        .padding(.vertical, 3)
+                        .background(Color(red: 56/255, green: 189/255, blue: 248/255))
+                        .clipShape(Capsule())
+                }
+
+                Image(systemName: "chevron.right")
+                    .font(.system(size: 14, weight: .semibold))
+                    .foregroundColor(.secondary)
+            }
+            .padding(16)
+            .background(Color(.secondarySystemGroupedBackground))
+            .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+            .overlay(
+                RoundedRectangle(cornerRadius: 16, style: .continuous)
+                    .stroke(Color.primary.opacity(0.06), lineWidth: 1)
+            )
+        }
+        .buttonStyle(.plain)
+    }
+
+    // MARK: - Section 6: AI & MCP Integration
     private var mcpIntegrationSection: some View {
         NavigationLink(destination: McpSettingsView()) {
             HStack(spacing: 14) {

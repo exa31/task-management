@@ -123,8 +123,10 @@ public struct RecurringTaskWidgetView: View {
         let combined = entry.bundle.focusTasks + entry.bundle.upcomingDeadlines
         var seen = Set<Int64>()
         var result: [TaskItem] = []
+        let selectedIds = SharedWidgetDataManager.shared.getSelectedRecurringTaskIds()
+        guard !selectedIds.isEmpty else { return [] }
         for t in combined {
-            if t.isRecurring == true && !seen.contains(t.id) {
+            if t.isRecurring == true && t.status != "done" && selectedIds.contains(t.id) && !seen.contains(t.id) {
                 seen.insert(t.id)
                 result.append(t)
             }
@@ -231,14 +233,21 @@ public struct RecurringTaskWidgetView: View {
                     }
                 }
             } else {
-                emptyRecurringView(isCompact: true)
+                let selectedIds = SharedWidgetDataManager.shared.getSelectedRecurringTaskIds()
+                if selectedIds.isEmpty {
+                    unselectedRecurringView(isCompact: true)
+                } else if entry.bundle.completedToday > 0 {
+                    doneStateView(isCompact: true)
+                } else {
+                    emptyRecurringView(isCompact: true)
+                }
             }
 
             Spacer(minLength: 0)
         }
         .padding(12)
         .widgetBackground(accentColor: Color(red: 56/255, green: 189/255, blue: 248/255))
-        .widgetURL(activeRecurringTask.flatMap { URL(string: "taskhub://tasks/\($0.id)") })
+        .widgetURL(activeRecurringTask.flatMap { URL(string: "taskhub://tasks/\($0.id)") } ?? URL(string: "taskhub://settings/widget"))
     }
 
     // MARK: - Medium Family
@@ -346,14 +355,21 @@ public struct RecurringTaskWidgetView: View {
                     }
                 }
             } else {
-                emptyRecurringView(isCompact: false)
+                let selectedIds = SharedWidgetDataManager.shared.getSelectedRecurringTaskIds()
+                if selectedIds.isEmpty {
+                    unselectedRecurringView(isCompact: false)
+                } else if entry.bundle.completedToday > 0 {
+                    doneStateView(isCompact: false)
+                } else {
+                    emptyRecurringView(isCompact: false)
+                }
             }
 
             Spacer(minLength: 0)
         }
         .padding(14)
         .widgetBackground(accentColor: Color(red: 56/255, green: 189/255, blue: 248/255))
-        .widgetURL(activeRecurringTask.flatMap { URL(string: "taskhub://tasks/\($0.id)") })
+        .widgetURL(activeRecurringTask.flatMap { URL(string: "taskhub://tasks/\($0.id)") } ?? URL(string: "taskhub://settings/widget"))
     }
 
     // MARK: - Large Family
@@ -430,14 +446,21 @@ public struct RecurringTaskWidgetView: View {
                     }
                 }
             } else {
-                emptyRecurringView(isCompact: false)
+                let selectedIds = SharedWidgetDataManager.shared.getSelectedRecurringTaskIds()
+                if selectedIds.isEmpty {
+                    unselectedRecurringView(isCompact: false)
+                } else if entry.bundle.completedToday > 0 {
+                    doneStateView(isCompact: false)
+                } else {
+                    emptyRecurringView(isCompact: false)
+                }
             }
 
             Spacer(minLength: 0)
         }
         .padding(16)
         .widgetBackground(accentColor: Color(red: 56/255, green: 189/255, blue: 248/255))
-        .widgetURL(activeRecurringTask.flatMap { URL(string: "taskhub://tasks/\($0.id)") })
+        .widgetURL(activeRecurringTask.flatMap { URL(string: "taskhub://tasks/\($0.id)") } ?? URL(string: "taskhub://settings/widget"))
     }
 
     // MARK: - Subcomponents
@@ -614,6 +637,41 @@ public struct RecurringTaskWidgetView: View {
         .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 
+    @ViewBuilder
+    private func unselectedRecurringView(isCompact: Bool) -> some View {
+        VStack(spacing: isCompact ? 5 : 7) {
+            Image(systemName: "repeat.circle")
+                .font(.system(size: isCompact ? 22 : 28))
+                .foregroundStyle(Color(red: 56/255, green: 189/255, blue: 248/255))
+
+            Text(L10n.Widgets.recurringUnselectedTitle)
+                .font(.system(size: isCompact ? 11 : 13, weight: .bold))
+                .foregroundStyle(.white)
+                .multilineTextAlignment(.center)
+
+            Text(L10n.Widgets.recurringUnselectedDesc)
+                .font(.system(size: isCompact ? 9 : 10))
+                .foregroundStyle(.white.opacity(0.65))
+                .multilineTextAlignment(.center)
+                .padding(.horizontal, 4)
+
+            if !isCompact {
+                HStack(spacing: 4) {
+                    Image(systemName: "slider.horizontal.3")
+                        .font(.system(size: 10, weight: .semibold))
+                    Text(L10n.Widgets.setupAction)
+                        .font(.system(size: 11, weight: .bold))
+                }
+                .foregroundStyle(.white)
+                .padding(.horizontal, 10)
+                .padding(.vertical, 5)
+                .background(Color(red: 56/255, green: 189/255, blue: 248/255).opacity(0.25))
+                .clipShape(Capsule())
+            }
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+    }
+
     private func formatPattern(_ p: String) -> String {
         switch p.lowercased() {
         case "daily": return "pattern.daily".localized
@@ -637,8 +695,10 @@ public struct CustomTaskWidgetView: View {
         let combined = entry.bundle.focusTasks + entry.bundle.upcomingDeadlines
         var seen = Set<Int64>()
         var result: [TaskItem] = []
+        let selectedIds = SharedWidgetDataManager.shared.getSelectedCustomTaskIds()
+        guard !selectedIds.isEmpty else { return [] }
         for t in combined {
-            if !seen.contains(t.id) && t.status != "done" {
+            if !seen.contains(t.id) && t.status != "done" && selectedIds.contains(t.id) {
                 seen.insert(t.id)
                 result.append(t)
             }
@@ -741,14 +801,19 @@ public struct CustomTaskWidgetView: View {
                     }
                 }
             } else {
-                emptyTasksView(isCompact: true)
+                let selectedIds = SharedWidgetDataManager.shared.getSelectedCustomTaskIds()
+                if selectedIds.isEmpty {
+                    unselectedCustomView(isCompact: true)
+                } else {
+                    emptyTasksView(isCompact: true)
+                }
             }
 
             Spacer(minLength: 0)
         }
         .padding(12)
         .widgetBackground(accentColor: Color(red: 168/255, green: 85/255, blue: 247/255))
-        .widgetURL(currentTask.flatMap { URL(string: "taskhub://tasks/\($0.id)") })
+        .widgetURL(currentTask.flatMap { URL(string: "taskhub://tasks/\($0.id)") } ?? URL(string: "taskhub://settings/widget"))
     }
 
     // MARK: - Medium Family
@@ -862,14 +927,19 @@ public struct CustomTaskWidgetView: View {
                     }
                 }
             } else {
-                emptyTasksView(isCompact: false)
+                let selectedIds = SharedWidgetDataManager.shared.getSelectedCustomTaskIds()
+                if selectedIds.isEmpty {
+                    unselectedCustomView(isCompact: false)
+                } else {
+                    emptyTasksView(isCompact: false)
+                }
             }
 
             Spacer(minLength: 0)
         }
         .padding(14)
         .widgetBackground(accentColor: Color(red: 168/255, green: 85/255, blue: 247/255))
-        .widgetURL(currentTask.flatMap { URL(string: "taskhub://tasks/\($0.id)") })
+        .widgetURL(currentTask.flatMap { URL(string: "taskhub://tasks/\($0.id)") } ?? URL(string: "taskhub://settings/widget"))
     }
 
     // MARK: - Large Family
@@ -946,14 +1016,19 @@ public struct CustomTaskWidgetView: View {
                     .buttonStyle(.plain)
                 }
             } else {
-                emptyTasksView(isCompact: false)
+                let selectedIds = SharedWidgetDataManager.shared.getSelectedCustomTaskIds()
+                if selectedIds.isEmpty {
+                    unselectedCustomView(isCompact: false)
+                } else {
+                    emptyTasksView(isCompact: false)
+                }
             }
 
             Spacer(minLength: 0)
         }
         .padding(16)
         .widgetBackground(accentColor: Color(red: 168/255, green: 85/255, blue: 247/255))
-        .widgetURL(currentTask.flatMap { URL(string: "taskhub://tasks/\($0.id)") })
+        .widgetURL(currentTask.flatMap { URL(string: "taskhub://tasks/\($0.id)") } ?? URL(string: "taskhub://settings/widget"))
     }
 
     // MARK: - Row & States
@@ -998,6 +1073,41 @@ public struct CustomTaskWidgetView: View {
                 Text(L10n.Widgets.customAddNewTask)
                     .font(.system(size: 9))
                     .foregroundStyle(.white.opacity(0.5))
+            }
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+    }
+
+    @ViewBuilder
+    private func unselectedCustomView(isCompact: Bool) -> some View {
+        VStack(spacing: isCompact ? 5 : 7) {
+            Image(systemName: "checklist.checked")
+                .font(.system(size: isCompact ? 22 : 28))
+                .foregroundStyle(Color(red: 168/255, green: 85/255, blue: 247/255))
+
+            Text(L10n.Widgets.customUnselectedTitle)
+                .font(.system(size: isCompact ? 11 : 13, weight: .bold))
+                .foregroundStyle(.white)
+                .multilineTextAlignment(.center)
+
+            Text(L10n.Widgets.customUnselectedDesc)
+                .font(.system(size: isCompact ? 9 : 10))
+                .foregroundStyle(.white.opacity(0.65))
+                .multilineTextAlignment(.center)
+                .padding(.horizontal, 4)
+
+            if !isCompact {
+                HStack(spacing: 4) {
+                    Image(systemName: "slider.horizontal.3")
+                        .font(.system(size: 10, weight: .semibold))
+                    Text(L10n.Widgets.setupAction)
+                        .font(.system(size: 11, weight: .bold))
+                }
+                .foregroundStyle(.white)
+                .padding(.horizontal, 10)
+                .padding(.vertical, 5)
+                .background(Color(red: 168/255, green: 85/255, blue: 247/255).opacity(0.25))
+                .clipShape(Capsule())
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)

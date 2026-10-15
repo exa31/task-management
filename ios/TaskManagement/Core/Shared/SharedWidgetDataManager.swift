@@ -26,6 +26,8 @@ public final class SharedWidgetDataManager: @unchecked Sendable {
     private let pendingStatusUpdatesKey = "task_hub_pending_status_updates"
     private let customTaskIndexKey = "task_hub_custom_task_index"
     private let recurringTaskIndexKey = "task_hub_recurring_task_index"
+    private let selectedRecurringTaskIdsKey = "task_hub_selected_recurring_task_ids"
+    private let selectedCustomTaskIdsKey = "task_hub_selected_custom_task_ids"
     private let lastSyncKey = "task_hub_widget_last_sync"
     private let authTokenKey = "task_hub_shared_auth_token"
 
@@ -78,7 +80,17 @@ public final class SharedWidgetDataManager: @unchecked Sendable {
         lock.lock()
         defer { lock.unlock() }
 
-        if let encoded = try? JSONEncoder().encode(bundle) {
+        // Sanitize: ensure no done tasks are stored in focusTasks or upcomingDeadlines
+        let sanitizedFocus = bundle.focusTasks.filter { $0.status != "done" }
+        let sanitizedDeadlines = bundle.upcomingDeadlines.filter { $0.status != "done" }
+        let sanitizedBundle = WidgetBundleResponse(
+            focusTasks: sanitizedFocus,
+            upcomingDeadlines: sanitizedDeadlines,
+            completedToday: bundle.completedToday,
+            totalToday: bundle.totalToday
+        )
+
+        if let encoded = try? JSONEncoder().encode(sanitizedBundle) {
             defaults.set(encoded, forKey: widgetBundleKey)
             defaults.set(Date().timeIntervalSince1970, forKey: lastSyncKey)
         }
@@ -96,7 +108,15 @@ public final class SharedWidgetDataManager: @unchecked Sendable {
               let bundle = try? JSONDecoder().decode(WidgetBundleResponse.self, from: data) else {
             return nil
         }
-        return bundle
+        // In case previous cache contained completed tasks, filter them out on load
+        let cleanFocus = bundle.focusTasks.filter { $0.status != "done" }
+        let cleanDeadlines = bundle.upcomingDeadlines.filter { $0.status != "done" }
+        return WidgetBundleResponse(
+            focusTasks: cleanFocus,
+            upcomingDeadlines: cleanDeadlines,
+            completedToday: bundle.completedToday,
+            totalToday: bundle.totalToday
+        )
     }
 
     // MARK: - Offline Subtask Checkoff
@@ -118,15 +138,13 @@ public final class SharedWidgetDataManager: @unchecked Sendable {
                         }
                     }
                     task.subtasks = subtasks
-                    let allCompleted = !subtasks.isEmpty && subtasks.allSatisfy { $0.isCompleted }
-                    if allCompleted {
-                        task.status = "done"
-                        task.isFocus = false
-                    } else if !isCompleted && task.status == "done" {
-                        task.status = "in_progress"
-                    }
+                    let completedCount = subtasks.filter { $0.isCompleted }.count
+                    task.subtasksCompleted = completedCount
+                    task.progressPercent = subtasks.isEmpty ? 0 : Int(Double(completedCount) / Double(subtasks.count) * 100)
                 }
-                updatedFocus.append(task)
+                if task.status != "done" {
+                    updatedFocus.append(task)
+                }
             }
 
             var updatedDeadlines: [TaskItem] = []
@@ -138,21 +156,19 @@ public final class SharedWidgetDataManager: @unchecked Sendable {
                         }
                     }
                     task.subtasks = subtasks
-                    let allCompleted = !subtasks.isEmpty && subtasks.allSatisfy { $0.isCompleted }
-                    if allCompleted {
-                        task.status = "done"
-                        task.isFocus = false
-                    } else if !isCompleted && task.status == "done" {
-                        task.status = "in_progress"
-                    }
+                    let completedCount = subtasks.filter { $0.isCompleted }.count
+                    task.subtasksCompleted = completedCount
+                    task.progressPercent = subtasks.isEmpty ? 0 : Int(Double(completedCount) / Double(subtasks.count) * 100)
                 }
-                updatedDeadlines.append(task)
+                if task.status != "done" {
+                    updatedDeadlines.append(task)
+                }
             }
 
             let newBundle = WidgetBundleResponse(
                 focusTasks: updatedFocus,
                 upcomingDeadlines: updatedDeadlines,
-                completedToday: bundle.completedToday + (isCompleted ? 1 : -1),
+                completedToday: bundle.completedToday,
                 totalToday: bundle.totalToday
             )
 
@@ -210,12 +226,24 @@ public final class SharedWidgetDataManager: @unchecked Sendable {
         if let data = defaults.data(forKey: widgetBundleKey),
            let bundle = try? JSONDecoder().decode(WidgetBundleResponse.self, from: data) {
 
+            let wasDone = bundle.focusTasks.first(where: { $0.id == taskId })?.status == "done"
+                || bundle.upcomingDeadlines.first(where: { $0.id == taskId })?.status == "done"
+            let isNowDone = status == "done"
+            var completedDelta = 0
+            if !wasDone && isNowDone {
+                completedDelta = 1
+            } else if wasDone && !isNowDone {
+                completedDelta = -1
+            }
+
             var updatedFocus: [TaskItem] = []
             for var t in bundle.focusTasks {
                 if t.id == taskId {
                     t.status = status
                 }
-                updatedFocus.append(t)
+                if t.status != "done" {
+                    updatedFocus.append(t)
+                }
             }
 
             var updatedDeadlines: [TaskItem] = []
@@ -223,18 +251,9 @@ public final class SharedWidgetDataManager: @unchecked Sendable {
                 if t.id == taskId {
                     t.status = status
                 }
-                if status != "done" || t.id != taskId {
+                if t.status != "done" {
                     updatedDeadlines.append(t)
                 }
-            }
-
-            let wasDone = bundle.focusTasks.first(where: { $0.id == taskId })?.status == "done"
-            let isNowDone = status == "done"
-            var completedDelta = 0
-            if !wasDone && isNowDone {
-                completedDelta = 1
-            } else if wasDone && !isNowDone {
-                completedDelta = -1
             }
 
             let newBundle = WidgetBundleResponse(
@@ -246,6 +265,17 @@ public final class SharedWidgetDataManager: @unchecked Sendable {
 
             if let reencoded = try? JSONEncoder().encode(newBundle) {
                 defaults.set(reencoded, forKey: widgetBundleKey)
+            }
+
+            if status == "done" {
+                var rec = Set(defaults.array(forKey: selectedRecurringTaskIdsKey) as? [Int64] ?? [])
+                if rec.remove(taskId) != nil {
+                    defaults.set(Array(rec), forKey: selectedRecurringTaskIdsKey)
+                }
+                var cus = Set(defaults.array(forKey: selectedCustomTaskIdsKey) as? [Int64] ?? [])
+                if cus.remove(taskId) != nil {
+                    defaults.set(Array(cus), forKey: selectedCustomTaskIdsKey)
+                }
             }
         }
 
@@ -326,6 +356,70 @@ public final class SharedWidgetDataManager: @unchecked Sendable {
         return defaults.integer(forKey: recurringTaskIndexKey)
     }
 
+    // MARK: - BCA-Style Widget Selection Management
+
+    public func getSelectedRecurringTaskIds() -> Set<Int64> {
+        lock.lock()
+        defer { lock.unlock() }
+        let arr = defaults.array(forKey: selectedRecurringTaskIdsKey) as? [Int64] ?? []
+        return Set(arr)
+    }
+
+    public func setSelectedRecurringTaskIds(_ ids: Set<Int64>) {
+        lock.lock()
+        defer { lock.unlock() }
+        defaults.set(Array(ids), forKey: selectedRecurringTaskIdsKey)
+        #if canImport(WidgetKit)
+        WidgetCenter.shared.reloadAllTimelines()
+        #endif
+    }
+
+    public func toggleSelectedRecurringTaskId(_ id: Int64) {
+        lock.lock()
+        defer { lock.unlock() }
+        var current = Set(defaults.array(forKey: selectedRecurringTaskIdsKey) as? [Int64] ?? [])
+        if current.contains(id) {
+            current.remove(id)
+        } else {
+            current.insert(id)
+        }
+        defaults.set(Array(current), forKey: selectedRecurringTaskIdsKey)
+        #if canImport(WidgetKit)
+        WidgetCenter.shared.reloadAllTimelines()
+        #endif
+    }
+
+    public func getSelectedCustomTaskIds() -> Set<Int64> {
+        lock.lock()
+        defer { lock.unlock() }
+        let arr = defaults.array(forKey: selectedCustomTaskIdsKey) as? [Int64] ?? []
+        return Set(arr)
+    }
+
+    public func setSelectedCustomTaskIds(_ ids: Set<Int64>) {
+        lock.lock()
+        defer { lock.unlock() }
+        defaults.set(Array(ids), forKey: selectedCustomTaskIdsKey)
+        #if canImport(WidgetKit)
+        WidgetCenter.shared.reloadAllTimelines()
+        #endif
+    }
+
+    public func toggleSelectedCustomTaskId(_ id: Int64) {
+        lock.lock()
+        defer { lock.unlock() }
+        var current = Set(defaults.array(forKey: selectedCustomTaskIdsKey) as? [Int64] ?? [])
+        if current.contains(id) {
+            current.remove(id)
+        } else {
+            current.insert(id)
+        }
+        defaults.set(Array(current), forKey: selectedCustomTaskIdsKey)
+        #if canImport(WidgetKit)
+        WidgetCenter.shared.reloadAllTimelines()
+        #endif
+    }
+
     // MARK: - Subtask Pagination per Task
 
     public func getSubtaskPage(for taskId: Int64, totalPages: Int) -> Int {
@@ -352,7 +446,30 @@ public final class SharedWidgetDataManager: @unchecked Sendable {
         lock.lock()
         defer { lock.unlock() }
 
-        let focus = tasks.filter { ($0.isFocus == true && $0.status != "done") || ($0.isRecurring == true) }
+        var selectedRec = Set(defaults.array(forKey: selectedRecurringTaskIdsKey) as? [Int64] ?? [])
+        var selectedCus = Set(defaults.array(forKey: selectedCustomTaskIdsKey) as? [Int64] ?? [])
+
+        // Clean up any selected tasks that are now done
+        let doneIds = Set(tasks.filter { $0.status == "done" }.map { $0.id })
+        let prevRecCount = selectedRec.count
+        let prevCusCount = selectedCus.count
+        selectedRec.subtract(doneIds)
+        selectedCus.subtract(doneIds)
+        if selectedRec.count != prevRecCount {
+            defaults.set(Array(selectedRec), forKey: selectedRecurringTaskIdsKey)
+        }
+        if selectedCus.count != prevCusCount {
+            defaults.set(Array(selectedCus), forKey: selectedCustomTaskIdsKey)
+        }
+
+        let focus = tasks.filter { 
+            $0.status != "done" && (
+                $0.isFocus == true || 
+                $0.isRecurring == true || 
+                selectedRec.contains($0.id) || 
+                selectedCus.contains($0.id)
+            ) 
+        }
         let deadlines = tasks
             .filter { $0.status != "done" && $0.dueDate != nil && !($0.dueDate?.isEmpty ?? true) }
             .sorted { ($0.dueDate ?? "") < ($1.dueDate ?? "") }

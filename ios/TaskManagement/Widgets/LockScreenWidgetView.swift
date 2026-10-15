@@ -17,7 +17,8 @@ public struct LockScreenWidgetView: View {
     }
 
     private var topTask: TaskItem? {
-        entry.bundle.upcomingDeadlines.first ?? entry.bundle.focusTasks.first
+        entry.bundle.upcomingDeadlines.first(where: { $0.status != "done" })
+            ?? entry.bundle.focusTasks.first(where: { $0.status != "done" })
     }
 
     public var body: some View {

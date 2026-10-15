@@ -303,6 +303,21 @@ public enum L10n {
         public static var threshold24h: String { "settings.threshold24h".localized }
         public static var threshold48h: String { "settings.threshold48h".localized }
         public static var deleteConfirmTitle: String { "settings.deleteConfirmTitle".localized }
+
+        // Widget Settings
+        public static var widgetSettings: String { "settings.widgetSettings".localized }
+        public static var widgetSettingsDesc: String { "settings.widgetSettingsDesc".localized }
+        public static var widgetRecurringSection: String { "settings.widgetRecurringSection".localized }
+        public static var widgetRecurringSectionDesc: String { "settings.widgetRecurringSectionDesc".localized }
+        public static var widgetCustomSection: String { "settings.widgetCustomSection".localized }
+        public static var widgetCustomSectionDesc: String { "settings.widgetCustomSectionDesc".localized }
+        public static func widgetSelectedCount(count: Int) -> String { "settings.widgetSelectedCount".localized(with: count) }
+        public static var widgetSelectAll: String { "settings.widgetSelectAll".localized }
+        public static var widgetDeselectAll: String { "settings.widgetDeselectAll".localized }
+        public static var widgetSearchPlaceholder: String { "settings.widgetSearchPlaceholder".localized }
+        public static var widgetEmptyTasks: String { "settings.widgetEmptyTasks".localized }
+        public static var widgetEmptyDesc: String { "settings.widgetEmptyDesc".localized }
+        public static var widgetTip: String { "settings.widgetTip".localized }
     }
 
     public enum Mcp {
@@ -349,6 +364,8 @@ public enum L10n {
         public static var close: String { "general.close".localized }
         public static var done: String { "general.done".localized }
         public static var back: String { "general.back".localized }
+        public static var loading: String { "general.loading".localized }
+        public static var retry: String { "general.retry".localized }
     }
 
     public enum Widgets {
@@ -435,6 +452,13 @@ public enum L10n {
         public static var customNoSubtasks: String { "widget.custom.noSubtasks".localized }
         public static var customConfigName: String { "widget.custom.configName".localized }
         public static var customConfigDesc: String { "widget.custom.configDesc".localized }
+
+        // BCA-Style Widget Configuration Accessors
+        public static var recurringUnselectedTitle: String { "widget.recurring.unselectedTitle".localized }
+        public static var recurringUnselectedDesc: String { "widget.recurring.unselectedDesc".localized }
+        public static var customUnselectedTitle: String { "widget.custom.unselectedTitle".localized }
+        public static var customUnselectedDesc: String { "widget.custom.unselectedDesc".localized }
+        public static var setupAction: String { "widget.setupAction".localized }
 
         public static func lockscreenTasksDone(completed: Int, total: Int) -> String {
             "widget.lockscreen.tasksDone".localized(with: completed, total)
