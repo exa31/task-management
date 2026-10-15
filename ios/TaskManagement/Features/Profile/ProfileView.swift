@@ -220,7 +220,7 @@ public struct ProfileView: View {
     }
 
     public var body: some View {
-        NavigationStack {
+        AdaptiveTabNavigationStack {
             ScrollView {
                 VStack(spacing: 20) {
                     // Success / Error Banners
@@ -304,6 +304,7 @@ public struct ProfileView: View {
             }
             .background(Color(.systemGroupedBackground))
             .navigationTitle(L10n.Settings.title)
+            .navigationBarTitleDisplayMode(.inline)
             .refreshable {
                 await viewModel.loadProfile()
             }

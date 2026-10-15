@@ -233,3 +233,31 @@ public struct TaskListSkeleton: View {
     }
 }
 
+/// Adaptive navigation container for top-level tabs.
+/// On iPhone, when a tab resides within UIKit's `UIMoreNavigationController` (tabs 4+),
+/// wrapping content in an additional `NavigationStack` creates duplicate navigation bars
+/// and double back buttons on pushed child views. This component avoids redundant nesting on iPhone.
+public struct AdaptiveTabNavigationStack<Content: View>: View {
+    private let content: Content
+
+    public init(@ViewBuilder content: () -> Content) {
+        self.content = content()
+    }
+
+    public var body: some View {
+        #if canImport(UIKit)
+        if UIDevice.current.userInterfaceIdiom == .phone {
+            content
+        } else {
+            NavigationStack {
+                content
+            }
+        }
+        #else
+        NavigationStack {
+            content
+        }
+        #endif
+    }
+}
+

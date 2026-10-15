@@ -204,7 +204,7 @@ public struct ReminderListView: View {
     }
 
     public var body: some View {
-        NavigationStack {
+        AdaptiveTabNavigationStack {
             VStack(spacing: 0) {
                 // Live Alert Banner (SSE Triggered)
                 if let alert = viewModel.activeAlert {
@@ -369,6 +369,7 @@ public struct ReminderListView: View {
                 }
             }
             .navigationTitle(L10n.Reminders.title)
+            .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
                     Button(action: { viewModel.isShowingCreateSheet = true }) {
