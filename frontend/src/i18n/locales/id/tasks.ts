@@ -100,6 +100,8 @@ export const taskDrawer = {
   subtasksChecklist: 'Checklist Subtask ({completed}/{total})',
   addSubtaskPlaceholder: 'Tambah langkah checklist...',
   add: 'Tambah',
+  subtaskTitlePlaceholder: 'Judul subtask',
+  subtaskDetails: 'Detail & catatan subtask',
   subtaskDescriptionPlaceholder: 'Tambah catatan, kriteria, atau detail (opsional)...',
   subtaskDueDate: 'Tenggat subtask',
   subtaskDueDatePlaceholder: 'Atur tenggat',

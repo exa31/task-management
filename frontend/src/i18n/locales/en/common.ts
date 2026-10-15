@@ -13,5 +13,6 @@ export const common = {
   yes: 'Yes',
   no: 'No',
   success: 'Success',
-  search: 'Search'
+  search: 'Search',
+  clear: 'Clear'
 }

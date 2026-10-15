@@ -101,6 +101,8 @@ export const taskDrawer = {
   subtasksChecklist: 'Checklist Subtasks ({completed}/{total})',
   addSubtaskPlaceholder: 'Add subtask item...',
   add: 'Add',
+  subtaskTitlePlaceholder: 'Subtask title',
+  subtaskDetails: 'Subtask details & notes',
   subtaskDescriptionPlaceholder: 'Add notes, acceptance criteria, or details (optional)...',
   subtaskDueDate: 'Subtask deadline',
   subtaskDueDatePlaceholder: 'Set deadline',

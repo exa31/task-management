@@ -82,7 +82,7 @@ export default function RemindersPage() {
       year: 'numeric',
       hour: '2-digit',
       minute: '2-digit',
-      hour12: locale !== 'id'
+      hour12: false
     })
   }
 

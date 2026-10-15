@@ -1059,7 +1059,7 @@ export const TaskDrawer: React.FC = () => {
                   <TaskReminderSection
                     taskId={task.id}
                     taskTitle={task.title}
-                    dueDate={task.due_date}
+                    dueDate={dueDate ? dueDate.toISOString() : task.due_date}
                   />
                 </div>
               </>

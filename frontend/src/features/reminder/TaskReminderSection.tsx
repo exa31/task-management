@@ -67,7 +67,7 @@ export const TaskReminderSection = ({ taskId, taskTitle, dueDate }: TaskReminder
       day: 'numeric',
       hour: '2-digit',
       minute: '2-digit',
-      hour12: locale !== 'id'
+      hour12: false
     })
   }
 

@@ -18,6 +18,20 @@ import type { Task } from '@/types'
 type CalendarViewMode = 'month' | 'week'
 type FilterType = 'all' | 'tasks' | 'reminders' | 'activities'
 
+// Date helper: YYYY-MM-DD
+const formatDateKey = (d: Date): string => {
+  const y = d.getFullYear()
+  const m = String(d.getMonth() + 1).padStart(2, '0')
+  const day = String(d.getDate()).padStart(2, '0')
+  return `${y}-${m}-${day}`
+}
+
+const toLocalDateKey = (isoStr?: string | null): string => {
+  if (!isoStr) return ''
+  const d = new Date(isoStr)
+  return isNaN(d.getTime()) ? isoStr.slice(0, 10) : formatDateKey(d)
+}
+
 export const CalendarPage: React.FC = () => {
   const { t, locale } = useTranslation()
   const { openDrawer } = useTaskStore()
@@ -54,12 +68,16 @@ export const CalendarPage: React.FC = () => {
   const reminders = data?.reminders || []
   const activities = data?.activities || []
 
-  // Date helper: YYYY-MM-DD
-  const formatDateKey = (d: Date): string => {
-    const y = d.getFullYear()
-    const m = String(d.getMonth() + 1).padStart(2, '0')
-    const day = String(d.getDate()).padStart(2, '0')
-    return `${y}-${m}-${day}`
+
+  const formatTimeOnly = (dateStr?: string | null): string => {
+    if (!dateStr) return ''
+    const d = new Date(dateStr)
+    if (isNaN(d.getTime())) return ''
+    return d.toLocaleTimeString(locale === 'id' ? 'id-ID' : 'en-US', {
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: false
+    })
   }
 
   // Index items by date key
@@ -84,21 +102,21 @@ export const CalendarPage: React.FC = () => {
 
     tasks.forEach((item) => {
       if (item.due_date) {
-        const key = item.due_date.slice(0, 10)
+        const key = toLocalDateKey(item.due_date)
         getEntry(key).tasks.push(item)
       }
     })
 
     reminders.forEach((item) => {
       if (item.remind_at) {
-        const key = item.remind_at.slice(0, 10)
+        const key = toLocalDateKey(item.remind_at)
         getEntry(key).reminders.push(item)
       }
     })
 
     activities.forEach((item) => {
       if (item.created_at) {
-        const key = item.created_at.slice(0, 10)
+        const key = toLocalDateKey(item.created_at)
         getEntry(key).activities.push(item)
       }
     })
@@ -576,7 +594,7 @@ export const CalendarPage: React.FC = () => {
                           >
                             <div className="font-medium truncate">{r.title}</div>
                             <div className="text-[10px] text-amber-600 dark:text-amber-400">
-                              {r.remind_at?.slice(11, 16)}
+                              {formatTimeOnly(r.remind_at)}
                             </div>
                           </div>
                         ))}
@@ -716,7 +734,7 @@ export const CalendarPage: React.FC = () => {
                             </p>
                           )}
                           <p className="text-[10px] text-slate-400 mt-1">
-                            ⏰ {rem.remind_at?.slice(11, 16)}
+                            ⏰ {formatTimeOnly(rem.remind_at)}
                           </p>
                         </div>
                         <div className="flex items-center gap-1">
@@ -763,7 +781,7 @@ export const CalendarPage: React.FC = () => {
 
                       <div className="text-[11px]">
                         <div className="flex items-center gap-1.5 text-slate-400 text-[10px]">
-                          <span>{act.created_at?.slice(11, 16)}</span>
+                          <span>{formatTimeOnly(act.created_at)}</span>
                           {act.task_title && (
                             <span className="font-semibold text-slate-700 dark:text-slate-300">
                               • {act.task_title}
