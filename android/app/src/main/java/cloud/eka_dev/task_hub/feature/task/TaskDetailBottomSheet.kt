@@ -383,9 +383,7 @@ private fun ActivityLogsTabContent(
 
         // Activity Timeline
         if (isLoading && activities.isEmpty()) {
-            Box(modifier = Modifier.fillMaxWidth().padding(32.dp), contentAlignment = Alignment.Center) {
-                CircularProgressIndicator(modifier = Modifier.size(28.dp), color = BrandPrimary)
-            }
+            TaskListSkeleton(count = 2)
         } else if (activities.isEmpty()) {
             Column(
                 modifier = Modifier

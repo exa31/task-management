@@ -41,7 +41,12 @@ export const taskApi = {
   updateSubtask: (
     taskId: number,
     subtaskId: number,
-    payload: { title?: string; description?: string; is_completed?: boolean; due_date?: string | null }
+    payload: {
+      title?: string
+      description?: string
+      is_completed?: boolean
+      due_date?: string | null
+    }
   ) => apiClient.put<Subtask>(`/api/v1/tasks/${taskId}/subtasks/${subtaskId}`, payload),
 
   deleteSubtask: (taskId: number, subtaskId: number) =>

@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useRef } from 'react'
 
+import { TaskListSkeleton } from '@/components'
 import { useInfiniteTasks, useToggleFocus, useUpdateTask } from '@/hooks'
 import { useTranslation } from '@/i18n'
 import { useTaskStore } from '@/stores'
@@ -86,11 +87,7 @@ export const TaskListView: React.FC = () => {
   const toggleFocusMutation = useToggleFocus()
 
   if (isLoading) {
-    return (
-      <div className="py-16 text-center text-slate-500 text-xs flex items-center justify-center gap-2">
-        <i className="pi pi-spin pi-spinner text-indigo-400" /> {t('tasks.loadingTasks')}
-      </div>
-    )
+    return <TaskListSkeleton count={6} />
   }
 
   if (isError) {
@@ -286,9 +283,8 @@ export const TaskListView: React.FC = () => {
       {/* Infinite Scroll Sentinel & Loader */}
       <div ref={sentinelRef} className="py-2.5 flex items-center justify-center bg-transparent">
         {isFetchingNextPage ? (
-          <div className="flex items-center gap-2 text-xs text-indigo-500 dark:text-indigo-400 py-2 font-mono">
-            <i className="pi pi-spin pi-spinner text-xs" />
-            <span>{t('tasks.loadingMore')}</span>
+          <div className="w-full py-2">
+            <TaskListSkeleton count={2} />
           </div>
         ) : hasNextPage ? (
           <button

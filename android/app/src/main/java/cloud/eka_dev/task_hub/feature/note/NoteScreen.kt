@@ -288,7 +288,7 @@ fun NoteScreen(viewModel: NoteViewModel) {
                     .padding(horizontal = 16.dp, vertical = 8.dp)
             ) {
                 if (uiState.isLoading && uiState.notes.isEmpty()) {
-                    CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
+                    TaskListSkeleton(count = 4)
                 } else if (sortedNotes.isEmpty()) {
                     Column(
                         modifier = Modifier.align(Alignment.Center),

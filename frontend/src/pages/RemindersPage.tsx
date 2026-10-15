@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 
 import { taskApi } from '@/api'
-import { confirmDialog } from '@/components'
+import { confirmDialog, RemindersSkeleton } from '@/components'
 import { ReminderModal } from '@/features/reminder'
 import { useDeleteReminder, useDismissReminder, useReminders, useSnoozeReminder } from '@/hooks'
 import { useTranslation } from '@/i18n'
@@ -211,12 +211,7 @@ export default function RemindersPage() {
 
       {/* Reminders List / Grid */}
       {isLoading ? (
-        <div className="flex items-center justify-center py-20">
-          <div className="flex items-center gap-2 text-xs text-slate-400">
-            <i className="pi pi-spin pi-spinner text-base text-indigo-500" />
-            <span>{t('reminders.loading')}</span>
-          </div>
-        </div>
+        <RemindersSkeleton count={6} />
       ) : filteredReminders.length === 0 ? (
         <div className="flex flex-col items-center justify-center p-12 rounded-2xl bg-white/50 dark:bg-slate-900/50 border border-slate-200/80 dark:border-slate-800/80 text-center">
           <div className="w-14 h-14 rounded-2xl bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400 flex items-center justify-center mb-3">

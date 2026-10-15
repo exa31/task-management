@@ -129,9 +129,7 @@ fun TaskListScreen(
 
             // Task List Content
             if (uiState.isLoading) {
-                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    CircularProgressIndicator(color = BrandPrimary)
-                }
+                TaskListSkeleton(count = 6)
             } else if (uiState.tasks.isEmpty()) {
                 Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                     Column(

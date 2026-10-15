@@ -260,9 +260,8 @@ public struct ReminderListView: View {
                 }
 
                 if viewModel.isLoading && viewModel.reminders.isEmpty {
-                    Spacer()
-                    ProgressView()
-                    Spacer()
+                    TaskListSkeleton(count: 4)
+                        .padding(.horizontal, 16)
                 } else if filteredReminders.isEmpty {
                     Spacer()
                     VStack(spacing: 14) {

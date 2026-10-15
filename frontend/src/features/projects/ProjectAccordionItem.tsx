@@ -1,6 +1,6 @@
 import React, { useMemo, useState } from 'react'
 
-import { confirmDialog } from '@/components'
+import { confirmDialog, TaskListSkeleton } from '@/components'
 import { useDeleteProject, useTasks, useToggleFocus, useUpdateTask } from '@/hooks'
 import { useTranslation } from '@/i18n'
 import { useTaskStore, useUIStore } from '@/stores'
@@ -242,9 +242,8 @@ export const ProjectAccordionItem: React.FC<ProjectAccordionItemProps> = ({
 
           {/* Loading Indicator */}
           {isLoadingTasks ? (
-            <div className="py-8 text-center text-xs text-slate-400 flex items-center justify-center gap-2">
-              <i className="pi pi-spin pi-spinner text-indigo-500" />
-              <span>{t('tasks.loadingTasks')}</span>
+            <div className="py-2">
+              <TaskListSkeleton count={2} />
             </div>
           ) : totalTasks === 0 ? (
             <div className="py-10 text-center border border-dashed border-slate-200 dark:border-slate-800 rounded-xl">

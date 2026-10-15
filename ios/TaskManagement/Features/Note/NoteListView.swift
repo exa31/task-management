@@ -244,11 +244,8 @@ public struct NoteListView: View {
                 // Main Content List
                 Group {
                     if viewModel.isLoading && viewModel.notes.isEmpty {
-                        VStack(spacing: 12) {
-                            ProgressView()
-                            Text(L10n.Notes.loading).font(.system(size: 13)).foregroundColor(.secondary)
-                        }
-                        .frame(maxHeight: .infinity)
+                        TaskListSkeleton(count: 4)
+                            .padding(.horizontal, 16)
                     } else if viewModel.filteredNotes.isEmpty {
                         VStack(spacing: 14) {
                             ZStack {

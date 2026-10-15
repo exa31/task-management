@@ -21,6 +21,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import cloud.eka_dev.task_hub.core.designsystem.AppButton
 import cloud.eka_dev.task_hub.core.designsystem.PrimaryBlue
+import cloud.eka_dev.task_hub.core.designsystem.TaskListSkeleton
 import cloud.eka_dev.task_hub.core.model.CreateProjectRequest
 import cloud.eka_dev.task_hub.core.model.Project
 import cloud.eka_dev.task_hub.core.network.ApiClient
@@ -93,7 +94,7 @@ fun ProjectScreen(viewModel: ProjectViewModel) {
     ) { padding ->
         Box(modifier = Modifier.fillMaxSize().padding(padding).padding(16.dp)) {
             if (isLoading) {
-                CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
+                TaskListSkeleton(count = 5)
             } else if (projects.isEmpty()) {
                 Text(
                     text = "Belum ada proyek. Tambahkan proyek pertama Anda!",

@@ -1,7 +1,7 @@
 import React, { useState } from 'react'
 
 import { apiBaseUrl } from '@/api/client'
-import { confirmDialog } from '@/components'
+import { confirmDialog, Skeleton } from '@/components'
 import { useCreateMcpToken, useDeleteMcpToken, useMcpTokens } from '@/hooks'
 import { useTranslation } from '@/i18n'
 import type { GenerateTokenResponse } from '@/types'
@@ -247,8 +247,19 @@ export const McpSettingsPage: React.FC = () => {
               </div>
 
               {isLoading ? (
-                <div className="py-6 text-center text-slate-500 text-xs flex items-center justify-center gap-2">
-                  <i className="pi pi-spin pi-spinner text-indigo-400" /> {t('common.loading')}
+                <div className="py-2 space-y-3">
+                  {[1, 2, 3].map((i) => (
+                    <div
+                      key={`mcp-tok-skel-${i}`}
+                      className="py-2.5 flex items-center justify-between gap-3 border-b border-slate-100 dark:border-slate-800/60 last:border-0"
+                    >
+                      <div className="space-y-1.5 flex-1">
+                        <Skeleton className="h-4 w-32 rounded" />
+                        <Skeleton className="h-3 w-48 rounded" />
+                      </div>
+                      <Skeleton className="h-6 w-16 rounded" />
+                    </div>
+                  ))}
                 </div>
               ) : isError ? (
                 <div className="py-6 text-center rounded-lg border border-rose-200 dark:border-rose-900/40 bg-rose-50 dark:bg-rose-950/20 p-3">

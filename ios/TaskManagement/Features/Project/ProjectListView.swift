@@ -197,14 +197,8 @@ public struct ProjectListView: View {
 
                     // Content State
                     if viewModel.isLoading && viewModel.projects.isEmpty {
-                        VStack(spacing: 12) {
-                            ProgressView()
-                                .scaleEffect(1.2)
-                            Text("Memuat daftar proyek…")
-                                .font(.system(size: 13))
-                                .foregroundColor(.secondary)
-                        }
-                        .frame(maxWidth: .infinity, minHeight: 200)
+                        TaskListSkeleton(count: 4)
+                            .padding(.horizontal, 16)
                     } else if viewModel.filteredProjects.isEmpty {
                         VStack(spacing: 14) {
                             ZStack {

@@ -270,15 +270,8 @@ public struct TaskListView: View {
 
                 // Task List Content
                 if viewModel.isLoading && viewModel.tasks.isEmpty {
-                    Spacer()
-                    VStack(spacing: 12) {
-                        ProgressView()
-                            .scaleEffect(1.2)
-                        Text("Memuat daftar tugas…")
-                            .font(.system(size: 13))
-                            .foregroundColor(.secondary)
-                    }
-                    Spacer()
+                    TaskListSkeleton(count: 6)
+                        .padding(.horizontal, 16)
                 } else if viewModel.filteredTasks.isEmpty {
                     Spacer()
                     VStack(spacing: 14) {

@@ -1,6 +1,6 @@
 import React, { useState } from 'react'
 
-import { confirmDialog } from '@/components'
+import { confirmDialog, NotesSkeleton } from '@/components'
 import { useConvertToTask, useCreateNote, useDeleteNote, useNotes, useUpdateNote } from '@/hooks'
 import { useTranslation } from '@/i18n'
 import type {
@@ -173,9 +173,7 @@ export const NoteGrid: React.FC = () => {
 
       {/* Grid of Notes */}
       {isLoading ? (
-        <div className="py-16 text-center text-slate-500 text-xs flex items-center justify-center gap-2">
-          <i className="pi pi-spin pi-spinner text-indigo-400" /> {t('notes.loadingIdeas')}
-        </div>
+        <NotesSkeleton count={8} />
       ) : isError ? (
         <div className="py-12 text-center rounded-2xl border border-rose-900/40 bg-rose-950/20 p-8">
           <i className="pi pi-exclamation-circle text-3xl text-rose-400 mb-2" />

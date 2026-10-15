@@ -386,9 +386,9 @@ public struct TaskDetailSheet: View {
 
             // Timeline Scroll
             if viewModel.isLoadingActivities && viewModel.taskActivities.isEmpty {
-                Spacer()
-                ProgressView(L10n.Tasks.loadingLogs)
-                Spacer()
+                TaskListSkeleton(count: 3)
+                    .padding(.horizontal, 16)
+                    .padding(.top, 12)
             } else if viewModel.taskActivities.isEmpty {
                 Spacer()
                 VStack(spacing: 12) {

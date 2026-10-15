@@ -182,3 +182,54 @@ public struct ProgressBar: View {
         .frame(height: 6)
     }
 }
+
+public struct TaskItemSkeleton: View {
+    public init() {}
+
+    public var body: some View {
+        HStack(spacing: 12) {
+            RoundedRectangle(cornerRadius: 6, style: .continuous)
+                .fill(Color.secondary.opacity(0.15))
+                .frame(width: 22, height: 22)
+
+            VStack(alignment: .leading, spacing: 6) {
+                RoundedRectangle(cornerRadius: 4, style: .continuous)
+                    .fill(Color.secondary.opacity(0.2))
+                    .frame(width: 180, height: 14)
+
+                RoundedRectangle(cornerRadius: 4, style: .continuous)
+                    .fill(Color.secondary.opacity(0.15))
+                    .frame(width: 100, height: 10)
+            }
+
+            Spacer()
+
+            RoundedRectangle(cornerRadius: 8, style: .continuous)
+                .fill(Color.secondary.opacity(0.15))
+                .frame(width: 50, height: 22)
+        }
+        .padding(.horizontal, 14)
+        .padding(.vertical, 12)
+        .background(
+            RoundedRectangle(cornerRadius: 16, style: .continuous)
+                .fill(Color(uiColor: .secondarySystemGroupedBackground))
+        )
+        .redacted(reason: .placeholder)
+    }
+}
+
+public struct TaskListSkeleton: View {
+    let count: Int
+    public init(count: Int = 6) {
+        self.count = count
+    }
+
+    public var body: some View {
+        VStack(spacing: 10) {
+            ForEach(0..<count, id: \.self) { _ in
+                TaskItemSkeleton()
+            }
+        }
+    }
+}
+

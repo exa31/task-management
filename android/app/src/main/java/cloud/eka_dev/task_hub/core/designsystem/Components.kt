@@ -1,5 +1,6 @@
 package cloud.eka_dev.task_hub.core.designsystem
 
+import androidx.compose.animation.core.*
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -14,6 +15,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontStyle
@@ -562,3 +564,77 @@ fun TaskItemCard(
         }
     }
 }
+
+@Composable
+fun TaskItemSkeleton() {
+    val shimmerColors = listOf(
+        MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
+        MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.2f),
+        MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
+    )
+    val transition = rememberInfiniteTransition(label = "shimmer")
+    val translateAnim by transition.animateFloat(
+        initialValue = 0f,
+        targetValue = 1000f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(durationMillis = 1000, easing = LinearEasing),
+            repeatMode = RepeatMode.Restart
+        ),
+        label = "shimmer_anim"
+    )
+    val brush = Brush.linearGradient(
+        colors = shimmerColors,
+        start = Offset.Zero,
+        end = Offset(translateAnim, translateAnim)
+    )
+
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(16.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surface
+        ),
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
+    ) {
+        Column(modifier = Modifier.padding(14.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Box(
+                    modifier = Modifier
+                        .size(20.dp)
+                        .clip(RoundedCornerShape(6.dp))
+                        .background(brush)
+                )
+                Spacer(modifier = Modifier.width(10.dp))
+                Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth(0.65f)
+                            .height(14.dp)
+                            .clip(RoundedCornerShape(4.dp))
+                            .background(brush)
+                    )
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth(0.35f)
+                            .height(10.dp)
+                            .clip(RoundedCornerShape(4.dp))
+                            .background(brush)
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun TaskListSkeleton(count: Int = 6) {
+    Column(
+        verticalArrangement = Arrangement.spacedBy(10.dp),
+        modifier = Modifier.fillMaxSize()
+    ) {
+        repeat(count) {
+            TaskItemSkeleton()
+        }
+    }
+}
+

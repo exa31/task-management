@@ -1,5 +1,6 @@
 import React, { useMemo } from 'react'
 
+import { TaskBoardSkeleton } from '@/components'
 import { useTasks, useToggleFocus, useUpdateTask } from '@/hooks'
 import { useTranslation } from '@/i18n'
 import { useTaskStore } from '@/stores'
@@ -50,11 +51,7 @@ export const TaskBoardView: React.FC = () => {
   }
 
   if (isLoading) {
-    return (
-      <div className="py-16 text-center text-slate-500 text-xs flex items-center justify-center gap-2">
-        <i className="pi pi-spin pi-spinner text-indigo-400" /> {t('tasks.loadingTasks')}
-      </div>
-    )
+    return <TaskBoardSkeleton />
   }
 
   if (isError) {

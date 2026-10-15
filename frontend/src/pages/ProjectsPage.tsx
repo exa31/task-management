@@ -1,5 +1,6 @@
 import React, { useMemo, useState } from 'react'
 
+import { ProjectsSkeleton } from '@/components'
 import { ProjectAccordionItem, ProjectModal } from '@/features/projects'
 import { TaskDrawer, TaskModal } from '@/features/tasks'
 import { useProjects, useTasks } from '@/hooks'
@@ -196,10 +197,7 @@ export const ProjectsPage: React.FC = () => {
 
       {/* Projects List Accordion */}
       {isLoading ? (
-        <div className="py-20 text-center text-xs text-slate-400 flex items-center justify-center gap-2">
-          <i className="pi pi-spin pi-spinner text-indigo-500 text-base" />
-          <span>{t('projects.loading')}</span>
-        </div>
+        <ProjectsSkeleton count={4} />
       ) : projects.length === 0 ? (
         <div className="py-20 text-center rounded-2xl border-2 border-dashed border-slate-200 dark:border-slate-800 bg-white/50 dark:bg-slate-900/40 p-8">
           <div className="w-12 h-12 rounded-2xl bg-indigo-500/10 text-indigo-500 flex items-center justify-center text-xl mx-auto mb-3">

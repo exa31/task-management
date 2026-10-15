@@ -1,5 +1,6 @@
 import React, { useState } from 'react'
 
+import { TimelineSkeleton } from '@/components'
 import { useCreateTaskActivity, useTaskActivities } from '@/hooks'
 import { useTranslation } from '@/i18n'
 import type { TaskActivity } from '@/types'
@@ -172,9 +173,8 @@ export const TaskActivityTimeline: React.FC<TaskActivityTimelineProps> = ({ task
         </div>
 
         {isLoading ? (
-          <div className="p-8 text-center text-slate-400">
-            <i className="pi pi-spin pi-spinner text-lg mb-2" />
-            <p className="text-xs">{t('tasks.loadingTasks')}</p>
+          <div className="py-4">
+            <TimelineSkeleton count={3} />
           </div>
         ) : activities.length === 0 ? (
           <div className="p-8 text-center rounded-xl border border-dashed border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/30">

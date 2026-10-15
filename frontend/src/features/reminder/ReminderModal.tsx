@@ -2,6 +2,7 @@ import { Calendar } from 'primereact/calendar'
 import React, { type FormEvent, useEffect, useRef, useState } from 'react'
 
 import { getLocalizedErrorMessage } from '@/api'
+import { Skeleton } from '@/components'
 import { useCreateReminder, useTask, useTasks, useUpdateReminder } from '@/hooks'
 import { useTranslation } from '@/i18n'
 import type { Reminder, Task } from '@/types'
@@ -311,9 +312,9 @@ export const ReminderModal: React.FC<ReminderModalProps> = ({
                     </button>
 
                     {isSearchingTasks ? (
-                      <div className="py-4 text-center text-xs text-slate-400 flex items-center justify-center gap-2">
-                        <i className="pi pi-spin pi-spinner text-xs text-indigo-500" />
-                        <span>{t('reminders.searchingTasks')}</span>
+                      <div className="p-2 space-y-1.5">
+                        <Skeleton className="h-8 w-full rounded-lg" />
+                        <Skeleton className="h-8 w-full rounded-lg" />
                       </div>
                     ) : searchResults.length === 0 ? (
                       <div className="py-4 text-center text-xs text-slate-400">

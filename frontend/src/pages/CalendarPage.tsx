@@ -68,7 +68,6 @@ export const CalendarPage: React.FC = () => {
   const reminders = data?.reminders || []
   const activities = data?.activities || []
 
-
   const formatTimeOnly = (dateStr?: string | null): string => {
     if (!dateStr) return ''
     const d = new Date(dateStr)
