@@ -51,8 +51,10 @@ data class Subtask(
     val id: Long,
     @SerialName("task_id") val taskId: Long,
     val title: String,
+    val description: String = "",
     @SerialName("is_completed") val isCompleted: Boolean,
-    @SerialName("order_index") val orderIndex: Int = 0
+    @SerialName("order_index") val orderIndex: Int = 0,
+    @SerialName("due_date") val dueDate: String? = null
 )
 
 @Serializable
@@ -111,13 +113,17 @@ data class LogProgressRequest(
 
 @Serializable
 data class CreateSubtaskRequest(
-    val title: String
+    val title: String,
+    val description: String? = null,
+    @SerialName("due_date") val dueDate: String? = null
 )
 
 @Serializable
 data class UpdateSubtaskRequest(
     val title: String? = null,
-    @SerialName("is_completed") val isCompleted: Boolean? = null
+    val description: String? = null,
+    @SerialName("is_completed") val isCompleted: Boolean? = null,
+    @SerialName("due_date") val dueDate: String? = null
 )
 
 @Serializable
@@ -214,6 +220,16 @@ data class CreateReminderRequest(
     val title: String,
     val description: String = "",
     @SerialName("remind_at") val remindAt: String
+)
+
+@Serializable
+data class UpdateReminderRequest(
+    @SerialName("task_id") val taskId: Long? = null,
+    @SerialName("clear_task_id") val clearTaskId: Boolean = false,
+    val title: String? = null,
+    val description: String? = null,
+    @SerialName("remind_at") val remindAt: String? = null,
+    val status: String? = null
 )
 
 @Serializable

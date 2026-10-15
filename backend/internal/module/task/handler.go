@@ -413,4 +413,3 @@ func (h *Handler) GetWorkspaceStats(c *fiber.Ctx) error {
 
 	return response.SuccessResponse(c, result, "Workspace stats retrieved successfully")
 }
-

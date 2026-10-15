@@ -982,7 +982,7 @@ func (s *service) cloneAndRollOverRecurringTask(ctx context.Context, task *TaskR
 			Data: map[string]any{
 				"old_task_id": task.ID,
 				"new_task_id": created.ID,
-				"title":        created.Title,
+				"title":       created.Title,
 			},
 		})
 	}
@@ -1060,5 +1060,3 @@ func (s *service) notifyTaskDeadlineChanged(taskID int64, title string, dueDate 
 		}
 	}()
 }
-
-

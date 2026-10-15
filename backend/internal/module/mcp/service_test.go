@@ -68,8 +68,11 @@ type dummyNoteService struct {
 
 type dummyTaskService struct {
 	task.Service
-	createFunc func(ctx context.Context, userID string, req task.CreateTaskRequest) (*task.TaskResponse, error)
-	updateFunc func(ctx context.Context, userID string, taskID int64, req task.UpdateTaskRequest) (*task.TaskResponse, error)
+	createFunc        func(ctx context.Context, userID string, req task.CreateTaskRequest) (*task.TaskResponse, error)
+	updateFunc        func(ctx context.Context, userID string, taskID int64, req task.UpdateTaskRequest) (*task.TaskResponse, error)
+	createSubtaskFunc func(ctx context.Context, userID string, taskID int64, req task.CreateSubtaskRequest) (*task.SubtaskResponse, error)
+	updateSubtaskFunc func(ctx context.Context, userID string, taskID int64, subtaskID int64, req task.UpdateSubtaskRequest) (*task.SubtaskResponse, error)
+	deleteSubtaskFunc func(ctx context.Context, userID string, taskID int64, subtaskID int64) error
 }
 
 func (d *dummyTaskService) Create(ctx context.Context, userID string, req task.CreateTaskRequest) (*task.TaskResponse, error) {
@@ -88,6 +91,39 @@ func (d *dummyTaskService) Update(ctx context.Context, userID string, taskID int
 		title = *req.Title
 	}
 	return &task.TaskResponse{ID: taskID, Title: title}, nil
+}
+
+func (d *dummyTaskService) CreateSubtask(ctx context.Context, userID string, taskID int64, req task.CreateSubtaskRequest) (*task.SubtaskResponse, error) {
+	if d.createSubtaskFunc != nil {
+		return d.createSubtaskFunc(ctx, userID, taskID, req)
+	}
+	return &task.SubtaskResponse{ID: 101, TaskID: taskID, Title: req.Title, Description: req.Description}, nil
+}
+
+func (d *dummyTaskService) UpdateSubtask(ctx context.Context, userID string, taskID int64, subtaskID int64, req task.UpdateSubtaskRequest) (*task.SubtaskResponse, error) {
+	if d.updateSubtaskFunc != nil {
+		return d.updateSubtaskFunc(ctx, userID, taskID, subtaskID, req)
+	}
+	title := "Subtask"
+	if req.Title != nil {
+		title = *req.Title
+	}
+	desc := ""
+	if req.Description != nil {
+		desc = *req.Description
+	}
+	isComp := false
+	if req.IsCompleted != nil {
+		isComp = *req.IsCompleted
+	}
+	return &task.SubtaskResponse{ID: subtaskID, TaskID: taskID, Title: title, Description: desc, IsCompleted: isComp}, nil
+}
+
+func (d *dummyTaskService) DeleteSubtask(ctx context.Context, userID string, taskID int64, subtaskID int64) error {
+	if d.deleteSubtaskFunc != nil {
+		return d.deleteSubtaskFunc(ctx, userID, taskID, subtaskID)
+	}
+	return nil
 }
 
 func TestMCPService_CreateToken(t *testing.T) {
@@ -401,5 +437,104 @@ func TestMCPService_ProjectTools(t *testing.T) {
 	}
 	if capturedReq.ProjectID == nil || *capturedReq.ProjectID != 2 {
 		t.Fatalf("expected project_id 2 to be linked, got %v", capturedReq.ProjectID)
+	}
+}
+
+func TestMCPService_SubtaskTools(t *testing.T) {
+	ctx := context.Background()
+	testUserID := "user-uuid-123"
+
+	var createdSubtaskReq task.CreateSubtaskRequest
+	var updatedSubtaskReq task.UpdateSubtaskRequest
+	var deletedSubtaskID int64
+
+	taskSvc := &dummyTaskService{
+		createSubtaskFunc: func(ctx context.Context, userID string, taskID int64, req task.CreateSubtaskRequest) (*task.SubtaskResponse, error) {
+			createdSubtaskReq = req
+			return &task.SubtaskResponse{
+				ID:          201,
+				TaskID:      taskID,
+				Title:       req.Title,
+				Description: req.Description,
+			}, nil
+		},
+		updateSubtaskFunc: func(ctx context.Context, userID string, taskID int64, subtaskID int64, req task.UpdateSubtaskRequest) (*task.SubtaskResponse, error) {
+			updatedSubtaskReq = req
+			return &task.SubtaskResponse{
+				ID:          subtaskID,
+				TaskID:      taskID,
+				Title:       *req.Title,
+				Description: *req.Description,
+				IsCompleted: *req.IsCompleted,
+			}, nil
+		},
+		deleteSubtaskFunc: func(ctx context.Context, userID string, taskID int64, subtaskID int64) error {
+			deletedSubtaskID = subtaskID
+			return nil
+		},
+	}
+
+	svc := NewService(&mockTokenRepository{}, &dummyNoteService{}, taskSvc, &mockTransactor{})
+
+	// 1. Test create_subtask
+	createResp := svc.HandleJSONRPC(ctx, testUserID, JSONRPCRequest{
+		Method: "tools/call",
+		ID:     1,
+		Params: map[string]interface{}{
+			"name": "create_subtask",
+			"arguments": map[string]interface{}{
+				"task_id":     10,
+				"title":       "New Subtask Title",
+				"description": "Subtask detail notes",
+				"due_date":    "2026-10-20T10:00:00Z",
+			},
+		},
+	})
+	if createResp.Error != nil {
+		t.Fatalf("create_subtask failed: %v", createResp.Error)
+	}
+	if createdSubtaskReq.Title != "New Subtask Title" || createdSubtaskReq.Description != "Subtask detail notes" {
+		t.Fatalf("unexpected create_subtask params: %+v", createdSubtaskReq)
+	}
+
+	// 2. Test update_subtask
+	updateResp := svc.HandleJSONRPC(ctx, testUserID, JSONRPCRequest{
+		Method: "tools/call",
+		ID:     2,
+		Params: map[string]interface{}{
+			"name": "update_subtask",
+			"arguments": map[string]interface{}{
+				"task_id":      10,
+				"subtask_id":   201,
+				"title":        "Updated Subtask",
+				"description":  "Updated notes",
+				"is_completed": true,
+			},
+		},
+	})
+	if updateResp.Error != nil {
+		t.Fatalf("update_subtask failed: %v", updateResp.Error)
+	}
+	if updatedSubtaskReq.Title == nil || *updatedSubtaskReq.Title != "Updated Subtask" {
+		t.Fatalf("unexpected update_subtask title: %+v", updatedSubtaskReq)
+	}
+
+	// 3. Test delete_subtask
+	delResp := svc.HandleJSONRPC(ctx, testUserID, JSONRPCRequest{
+		Method: "tools/call",
+		ID:     3,
+		Params: map[string]interface{}{
+			"name": "delete_subtask",
+			"arguments": map[string]interface{}{
+				"task_id":    10,
+				"subtask_id": 201,
+			},
+		},
+	})
+	if delResp.Error != nil {
+		t.Fatalf("delete_subtask failed: %v", delResp.Error)
+	}
+	if deletedSubtaskID != 201 {
+		t.Fatalf("expected subtask 201 to be deleted, got %d", deletedSubtaskID)
 	}
 }

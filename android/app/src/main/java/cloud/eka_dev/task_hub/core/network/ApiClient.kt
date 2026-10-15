@@ -102,6 +102,12 @@ interface ApiService {
     @POST("reminders")
     suspend fun createReminder(@Body req: CreateReminderRequest): BaseResponse<Reminder>
 
+    @PUT("reminders/{id}")
+    suspend fun updateReminder(@Path("id") id: Long, @Body req: UpdateReminderRequest): BaseResponse<Reminder>
+
+    @DELETE("reminders/{id}")
+    suspend fun deleteReminder(@Path("id") id: Long): BaseResponse<Unit>
+
     @POST("reminders/device-token")
     suspend fun registerDeviceToken(@Body req: RegisterDeviceTokenRequest): BaseResponse<Unit>
 

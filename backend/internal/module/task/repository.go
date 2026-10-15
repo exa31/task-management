@@ -133,7 +133,7 @@ func (e *taskEntity) toResponse(subtasks []SubtaskResponse) TaskResponse {
 
 func (r *repository) fetchSubtasks(ctx context.Context, taskID int64) ([]SubtaskResponse, error) {
 	query := `
-		SELECT id, task_id, title, is_completed, order_index, due_date, created_at, updated_at
+		SELECT id, task_id, title, COALESCE(description, '') AS description, is_completed, order_index, due_date, created_at, updated_at
 		FROM subtasks
 		WHERE task_id = $1
 		ORDER BY order_index ASC, id ASC
@@ -192,9 +192,9 @@ func (r *repository) Create(ctx context.Context, userID string, req CreateTaskRe
 			continue
 		}
 		subQuery := `
-			INSERT INTO subtasks (task_id, title, is_completed, order_index, created_at, updated_at)
-			VALUES ($1, $2, FALSE, $3, NOW(), NOW())
-			RETURNING id, task_id, title, is_completed, order_index, due_date, created_at, updated_at
+			INSERT INTO subtasks (task_id, title, description, is_completed, order_index, created_at, updated_at)
+			VALUES ($1, $2, '', FALSE, $3, NOW(), NOW())
+			RETURNING id, task_id, title, COALESCE(description, '') AS description, is_completed, order_index, due_date, created_at, updated_at
 		`
 		var st SubtaskResponse
 		if err := r.exec(ctx).QueryRowxContext(ctx, subQuery, entity.ID, stTitle, i).StructScan(&st); err != nil {
@@ -559,12 +559,12 @@ func (r *repository) CreateSubtask(ctx context.Context, userID string, taskID in
 	}
 
 	query := `
-		INSERT INTO subtasks (task_id, title, is_completed, order_index, due_date, created_at, updated_at)
-		VALUES ($1, $2, FALSE, (SELECT COALESCE(MAX(order_index) + 1, 0) FROM subtasks WHERE task_id = $1), $3, NOW(), NOW())
-		RETURNING id, task_id, title, is_completed, order_index, due_date, created_at, updated_at
+		INSERT INTO subtasks (task_id, title, description, is_completed, order_index, due_date, created_at, updated_at)
+		VALUES ($1, $2, $3, FALSE, (SELECT COALESCE(MAX(order_index) + 1, 0) FROM subtasks WHERE task_id = $1), $4, NOW(), NOW())
+		RETURNING id, task_id, title, COALESCE(description, '') AS description, is_completed, order_index, due_date, created_at, updated_at
 	`
 	var st SubtaskResponse
-	err = r.exec(ctx).QueryRowxContext(ctx, query, taskID, req.Title, req.DueDate).StructScan(&st)
+	err = r.exec(ctx).QueryRowxContext(ctx, query, taskID, req.Title, req.Description, req.DueDate).StructScan(&st)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create subtask: %w", err)
 	}
@@ -579,7 +579,7 @@ func (r *repository) UpdateSubtask(ctx context.Context, userID string, taskID in
 	}
 
 	var existing SubtaskResponse
-	err = r.exec(ctx).GetContext(ctx, &existing, `SELECT id, task_id, title, is_completed, order_index, due_date, created_at, updated_at FROM subtasks WHERE id = $1 AND task_id = $2`, subtaskID, taskID)
+	err = r.exec(ctx).GetContext(ctx, &existing, `SELECT id, task_id, title, COALESCE(description, '') AS description, is_completed, order_index, due_date, created_at, updated_at FROM subtasks WHERE id = $1 AND task_id = $2`, subtaskID, taskID)
 	if err != nil {
 		return nil, fmt.Errorf("subtask not found: %w", err)
 	}
@@ -587,6 +587,16 @@ func (r *repository) UpdateSubtask(ctx context.Context, userID string, taskID in
 	title := existing.Title
 	if req.Title != nil {
 		title = *req.Title
+	}
+	description := existing.Description
+	if req.HasDescription {
+		if req.Description != nil {
+			description = *req.Description
+		} else {
+			description = ""
+		}
+	} else if req.Description != nil {
+		description = *req.Description
 	}
 	isCompleted := existing.IsCompleted
 	if req.IsCompleted != nil {
@@ -601,12 +611,12 @@ func (r *repository) UpdateSubtask(ctx context.Context, userID string, taskID in
 
 	query := `
 		UPDATE subtasks
-		SET title = $1, is_completed = $2, due_date = $3, updated_at = NOW()
-		WHERE id = $4 AND task_id = $5
-		RETURNING id, task_id, title, is_completed, order_index, due_date, created_at, updated_at
+		SET title = $1, description = $2, is_completed = $3, due_date = $4, updated_at = NOW()
+		WHERE id = $5 AND task_id = $6
+		RETURNING id, task_id, title, COALESCE(description, '') AS description, is_completed, order_index, due_date, created_at, updated_at
 	`
 	var updated SubtaskResponse
-	err = r.exec(ctx).QueryRowxContext(ctx, query, title, isCompleted, dueDate, subtaskID, taskID).StructScan(&updated)
+	err = r.exec(ctx).QueryRowxContext(ctx, query, title, description, isCompleted, dueDate, subtaskID, taskID).StructScan(&updated)
 	if err != nil {
 		return nil, fmt.Errorf("failed to update subtask: %w", err)
 	}

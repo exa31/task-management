@@ -10,6 +10,7 @@ type SubtaskResponse struct {
 	ID          int64      `json:"id" db:"id"`
 	TaskID      int64      `json:"task_id" db:"task_id"`
 	Title       string     `json:"title" db:"title"`
+	Description string     `json:"description" db:"description"`
 	IsCompleted bool       `json:"is_completed" db:"is_completed"`
 	OrderIndex  int        `json:"order_index" db:"order_index"`
 	DueDate     *time.Time `json:"due_date" db:"due_date"`
@@ -37,10 +38,10 @@ type CreateTaskRequest struct {
 
 // UpdateTaskRequest payload for updating an existing task.
 type UpdateTaskRequest struct {
-	Title              *string    `json:"title" validate:"omitempty,min=1,max=255"`
-	Description        *string    `json:"description"`
-	Status             *string    `json:"status" validate:"omitempty,oneof=backlog todo in_progress review done"`
-	Priority           *string    `json:"priority" validate:"omitempty,oneof=low medium high urgent"`
+	Title                *string    `json:"title" validate:"omitempty,min=1,max=255"`
+	Description          *string    `json:"description"`
+	Status               *string    `json:"status" validate:"omitempty,oneof=backlog todo in_progress review done"`
+	Priority             *string    `json:"priority" validate:"omitempty,oneof=low medium high urgent"`
 	DueDate              *time.Time `json:"due_date"`
 	HasDueDate           bool       `json:"-"`
 	IsFocus              *bool      `json:"is_focus"`
@@ -90,16 +91,19 @@ type LogProgressRequest struct {
 
 // CreateSubtaskRequest payload for adding a subtask checklist item.
 type CreateSubtaskRequest struct {
-	Title   string     `json:"title" validate:"required,min=1,max=255"`
-	DueDate *time.Time `json:"due_date"`
+	Title       string     `json:"title" validate:"required,min=1,max=255"`
+	Description string     `json:"description"`
+	DueDate     *time.Time `json:"due_date"`
 }
 
 // UpdateSubtaskRequest payload for modifying a subtask checklist item.
 type UpdateSubtaskRequest struct {
-	Title       *string    `json:"title"`
-	IsCompleted *bool      `json:"is_completed"`
-	DueDate     *time.Time `json:"due_date"`
-	HasDueDate  bool       `json:"-"`
+	Title          *string    `json:"title"`
+	Description    *string    `json:"description"`
+	IsCompleted    *bool      `json:"is_completed"`
+	DueDate        *time.Time `json:"due_date"`
+	HasDueDate     bool       `json:"-"`
+	HasDescription bool       `json:"-"`
 }
 
 // UnmarshalJSON detects if due_date was explicitly provided in JSON (including null).
@@ -117,6 +121,9 @@ func (u *UpdateSubtaskRequest) UnmarshalJSON(data []byte) error {
 	if err := json.Unmarshal(data, &raw); err == nil {
 		if _, exists := raw["due_date"]; exists {
 			u.HasDueDate = true
+		}
+		if _, exists := raw["description"]; exists {
+			u.HasDescription = true
 		}
 	}
 	return nil
@@ -235,4 +242,3 @@ type WorkspaceStatsResponse struct {
 	PendingReminders int `json:"pending_reminders" db:"pending_reminders"`
 	TotalNotes       int `json:"total_notes" db:"total_notes"`
 }
-

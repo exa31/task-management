@@ -78,6 +78,42 @@ class ReminderViewModel(
         }
     }
 
+    fun updateReminder(
+        id: Long,
+        title: String,
+        description: String?,
+        remindAt: String? = null,
+        status: String? = null
+    ) {
+        viewModelScope.launch {
+            try {
+                apiClient.apiService.updateReminder(
+                    id,
+                    cloud.eka_dev.task_hub.core.model.UpdateReminderRequest(
+                        title = title,
+                        description = description,
+                        remindAt = remindAt,
+                        status = status
+                    )
+                )
+                loadReminders()
+            } catch (e: Exception) {
+                // handle error
+            }
+        }
+    }
+
+    fun deleteReminder(id: Long) {
+        viewModelScope.launch {
+            try {
+                apiClient.apiService.deleteReminder(id)
+                loadReminders()
+            } catch (e: Exception) {
+                // handle error
+            }
+        }
+    }
+
     fun dismiss(id: Long) {
         viewModelScope.launch {
             try {
@@ -111,6 +147,7 @@ class ReminderViewModel(
 fun ReminderScreen(viewModel: ReminderViewModel) {
     val reminders by viewModel.reminders.collectAsState()
     val activeAlert by viewModel.activeAlert.collectAsState()
+    var editingReminder by remember { mutableStateOf<Reminder?>(null) }
 
     Scaffold(
         topBar = { TopAppBar(title = { Text("Pengingat & Notifikasi") }) }
@@ -161,7 +198,13 @@ fun ReminderScreen(viewModel: ReminderViewModel) {
                                 Text("Jadwal: ${reminder.remindAt}", fontSize = 12.sp, color = MaterialTheme.colorScheme.primary)
 
                                 Spacer(modifier = Modifier.height(12.dp))
-                                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                Row(
+                                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    OutlinedButton(onClick = { editingReminder = reminder }) {
+                                        Text("Edit")
+                                    }
                                     OutlinedButton(onClick = { viewModel.snooze(reminder.id) }) {
                                         Text("Tunda 15 mnt")
                                     }
@@ -175,5 +218,55 @@ fun ReminderScreen(viewModel: ReminderViewModel) {
                 }
             }
         }
+    }
+
+    if (editingReminder != null) {
+        val current = editingReminder!!
+        var editTitle by remember { mutableStateOf(current.title) }
+        var editDescription by remember { mutableStateOf(current.description) }
+
+        AlertDialog(
+            onDismissRequest = { editingReminder = null },
+            title = { Text("Edit Pengingat") },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    OutlinedTextField(
+                        value = editTitle,
+                        onValueChange = { editTitle = it },
+                        label = { Text("Judul Pengingat") },
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                    OutlinedTextField(
+                        value = editDescription,
+                        onValueChange = { editDescription = it },
+                        label = { Text("Deskripsi / Catatan") },
+                        modifier = Modifier.fillMaxWidth(),
+                        maxLines = 3
+                    )
+                }
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        if (editTitle.isNotBlank()) {
+                            viewModel.updateReminder(
+                                id = current.id,
+                                title = editTitle.trim(),
+                                description = editDescription.trim()
+                            )
+                            editingReminder = null
+                        }
+                    },
+                    enabled = editTitle.isNotBlank()
+                ) {
+                    Text("Simpan")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { editingReminder = null }) {
+                    Text("Batal")
+                }
+            }
+        )
     }
 }

@@ -220,10 +220,29 @@ public struct TaskDetailSheet: View {
                                     }
                                     .buttonStyle(.plain)
 
-                                    Text(subtask.title)
-                                        .font(.system(size: 13))
-                                        .strikethrough(subtask.isCompleted)
-                                        .foregroundColor(subtask.isCompleted ? .secondary : .primary)
+                                    VStack(alignment: .leading, spacing: 3) {
+                                        Text(subtask.title)
+                                            .font(.system(size: 13))
+                                            .strikethrough(subtask.isCompleted)
+                                            .foregroundColor(subtask.isCompleted ? .secondary : .primary)
+
+                                        if let desc = subtask.description, !desc.isEmpty {
+                                            Text(desc)
+                                                .font(.system(size: 11))
+                                                .foregroundColor(.secondary)
+                                                .lineLimit(2)
+                                        }
+
+                                        if let due = subtask.dueDate, !due.isEmpty {
+                                            HStack(spacing: 4) {
+                                                Image(systemName: "calendar")
+                                                    .font(.system(size: 9))
+                                                Text(due)
+                                                    .font(.system(size: 10))
+                                            }
+                                            .foregroundColor(AppColors.primary)
+                                        }
+                                    }
 
                                     Spacer()
 
@@ -725,10 +744,29 @@ public struct EditTaskSheet: View {
                                 }
                                 .buttonStyle(.plain)
 
-                                Text(subtask.title)
-                                    .font(.system(size: 14))
-                                    .strikethrough(subtask.isCompleted)
-                                    .foregroundColor(subtask.isCompleted ? .secondary : .primary)
+                                VStack(alignment: .leading, spacing: 3) {
+                                    Text(subtask.title)
+                                        .font(.system(size: 14))
+                                        .strikethrough(subtask.isCompleted)
+                                        .foregroundColor(subtask.isCompleted ? .secondary : .primary)
+
+                                    if let desc = subtask.description, !desc.isEmpty {
+                                        Text(desc)
+                                            .font(.system(size: 11))
+                                            .foregroundColor(.secondary)
+                                            .lineLimit(2)
+                                    }
+
+                                    if let due = subtask.dueDate, !due.isEmpty {
+                                        HStack(spacing: 4) {
+                                            Image(systemName: "calendar")
+                                                .font(.system(size: 9))
+                                            Text(due)
+                                                .font(.system(size: 10))
+                                        }
+                                        .foregroundColor(AppColors.primary)
+                                    }
+                                }
 
                                 Spacer()
 

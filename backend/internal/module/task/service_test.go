@@ -452,10 +452,10 @@ func TestTaskService_SubtaskDueDateValidation(t *testing.T) {
 				DueDate: &taskDueDate,
 				Subtasks: []SubtaskResponse{
 					{
-						ID:        10,
-						TaskID:    id,
-						Title:     "Existing Subtask",
-						DueDate:   &validSubtaskDueDate,
+						ID:      10,
+						TaskID:  id,
+						Title:   "Existing Subtask",
+						DueDate: &validSubtaskDueDate,
 					},
 				},
 			}, nil
@@ -925,5 +925,3 @@ func TestTaskService_DeadlineChangePushNotification(t *testing.T) {
 		t.Errorf("timed out waiting for push notification to be dispatched")
 	}
 }
-
-

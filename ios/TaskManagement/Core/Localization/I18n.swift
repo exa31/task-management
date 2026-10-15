@@ -282,6 +282,12 @@ public enum Translations {
             // Reminders
             "reminders.title": "Reminders & Alerts",
             "reminders.new": "New Reminder",
+            "reminders.edit": "Edit Reminder",
+            "reminders.editDesc": "Modify schedule, details, or linked task",
+            "reminders.status": "Reminder Status",
+            "reminders.statusPending": "Pending (Waiting)",
+            "reminders.statusSent": "Triggered / Sent",
+            "reminders.statusDismissed": "Completed",
             "reminders.emptyTitle": "No Reminders Found",
             "reminders.emptyDesc": "Stay ahead of schedule by adding deadlines and alerts.",
             "reminders.createFirst": "Create First Reminder",
@@ -394,6 +400,7 @@ public enum Translations {
 
             // General
             "general.create": "Create",
+            "general.edit": "Edit",
             "general.save": "Save",
             "general.saving": "Saving...",
             "general.cancel": "Cancel",
@@ -661,6 +668,12 @@ public enum Translations {
             // Reminders
             "reminders.title": "Pengingat & Alert",
             "reminders.new": "Pengingat Baru",
+            "reminders.edit": "Edit Pengingat",
+            "reminders.editDesc": "Ubah jadwal, detail, atau tautan tugas",
+            "reminders.status": "Status Pengingat",
+            "reminders.statusPending": "Menunggu (Aktif)",
+            "reminders.statusSent": "Terkirim",
+            "reminders.statusDismissed": "Selesai",
             "reminders.emptyTitle": "Tidak Ada Pengingat",
             "reminders.emptyDesc": "Semua tugas & pengingat Anda sudah tertangani dengan baik.",
             "reminders.createFirst": "Tambah Pengingat Baru",
@@ -773,6 +786,7 @@ public enum Translations {
 
             // General
             "general.create": "Simpan",
+            "general.edit": "Edit",
             "general.save": "Simpan",
             "general.saving": "Menyimpan...",
             "general.cancel": "Batal",

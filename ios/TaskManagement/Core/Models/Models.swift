@@ -138,21 +138,23 @@ public struct Subtask: Codable, Identifiable, Sendable {
     public let id: Int64
     public let taskId: Int64
     public var title: String
+    public var description: String?
     public var isCompleted: Bool
     public let orderIndex: Int
     public let dueDate: String?
 
-    public init(id: Int64, taskId: Int64, title: String, isCompleted: Bool, orderIndex: Int, dueDate: String? = nil) {
+    public init(id: Int64, taskId: Int64, title: String, description: String? = nil, isCompleted: Bool, orderIndex: Int, dueDate: String? = nil) {
         self.id = id
         self.taskId = taskId
         self.title = title
+        self.description = description
         self.isCompleted = isCompleted
         self.orderIndex = orderIndex
         self.dueDate = dueDate
     }
 
     enum CodingKeys: String, CodingKey {
-        case id, title
+        case id, title, description
         case taskId = "task_id"
         case isCompleted = "is_completed"
         case orderIndex = "order_index"
@@ -377,32 +379,36 @@ public struct UpdateTaskRequest: Codable {
 
 public struct CreateSubtaskRequest: Codable {
     public let title: String
+    public let description: String?
     public let dueDate: String?
 
-    public init(title: String, dueDate: String? = nil) {
+    public init(title: String, description: String? = nil, dueDate: String? = nil) {
         self.title = title
+        self.description = description
         self.dueDate = dueDate
     }
 
     enum CodingKeys: String, CodingKey {
-        case title
+        case title, description
         case dueDate = "due_date"
     }
 }
 
 public struct UpdateSubtaskRequest: Codable {
     public let title: String?
+    public let description: String?
     public let isCompleted: Bool?
     public let dueDate: String?
 
-    public init(title: String? = nil, isCompleted: Bool? = nil, dueDate: String? = nil) {
+    public init(title: String? = nil, description: String? = nil, isCompleted: Bool? = nil, dueDate: String? = nil) {
         self.title = title
+        self.description = description
         self.isCompleted = isCompleted
         self.dueDate = dueDate
     }
 
     enum CodingKeys: String, CodingKey {
-        case title
+        case title, description
         case isCompleted = "is_completed"
         case dueDate = "due_date"
     }
@@ -631,6 +637,62 @@ public struct CreateReminderRequest: Codable {
         case title, description
         case remindAt = "remind_at"
         case taskId = "task_id"
+    }
+}
+
+public struct UpdateReminderRequest: Codable {
+    public let title: String?
+    public let description: String?
+    public let remindAt: String?
+    public let status: String?
+    public let taskId: Int64?
+    public let clearTaskId: Bool
+
+    public init(
+        title: String? = nil,
+        description: String? = nil,
+        remindAt: String? = nil,
+        status: String? = nil,
+        taskId: Int64? = nil,
+        clearTaskId: Bool = false
+    ) {
+        self.title = title
+        self.description = description
+        self.remindAt = remindAt
+        self.status = status
+        self.taskId = taskId
+        self.clearTaskId = clearTaskId
+    }
+
+    enum CodingKeys: String, CodingKey {
+        case title, description, status
+        case remindAt = "remind_at"
+        case taskId = "task_id"
+        case clearTaskId = "clear_task_id"
+    }
+
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encodeIfPresent(title, forKey: .title)
+        try container.encodeIfPresent(description, forKey: .description)
+        try container.encodeIfPresent(remindAt, forKey: .remindAt)
+        try container.encodeIfPresent(status, forKey: .status)
+        try container.encode(clearTaskId, forKey: .clearTaskId)
+        if clearTaskId {
+            try container.encodeNil(forKey: .taskId)
+        } else {
+            try container.encodeIfPresent(taskId, forKey: .taskId)
+        }
+    }
+
+    public init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        title = try container.decodeIfPresent(String.self, forKey: .title)
+        description = try container.decodeIfPresent(String.self, forKey: .description)
+        remindAt = try container.decodeIfPresent(String.self, forKey: .remindAt)
+        status = try container.decodeIfPresent(String.self, forKey: .status)
+        taskId = try container.decodeIfPresent(Int64.self, forKey: .taskId)
+        clearTaskId = try container.decodeIfPresent(Bool.self, forKey: .clearTaskId) ?? false
     }
 }
 

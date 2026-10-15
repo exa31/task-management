@@ -54,7 +54,17 @@ func BuildSchema(cfg SchemaConfig) (graphql.Schema, error) {
 		Fields: graphql.Fields{
 			"id":           &graphql.Field{Type: graphql.Int},
 			"title":        &graphql.Field{Type: graphql.String},
+			"description":  &graphql.Field{Type: graphql.String},
 			"is_completed": &graphql.Field{Type: graphql.Boolean},
+			"due_date": &graphql.Field{
+				Type: graphql.String,
+				Resolve: func(p graphql.ResolveParams) (interface{}, error) {
+					if st, ok := p.Source.(task.SubtaskResponse); ok && st.DueDate != nil {
+						return st.DueDate.Format(time.RFC3339), nil
+					}
+					return nil, nil
+				},
+			},
 		},
 	})
 
@@ -62,11 +72,11 @@ func BuildSchema(cfg SchemaConfig) (graphql.Schema, error) {
 	taskType := graphql.NewObject(graphql.ObjectConfig{
 		Name: "Task",
 		Fields: graphql.Fields{
-			"id":                 &graphql.Field{Type: graphql.Int},
-			"title":              &graphql.Field{Type: graphql.String},
-			"description":        &graphql.Field{Type: graphql.String},
-			"status":             &graphql.Field{Type: graphql.String},
-			"priority":           &graphql.Field{Type: graphql.String},
+			"id":          &graphql.Field{Type: graphql.Int},
+			"title":       &graphql.Field{Type: graphql.String},
+			"description": &graphql.Field{Type: graphql.String},
+			"status":      &graphql.Field{Type: graphql.String},
+			"priority":    &graphql.Field{Type: graphql.String},
 			"due_date": &graphql.Field{
 				Type: graphql.String,
 				Resolve: func(p graphql.ResolveParams) (interface{}, error) {
@@ -76,10 +86,10 @@ func BuildSchema(cfg SchemaConfig) (graphql.Schema, error) {
 					return nil, nil
 				},
 			},
-			"is_focus":           &graphql.Field{Type: graphql.Boolean},
-			"project_id":         &graphql.Field{Type: graphql.Int},
-			"project_name":       &graphql.Field{Type: graphql.String},
-			"project_color":      &graphql.Field{Type: graphql.String},
+			"is_focus":      &graphql.Field{Type: graphql.Boolean},
+			"project_id":    &graphql.Field{Type: graphql.Int},
+			"project_name":  &graphql.Field{Type: graphql.String},
+			"project_color": &graphql.Field{Type: graphql.String},
 			"project": &graphql.Field{
 				Type: projectType,
 				Resolve: func(p graphql.ResolveParams) (interface{}, error) {
@@ -126,8 +136,8 @@ func BuildSchema(cfg SchemaConfig) (graphql.Schema, error) {
 					return 0, nil
 				},
 			},
-			"subtasks":           &graphql.Field{Type: graphql.NewList(subtaskType)},
-			"created_at":         &graphql.Field{Type: graphql.String},
+			"subtasks":   &graphql.Field{Type: graphql.NewList(subtaskType)},
+			"created_at": &graphql.Field{Type: graphql.String},
 		},
 	})
 
@@ -147,11 +157,11 @@ func BuildSchema(cfg SchemaConfig) (graphql.Schema, error) {
 					return nil, nil
 				},
 			},
-			"status":      &graphql.Field{Type: graphql.String},
-			"task_id":     &graphql.Field{Type: graphql.Int},
-			"task_title":  &graphql.Field{Type: graphql.String},
+			"status":       &graphql.Field{Type: graphql.String},
+			"task_id":      &graphql.Field{Type: graphql.Int},
+			"task_title":   &graphql.Field{Type: graphql.String},
 			"snooze_count": &graphql.Field{Type: graphql.Int},
-			"created_at":  &graphql.Field{Type: graphql.String},
+			"created_at":   &graphql.Field{Type: graphql.String},
 		},
 	})
 

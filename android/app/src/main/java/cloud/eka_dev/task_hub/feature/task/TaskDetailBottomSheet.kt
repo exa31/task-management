@@ -255,7 +255,7 @@ private fun DetailTabContent(task: Task, viewModel: TaskViewModel) {
                             .clip(RoundedCornerShape(10.dp))
                             .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f))
                             .padding(10.dp),
-                        verticalAlignment = Alignment.CenterVertically
+                        verticalAlignment = Alignment.Top
                     ) {
                         Checkbox(
                             checked = subtask.isCompleted,
@@ -265,12 +265,31 @@ private fun DetailTabContent(task: Task, viewModel: TaskViewModel) {
                             colors = CheckboxDefaults.colors(checkedColor = StatusDone)
                         )
                         Spacer(modifier = Modifier.width(8.dp))
-                        Text(
-                            text = subtask.title,
-                            fontSize = 13.sp,
-                            textDecoration = if (subtask.isCompleted) TextDecoration.LineThrough else TextDecoration.None,
-                            color = if (subtask.isCompleted) MaterialTheme.colorScheme.onSurfaceVariant else MaterialTheme.colorScheme.onSurface
-                        )
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(
+                                text = subtask.title,
+                                fontSize = 13.sp,
+                                textDecoration = if (subtask.isCompleted) TextDecoration.LineThrough else TextDecoration.None,
+                                color = if (subtask.isCompleted) MaterialTheme.colorScheme.onSurfaceVariant else MaterialTheme.colorScheme.onSurface
+                            )
+                            if (subtask.description.isNotBlank()) {
+                                Spacer(modifier = Modifier.height(2.dp))
+                                Text(
+                                    text = subtask.description,
+                                    fontSize = 11.sp,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.8f),
+                                    maxLines = 2
+                                )
+                            }
+                            if (!subtask.dueDate.isNullOrBlank()) {
+                                Spacer(modifier = Modifier.height(2.dp))
+                                Text(
+                                    text = subtask.dueDate,
+                                    fontSize = 10.sp,
+                                    color = BrandPrimary
+                                )
+                            }
+                        }
                     }
                 }
             }

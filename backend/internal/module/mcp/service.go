@@ -315,6 +315,48 @@ func (s *service) getToolDefinitions() []map[string]interface{} {
 			},
 		},
 		{
+			"name":        "create_subtask",
+			"description": "Add a new checklist subtask with optional description and deadline to an existing task.",
+			"inputSchema": map[string]interface{}{
+				"type": "object",
+				"properties": map[string]interface{}{
+					"task_id":     map[string]interface{}{"type": "number", "description": "Parent Task ID"},
+					"title":       map[string]interface{}{"type": "string", "description": "Subtask title"},
+					"description": map[string]interface{}{"type": "string", "description": "Optional notes or details for the subtask"},
+					"due_date":    map[string]interface{}{"type": "string", "description": "Optional deadline (ISO-8601 string, e.g. '2026-10-15T18:00:00Z')"},
+				},
+				"required": []string{"task_id", "title"},
+			},
+		},
+		{
+			"name":        "update_subtask",
+			"description": "Update a checklist subtask's completion status, title, description, or due date.",
+			"inputSchema": map[string]interface{}{
+				"type": "object",
+				"properties": map[string]interface{}{
+					"task_id":      map[string]interface{}{"type": "number", "description": "Parent Task ID"},
+					"subtask_id":   map[string]interface{}{"type": "number", "description": "Subtask ID to update"},
+					"title":        map[string]interface{}{"type": "string", "description": "New title for the subtask"},
+					"description":  map[string]interface{}{"type": "string", "description": "New description/notes for the subtask"},
+					"is_completed": map[string]interface{}{"type": "boolean", "description": "Mark subtask as completed (true) or pending (false)"},
+					"due_date":     map[string]interface{}{"type": "string", "description": "New deadline (ISO-8601 string) or empty string to clear"},
+				},
+				"required": []string{"task_id", "subtask_id"},
+			},
+		},
+		{
+			"name":        "delete_subtask",
+			"description": "Remove a checklist subtask from a task.",
+			"inputSchema": map[string]interface{}{
+				"type": "object",
+				"properties": map[string]interface{}{
+					"task_id":    map[string]interface{}{"type": "number", "description": "Parent Task ID"},
+					"subtask_id": map[string]interface{}{"type": "number", "description": "Subtask ID to delete"},
+				},
+				"required": []string{"task_id", "subtask_id"},
+			},
+		},
+		{
 			"name":        "create_reminder",
 			"description": "Create a reminder/notification alert for a deadline or event.",
 			"inputSchema": map[string]interface{}{
@@ -322,8 +364,8 @@ func (s *service) getToolDefinitions() []map[string]interface{} {
 				"properties": map[string]interface{}{
 					"title":       map[string]interface{}{"type": "string", "description": "Reminder title/headline"},
 					"description": map[string]interface{}{"type": "string", "description": "Optional notes or details"},
-					"remind_at":    map[string]interface{}{"type": "string", "description": "Scheduled trigger timestamp (ISO-8601/RFC3339, e.g. '2026-10-15T09:00:00Z')"},
-					"task_id":      map[string]interface{}{"type": "number", "description": "Optional linked Task ID"},
+					"remind_at":   map[string]interface{}{"type": "string", "description": "Scheduled trigger timestamp (ISO-8601/RFC3339, e.g. '2026-10-15T09:00:00Z')"},
+					"task_id":     map[string]interface{}{"type": "number", "description": "Optional linked Task ID"},
 				},
 				"required": []string{"title", "remind_at"},
 			},
@@ -711,6 +753,91 @@ func (s *service) callTool(ctx context.Context, userID string, name string, args
 			return nil, err
 		}
 		jsonStr, _ := json.MarshalIndent(res, "", "  ")
+		return &MCPToolResult{
+			Content: []MCPToolContent{{Type: "text", Text: string(jsonStr)}},
+		}, nil
+
+	case "create_subtask":
+		taskID := int64(parseInt(args["task_id"], 0))
+		title, _ := args["title"].(string)
+		desc, _ := args["description"].(string)
+		var dueTimePtr *time.Time
+		if dd, ok := args["due_date"].(string); ok && strings.TrimSpace(dd) != "" {
+			if t, err := parseDateTime(dd); err == nil {
+				dueTimePtr = &t
+			}
+		}
+
+		res, err := s.taskService.CreateSubtask(ctx, userID, taskID, task.CreateSubtaskRequest{
+			Title:       title,
+			Description: desc,
+			DueDate:     dueTimePtr,
+		})
+		if err != nil {
+			return nil, err
+		}
+		jsonStr, _ := json.MarshalIndent(res, "", "  ")
+		return &MCPToolResult{
+			Content: []MCPToolContent{{Type: "text", Text: string(jsonStr)}},
+		}, nil
+
+	case "update_subtask":
+		taskID := int64(parseInt(args["task_id"], 0))
+		subtaskID := int64(parseInt(args["subtask_id"], 0))
+		var titlePtr, descPtr *string
+		if t, ok := args["title"].(string); ok && t != "" {
+			titlePtr = &t
+		}
+		hasDesc := false
+		if d, exists := args["description"]; exists {
+			hasDesc = true
+			if str, ok := d.(string); ok {
+				descPtr = &str
+			}
+		}
+		var isCompletedPtr *bool
+		if ic, ok := args["is_completed"].(bool); ok {
+			isCompletedPtr = &ic
+		}
+		var dueTimePtr *time.Time
+		hasDueDate := false
+		if rawDD, exists := args["due_date"]; exists {
+			hasDueDate = true
+			if dd, ok := rawDD.(string); ok && strings.TrimSpace(dd) != "" {
+				if t, err := parseDateTime(dd); err == nil {
+					dueTimePtr = &t
+				}
+			}
+		}
+
+		res, err := s.taskService.UpdateSubtask(ctx, userID, taskID, subtaskID, task.UpdateSubtaskRequest{
+			Title:          titlePtr,
+			Description:    descPtr,
+			IsCompleted:    isCompletedPtr,
+			DueDate:        dueTimePtr,
+			HasDueDate:     hasDueDate,
+			HasDescription: hasDesc,
+		})
+		if err != nil {
+			return nil, err
+		}
+		jsonStr, _ := json.MarshalIndent(res, "", "  ")
+		return &MCPToolResult{
+			Content: []MCPToolContent{{Type: "text", Text: string(jsonStr)}},
+		}, nil
+
+	case "delete_subtask":
+		taskID := int64(parseInt(args["task_id"], 0))
+		subtaskID := int64(parseInt(args["subtask_id"], 0))
+		if err := s.taskService.DeleteSubtask(ctx, userID, taskID, subtaskID); err != nil {
+			return nil, err
+		}
+		out := map[string]interface{}{
+			"message":    "Subtask deleted successfully",
+			"task_id":    taskID,
+			"subtask_id": subtaskID,
+		}
+		jsonStr, _ := json.MarshalIndent(out, "", "  ")
 		return &MCPToolResult{
 			Content: []MCPToolContent{{Type: "text", Text: string(jsonStr)}},
 		}, nil

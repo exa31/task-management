@@ -359,4 +359,3 @@ func (s *AsynqScheduler) CancelTaskRecurrence(ctx context.Context, taskID int64)
 	}
 	return nil
 }
-

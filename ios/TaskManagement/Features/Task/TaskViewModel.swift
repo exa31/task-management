@@ -381,16 +381,30 @@ public final class TaskViewModel {
     }
 
     @MainActor
-    public func addSubtask(taskId: Int64, title: String) async -> Bool {
+    public func addSubtask(taskId: Int64, title: String, description: String? = nil, dueDate: String? = nil) async -> Bool {
         let trimmed = title.trimmingCharacters(in: .whitespaces)
         guard !trimmed.isEmpty else { return false }
         do {
-            _ = try await apiClient.createSubtask(taskId: taskId, req: CreateSubtaskRequest(title: trimmed))
+            _ = try await apiClient.createSubtask(taskId: taskId, req: CreateSubtaskRequest(title: trimmed, description: description, dueDate: dueDate))
             AppLogger.success("Subtask created", category: .task, metadata: ["taskId": taskId, "title": trimmed])
             await loadTasks()
             return true
         } catch {
             AppLogger.error("Failed to create subtask", error: error, category: .task)
+            self.errorMessage = error.localizedDescription
+            return false
+        }
+    }
+
+    @MainActor
+    public func updateSubtask(taskId: Int64, subtaskId: Int64, title: String? = nil, description: String? = nil, isCompleted: Bool? = nil, dueDate: String? = nil) async -> Bool {
+        do {
+            _ = try await apiClient.updateSubtask(taskId: taskId, subtaskId: subtaskId, req: UpdateSubtaskRequest(title: title, description: description, isCompleted: isCompleted, dueDate: dueDate))
+            AppLogger.success("Subtask updated", category: .task, metadata: ["taskId": taskId, "subtaskId": subtaskId])
+            await loadTasks()
+            return true
+        } catch {
+            AppLogger.error("Failed to update subtask", error: error, category: .task)
             self.errorMessage = error.localizedDescription
             return false
         }

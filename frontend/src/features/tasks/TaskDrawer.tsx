@@ -14,11 +14,230 @@ import {
   useTask,
   useToggleFocus,
   useToggleSubtask,
+  useUpdateSubtask,
   useUpdateTask
 } from '@/hooks'
 import { useTranslation } from '@/i18n'
 import { useTaskStore } from '@/stores'
-import type { RecurrencePattern, TaskPriority, TaskStatus } from '@/types'
+import type { RecurrencePattern, Subtask, TaskPriority, TaskStatus } from '@/types'
+
+interface SubtaskItemRowProps {
+  subtask: Subtask
+  taskId: number
+  onToggle: (completed: boolean) => void
+  onDelete: (id: number, title: string) => void
+  onUpdate: (params: {
+    taskId: number
+    subtaskId: number
+    title?: string
+    description?: string
+    dueDate?: string | null
+  }) => Promise<unknown>
+}
+
+const SubtaskItemRow: React.FC<SubtaskItemRowProps> = ({
+  subtask,
+  taskId,
+  onToggle,
+  onDelete,
+  onUpdate
+}) => {
+  const { t, locale } = useTranslation()
+  const [isExpanded, setIsExpanded] = useState(false)
+  const [editTitle, setEditTitle] = useState(subtask.title)
+  const [editDescription, setEditDescription] = useState(subtask.description || '')
+  const [editDueDate, setEditDueDate] = useState<Date | null>(
+    subtask.due_date ? new Date(subtask.due_date) : null
+  )
+  const [isSaving, setIsSaving] = useState(false)
+
+  useEffect(() => {
+    setEditTitle(subtask.title)
+    setEditDescription(subtask.description || '')
+    setEditDueDate(subtask.due_date ? new Date(subtask.due_date) : null)
+  }, [subtask.title, subtask.description, subtask.due_date])
+
+  const handleSave = async () => {
+    if (!editTitle.trim()) return
+    setIsSaving(true)
+    try {
+      await onUpdate({
+        taskId,
+        subtaskId: subtask.id,
+        title: editTitle.trim(),
+        description: editDescription.trim(),
+        dueDate: editDueDate ? editDueDate.toISOString() : null
+      })
+      setIsExpanded(false)
+    } finally {
+      setIsSaving(false)
+    }
+  }
+
+  const handleCancel = () => {
+    setEditTitle(subtask.title)
+    setEditDescription(subtask.description || '')
+    setEditDueDate(subtask.due_date ? new Date(subtask.due_date) : null)
+    setIsExpanded(false)
+  }
+
+  const formattedDueDate = subtask.due_date
+    ? new Date(subtask.due_date).toLocaleDateString(locale === 'id' ? 'id-ID' : 'en-US', {
+        month: 'short',
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit'
+      })
+    : null
+
+  return (
+    <div
+      className={`rounded-lg border transition-all duration-200 ${
+        isExpanded
+          ? 'bg-slate-50 dark:bg-slate-900/90 border-indigo-300 dark:border-indigo-800 shadow-xs'
+          : 'bg-slate-50/70 dark:bg-slate-950/60 hover:bg-slate-100/80 dark:hover:bg-slate-950 border-slate-200 dark:border-slate-800/80'
+      }`}
+    >
+      {/* Header / Summary Row */}
+      <div className="flex items-start justify-between gap-2 p-2.5 text-xs">
+        <label className="flex items-start gap-2.5 flex-1 min-w-0 cursor-pointer">
+          <input
+            type="checkbox"
+            checked={subtask.is_completed}
+            onChange={(e) => onToggle(e.target.checked)}
+            className="mt-0.5 rounded border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-indigo-600 focus:ring-0 shrink-0 cursor-pointer"
+          />
+          <div className="flex-1 min-w-0 space-y-1">
+            <span
+              className={`block break-words leading-snug ${
+                subtask.is_completed
+                  ? 'line-through text-slate-400 dark:text-slate-500'
+                  : 'text-slate-800 dark:text-slate-200 font-medium'
+              }`}
+            >
+              {subtask.title}
+            </span>
+
+            {/* Badges / indicators when collapsed */}
+            {!isExpanded && (subtask.description || subtask.due_date) && (
+              <div className="flex flex-wrap items-center gap-1.5 pt-0.5">
+                {subtask.description && (
+                  <span
+                    className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] text-slate-600 dark:text-slate-300 bg-slate-200/60 dark:bg-slate-800/80 max-w-full"
+                    title={subtask.description}
+                  >
+                    <i className="pi pi-align-left text-[9px] shrink-0 text-slate-500 dark:text-slate-400" />
+                    <span className="truncate max-w-[200px]">{subtask.description}</span>
+                  </span>
+                )}
+                {formattedDueDate && (
+                  <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-950/60 border border-indigo-200/50 dark:border-indigo-800/40">
+                    <i className="pi pi-calendar text-[9px]" />
+                    {formattedDueDate}
+                  </span>
+                )}
+              </div>
+            )}
+          </div>
+        </label>
+
+        <div className="flex items-center gap-1 shrink-0 pt-0.5">
+          <button
+            type="button"
+            onClick={() => setIsExpanded(!isExpanded)}
+            data-pr-tooltip={
+              isExpanded
+                ? t('taskDrawer.subtaskCollapseTooltip')
+                : t('taskDrawer.subtaskExpandTooltip')
+            }
+            className={`p-1 rounded text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors cursor-pointer ${
+              isExpanded
+                ? 'text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-950/50'
+                : ''
+            }`}
+          >
+            <i className={`pi ${isExpanded ? 'pi-chevron-up' : 'pi-chevron-down'} text-[10px]`} />
+          </button>
+
+          <button
+            type="button"
+            onClick={() => onDelete(subtask.id, subtask.title)}
+            data-pr-tooltip={t('taskDrawer.deleteSubtaskTooltip')}
+            className="p-1 rounded text-slate-400 dark:text-slate-500 hover:text-rose-500 dark:hover:text-rose-400 transition-colors cursor-pointer"
+          >
+            <i className="pi pi-times text-[10px]" />
+          </button>
+        </div>
+      </div>
+
+      {/* Expanded Details Form */}
+      {isExpanded && (
+        <div className="px-2.5 pb-2.5 pt-1 border-t border-slate-200/70 dark:border-slate-800/70 space-y-2.5 animate-fade-in text-xs">
+          <div>
+            <label className="block text-[11px] font-medium text-slate-600 dark:text-slate-400 mb-1">
+              {t('taskDrawer.subtaskTitlePlaceholder')}
+            </label>
+            <input
+              type="text"
+              value={editTitle}
+              onChange={(e) => setEditTitle(e.target.value)}
+              className="w-full rounded-md border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 px-2.5 py-1.5 text-xs text-slate-900 dark:text-slate-100 placeholder-slate-400 focus:border-indigo-500 focus:outline-none"
+            />
+          </div>
+
+          <div>
+            <label className="block text-[11px] font-medium text-slate-600 dark:text-slate-400 mb-1">
+              {t('taskDrawer.subtaskDetails')}
+            </label>
+            <textarea
+              rows={2}
+              value={editDescription}
+              onChange={(e) => setEditDescription(e.target.value)}
+              placeholder={t('taskDrawer.subtaskDescriptionPlaceholder')}
+              className="w-full rounded-md border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 px-2.5 py-1.5 text-xs text-slate-900 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500 focus:border-indigo-500 focus:outline-none resize-none"
+            />
+          </div>
+
+          <div>
+            <label className="block text-[11px] font-medium text-slate-600 dark:text-slate-400 mb-1">
+              {t('taskDrawer.subtaskDueDate')}
+            </label>
+            <Calendar
+              value={editDueDate}
+              onChange={(e) => setEditDueDate(e.value as Date | null)}
+              showTime
+              hourFormat="24"
+              placeholder={t('taskDrawer.subtaskDueDatePlaceholder')}
+              className="w-full text-xs"
+              inputClassName="w-full rounded-md border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 px-2.5 py-1.5 text-xs text-slate-900 dark:text-slate-100 placeholder-slate-400 focus:border-indigo-500 focus:outline-none"
+              showIcon
+              showButtonBar
+            />
+          </div>
+
+          <div className="flex items-center justify-end gap-1.5 pt-1">
+            <button
+              type="button"
+              onClick={handleCancel}
+              className="px-2.5 py-1 rounded text-xs text-slate-600 dark:text-slate-400 hover:bg-slate-200/50 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+            >
+              {t('common.cancel')}
+            </button>
+            <button
+              type="button"
+              disabled={isSaving || !editTitle.trim()}
+              onClick={handleSave}
+              className="px-3 py-1 rounded bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-medium disabled:opacity-50 flex items-center gap-1 shadow-xs transition-colors cursor-pointer"
+            >
+              {isSaving && <i className="pi pi-spin pi-spinner text-[10px]" />}
+              {t('common.save')}
+            </button>
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
 
 export const TaskDrawer: React.FC = () => {
   const { selectedTask, isDrawerOpen, closeDrawer } = useTaskStore()
@@ -36,6 +255,7 @@ export const TaskDrawer: React.FC = () => {
   const logProgressMutation = useLogProgress()
   const addSubtaskMutation = useAddSubtask()
   const toggleSubtaskMutation = useToggleSubtask()
+  const updateSubtaskMutation = useUpdateSubtask()
   const deleteSubtaskMutation = useDeleteSubtask()
 
   const [title, setTitle] = useState('')
@@ -46,6 +266,9 @@ export const TaskDrawer: React.FC = () => {
   const [dueDate, setDueDate] = useState<Date | null>(null)
   const [projectId, setProjectId] = useState<number | null>(null)
   const [newSubtaskTitle, setNewSubtaskTitle] = useState('')
+  const [newSubtaskDescription, setNewSubtaskDescription] = useState('')
+  const [newSubtaskDueDate, setNewSubtaskDueDate] = useState<Date | null>(null)
+  const [isAddingWithDetails, setIsAddingWithDetails] = useState(false)
   const [newProgressNote, setNewProgressNote] = useState('')
   const [isRecurring, setIsRecurring] = useState(false)
   const [recurrencePattern, setRecurrencePattern] = useState<RecurrencePattern>('daily')
@@ -199,9 +422,14 @@ export const TaskDrawer: React.FC = () => {
     if (!task || !newSubtaskTitle.trim()) return
     await addSubtaskMutation.mutateAsync({
       taskId: task.id,
-      title: newSubtaskTitle.trim()
+      title: newSubtaskTitle.trim(),
+      description: newSubtaskDescription.trim() || undefined,
+      dueDate: newSubtaskDueDate ? newSubtaskDueDate.toISOString() : undefined
     })
     setNewSubtaskTitle('')
+    setNewSubtaskDescription('')
+    setNewSubtaskDueDate(null)
+    setIsAddingWithDetails(false)
   }
 
   const handleLogProgressSubmit = async (e: React.FormEvent) => {
@@ -736,68 +964,93 @@ export const TaskDrawer: React.FC = () => {
                   </div>
 
                   {/* Subtask Items */}
-                  <div className="space-y-1.5 mb-3">
+                  <div className="space-y-1.5 mb-3 max-h-72 overflow-y-auto pr-1">
                     {task.subtasks?.map((st) => (
-                      <div
+                      <SubtaskItemRow
                         key={st.id}
-                        className="group flex items-center justify-between p-2 rounded-lg bg-slate-50 dark:bg-slate-950/60 hover:bg-slate-100/80 dark:hover:bg-slate-950 border border-slate-200 dark:border-slate-800/80 text-xs"
-                      >
-                        <label className="flex items-center gap-2.5 flex-1 cursor-pointer min-w-0">
-                          <input
-                            type="checkbox"
-                            checked={st.is_completed}
-                            onChange={(e) =>
-                              toggleSubtaskMutation.mutate({
-                                taskId: task.id,
-                                subtaskId: st.id,
-                                isCompleted: e.target.checked
-                              })
-                            }
-                            className="rounded border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-indigo-600 focus:ring-0 shrink-0 cursor-pointer"
-                          />
-                          <span
-                            className={`truncate ${
-                              st.is_completed
-                                ? 'line-through text-slate-400 dark:text-slate-500'
-                                : 'text-slate-800 dark:text-slate-200'
-                            }`}
-                          >
-                            {st.title}
-                          </span>
-                        </label>
-
-                        <button
-                          type="button"
-                          onClick={() => handleDeleteSubtask(st.id, st.title)}
-                          data-pr-tooltip={t('taskDrawer.deleteSubtaskTooltip')}
-                          className="p-1 text-slate-400 dark:text-slate-600 hover:text-rose-500 dark:hover:text-rose-400 opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer"
-                        >
-                          <i className="pi pi-times text-[10px]" />
-                        </button>
-                      </div>
+                        subtask={st}
+                        taskId={task.id}
+                        onToggle={(checked) =>
+                          toggleSubtaskMutation.mutate({
+                            taskId: task.id,
+                            subtaskId: st.id,
+                            isCompleted: checked
+                          })
+                        }
+                        onDelete={handleDeleteSubtask}
+                        onUpdate={(params) => updateSubtaskMutation.mutateAsync(params)}
+                      />
                     ))}
                   </div>
 
                   {/* Add Subtask Input */}
-                  <form onSubmit={handleAddSubtaskSubmit} className="flex gap-2">
-                    <input
-                      type="text"
-                      value={newSubtaskTitle}
-                      onChange={(e) => setNewSubtaskTitle(e.target.value)}
-                      placeholder={t('taskDrawer.addSubtaskPlaceholder')}
-                      className="flex-1 rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 px-3 py-1.5 text-xs text-slate-900 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500 focus:border-indigo-500 focus:outline-none"
-                    />
-                    <button
-                      type="submit"
-                      disabled={addSubtaskMutation.isPending || !newSubtaskTitle.trim()}
-                      data-pr-tooltip={t('taskDrawer.addSubtaskTooltip')}
-                      className="px-3 py-1.5 rounded-lg bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700 disabled:opacity-50 text-xs font-medium text-slate-700 dark:text-slate-200 flex items-center gap-1 transition-colors cursor-pointer"
-                    >
-                      {addSubtaskMutation.isPending && (
-                        <i className="pi pi-spin pi-spinner text-[10px]" />
-                      )}
-                      {t('taskDrawer.add')}
-                    </button>
+                  <form onSubmit={handleAddSubtaskSubmit} className="space-y-2">
+                    <div className="flex gap-2">
+                      <input
+                        type="text"
+                        value={newSubtaskTitle}
+                        onChange={(e) => setNewSubtaskTitle(e.target.value)}
+                        placeholder={t('taskDrawer.addSubtaskPlaceholder')}
+                        className="flex-1 rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 px-3 py-1.5 text-xs text-slate-900 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500 focus:border-indigo-500 focus:outline-none"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setIsAddingWithDetails(!isAddingWithDetails)}
+                        data-pr-tooltip={t('taskDrawer.subtaskDetails')}
+                        className={`px-2.5 py-1.5 rounded-lg border text-xs transition-colors cursor-pointer ${
+                          isAddingWithDetails
+                            ? 'bg-indigo-50 dark:bg-indigo-950/70 border-indigo-400 dark:border-indigo-700 text-indigo-600 dark:text-indigo-400'
+                            : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'
+                        }`}
+                      >
+                        <i className="pi pi-sliders-h text-xs" />
+                      </button>
+                      <button
+                        type="submit"
+                        disabled={addSubtaskMutation.isPending || !newSubtaskTitle.trim()}
+                        data-pr-tooltip={t('taskDrawer.addSubtaskTooltip')}
+                        className="px-3 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white disabled:opacity-50 text-xs font-medium flex items-center gap-1 shadow-xs transition-colors cursor-pointer"
+                      >
+                        {addSubtaskMutation.isPending && (
+                          <i className="pi pi-spin pi-spinner text-[10px]" />
+                        )}
+                        {t('taskDrawer.add')}
+                      </button>
+                    </div>
+
+                    {/* Optional additional details when creating */}
+                    {isAddingWithDetails && (
+                      <div className="p-2.5 rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50/80 dark:bg-slate-950/40 space-y-2 animate-fade-in text-xs">
+                        <div>
+                          <label className="block text-[11px] font-medium text-slate-600 dark:text-slate-400 mb-1">
+                            {t('taskDrawer.subtaskDetails')}
+                          </label>
+                          <textarea
+                            rows={2}
+                            value={newSubtaskDescription}
+                            onChange={(e) => setNewSubtaskDescription(e.target.value)}
+                            placeholder={t('taskDrawer.subtaskDescriptionPlaceholder')}
+                            className="w-full rounded-md border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 px-2.5 py-1.5 text-xs text-slate-900 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500 focus:border-indigo-500 focus:outline-none resize-none"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-[11px] font-medium text-slate-600 dark:text-slate-400 mb-1">
+                            {t('taskDrawer.subtaskDueDate')}
+                          </label>
+                          <Calendar
+                            value={newSubtaskDueDate}
+                            onChange={(e) => setNewSubtaskDueDate(e.value as Date | null)}
+                            showTime
+                            hourFormat="24"
+                            placeholder={t('taskDrawer.subtaskDueDatePlaceholder')}
+                            className="w-full text-xs"
+                            inputClassName="w-full rounded-md border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 px-2.5 py-1.5 text-xs text-slate-900 dark:text-slate-100 placeholder-slate-400 focus:border-indigo-500 focus:outline-none"
+                            showIcon
+                            showButtonBar
+                          />
+                        </div>
+                      </div>
+                    )}
                   </form>
                 </div>
 

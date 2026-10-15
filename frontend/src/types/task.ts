@@ -68,8 +68,10 @@ export interface Subtask {
   id: number
   task_id: number
   title: string
+  description?: string
   is_completed: boolean
   order_index: number
+  due_date?: string | null
   created_at: string
   updated_at: string
 }

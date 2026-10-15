@@ -30,13 +30,18 @@ export const taskApi = {
 
   toggleFocus: (id: number) => apiClient.post<Task>(`/api/v1/tasks/${id}/focus`),
 
-  createSubtask: (taskId: number, title: string) =>
-    apiClient.post<Subtask>(`/api/v1/tasks/${taskId}/subtasks`, { title }),
+  createSubtask: (
+    taskId: number,
+    payload: { title: string; description?: string; due_date?: string | null } | string
+  ) => {
+    const body = typeof payload === 'string' ? { title: payload } : payload
+    return apiClient.post<Subtask>(`/api/v1/tasks/${taskId}/subtasks`, body)
+  },
 
   updateSubtask: (
     taskId: number,
     subtaskId: number,
-    payload: { title?: string; is_completed?: boolean }
+    payload: { title?: string; description?: string; is_completed?: boolean; due_date?: string | null }
   ) => apiClient.put<Subtask>(`/api/v1/tasks/${taskId}/subtasks/${subtaskId}`, payload),
 
   deleteSubtask: (taskId: number, subtaskId: number) =>

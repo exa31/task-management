@@ -399,6 +399,11 @@ public actor APIClient {
         return try await request(endpoint: "reminders", method: "POST", body: body)
     }
 
+    public func updateReminder(id: Int64, req: UpdateReminderRequest) async throws -> Reminder {
+        let body = try encoder.encode(req)
+        return try await request(endpoint: "reminders/\(id)", method: "PUT", body: body)
+    }
+
     public func deleteReminder(id: Int64) async throws {
         let _: EmptyResponse? = try? await request(endpoint: "reminders/\(id)", method: "DELETE")
     }

@@ -195,8 +195,14 @@ func (r *repository) Update(ctx context.Context, userID string, id int64, req Up
 	}
 
 	taskID := current.TaskID
-	if req.TaskID != nil {
-		taskID = req.TaskID
+	if req.ClearTaskID {
+		taskID = nil
+	} else if req.TaskID != nil {
+		if *req.TaskID <= 0 {
+			taskID = nil
+		} else {
+			taskID = req.TaskID
+		}
 	}
 	title := current.Title
 	if req.Title != nil {

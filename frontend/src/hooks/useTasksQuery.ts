@@ -436,8 +436,22 @@ export const useAddSubtask = () => {
   const toast = useAppToast()
 
   return useMutation({
-    mutationFn: async ({ taskId, title }: { taskId: number; title: string }) => {
-      const res = await taskApi.createSubtask(taskId, title)
+    mutationFn: async ({
+      taskId,
+      title,
+      description,
+      dueDate
+    }: {
+      taskId: number
+      title: string
+      description?: string
+      dueDate?: string | null
+    }) => {
+      const res = await taskApi.createSubtask(taskId, {
+        title,
+        description,
+        due_date: dueDate
+      })
       return { taskId, subtask: res.data }
     },
     onSuccess: ({ taskId, subtask }) => {
@@ -768,6 +782,53 @@ export const useDeleteSubtask = () => {
 
       queryClient.invalidateQueries({ queryKey: taskKeys.detail(taskId), refetchType: 'all' })
       queryClient.invalidateQueries({ queryKey: taskKeys.all, refetchType: 'all' })
+    },
+    onError: (err) => {
+      toast.error(err)
+    }
+  })
+}
+
+export const useUpdateSubtask = () => {
+  const queryClient = useQueryClient()
+  const toast = useAppToast()
+
+  return useMutation({
+    mutationFn: async ({
+      taskId,
+      subtaskId,
+      title,
+      description,
+      dueDate,
+      isCompleted
+    }: {
+      taskId: number
+      subtaskId: number
+      title?: string
+      description?: string
+      dueDate?: string | null
+      isCompleted?: boolean
+    }) => {
+      const res = await taskApi.updateSubtask(taskId, subtaskId, {
+        title,
+        description,
+        due_date: dueDate,
+        is_completed: isCompleted
+      })
+      return { taskId, subtask: res.data }
+    },
+    onSuccess: ({ taskId, subtask }) => {
+      queryClient.setQueryData<Task>(taskKeys.detail(taskId), (old) => {
+        if (!old) return old
+        const updatedSubtasks = (old.subtasks || []).map((st) =>
+          st.id === subtask.id ? subtask : st
+        )
+        return {
+          ...old,
+          subtasks: updatedSubtasks
+        }
+      })
+      queryClient.invalidateQueries({ queryKey: taskKeys.detail(taskId), refetchType: 'all' })
     },
     onError: (err) => {
       toast.error(err)

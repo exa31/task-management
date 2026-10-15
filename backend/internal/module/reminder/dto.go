@@ -13,6 +13,7 @@ type CreateReminderRequest struct {
 // UpdateReminderRequest payload for updating an existing reminder.
 type UpdateReminderRequest struct {
 	TaskID      *int64     `json:"task_id"`
+	ClearTaskID bool       `json:"clear_task_id"`
 	Title       *string    `json:"title" validate:"omitempty,min=1,max=255"`
 	Description *string    `json:"description" validate:"omitempty,max=1000"`
 	RemindAt    *time.Time `json:"remind_at"`

@@ -6,6 +6,7 @@ public final class ReminderViewModel {
     public var activeAlert: String?
     public var isLoading = false
     public var isCreating = false
+    public var isUpdating = false
     public var isShowingCreateSheet = false
     public var errorMessage: String?
 
@@ -89,6 +90,55 @@ public final class ReminderViewModel {
     }
 
     @MainActor
+    public func updateReminder(
+        id: Int64,
+        title: String,
+        description: String?,
+        remindAt: Date,
+        status: String?,
+        taskId: Int64?,
+        clearTaskId: Bool
+    ) async -> Bool {
+        let trimmedTitle = title.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmedTitle.isEmpty else {
+            self.errorMessage = "\(L10n.Reminders.fieldTitle) required"
+            return false
+        }
+        isUpdating = true
+        errorMessage = nil
+
+        let formatter = ISO8601DateFormatter()
+        formatter.formatOptions = [.withInternetDateTime]
+        let remindAtStr = formatter.string(from: remindAt)
+
+        let req = UpdateReminderRequest(
+            title: trimmedTitle,
+            description: description?.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty == true ? nil : description,
+            remindAt: remindAtStr,
+            status: status,
+            taskId: taskId,
+            clearTaskId: clearTaskId
+        )
+
+        do {
+            let updated = try await apiClient.updateReminder(id: id, req: req)
+            AppLogger.success("Reminder updated successfully", category: .reminder, metadata: ["id": id, "title": trimmedTitle])
+            if let idx = reminders.firstIndex(where: { $0.id == id }) {
+                reminders[idx] = updated
+            } else {
+                await loadReminders()
+            }
+            isUpdating = false
+            return true
+        } catch {
+            AppLogger.error("Failed to update reminder", error: error, category: .reminder, metadata: ["id": id])
+            self.errorMessage = error.localizedDescription
+            isUpdating = false
+            return false
+        }
+    }
+
+    @MainActor
     public func snooze(id: Int64) {
         Task {
             do {
@@ -140,6 +190,7 @@ public final class ReminderViewModel {
 public struct ReminderListView: View {
     @Bindable var viewModel: ReminderViewModel
     @State private var filterStatus: String = "all" // all, pending, sent, dismissed
+    @State private var selectedReminderForEdit: Reminder? = nil
 
     public init(viewModel: ReminderViewModel) {
         self.viewModel = viewModel
@@ -250,12 +301,23 @@ public struct ReminderListView: View {
                     List {
                         ForEach(filteredReminders) { reminder in
                             reminderCard(reminder)
+                                .contentShape(Rectangle())
+                                .onTapGesture {
+                                    selectedReminderForEdit = reminder
+                                }
                                 .swipeActions(edge: .trailing) {
                                     Button(role: .destructive) {
                                         viewModel.deleteReminder(id: reminder.id)
                                     } label: {
                                         Label(L10n.General.delete, systemImage: "trash")
                                     }
+
+                                    Button {
+                                        selectedReminderForEdit = reminder
+                                    } label: {
+                                        Label(L10n.General.edit, systemImage: "pencil")
+                                    }
+                                    .tint(AppColors.primary)
                                 }
                                 .swipeActions(edge: .leading) {
                                     if reminder.status != "dismissed" {
@@ -265,6 +327,35 @@ public struct ReminderListView: View {
                                             Label(L10n.Reminders.done, systemImage: "checkmark")
                                         }
                                         .tint(AppColors.statusDone)
+                                    }
+                                }
+                                .contextMenu {
+                                    Button {
+                                        selectedReminderForEdit = reminder
+                                    } label: {
+                                        Label(L10n.Reminders.editReminder, systemImage: "pencil")
+                                    }
+
+                                    if reminder.status != "dismissed" {
+                                        Button {
+                                            viewModel.snooze(id: reminder.id)
+                                        } label: {
+                                            Label(L10n.Reminders.snooze, systemImage: "clock.arrow.circlepath")
+                                        }
+
+                                        Button {
+                                            viewModel.dismiss(id: reminder.id)
+                                        } label: {
+                                            Label(L10n.Reminders.done, systemImage: "checkmark")
+                                        }
+                                    }
+
+                                    Divider()
+
+                                    Button(role: .destructive) {
+                                        viewModel.deleteReminder(id: reminder.id)
+                                    } label: {
+                                        Label(L10n.General.delete, systemImage: "trash")
                                     }
                                 }
                                 .listRowSeparator(.hidden)
@@ -298,6 +389,9 @@ public struct ReminderListView: View {
             }
             .sheet(isPresented: $viewModel.isShowingCreateSheet) {
                 CreateReminderSheet(viewModel: viewModel)
+            }
+            .sheet(item: $selectedReminderForEdit) { reminder in
+                EditReminderSheet(reminder: reminder, viewModel: viewModel)
             }
         }
     }
@@ -354,18 +448,30 @@ public struct ReminderListView: View {
 
                 Spacer()
 
-                // Remind at pill
-                HStack(spacing: 4) {
-                    Image(systemName: "clock.fill")
-                        .font(.system(size: 10))
-                    Text(reminder.remindAt.prefix(16))
-                        .font(.system(size: 11, weight: .medium))
+                // Remind at pill & Edit button
+                HStack(spacing: 6) {
+                    HStack(spacing: 4) {
+                        Image(systemName: "clock.fill")
+                            .font(.system(size: 10))
+                        Text(reminder.remindAt.prefix(16))
+                            .font(.system(size: 11, weight: .medium))
+                    }
+                    .foregroundColor(AppColors.primary)
+                    .padding(.horizontal, 8)
+                    .padding(.vertical, 4)
+                    .background(AppColors.primary.opacity(0.1))
+                    .clipShape(Capsule())
+
+                    Button(action: { selectedReminderForEdit = reminder }) {
+                        Image(systemName: "pencil")
+                            .font(.system(size: 11, weight: .semibold))
+                            .foregroundColor(.secondary)
+                            .padding(6)
+                            .background(Color(.secondarySystemGroupedBackground))
+                            .clipShape(Circle())
+                    }
+                    .buttonStyle(.plain)
                 }
-                .foregroundColor(AppColors.primary)
-                .padding(.horizontal, 8)
-                .padding(.vertical, 4)
-                .background(AppColors.primary.opacity(0.1))
-                .clipShape(Capsule())
             }
 
             Divider()
@@ -620,6 +726,256 @@ public struct CreateReminderSheet: View {
                         selectedTaskId = nil
                         selectedTaskTitle = nil
                     }
+                }
+            }
+        }
+    }
+
+    private func presetButton(label: String, minutes: Int) -> some View {
+        Button(action: {
+            remindAt = Date().addingTimeInterval(TimeInterval(minutes * 60))
+        }) {
+            Text(label)
+                .font(.system(size: 11, weight: .semibold))
+                .padding(.horizontal, 10)
+                .padding(.vertical, 6)
+                .background(Color(.tertiarySystemGroupedBackground))
+                .clipShape(Capsule())
+        }
+        .buttonStyle(.plain)
+    }
+
+    private func applyTomorrowMorning() {
+        let calendar = Calendar.current
+        var comps = calendar.dateComponents([.year, .month, .day], from: Date().addingTimeInterval(86400))
+        comps.hour = 9
+        comps.minute = 0
+        comps.second = 0
+        if let d = calendar.date(from: comps) {
+            remindAt = d
+        }
+    }
+}
+
+// MARK: - Edit Reminder Sheet Modal
+public struct EditReminderSheet: View {
+    let reminder: Reminder
+    @Bindable var viewModel: ReminderViewModel
+    @Environment(\.dismiss) private var dismiss
+
+    @State private var title: String
+    @State private var description: String
+    @State private var remindAt: Date
+    @State private var status: String
+    @State private var selectedTaskId: Int64?
+    @State private var selectedTaskTitle: String?
+    @State private var isShowingTaskPicker = false
+    @State private var isSubmitting: Bool = false
+    @State private var errorMessage: String? = nil
+
+    public init(reminder: Reminder, viewModel: ReminderViewModel) {
+        self.reminder = reminder
+        self.viewModel = viewModel
+
+        _title = State(initialValue: reminder.title)
+        _description = State(initialValue: reminder.description)
+        _status = State(initialValue: reminder.status.lowercased())
+        _selectedTaskId = State(initialValue: reminder.taskId)
+        _selectedTaskTitle = State(initialValue: reminder.taskTitle)
+
+        let formatter = ISO8601DateFormatter()
+        formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+        var parsed = formatter.date(from: reminder.remindAt)
+        if parsed == nil {
+            let basic = ISO8601DateFormatter()
+            basic.formatOptions = [.withInternetDateTime]
+            parsed = basic.date(from: reminder.remindAt)
+        }
+        _remindAt = State(initialValue: parsed ?? Date().addingTimeInterval(3600))
+    }
+
+    public var body: some View {
+        NavigationStack {
+            Form {
+                // Section 1: Details
+                Section {
+                    TextField(L10n.Reminders.fieldTitle, text: $title)
+                        .font(.system(size: 15))
+
+                    TextField(L10n.Reminders.fieldNotes, text: $description, axis: .vertical)
+                        .lineLimit(3...6)
+                        .font(.system(size: 14))
+                } header: {
+                    Text(L10n.Reminders.sectionInfo)
+                }
+
+                // Section 2: Time & Date
+                Section {
+                    DatePicker(
+                        L10n.Reminders.remindAt,
+                        selection: $remindAt,
+                        displayedComponents: [.date, .hourAndMinute]
+                    )
+
+                    // Quick Presets
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text(L10n.Reminders.presets)
+                            .font(.system(size: 11, weight: .medium))
+                            .foregroundColor(.secondary)
+
+                        HStack(spacing: 8) {
+                            presetButton(label: "+30m", minutes: 30)
+                            presetButton(label: "+1h", minutes: 60)
+                            presetButton(label: "+3h", minutes: 180)
+                            Button(action: applyTomorrowMorning) {
+                                Text(L10n.Reminders.tomorrowMorning)
+                                    .font(.system(size: 11, weight: .semibold))
+                                    .padding(.horizontal, 8)
+                                    .padding(.vertical, 6)
+                                    .background(Color(.tertiarySystemGroupedBackground))
+                                    .clipShape(Capsule())
+                            }
+                            .buttonStyle(.plain)
+                        }
+                    }
+                    .padding(.vertical, 4)
+                } header: {
+                    Text(L10n.Reminders.sectionSchedule)
+                }
+
+                // Section 3: Status
+                Section {
+                    Picker(L10n.Reminders.status, selection: $status) {
+                        Text(L10n.Reminders.statusPending).tag("pending")
+                        Text(L10n.Reminders.statusSent).tag("sent")
+                        Text(L10n.Reminders.statusDismissed).tag("dismissed")
+                    }
+                } header: {
+                    Text(L10n.Reminders.status)
+                }
+
+                // Section 4: Task Association (Optional)
+                Section {
+                    if let taskId = selectedTaskId {
+                        HStack(spacing: 12) {
+                            Image(systemName: "checkmark.circle.fill")
+                                .foregroundColor(AppColors.primary)
+                                .font(.system(size: 18))
+
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text(selectedTaskTitle ?? "Task #\(taskId)")
+                                    .font(.system(size: 14, weight: .semibold))
+                                    .foregroundColor(.primary)
+                                    .lineLimit(1)
+                                Text(L10n.Reminders.linkedTask)
+                                    .font(.system(size: 11))
+                                    .foregroundColor(.secondary)
+                            }
+
+                            Spacer()
+
+                            Button(action: {
+                                selectedTaskId = nil
+                                selectedTaskTitle = nil
+                            }) {
+                                Image(systemName: "xmark.circle.fill")
+                                    .foregroundColor(.secondary)
+                                    .font(.system(size: 18))
+                            }
+                            .buttonStyle(.plain)
+                        }
+                        .padding(.vertical, 4)
+                    } else {
+                        Button(action: {
+                            isShowingTaskPicker = true
+                        }) {
+                            HStack {
+                                Label(L10n.Reminders.selectTask, systemImage: "link")
+                                    .font(.system(size: 14, weight: .medium))
+                                    .foregroundColor(AppColors.primary)
+                                Spacer()
+                                Image(systemName: "chevron.right")
+                                    .font(.system(size: 12, weight: .semibold))
+                                    .foregroundColor(.secondary)
+                            }
+                            .padding(.vertical, 2)
+                        }
+                        .buttonStyle(.plain)
+                    }
+                } header: {
+                    Text(L10n.Reminders.sectionAssociation)
+                }
+
+                if let err = errorMessage ?? viewModel.errorMessage {
+                    Section {
+                        Text(err)
+                            .font(.system(size: 12))
+                            .foregroundColor(AppColors.priorityUrgent)
+                    }
+                }
+            }
+            .navigationTitle(L10n.Reminders.editReminder)
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button(L10n.General.cancel) {
+                        dismiss()
+                    }
+                }
+                ToolbarItem(placement: .confirmationAction) {
+                    Button {
+                        handleSave()
+                    } label: {
+                        if isSubmitting || viewModel.isUpdating {
+                            ProgressView()
+                                .scaleEffect(0.8)
+                        } else {
+                            Text(L10n.General.save)
+                                .fontWeight(.bold)
+                        }
+                    }
+                    .disabled(title.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || isSubmitting || viewModel.isUpdating)
+                }
+            }
+            .sheet(isPresented: $isShowingTaskPicker) {
+                TaskSearchPickerSheet(viewModel: viewModel) { chosenTask in
+                    if let t = chosenTask {
+                        selectedTaskId = t.id
+                        selectedTaskTitle = t.title
+                    } else {
+                        selectedTaskId = nil
+                        selectedTaskTitle = nil
+                    }
+                }
+            }
+        }
+    }
+
+    private func handleSave() {
+        let trimmedTitle = title.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmedTitle.isEmpty else { return }
+
+        isSubmitting = true
+        errorMessage = nil
+
+        let clearTask = (selectedTaskId == nil && reminder.taskId != nil)
+
+        Task {
+            let ok = await viewModel.updateReminder(
+                id: reminder.id,
+                title: trimmedTitle,
+                description: description.isEmpty ? nil : description,
+                remindAt: remindAt,
+                status: status,
+                taskId: selectedTaskId,
+                clearTaskId: clearTask
+            )
+            await MainActor.run {
+                isSubmitting = false
+                if ok {
+                    dismiss()
+                } else {
+                    errorMessage = viewModel.errorMessage
                 }
             }
         }

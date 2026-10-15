@@ -199,6 +199,12 @@ public enum L10n {
     public enum Reminders {
         public static var title: String { "reminders.title".localized }
         public static var newReminder: String { "reminders.new".localized }
+        public static var editReminder: String { "reminders.edit".localized }
+        public static var editDesc: String { "reminders.editDesc".localized }
+        public static var status: String { "reminders.status".localized }
+        public static var statusPending: String { "reminders.statusPending".localized }
+        public static var statusSent: String { "reminders.statusSent".localized }
+        public static var statusDismissed: String { "reminders.statusDismissed".localized }
         public static var emptyTitle: String { "reminders.emptyTitle".localized }
         public static var emptyDesc: String { "reminders.emptyDesc".localized }
         public static var createFirst: String { "reminders.createFirst".localized }
@@ -324,6 +330,7 @@ public enum L10n {
 
     public enum General {
         public static var create: String { "general.create".localized }
+        public static var edit: String { "general.edit".localized }
         public static var save: String { "general.save".localized }
         public static var saving: String { "general.saving".localized }
         public static var cancel: String { "general.cancel".localized }
