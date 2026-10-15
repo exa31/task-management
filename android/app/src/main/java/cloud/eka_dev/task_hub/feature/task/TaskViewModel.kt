@@ -84,6 +84,30 @@ class TaskViewModel(private val apiClient: ApiClient) : ViewModel() {
         }
     }
 
+    fun updateTaskStatus(task: Task, newStatus: String) {
+        viewModelScope.launch {
+            try {
+                val updatedTasks = _uiState.value.tasks.map {
+                    if (it.id == task.id) it.copy(status = newStatus) else it
+                }
+                _uiState.value = _uiState.value.copy(tasks = updatedTasks)
+                if (_uiState.value.selectedTask?.id == task.id) {
+                    _uiState.value = _uiState.value.copy(selectedTask = _uiState.value.selectedTask?.copy(status = newStatus))
+                }
+
+                val res = apiClient.apiService.updateTask(task.id, UpdateTaskRequest(status = newStatus))
+                if (res.success && res.data != null) {
+                    if (_uiState.value.selectedTask?.id == task.id) {
+                        _uiState.value = _uiState.value.copy(selectedTask = res.data)
+                    }
+                }
+                loadTasks()
+            } catch (e: Exception) {
+                loadTasks()
+            }
+        }
+    }
+
     fun updateTask(
         id: Long,
         title: String? = null,

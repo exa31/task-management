@@ -225,6 +225,27 @@ public final class TaskViewModel {
     }
 
     @MainActor
+    public func updateTaskStatus(task: TaskItem, newStatus: String) {
+        if let idx = tasks.firstIndex(where: { $0.id == task.id }) {
+            var copy = tasks[idx]
+            copy.status = newStatus
+            tasks[idx] = copy
+            SharedWidgetDataManager.shared.syncWithTaskList(self.tasks)
+        }
+        Task {
+            do {
+                _ = try await apiClient.updateTask(
+                    id: task.id,
+                    req: UpdateTaskRequest(status: newStatus)
+                )
+                await loadTasks()
+            } catch {
+                self.errorMessage = error.localizedDescription
+            }
+        }
+    }
+
+    @MainActor
     public func updateTask(
         id: Int64,
         title: String? = nil,

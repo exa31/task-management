@@ -344,6 +344,9 @@ public struct TaskListView: View {
                             TaskRowView(
                                 task: task,
                                 onToggle: { viewModel.toggleTaskStatus(task: task) },
+                                onStatusChange: { newStatus in
+                                    viewModel.updateTaskStatus(task: task, newStatus: newStatus)
+                                },
                                 onSubtaskToggle: { subtaskId, isDone in
                                     viewModel.toggleSubtask(taskId: task.id, subtaskId: subtaskId, currentCompleted: isDone)
                                 },
@@ -352,6 +355,50 @@ public struct TaskListView: View {
                                 }
                             )
                             .swipeActions(edge: .leading) {
+                                if task.status == "todo" {
+                                    Button {
+                                        viewModel.updateTaskStatus(task: task, newStatus: "in_progress")
+                                    } label: {
+                                        Label(L10n.Tasks.startWorking, systemImage: "play.circle.fill")
+                                    }
+                                    .tint(AppColors.statusInProgress)
+                                } else if task.status == "in_progress" {
+                                    Button {
+                                        viewModel.updateTaskStatus(task: task, newStatus: "done")
+                                    } label: {
+                                        Label(L10n.Tasks.markComplete, systemImage: "checkmark.circle.fill")
+                                    }
+                                    .tint(AppColors.statusDone)
+
+                                    Button {
+                                        viewModel.updateTaskStatus(task: task, newStatus: "review")
+                                    } label: {
+                                        Label(L10n.Tasks.requestReview, systemImage: "eye.circle.fill")
+                                    }
+                                    .tint(AppColors.statusReview)
+                                } else if task.status == "review" {
+                                    Button {
+                                        viewModel.updateTaskStatus(task: task, newStatus: "done")
+                                    } label: {
+                                        Label(L10n.Tasks.markComplete, systemImage: "checkmark.circle.fill")
+                                    }
+                                    .tint(AppColors.statusDone)
+
+                                    Button {
+                                        viewModel.updateTaskStatus(task: task, newStatus: "in_progress")
+                                    } label: {
+                                        Label(L10n.Tasks.revertToInProgress, systemImage: "arrow.uturn.backward.circle.fill")
+                                    }
+                                    .tint(AppColors.statusInProgress)
+                                } else if task.status == "done" {
+                                    Button {
+                                        viewModel.updateTaskStatus(task: task, newStatus: "in_progress")
+                                    } label: {
+                                        Label(L10n.Tasks.reopen, systemImage: "arrow.counterclockwise.circle.fill")
+                                    }
+                                    .tint(AppColors.statusInProgress)
+                                }
+
                                 Button {
                                     viewModel.toggleFocus(task: task)
                                 } label: {
@@ -363,6 +410,31 @@ public struct TaskListView: View {
                                 Button(role: .destructive) {
                                     Task { await viewModel.deleteTask(id: task.id) }
                                 } label: {
+                                    Label(L10n.General.delete, systemImage: "trash")
+                                }
+                            }
+                            .contextMenu {
+                                Menu(L10n.Tasks.quickStatus) {
+                                    Button(action: { viewModel.updateTaskStatus(task: task, newStatus: "todo") }) {
+                                        Label(L10n.Tasks.statusTodo, systemImage: "circle")
+                                    }
+                                    Button(action: { viewModel.updateTaskStatus(task: task, newStatus: "in_progress") }) {
+                                        Label(L10n.Tasks.statusInProgress, systemImage: "arrow.triangle.2.circlepath")
+                                    }
+                                    Button(action: { viewModel.updateTaskStatus(task: task, newStatus: "review") }) {
+                                        Label(L10n.Tasks.statusReview, systemImage: "eye.fill")
+                                    }
+                                    Button(action: { viewModel.updateTaskStatus(task: task, newStatus: "done") }) {
+                                        Label(L10n.Tasks.statusDone, systemImage: "checkmark.circle.fill")
+                                    }
+                                }
+                                Divider()
+                                Button(action: { viewModel.toggleFocus(task: task) }) {
+                                    Label(task.isFocus ? L10n.Tasks.unfocusToggle : L10n.Tasks.focusToggle, systemImage: task.isFocus ? "star.slash.fill" : "star.fill")
+                                }
+                                Button(role: .destructive, action: {
+                                    Task { await viewModel.deleteTask(id: task.id) }
+                                }) {
                                     Label(L10n.General.delete, systemImage: "trash")
                                 }
                             }
@@ -514,6 +586,7 @@ struct FilterButton: View {
 struct TaskRowView: View {
     let task: TaskItem
     let onToggle: () -> Void
+    let onStatusChange: (String) -> Void
     let onSubtaskToggle: (Int64, Bool) -> Void
     let onSelect: () -> Void
 
@@ -664,9 +737,143 @@ struct TaskRowView: View {
                 .padding(.top, 2)
             }
 
-            // Footer: Status Badge, Due Date, and Log History Button
-            HStack(spacing: 8) {
-                StatusBadge(status: task.status)
+            // Footer: Status Badge with Menu, Quick Advance/Revert, Due Date, and Log History Button
+            HStack(spacing: 6) {
+                // Interactive Status Picker Menu
+                Menu {
+                    Section(L10n.Tasks.quickStatus) {
+                        Button(action: { onStatusChange("todo") }) {
+                            HStack {
+                                Text(L10n.Tasks.statusTodo)
+                                if task.status == "todo" { Image(systemName: "checkmark") }
+                            }
+                        }
+                        Button(action: { onStatusChange("in_progress") }) {
+                            HStack {
+                                Text(L10n.Tasks.statusInProgress)
+                                if task.status == "in_progress" { Image(systemName: "checkmark") }
+                            }
+                        }
+                        Button(action: { onStatusChange("review") }) {
+                            HStack {
+                                Text(L10n.Tasks.statusReview)
+                                if task.status == "review" { Image(systemName: "checkmark") }
+                            }
+                        }
+                        Button(action: { onStatusChange("done") }) {
+                            HStack {
+                                Text(L10n.Tasks.statusDone)
+                                if task.status == "done" { Image(systemName: "checkmark") }
+                            }
+                        }
+                    }
+                } label: {
+                    HStack(spacing: 3) {
+                        StatusBadge(status: task.status)
+                        Image(systemName: "chevron.up.chevron.down")
+                            .font(.system(size: 8, weight: .bold))
+                            .foregroundColor(.secondary)
+                    }
+                }
+                .buttonStyle(.plain)
+
+                // Quick Action Shortcut Buttons
+                if task.status == "todo" {
+                    Button(action: { onStatusChange("in_progress") }) {
+                        HStack(spacing: 3) {
+                            Image(systemName: "play.fill")
+                                .font(.system(size: 7))
+                            Text(L10n.Tasks.startWorking)
+                                .font(.system(size: 10, weight: .bold))
+                        }
+                        .padding(.horizontal, 7)
+                        .padding(.vertical, 3.5)
+                        .background(AppColors.statusInProgress.opacity(0.15))
+                        .foregroundColor(AppColors.statusInProgress)
+                        .clipShape(Capsule())
+                    }
+                    .buttonStyle(.plain)
+                } else if task.status == "in_progress" {
+                    HStack(spacing: 4) {
+                        Button(action: { onStatusChange("review") }) {
+                            HStack(spacing: 3) {
+                                Image(systemName: "eye.fill")
+                                    .font(.system(size: 7))
+                                Text(L10n.Tasks.requestReview)
+                                    .font(.system(size: 10, weight: .bold))
+                            }
+                            .padding(.horizontal, 7)
+                            .padding(.vertical, 3.5)
+                            .background(AppColors.statusReview.opacity(0.15))
+                            .foregroundColor(AppColors.statusReview)
+                            .clipShape(Capsule())
+                        }
+                        .buttonStyle(.plain)
+
+                        Button(action: { onStatusChange("done") }) {
+                            HStack(spacing: 3) {
+                                Image(systemName: "checkmark")
+                                    .font(.system(size: 8, weight: .bold))
+                                Text(L10n.Tasks.markComplete)
+                                    .font(.system(size: 10, weight: .bold))
+                            }
+                            .padding(.horizontal, 7)
+                            .padding(.vertical, 3.5)
+                            .background(AppColors.statusDone.opacity(0.15))
+                            .foregroundColor(AppColors.statusDone)
+                            .clipShape(Capsule())
+                        }
+                        .buttonStyle(.plain)
+                    }
+                } else if task.status == "review" {
+                    HStack(spacing: 4) {
+                        Button(action: { onStatusChange("in_progress") }) {
+                            HStack(spacing: 3) {
+                                Image(systemName: "arrow.uturn.backward")
+                                    .font(.system(size: 7, weight: .bold))
+                                Text(L10n.Tasks.revertToInProgress)
+                                    .font(.system(size: 10, weight: .bold))
+                            }
+                            .padding(.horizontal, 7)
+                            .padding(.vertical, 3.5)
+                            .background(AppColors.statusInProgress.opacity(0.15))
+                            .foregroundColor(AppColors.statusInProgress)
+                            .clipShape(Capsule())
+                        }
+                        .buttonStyle(.plain)
+
+                        Button(action: { onStatusChange("done") }) {
+                            HStack(spacing: 3) {
+                                Image(systemName: "checkmark")
+                                    .font(.system(size: 8, weight: .bold))
+                                Text(L10n.Tasks.markComplete)
+                                    .font(.system(size: 10, weight: .bold))
+                            }
+                            .padding(.horizontal, 7)
+                            .padding(.vertical, 3.5)
+                            .background(AppColors.statusDone.opacity(0.15))
+                            .foregroundColor(AppColors.statusDone)
+                            .clipShape(Capsule())
+                        }
+                        .buttonStyle(.plain)
+                    }
+                } else if task.status == "done" {
+                    Button(action: { onStatusChange("in_progress") }) {
+                        HStack(spacing: 3) {
+                            Image(systemName: "arrow.counterclockwise")
+                                .font(.system(size: 7, weight: .bold))
+                            Text(L10n.Tasks.reopen)
+                                .font(.system(size: 10, weight: .bold))
+                        }
+                        .padding(.horizontal, 7)
+                        .padding(.vertical, 3.5)
+                        .background(AppColors.statusInProgress.opacity(0.15))
+                        .foregroundColor(AppColors.statusInProgress)
+                        .clipShape(Capsule())
+                    }
+                    .buttonStyle(.plain)
+                }
+
                 Spacer()
                 if let due = task.dueDate {
                     HStack(spacing: 4) {

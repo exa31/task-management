@@ -132,6 +132,17 @@ public enum L10n {
         public static var unitWeeks: String { "tasks.unitWeeks".localized }
         public static var unitMonths: String { "tasks.unitMonths".localized }
         public static var repeatBadge: String { "tasks.repeatBadge".localized }
+        public static var quickStatus: String { "tasks.quickStatus".localized }
+        public static var advanceStatus: String { "tasks.advanceStatus".localized }
+        public static var revertToInProgress: String { "tasks.revertToInProgress".localized }
+        public static var startWorking: String { "tasks.startWorking".localized }
+        public static var requestReview: String { "tasks.requestReview".localized }
+        public static var markComplete: String { "tasks.markComplete".localized }
+        public static var reopen: String { "tasks.reopen".localized }
+        public static var statusTodo: String { "tasks.statusTodo".localized }
+        public static var statusInProgress: String { "tasks.statusInProgress".localized }
+        public static var statusReview: String { "tasks.statusReview".localized }
+        public static var statusDone: String { "tasks.statusDone".localized }
     }
 
     public enum Projects {

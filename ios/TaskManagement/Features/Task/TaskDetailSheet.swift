@@ -134,24 +134,42 @@ public struct TaskDetailSheet: View {
     private var detailContentView: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 16) {
-                // Status Toggle Row
+                // Status Selector Row
                 VStack(alignment: .leading, spacing: 8) {
                     Text(L10n.Tasks.statusHeader)
                         .font(.system(size: 11, weight: .bold))
                         .foregroundColor(.secondary)
 
-                    HStack(spacing: 12) {
-                        Button(action: { viewModel.toggleTaskStatus(task: currentTask) }) {
-                            HStack(spacing: 8) {
-                                Image(systemName: currentTask.status == "done" ? "checkmark.circle.fill" : "circle")
-                                    .foregroundColor(currentTask.status == "done" ? AppColors.statusDone : .secondary)
-                                Text(currentTask.status == "done" ? L10n.Tasks.markUndone : L10n.Tasks.markDone)
-                                    .font(.system(size: 14, weight: .medium))
+                    ScrollView(.horizontal, showsIndicators: false) {
+                        HStack(spacing: 8) {
+                            ForEach([
+                                ("todo", L10n.Tasks.statusTodo, "circle", AppColors.statusTodo),
+                                ("in_progress", L10n.Tasks.statusInProgress, "arrow.triangle.2.circlepath", AppColors.statusInProgress),
+                                ("review", L10n.Tasks.statusReview, "eye.fill", AppColors.statusReview),
+                                ("done", L10n.Tasks.statusDone, "checkmark.circle.fill", AppColors.statusDone)
+                            ], id: \.0) { item in
+                                let isSelected = currentTask.status == item.0
+                                Button(action: {
+                                    viewModel.updateTaskStatus(task: currentTask, newStatus: item.0)
+                                }) {
+                                    HStack(spacing: 6) {
+                                        Image(systemName: item.2)
+                                            .font(.system(size: 12, weight: .semibold))
+                                        Text(item.1)
+                                            .font(.system(size: 13, weight: isSelected ? .bold : .medium))
+                                    }
+                                    .padding(.horizontal, 12)
+                                    .padding(.vertical, 8)
+                                    .background(isSelected ? item.3.opacity(0.18) : Color(.secondarySystemGroupedBackground))
+                                    .foregroundColor(isSelected ? item.3 : .secondary)
+                                    .clipShape(Capsule())
+                                    .overlay(
+                                        Capsule()
+                                            .stroke(isSelected ? item.3.opacity(0.4) : Color.secondary.opacity(0.15), lineWidth: 1)
+                                    )
+                                }
+                                .buttonStyle(.plain)
                             }
-                            .padding(.horizontal, 14)
-                            .padding(.vertical, 10)
-                            .background(Color(.secondarySystemGroupedBackground))
-                            .clipShape(RoundedRectangle(cornerRadius: 10))
                         }
                     }
                 }

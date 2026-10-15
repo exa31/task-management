@@ -1,5 +1,6 @@
 package cloud.eka_dev.task_hub.core.designsystem
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -9,7 +10,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -156,6 +157,7 @@ fun TaskItemCard(
     task: Task,
     onTaskClick: () -> Unit,
     onStatusToggle: () -> Unit,
+    onStatusChange: (String) -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     val isDone = task.status == "done"
@@ -322,7 +324,201 @@ fun TaskItemCard(
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                StatusBadge(status = task.status)
+                // Status with quick picker dropdown & quick advance/revert buttons
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(6.dp)
+                ) {
+                    var showStatusMenu by remember { mutableStateOf(false) }
+
+                    Box {
+                        Surface(
+                            shape = RoundedCornerShape(6.dp),
+                            color = when (task.status.lowercase()) {
+                                "done" -> StatusDone.copy(alpha = 0.12f)
+                                "in_progress" -> StatusInProgress.copy(alpha = 0.12f)
+                                "review" -> StatusReview.copy(alpha = 0.12f)
+                                else -> StatusTodo.copy(alpha = 0.12f)
+                            },
+                            border = BorderStroke(
+                                1.dp,
+                                when (task.status.lowercase()) {
+                                    "done" -> StatusDone.copy(alpha = 0.25f)
+                                    "in_progress" -> StatusInProgress.copy(alpha = 0.25f)
+                                    "review" -> StatusReview.copy(alpha = 0.25f)
+                                    else -> StatusTodo.copy(alpha = 0.25f)
+                                }
+                            ),
+                            modifier = Modifier.clickable { showStatusMenu = true }
+                        ) {
+                            Row(
+                                modifier = Modifier.padding(horizontal = 7.dp, vertical = 3.5.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(3.dp)
+                            ) {
+                                Text(
+                                    task.status.replace("_", " ").uppercase(),
+                                    fontSize = 10.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = when (task.status.lowercase()) {
+                                        "done" -> StatusDone
+                                        "in_progress" -> StatusInProgress
+                                        "review" -> StatusReview
+                                        else -> StatusTodo
+                                    }
+                                )
+                                Icon(
+                                    Icons.Default.ArrowDropDown,
+                                    contentDescription = "Pilih Status",
+                                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    modifier = Modifier.size(12.dp)
+                                )
+                            }
+                        }
+
+                        DropdownMenu(
+                            expanded = showStatusMenu,
+                            onDismissRequest = { showStatusMenu = false }
+                        ) {
+                            DropdownMenuItem(
+                                text = { Text("To Do", fontSize = 13.sp) },
+                                leadingIcon = {
+                                    Icon(Icons.Default.RadioButtonUnchecked, contentDescription = null, tint = StatusTodo, modifier = Modifier.size(16.dp))
+                                },
+                                onClick = {
+                                    showStatusMenu = false
+                                    onStatusChange("todo")
+                                }
+                            )
+                            DropdownMenuItem(
+                                text = { Text("In Progress", fontSize = 13.sp) },
+                                leadingIcon = {
+                                    Icon(Icons.Default.Sync, contentDescription = null, tint = StatusInProgress, modifier = Modifier.size(16.dp))
+                                },
+                                onClick = {
+                                    showStatusMenu = false
+                                    onStatusChange("in_progress")
+                                }
+                            )
+                            DropdownMenuItem(
+                                text = { Text("Review", fontSize = 13.sp) },
+                                leadingIcon = {
+                                    Icon(Icons.Default.Visibility, contentDescription = null, tint = StatusReview, modifier = Modifier.size(16.dp))
+                                },
+                                onClick = {
+                                    showStatusMenu = false
+                                    onStatusChange("review")
+                                }
+                            )
+                            DropdownMenuItem(
+                                text = { Text("Selesai", fontSize = 13.sp) },
+                                leadingIcon = {
+                                    Icon(Icons.Default.CheckCircle, contentDescription = null, tint = StatusDone, modifier = Modifier.size(16.dp))
+                                },
+                                onClick = {
+                                    showStatusMenu = false
+                                    onStatusChange("done")
+                                }
+                            )
+                        }
+                    }
+
+                    // Quick Action Shortcut Buttons
+                    when (task.status.lowercase()) {
+                        "todo" -> {
+                            Surface(
+                                shape = CircleShape,
+                                color = StatusInProgress.copy(alpha = 0.15f),
+                                modifier = Modifier.clickable { onStatusChange("in_progress") }
+                            ) {
+                                Row(
+                                    modifier = Modifier.padding(horizontal = 7.dp, vertical = 3.dp),
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(2.dp)
+                                ) {
+                                    Icon(Icons.Default.PlayArrow, contentDescription = null, tint = StatusInProgress, modifier = Modifier.size(10.dp))
+                                    Text("Mulai", fontSize = 10.sp, fontWeight = FontWeight.Bold, color = StatusInProgress)
+                                }
+                            }
+                        }
+                        "in_progress" -> {
+                            Surface(
+                                shape = CircleShape,
+                                color = StatusReview.copy(alpha = 0.15f),
+                                modifier = Modifier.clickable { onStatusChange("review") }
+                            ) {
+                                Row(
+                                    modifier = Modifier.padding(horizontal = 7.dp, vertical = 3.dp),
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(2.dp)
+                                ) {
+                                    Icon(Icons.Default.Visibility, contentDescription = null, tint = StatusReview, modifier = Modifier.size(10.dp))
+                                    Text("Review", fontSize = 10.sp, fontWeight = FontWeight.Bold, color = StatusReview)
+                                }
+                            }
+                            Surface(
+                                shape = CircleShape,
+                                color = StatusDone.copy(alpha = 0.15f),
+                                modifier = Modifier.clickable { onStatusChange("done") }
+                            ) {
+                                Row(
+                                    modifier = Modifier.padding(horizontal = 7.dp, vertical = 3.dp),
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(2.dp)
+                                ) {
+                                    Icon(Icons.Default.Check, contentDescription = null, tint = StatusDone, modifier = Modifier.size(10.dp))
+                                    Text("Selesai", fontSize = 10.sp, fontWeight = FontWeight.Bold, color = StatusDone)
+                                }
+                            }
+                        }
+                        "review" -> {
+                            Surface(
+                                shape = CircleShape,
+                                color = StatusInProgress.copy(alpha = 0.15f),
+                                modifier = Modifier.clickable { onStatusChange("in_progress") }
+                            ) {
+                                Row(
+                                    modifier = Modifier.padding(horizontal = 7.dp, vertical = 3.dp),
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(2.dp)
+                                ) {
+                                    Icon(Icons.Default.Undo, contentDescription = null, tint = StatusInProgress, modifier = Modifier.size(10.dp))
+                                    Text("Revisi", fontSize = 10.sp, fontWeight = FontWeight.Bold, color = StatusInProgress)
+                                }
+                            }
+                            Surface(
+                                shape = CircleShape,
+                                color = StatusDone.copy(alpha = 0.15f),
+                                modifier = Modifier.clickable { onStatusChange("done") }
+                            ) {
+                                Row(
+                                    modifier = Modifier.padding(horizontal = 7.dp, vertical = 3.dp),
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(2.dp)
+                                ) {
+                                    Icon(Icons.Default.Check, contentDescription = null, tint = StatusDone, modifier = Modifier.size(10.dp))
+                                    Text("Selesai", fontSize = 10.sp, fontWeight = FontWeight.Bold, color = StatusDone)
+                                }
+                            }
+                        }
+                        "done" -> {
+                            Surface(
+                                shape = CircleShape,
+                                color = StatusInProgress.copy(alpha = 0.15f),
+                                modifier = Modifier.clickable { onStatusChange("in_progress") }
+                            ) {
+                                Row(
+                                    modifier = Modifier.padding(horizontal = 7.dp, vertical = 3.dp),
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(2.dp)
+                                ) {
+                                    Icon(Icons.Default.Refresh, contentDescription = null, tint = StatusInProgress, modifier = Modifier.size(10.dp))
+                                    Text("Kerjakan Lagi", fontSize = 10.sp, fontWeight = FontWeight.Bold, color = StatusInProgress)
+                                }
+                            }
+                        }
+                    }
+                }
 
                 Row(
                     verticalAlignment = Alignment.CenterVertically,

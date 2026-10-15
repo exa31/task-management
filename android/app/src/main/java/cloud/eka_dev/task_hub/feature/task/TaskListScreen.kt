@@ -177,7 +177,8 @@ fun TaskListScreen(
                                 viewModel.selectTask(task)
                                 onTaskClick(task.id)
                             },
-                            onStatusToggle = { viewModel.toggleTaskStatus(task) }
+                            onStatusToggle = { viewModel.toggleTaskStatus(task) },
+                            onStatusChange = { newStatus -> viewModel.updateTaskStatus(task, newStatus) }
                         )
                     }
                 }

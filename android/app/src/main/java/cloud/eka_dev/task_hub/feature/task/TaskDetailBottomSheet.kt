@@ -4,6 +4,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -194,24 +195,53 @@ private fun DetailTabContent(task: Task, viewModel: TaskViewModel) {
             .padding(horizontal = 20.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
-        // Toggle Status Button
-        OutlinedButton(
-            onClick = { viewModel.toggleTaskStatus(task) },
-            shape = RoundedCornerShape(12.dp),
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            Icon(
-                if (task.status == "done") Icons.Default.CheckCircle else Icons.Default.RadioButtonUnchecked,
-                contentDescription = null,
-                tint = if (task.status == "done") StatusDone else BrandPrimary,
-                modifier = Modifier.size(18.dp)
-            )
-            Spacer(modifier = Modifier.width(8.dp))
+        // Status Stepper / Selector
+        Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
             Text(
-                if (task.status == "done") "Tandai Belum Selesai" else "Tandai Selesai",
-                fontSize = 14.sp,
-                fontWeight = FontWeight.Medium
+                "STATUS TUGAS",
+                fontSize = 11.sp,
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
             )
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .horizontalScroll(rememberScrollState()),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                listOf(
+                    Triple("todo", "To Do", StatusTodo),
+                    Triple("in_progress", "In Progress", StatusInProgress),
+                    Triple("review", "Review", StatusReview),
+                    Triple("done", "Selesai", StatusDone)
+                ).forEach { (st, label, color) ->
+                    val isSelected = task.status.lowercase() == st
+                    FilterChip(
+                        selected = isSelected,
+                        onClick = { viewModel.updateTaskStatus(task, st) },
+                        leadingIcon = {
+                            Icon(
+                                when (st) {
+                                    "done" -> Icons.Default.CheckCircle
+                                    "in_progress" -> Icons.Default.Sync
+                                    "review" -> Icons.Default.Visibility
+                                    else -> Icons.Default.RadioButtonUnchecked
+                                },
+                                contentDescription = null,
+                                tint = if (isSelected) color else MaterialTheme.colorScheme.onSurfaceVariant,
+                                modifier = Modifier.size(15.dp)
+                            )
+                        },
+                        label = {
+                            Text(
+                                label,
+                                fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
+                                color = if (isSelected) color else MaterialTheme.colorScheme.onSurface
+                            )
+                        }
+                    )
+                }
+            }
         }
 
         // Subtask Progress Header
