@@ -123,12 +123,16 @@ public struct RecurringTaskWidgetView: View {
         let combined = entry.bundle.focusTasks + entry.bundle.upcomingDeadlines
         var seen = Set<Int64>()
         var result: [TaskItem] = []
+        let isAuto = SharedWidgetDataManager.shared.isAutoSelectAllEnabled()
         let selectedIds = SharedWidgetDataManager.shared.getSelectedRecurringTaskIds()
-        guard !selectedIds.isEmpty else { return [] }
+        let excluded = SharedWidgetDataManager.shared.getExcludedTaskIds()
         for t in combined {
-            if t.isRecurring == true && t.status != "done" && selectedIds.contains(t.id) && !seen.contains(t.id) {
-                seen.insert(t.id)
-                result.append(t)
+            if t.isRecurring == true && t.status != "done" && !seen.contains(t.id) {
+                let isSelected = isAuto ? !excluded.contains(t.id) : selectedIds.contains(t.id)
+                if isSelected {
+                    seen.insert(t.id)
+                    result.append(t)
+                }
             }
         }
         return result
@@ -233,8 +237,9 @@ public struct RecurringTaskWidgetView: View {
                     }
                 }
             } else {
+                let isAuto = SharedWidgetDataManager.shared.isAutoSelectAllEnabled()
                 let selectedIds = SharedWidgetDataManager.shared.getSelectedRecurringTaskIds()
-                if selectedIds.isEmpty {
+                if !isAuto && selectedIds.isEmpty {
                     unselectedRecurringView(isCompact: true)
                 } else if entry.bundle.completedToday > 0 {
                     doneStateView(isCompact: true)
@@ -355,8 +360,9 @@ public struct RecurringTaskWidgetView: View {
                     }
                 }
             } else {
+                let isAuto = SharedWidgetDataManager.shared.isAutoSelectAllEnabled()
                 let selectedIds = SharedWidgetDataManager.shared.getSelectedRecurringTaskIds()
-                if selectedIds.isEmpty {
+                if !isAuto && selectedIds.isEmpty {
                     unselectedRecurringView(isCompact: false)
                 } else if entry.bundle.completedToday > 0 {
                     doneStateView(isCompact: false)
@@ -446,8 +452,9 @@ public struct RecurringTaskWidgetView: View {
                     }
                 }
             } else {
+                let isAuto = SharedWidgetDataManager.shared.isAutoSelectAllEnabled()
                 let selectedIds = SharedWidgetDataManager.shared.getSelectedRecurringTaskIds()
-                if selectedIds.isEmpty {
+                if !isAuto && selectedIds.isEmpty {
                     unselectedRecurringView(isCompact: false)
                 } else if entry.bundle.completedToday > 0 {
                     doneStateView(isCompact: false)
@@ -695,12 +702,16 @@ public struct CustomTaskWidgetView: View {
         let combined = entry.bundle.focusTasks + entry.bundle.upcomingDeadlines
         var seen = Set<Int64>()
         var result: [TaskItem] = []
+        let isAuto = SharedWidgetDataManager.shared.isAutoSelectAllEnabled()
         let selectedIds = SharedWidgetDataManager.shared.getSelectedCustomTaskIds()
-        guard !selectedIds.isEmpty else { return [] }
+        let excluded = SharedWidgetDataManager.shared.getExcludedTaskIds()
         for t in combined {
-            if !seen.contains(t.id) && t.status != "done" && selectedIds.contains(t.id) {
-                seen.insert(t.id)
-                result.append(t)
+            if !seen.contains(t.id) && t.status != "done" {
+                let isSelected = isAuto ? !excluded.contains(t.id) : selectedIds.contains(t.id)
+                if isSelected {
+                    seen.insert(t.id)
+                    result.append(t)
+                }
             }
         }
         return result
@@ -801,8 +812,9 @@ public struct CustomTaskWidgetView: View {
                     }
                 }
             } else {
+                let isAuto = SharedWidgetDataManager.shared.isAutoSelectAllEnabled()
                 let selectedIds = SharedWidgetDataManager.shared.getSelectedCustomTaskIds()
-                if selectedIds.isEmpty {
+                if !isAuto && selectedIds.isEmpty {
                     unselectedCustomView(isCompact: true)
                 } else {
                     emptyTasksView(isCompact: true)
@@ -927,8 +939,9 @@ public struct CustomTaskWidgetView: View {
                     }
                 }
             } else {
+                let isAuto = SharedWidgetDataManager.shared.isAutoSelectAllEnabled()
                 let selectedIds = SharedWidgetDataManager.shared.getSelectedCustomTaskIds()
-                if selectedIds.isEmpty {
+                if !isAuto && selectedIds.isEmpty {
                     unselectedCustomView(isCompact: false)
                 } else {
                     emptyTasksView(isCompact: false)
@@ -1016,8 +1029,9 @@ public struct CustomTaskWidgetView: View {
                     .buttonStyle(.plain)
                 }
             } else {
+                let isAuto = SharedWidgetDataManager.shared.isAutoSelectAllEnabled()
                 let selectedIds = SharedWidgetDataManager.shared.getSelectedCustomTaskIds()
-                if selectedIds.isEmpty {
+                if !isAuto && selectedIds.isEmpty {
                     unselectedCustomView(isCompact: false)
                 } else {
                     emptyTasksView(isCompact: false)

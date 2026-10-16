@@ -509,6 +509,11 @@ public enum Translations {
             "settings.widgetEmptyTasks": "No active tasks found",
             "settings.widgetEmptyDesc": "Create tasks first in the Tasks tab to display them in widgets.",
             "settings.widgetTip": "Only incomplete tasks are shown. When a task is marked done, it will automatically be removed from your widgets.",
+            "settings.widgetAutoSelectAll": "Auto-Select All Active Tasks (*)",
+            "settings.widgetAutoSelectAllDesc": "Automatically include all active and newly created tasks in widgets.",
+            "settings.widgetAutoSelectBadge": "Auto-Select (*)",
+            "settings.widgetManualBadge": "Manual Selection",
+            "settings.widgetAutoSelectHint": "New tasks will automatically be selected and appear in your widgets.",
 
             "widget.lockscreen.tasksDone": "%lld/%lld Tasks Done",
             "widget.lockscreen.duePrefix": "Due: %@",
@@ -925,6 +930,11 @@ public enum Translations {
             "settings.widgetEmptyTasks": "Tidak ada tugas aktif",
             "settings.widgetEmptyDesc": "Buat tugas terlebih dahulu di menu Tugas agar dapat ditampilkan di widget.",
             "settings.widgetTip": "Hanya tugas belum selesai yang ditampilkan. Tugas yang telah selesai otomatis dihapus dari widget.",
+            "settings.widgetAutoSelectAll": "Pilih Otomatis Semua Tugas Aktif (*)",
+            "settings.widgetAutoSelectAllDesc": "Semua tugas aktif dan tugas baru otomatis terpilih dan sinkron ke widget.",
+            "settings.widgetAutoSelectBadge": "Auto-Select (*)",
+            "settings.widgetManualBadge": "Pilihan Manual",
+            "settings.widgetAutoSelectHint": "Tugas baru akan otomatis terpilih dan langsung muncul di widget.",
 
             "widget.lockscreen.tasksDone": "%lld/%lld Tugas Selesai",
             "widget.lockscreen.duePrefix": "Tenggat: %@",

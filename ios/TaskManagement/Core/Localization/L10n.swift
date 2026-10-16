@@ -318,6 +318,11 @@ public enum L10n {
         public static var widgetEmptyTasks: String { "settings.widgetEmptyTasks".localized }
         public static var widgetEmptyDesc: String { "settings.widgetEmptyDesc".localized }
         public static var widgetTip: String { "settings.widgetTip".localized }
+        public static var widgetAutoSelectAll: String { "settings.widgetAutoSelectAll".localized }
+        public static var widgetAutoSelectAllDesc: String { "settings.widgetAutoSelectAllDesc".localized }
+        public static var widgetAutoSelectBadge: String { "settings.widgetAutoSelectBadge".localized }
+        public static var widgetManualBadge: String { "settings.widgetManualBadge".localized }
+        public static var widgetAutoSelectHint: String { "settings.widgetAutoSelectHint".localized }
     }
 
     public enum Mcp {

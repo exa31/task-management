@@ -13,6 +13,8 @@ public struct WidgetSettingsView: View {
     // Stored selection sets from App Group
     @State private var selectedRecurringIds: Set<Int64> = []
     @State private var selectedCustomIds: Set<Int64> = []
+    @State private var isAutoSelectAll: Bool = true
+    @State private var excludedTaskIds: Set<Int64> = []
 
     private let widgetManager = SharedWidgetDataManager.shared
     private let apiClient = APIClient.shared
@@ -44,6 +46,9 @@ public struct WidgetSettingsView: View {
     public var body: some View {
         ScrollView {
             VStack(spacing: 16) {
+                // Auto-Select Master Switch
+                autoSelectMasterCardView
+
                 // Info Tip Card
                 tipCardView
 
@@ -77,6 +82,91 @@ public struct WidgetSettingsView: View {
         .refreshable {
             await fetchTasks()
         }
+    }
+
+    // MARK: - Auto-Select Master Card
+    private var autoSelectMasterCardView: some View {
+        VStack(spacing: 12) {
+            HStack(alignment: .center, spacing: 12) {
+                // Icon
+                ZStack {
+                    Circle()
+                        .fill(
+                            LinearGradient(
+                                colors: isAutoSelectAll ? [
+                                    Color(red: 16/255, green: 185/255, blue: 129/255),
+                                    Color(red: 6/255, green: 182/255, blue: 212/255)
+                                ] : [
+                                    Color.secondary.opacity(0.2),
+                                    Color.secondary.opacity(0.1)
+                                ],
+                                startPoint: .topLeading,
+                                endPoint: .bottomTrailing
+                            )
+                        )
+                        .frame(width: 40, height: 40)
+
+                    Image(systemName: isAutoSelectAll ? "wand.and.stars" : "slider.horizontal.3")
+                        .font(.system(size: 18, weight: .semibold))
+                        .foregroundColor(isAutoSelectAll ? .white : .secondary)
+                }
+
+                VStack(alignment: .leading, spacing: 3) {
+                    HStack(spacing: 6) {
+                        Text(L10n.Settings.widgetAutoSelectAll)
+                            .font(.system(size: 14, weight: .bold))
+                            .foregroundColor(.primary)
+
+                        Text(isAutoSelectAll ? L10n.Settings.widgetAutoSelectBadge : L10n.Settings.widgetManualBadge)
+                            .font(.system(size: 9, weight: .black))
+                            .foregroundColor(isAutoSelectAll ? Color(red: 16/255, green: 185/255, blue: 129/255) : .secondary)
+                            .padding(.horizontal, 6)
+                            .padding(.vertical, 2)
+                            .background((isAutoSelectAll ? Color(red: 16/255, green: 185/255, blue: 129/255) : Color.secondary).opacity(0.12))
+                            .clipShape(Capsule())
+                    }
+
+                    Text(L10n.Settings.widgetAutoSelectAllDesc)
+                        .font(.system(size: 11))
+                        .foregroundColor(.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+
+                Spacer()
+
+                Toggle("", isOn: Binding(
+                    get: { isAutoSelectAll },
+                    set: { newVal in
+                        handleAutoSelectToggle(newVal)
+                    }
+                ))
+                .labelsHidden()
+                .tint(Color(red: 16/255, green: 185/255, blue: 129/255))
+            }
+
+            if isAutoSelectAll {
+                HStack(spacing: 6) {
+                    Image(systemName: "checkmark.circle.badge.questionmark")
+                        .font(.system(size: 11, weight: .semibold))
+                        .foregroundColor(Color(red: 16/255, green: 185/255, blue: 129/255))
+                    Text(L10n.Settings.widgetAutoSelectHint)
+                        .font(.system(size: 11, weight: .medium))
+                        .foregroundColor(Color(red: 16/255, green: 185/255, blue: 129/255))
+                    Spacer()
+                }
+                .padding(.horizontal, 10)
+                .padding(.vertical, 6)
+                .background(Color(red: 16/255, green: 185/255, blue: 129/255).opacity(0.08))
+                .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
+            }
+        }
+        .padding(14)
+        .background(Color(.secondarySystemGroupedBackground))
+        .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+        .overlay(
+            RoundedRectangle(cornerRadius: 16, style: .continuous)
+                .stroke(isAutoSelectAll ? Color(red: 16/255, green: 185/255, blue: 129/255).opacity(0.3) : Color.primary.opacity(0.06), lineWidth: 1.5)
+        )
     }
 
     // MARK: - Tip Banner
@@ -419,6 +509,8 @@ public struct WidgetSettingsView: View {
 
     // MARK: - Data Management & Toggle Actions
     private func loadSelections() {
+        isAutoSelectAll = widgetManager.isAutoSelectAllEnabled()
+        excludedTaskIds = widgetManager.getExcludedTaskIds()
         selectedRecurringIds = widgetManager.getSelectedRecurringTaskIds()
         selectedCustomIds = widgetManager.getSelectedCustomTaskIds()
     }
@@ -431,10 +523,23 @@ public struct WidgetSettingsView: View {
             let fetched = try await apiClient.getTasks(limit: 100)
             // Filter strictly: only active tasks (never done)
             self.tasks = fetched.filter { $0.status != "done" }
-            // Auto clean selections against active tasks
             let activeIds = Set(self.tasks.map { $0.id })
-            selectedRecurringIds = selectedRecurringIds.intersection(activeIds)
-            selectedCustomIds = selectedCustomIds.intersection(activeIds)
+
+            // Clean up excluded tasks against current active tasks
+            excludedTaskIds = excludedTaskIds.intersection(activeIds)
+            widgetManager.setExcludedTaskIds(excludedTaskIds)
+
+            if isAutoSelectAll {
+                // Auto-select * : select all active tasks not explicitly excluded
+                let recActive = Set(self.tasks.filter { $0.isRecurring == true && !excludedTaskIds.contains($0.id) }.map { $0.id })
+                let cusActive = Set(self.tasks.filter { $0.isRecurring != true && !excludedTaskIds.contains($0.id) }.map { $0.id })
+                selectedRecurringIds = recActive
+                selectedCustomIds = cusActive
+            } else {
+                selectedRecurringIds = selectedRecurringIds.intersection(activeIds)
+                selectedCustomIds = selectedCustomIds.intersection(activeIds)
+            }
+
             widgetManager.setSelectedRecurringTaskIds(selectedRecurringIds)
             widgetManager.setSelectedCustomTaskIds(selectedCustomIds)
             // Sync widget bundle
@@ -446,30 +551,73 @@ public struct WidgetSettingsView: View {
         isLoading = false
     }
 
-    private func toggleRecurring(_ task: TaskItem) {
-        if selectedRecurringIds.contains(task.id) {
-            selectedRecurringIds.remove(task.id)
-        } else {
-            selectedRecurringIds.insert(task.id)
+    private func handleAutoSelectToggle(_ enabled: Bool) {
+        UIImpactFeedbackGenerator(style: .medium).impactOccurred()
+        isAutoSelectAll = enabled
+        widgetManager.setAutoSelectAllEnabled(enabled)
+        if enabled {
+            excludedTaskIds.removeAll()
+            widgetManager.setExcludedTaskIds([])
+            let recActive = Set(tasks.filter { $0.isRecurring == true && $0.status != "done" }.map { $0.id })
+            let cusActive = Set(tasks.filter { $0.isRecurring != true && $0.status != "done" }.map { $0.id })
+            selectedRecurringIds = recActive
+            selectedCustomIds = cusActive
+            widgetManager.setSelectedRecurringTaskIds(recActive)
+            widgetManager.setSelectedCustomTaskIds(cusActive)
         }
-        widgetManager.setSelectedRecurringTaskIds(selectedRecurringIds)
+        widgetManager.syncWithTaskList(tasks)
+    }
+
+    private func toggleRecurring(_ task: TaskItem) {
+        if isAutoSelectAll {
+            if excludedTaskIds.contains(task.id) {
+                excludedTaskIds.remove(task.id)
+                selectedRecurringIds.insert(task.id)
+            } else {
+                excludedTaskIds.insert(task.id)
+                selectedRecurringIds.remove(task.id)
+            }
+            widgetManager.setExcludedTaskIds(excludedTaskIds)
+            widgetManager.setSelectedRecurringTaskIds(selectedRecurringIds)
+        } else {
+            if selectedRecurringIds.contains(task.id) {
+                selectedRecurringIds.remove(task.id)
+            } else {
+                selectedRecurringIds.insert(task.id)
+            }
+            widgetManager.setSelectedRecurringTaskIds(selectedRecurringIds)
+        }
         widgetManager.syncWithTaskList(tasks)
     }
 
     private func toggleCustom(_ task: TaskItem) {
-        if selectedCustomIds.contains(task.id) {
-            selectedCustomIds.remove(task.id)
+        if isAutoSelectAll {
+            if excludedTaskIds.contains(task.id) {
+                excludedTaskIds.remove(task.id)
+                selectedCustomIds.insert(task.id)
+            } else {
+                excludedTaskIds.insert(task.id)
+                selectedCustomIds.remove(task.id)
+            }
+            widgetManager.setExcludedTaskIds(excludedTaskIds)
+            widgetManager.setSelectedCustomTaskIds(selectedCustomIds)
         } else {
-            selectedCustomIds.insert(task.id)
+            if selectedCustomIds.contains(task.id) {
+                selectedCustomIds.remove(task.id)
+            } else {
+                selectedCustomIds.insert(task.id)
+            }
+            widgetManager.setSelectedCustomTaskIds(selectedCustomIds)
         }
-        widgetManager.setSelectedCustomTaskIds(selectedCustomIds)
         widgetManager.syncWithTaskList(tasks)
     }
 
     private func selectAllRecurring() {
         for t in filteredRecurringTasks {
             selectedRecurringIds.insert(t.id)
+            excludedTaskIds.remove(t.id)
         }
+        widgetManager.setExcludedTaskIds(excludedTaskIds)
         widgetManager.setSelectedRecurringTaskIds(selectedRecurringIds)
         widgetManager.syncWithTaskList(tasks)
     }
@@ -477,7 +625,11 @@ public struct WidgetSettingsView: View {
     private func deselectAllRecurring() {
         for t in filteredRecurringTasks {
             selectedRecurringIds.remove(t.id)
+            if isAutoSelectAll {
+                excludedTaskIds.insert(t.id)
+            }
         }
+        widgetManager.setExcludedTaskIds(excludedTaskIds)
         widgetManager.setSelectedRecurringTaskIds(selectedRecurringIds)
         widgetManager.syncWithTaskList(tasks)
     }
@@ -485,7 +637,9 @@ public struct WidgetSettingsView: View {
     private func selectAllCustom() {
         for t in filteredCustomTasks {
             selectedCustomIds.insert(t.id)
+            excludedTaskIds.remove(t.id)
         }
+        widgetManager.setExcludedTaskIds(excludedTaskIds)
         widgetManager.setSelectedCustomTaskIds(selectedCustomIds)
         widgetManager.syncWithTaskList(tasks)
     }
@@ -493,7 +647,11 @@ public struct WidgetSettingsView: View {
     private func deselectAllCustom() {
         for t in filteredCustomTasks {
             selectedCustomIds.remove(t.id)
+            if isAutoSelectAll {
+                excludedTaskIds.insert(t.id)
+            }
         }
+        widgetManager.setExcludedTaskIds(excludedTaskIds)
         widgetManager.setSelectedCustomTaskIds(selectedCustomIds)
         widgetManager.syncWithTaskList(tasks)
     }

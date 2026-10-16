@@ -28,6 +28,8 @@ public final class SharedWidgetDataManager: @unchecked Sendable {
     private let recurringTaskIndexKey = "task_hub_recurring_task_index"
     private let selectedRecurringTaskIdsKey = "task_hub_selected_recurring_task_ids"
     private let selectedCustomTaskIdsKey = "task_hub_selected_custom_task_ids"
+    private let autoSelectAllKey = "task_hub_widget_auto_select_all"
+    private let excludedTaskIdsKey = "task_hub_widget_excluded_task_ids"
     private let lastSyncKey = "task_hub_widget_last_sync"
     private let authTokenKey = "task_hub_shared_auth_token"
 
@@ -93,6 +95,25 @@ public final class SharedWidgetDataManager: @unchecked Sendable {
         if let encoded = try? JSONEncoder().encode(sanitizedBundle) {
             defaults.set(encoded, forKey: widgetBundleKey)
             defaults.set(Date().timeIntervalSince1970, forKey: lastSyncKey)
+        }
+
+        // Dynamic Matching: Reconcile active tasks into selection if auto-select is enabled
+        let isAutoSelect = (defaults.object(forKey: autoSelectAllKey) == nil) ? true : defaults.bool(forKey: autoSelectAllKey)
+        if isAutoSelect {
+            let excluded = Set(defaults.array(forKey: excludedTaskIdsKey) as? [Int64] ?? [])
+            var rec = Set(defaults.array(forKey: selectedRecurringTaskIdsKey) as? [Int64] ?? [])
+            var cus = Set(defaults.array(forKey: selectedCustomTaskIdsKey) as? [Int64] ?? [])
+            for t in sanitizedFocus + sanitizedDeadlines {
+                if !excluded.contains(t.id) {
+                    if t.isRecurring == true {
+                        rec.insert(t.id)
+                    } else {
+                        cus.insert(t.id)
+                    }
+                }
+            }
+            defaults.set(Array(rec), forKey: selectedRecurringTaskIdsKey)
+            defaults.set(Array(cus), forKey: selectedCustomTaskIdsKey)
         }
 
         #if canImport(WidgetKit)
@@ -276,6 +297,10 @@ public final class SharedWidgetDataManager: @unchecked Sendable {
                 if cus.remove(taskId) != nil {
                     defaults.set(Array(cus), forKey: selectedCustomTaskIdsKey)
                 }
+                var excl = Set(defaults.array(forKey: excludedTaskIdsKey) as? [Int64] ?? [])
+                if excl.remove(taskId) != nil {
+                    defaults.set(Array(excl), forKey: excludedTaskIdsKey)
+                }
             }
         }
 
@@ -440,6 +465,60 @@ public final class SharedWidgetDataManager: @unchecked Sendable {
         defaults.set(next, forKey: key)
     }
 
+    // MARK: - Auto-Select All & Dynamic Matching
+
+    public func isAutoSelectAllEnabled() -> Bool {
+        lock.lock()
+        defer { lock.unlock() }
+        if defaults.object(forKey: autoSelectAllKey) == nil {
+            return true
+        }
+        return defaults.bool(forKey: autoSelectAllKey)
+    }
+
+    public func setAutoSelectAllEnabled(_ enabled: Bool) {
+        lock.lock()
+        defer { lock.unlock() }
+        defaults.set(enabled, forKey: autoSelectAllKey)
+        if enabled {
+            defaults.removeObject(forKey: excludedTaskIdsKey)
+        }
+        #if canImport(WidgetKit)
+        WidgetCenter.shared.reloadAllTimelines()
+        #endif
+    }
+
+    public func getExcludedTaskIds() -> Set<Int64> {
+        lock.lock()
+        defer { lock.unlock() }
+        let arr = defaults.array(forKey: excludedTaskIdsKey) as? [Int64] ?? []
+        return Set(arr)
+    }
+
+    public func setExcludedTaskIds(_ ids: Set<Int64>) {
+        lock.lock()
+        defer { lock.unlock() }
+        defaults.set(Array(ids), forKey: excludedTaskIdsKey)
+        #if canImport(WidgetKit)
+        WidgetCenter.shared.reloadAllTimelines()
+        #endif
+    }
+
+    public func toggleExcludedTaskId(_ id: Int64) {
+        lock.lock()
+        defer { lock.unlock() }
+        var current = Set(defaults.array(forKey: excludedTaskIdsKey) as? [Int64] ?? [])
+        if current.contains(id) {
+            current.remove(id)
+        } else {
+            current.insert(id)
+        }
+        defaults.set(Array(current), forKey: excludedTaskIdsKey)
+        #if canImport(WidgetKit)
+        WidgetCenter.shared.reloadAllTimelines()
+        #endif
+    }
+
     // MARK: - Synchronous Task List Sync (Instant Local Sync)
 
     public func syncWithTaskList(_ tasks: [TaskItem]) {
@@ -448,26 +527,39 @@ public final class SharedWidgetDataManager: @unchecked Sendable {
 
         var selectedRec = Set(defaults.array(forKey: selectedRecurringTaskIdsKey) as? [Int64] ?? [])
         var selectedCus = Set(defaults.array(forKey: selectedCustomTaskIdsKey) as? [Int64] ?? [])
+        var excluded = Set(defaults.array(forKey: excludedTaskIdsKey) as? [Int64] ?? [])
 
-        // Clean up any selected tasks that are now done
+        // Clean up any tasks that are now done
         let doneIds = Set(tasks.filter { $0.status == "done" }.map { $0.id })
-        let prevRecCount = selectedRec.count
-        let prevCusCount = selectedCus.count
         selectedRec.subtract(doneIds)
         selectedCus.subtract(doneIds)
-        if selectedRec.count != prevRecCount {
-            defaults.set(Array(selectedRec), forKey: selectedRecurringTaskIdsKey)
+        excluded.subtract(doneIds)
+        defaults.set(Array(excluded), forKey: excludedTaskIdsKey)
+
+        let isAutoSelect = (defaults.object(forKey: autoSelectAllKey) == nil) ? true : defaults.bool(forKey: autoSelectAllKey)
+
+        if isAutoSelect {
+            // Dynamic Matching: Automatically select all active tasks that are not excluded
+            for task in tasks where task.status != "done" && !excluded.contains(task.id) {
+                if task.isRecurring == true {
+                    selectedRec.insert(task.id)
+                } else {
+                    selectedCus.insert(task.id)
+                }
+            }
         }
-        if selectedCus.count != prevCusCount {
-            defaults.set(Array(selectedCus), forKey: selectedCustomTaskIdsKey)
-        }
+
+        defaults.set(Array(selectedRec), forKey: selectedRecurringTaskIdsKey)
+        defaults.set(Array(selectedCus), forKey: selectedCustomTaskIdsKey)
 
         let focus = tasks.filter { 
             $0.status != "done" && (
-                $0.isFocus == true || 
-                $0.isRecurring == true || 
-                selectedRec.contains($0.id) || 
-                selectedCus.contains($0.id)
+                isAutoSelect ? !excluded.contains($0.id) : (
+                    $0.isFocus == true || 
+                    $0.isRecurring == true || 
+                    selectedRec.contains($0.id) || 
+                    selectedCus.contains($0.id)
+                )
             ) 
         }
         let deadlines = tasks
