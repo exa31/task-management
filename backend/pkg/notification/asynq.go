@@ -166,16 +166,44 @@ func (s *AsynqScheduler) ScheduleReminder(ctx context.Context, reminderID int64,
 	return nil
 }
 
-func (s *AsynqScheduler) CancelReminder(ctx context.Context, reminderID int64) error {
-	taskID := fmt.Sprintf("reminder:%d", reminderID)
-	err := s.inspector.DeleteTask(s.queue, taskID)
-	if err != nil {
-		s.logger.Debug("asynq task deletion error (may already be finished or absent)",
-			slog.Int64("reminder_id", reminderID),
-			slog.String("queue", s.queue),
-			slog.String("error", err.Error()),
-		)
+func (s *AsynqScheduler) deleteTasksByPrefix(prefix string) {
+	if s.inspector == nil {
+		return
 	}
+	_ = s.inspector.DeleteTask(s.queue, prefix)
+
+	// Clean scheduled tasks matching prefix (including fallback IDs e.g. prefix_timestamp)
+	if scheduled, err := s.inspector.ListScheduledTasks(s.queue); err == nil {
+		for _, t := range scheduled {
+			if t.ID == prefix || strings.HasPrefix(t.ID, prefix+":") || strings.HasPrefix(t.ID, prefix+"_") {
+				_ = s.inspector.DeleteTask(s.queue, t.ID)
+			}
+		}
+	}
+
+	// Clean retry tasks matching prefix
+	if retries, err := s.inspector.ListRetryTasks(s.queue); err == nil {
+		for _, t := range retries {
+			if t.ID == prefix || strings.HasPrefix(t.ID, prefix+":") || strings.HasPrefix(t.ID, prefix+"_") {
+				_ = s.inspector.DeleteTask(s.queue, t.ID)
+			}
+		}
+	}
+
+	// Clean pending tasks matching prefix
+	if pending, err := s.inspector.ListPendingTasks(s.queue); err == nil {
+		for _, t := range pending {
+			if t.ID == prefix || strings.HasPrefix(t.ID, prefix+":") || strings.HasPrefix(t.ID, prefix+"_") {
+				_ = s.inspector.DeleteTask(s.queue, t.ID)
+			}
+		}
+	}
+}
+
+func (s *AsynqScheduler) CancelReminder(ctx context.Context, reminderID int64) error {
+	prefix := fmt.Sprintf("reminder:%d", reminderID)
+	s.deleteTasksByPrefix(prefix)
+	s.logger.Debug("asynq tasks deleted for reminder", slog.Int64("reminder_id", reminderID))
 	return nil
 }
 
@@ -202,10 +230,9 @@ func (s *AsynqScheduler) ScheduleTaskDueAlert(ctx context.Context, taskID int64,
 		return fmt.Errorf("failed to serialize task due alert payload: %w", err)
 	}
 
+	// Clean up existing tasks if re-scheduling
 	taskIDStr := fmt.Sprintf("task_due:%d", taskID)
-
-	// Clean up existing task if re-scheduling
-	_ = s.inspector.DeleteTask(s.queue, taskIDStr)
+	s.deleteTasksByPrefix(taskIDStr)
 
 	task := asynq.NewTask(
 		s.taskType,
@@ -251,15 +278,9 @@ func (s *AsynqScheduler) ScheduleTaskDueAlert(ctx context.Context, taskID int64,
 }
 
 func (s *AsynqScheduler) CancelTaskDueAlert(ctx context.Context, taskID int64) error {
-	taskIDStr := fmt.Sprintf("task_due:%d", taskID)
-	err := s.inspector.DeleteTask(s.queue, taskIDStr)
-	if err != nil {
-		s.logger.Debug("asynq task deletion error for task due alert",
-			slog.Int64("task_id", taskID),
-			slog.String("queue", s.queue),
-			slog.String("error", err.Error()),
-		)
-	}
+	prefix := fmt.Sprintf("task_due:%d", taskID)
+	s.deleteTasksByPrefix(prefix)
+	s.logger.Debug("asynq tasks deleted for task due alert", slog.Int64("task_id", taskID))
 	return nil
 }
 
@@ -286,16 +307,9 @@ func (s *AsynqScheduler) ScheduleTaskRecurrence(ctx context.Context, taskID int6
 		return fmt.Errorf("failed to serialize task recurrence payload: %w", err)
 	}
 
-	// Delete any existing scheduled tasks for this taskID in the scheduled set
+	// Delete any existing scheduled tasks for this taskID
 	prefix := fmt.Sprintf("task_recurrence:%d", taskID)
-	if scheduled, lErr := s.inspector.ListScheduledTasks(s.queue); lErr == nil {
-		for _, t := range scheduled {
-			if t.ID == prefix || strings.HasPrefix(t.ID, prefix+":") {
-				_ = s.inspector.DeleteTask(s.queue, t.ID)
-			}
-		}
-	}
-	_ = s.inspector.DeleteTask(s.queue, prefix)
+	s.deleteTasksByPrefix(prefix)
 
 	taskIDStr := fmt.Sprintf("task_recurrence:%d:%d", taskID, processAt.Unix())
 	task := asynq.NewTask(
@@ -342,20 +356,7 @@ func (s *AsynqScheduler) ScheduleTaskRecurrence(ctx context.Context, taskID int6
 
 func (s *AsynqScheduler) CancelTaskRecurrence(ctx context.Context, taskID int64) error {
 	prefix := fmt.Sprintf("task_recurrence:%d", taskID)
-	if scheduled, lErr := s.inspector.ListScheduledTasks(s.queue); lErr == nil {
-		for _, t := range scheduled {
-			if t.ID == prefix || strings.HasPrefix(t.ID, prefix+":") {
-				_ = s.inspector.DeleteTask(s.queue, t.ID)
-			}
-		}
-	}
-	err := s.inspector.DeleteTask(s.queue, prefix)
-	if err != nil {
-		s.logger.Debug("asynq task deletion error for task recurrence",
-			slog.Int64("task_id", taskID),
-			slog.String("queue", s.queue),
-			slog.String("error", err.Error()),
-		)
-	}
+	s.deleteTasksByPrefix(prefix)
+	s.logger.Debug("asynq tasks deleted for task recurrence", slog.Int64("task_id", taskID))
 	return nil
 }

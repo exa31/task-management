@@ -2,6 +2,7 @@ package task
 
 import (
 	"context"
+	"errors"
 	"testing"
 	"time"
 
@@ -587,13 +588,28 @@ func TestTaskService_GetWorkspaceStats(t *testing.T) {
 type mockTaskScheduler struct {
 	dueScheduled        map[int64]time.Time
 	recurrenceScheduled map[int64]time.Time
+	dueCancelled        map[int64]bool
+	recurrenceCancelled map[int64]bool
+	remindersCancelled  map[int64]bool
 }
 
 func newMockTaskScheduler() *mockTaskScheduler {
 	return &mockTaskScheduler{
 		dueScheduled:        make(map[int64]time.Time),
 		recurrenceScheduled: make(map[int64]time.Time),
+		dueCancelled:        make(map[int64]bool),
+		recurrenceCancelled: make(map[int64]bool),
+		remindersCancelled:  make(map[int64]bool),
 	}
+}
+
+func (m *mockTaskScheduler) ScheduleReminder(ctx context.Context, reminderID int64, remindAt time.Time) error {
+	return nil
+}
+
+func (m *mockTaskScheduler) CancelReminder(ctx context.Context, reminderID int64) error {
+	m.remindersCancelled[reminderID] = true
+	return nil
 }
 
 func (m *mockTaskScheduler) ScheduleTaskDueAlert(ctx context.Context, taskID int64, remindAt time.Time) error {
@@ -603,6 +619,7 @@ func (m *mockTaskScheduler) ScheduleTaskDueAlert(ctx context.Context, taskID int
 
 func (m *mockTaskScheduler) CancelTaskDueAlert(ctx context.Context, taskID int64) error {
 	delete(m.dueScheduled, taskID)
+	m.dueCancelled[taskID] = true
 	return nil
 }
 
@@ -613,6 +630,7 @@ func (m *mockTaskScheduler) ScheduleTaskRecurrence(ctx context.Context, taskID i
 
 func (m *mockTaskScheduler) CancelTaskRecurrence(ctx context.Context, taskID int64) error {
 	delete(m.recurrenceScheduled, taskID)
+	m.recurrenceCancelled[taskID] = true
 	return nil
 }
 
@@ -855,11 +873,25 @@ func (m *mockTaskPushSender) SendPushNotificationWithResult(ctx context.Context,
 
 type mockTaskReminderRepo struct {
 	reminder.Repository
-	tokens []string
+	tokens    []string
+	reminders []reminder.ReminderResponse
 }
 
 func (m *mockTaskReminderRepo) GetUserDeviceTokens(ctx context.Context, userID string) ([]string, error) {
 	return m.tokens, nil
+}
+
+func (m *mockTaskReminderRepo) FindAll(ctx context.Context, userID string, filter reminder.ReminderFilter) ([]reminder.ReminderResponse, int, error) {
+	if filter.TaskID != nil {
+		var matched []reminder.ReminderResponse
+		for _, r := range m.reminders {
+			if r.TaskID != nil && *r.TaskID == *filter.TaskID {
+				matched = append(matched, r)
+			}
+		}
+		return matched, len(matched), nil
+	}
+	return m.reminders, len(m.reminders), nil
 }
 
 func TestTaskService_DeadlineChangePushNotification(t *testing.T) {
@@ -923,5 +955,134 @@ func TestTaskService_DeadlineChangePushNotification(t *testing.T) {
 		}
 	case <-time.After(2 * time.Second):
 		t.Errorf("timed out waiting for push notification to be dispatched")
+	}
+}
+
+func TestTaskService_Delete_CleansUpAsynqJobs(t *testing.T) {
+	ctx := context.Background()
+	userID := "user-del-test"
+	taskID := int64(201)
+	now := time.Now()
+	due := now.Add(4 * time.Hour)
+	isRecurring := true
+
+	taskDeleted := false
+	mockRepo := &mockRepository{
+		findByIDFunc: func(ctx context.Context, uID string, id int64) (*TaskResponse, error) {
+			if id == taskID {
+				return &TaskResponse{
+					ID:          taskID,
+					UserID:      uID,
+					Title:       "Task to Delete",
+					Status:      "in_progress",
+					Priority:    "high",
+					DueDate:     &due,
+					IsRecurring: isRecurring,
+				}, nil
+			}
+			return nil, errors.New("not found")
+		},
+		deleteFunc: func(ctx context.Context, uID string, id int64) error {
+			if id == taskID {
+				taskDeleted = true
+				return nil
+			}
+			return errors.New("not found")
+		},
+	}
+
+	rem1ID := int64(501)
+	rem2ID := int64(502)
+	reminderRepo := &mockTaskReminderRepo{
+		reminders: []reminder.ReminderResponse{
+			{ID: rem1ID, UserID: userID, TaskID: &taskID, Title: "Reminder 1"},
+			{ID: rem2ID, UserID: userID, TaskID: &taskID, Title: "Reminder 2"},
+		},
+	}
+
+	sched := newMockTaskScheduler()
+	sched.dueScheduled[taskID] = due
+	sched.recurrenceScheduled[taskID] = now.Add(24 * time.Hour)
+
+	svc := NewService(mockRepo, &mockTransactor{})
+	svc.SetNotificationDependencies(sched, nil, nil, reminderRepo, nil, nil)
+
+	err := svc.Delete(ctx, userID, taskID)
+	if err != nil {
+		t.Fatalf("unexpected error deleting task: %v", err)
+	}
+
+	if !taskDeleted {
+		t.Errorf("expected task to be deleted in repo")
+	}
+
+	// Verify task due alert was cancelled
+	if !sched.dueCancelled[taskID] {
+		t.Errorf("expected task due alert to be cancelled for task %d", taskID)
+	}
+
+	// Verify task recurrence was cancelled
+	if !sched.recurrenceCancelled[taskID] {
+		t.Errorf("expected task recurrence to be cancelled for task %d", taskID)
+	}
+
+	// Verify associated reminders were cancelled in Asynq
+	if !sched.remindersCancelled[rem1ID] {
+		t.Errorf("expected reminder %d to be cancelled in Asynq", rem1ID)
+	}
+	if !sched.remindersCancelled[rem2ID] {
+		t.Errorf("expected reminder %d to be cancelled in Asynq", rem2ID)
+	}
+}
+
+func TestTaskService_LogProgress_Done_CancelsDueAlert(t *testing.T) {
+	ctx := context.Background()
+	userID := "user-progress-test"
+	taskID := int64(301)
+	due := time.Now().Add(2 * time.Hour)
+
+	statusDone := "done"
+	mockRepo := &mockRepository{
+		findByIDFunc: func(ctx context.Context, uID string, id int64) (*TaskResponse, error) {
+			return &TaskResponse{
+				ID:       taskID,
+				UserID:   uID,
+				Title:    "Task in progress",
+				Status:   "in_progress",
+				Priority: "medium",
+				DueDate:  &due,
+			}, nil
+		},
+		logProgressFunc: func(ctx context.Context, uID string, id int64, req LogProgressRequest) (*TaskResponse, error) {
+			return &TaskResponse{
+				ID:       taskID,
+				UserID:   uID,
+				Title:    "Task in progress",
+				Status:   *req.Status,
+				Priority: "medium",
+				DueDate:  &due,
+			}, nil
+		},
+		createActivityFunc: func(ctx context.Context, tID int64, uID string, actType string, desc string, ch []byte) (*TaskActivityResponse, error) {
+			return &TaskActivityResponse{ID: 1}, nil
+		},
+	}
+
+	sched := newMockTaskScheduler()
+	sched.dueScheduled[taskID] = due
+
+	svc := NewService(mockRepo, &mockTransactor{})
+	svc.SetNotificationDependencies(sched, nil, nil, nil, nil, nil)
+
+	_, err := svc.LogProgress(ctx, userID, taskID, LogProgressRequest{
+		ProgressNote: "Done with task!",
+		Status:       &statusDone,
+	})
+	if err != nil {
+		t.Fatalf("unexpected error logging progress: %v", err)
+	}
+
+	if !sched.dueCancelled[taskID] {
+		t.Errorf("expected task due alert to be cancelled when task is marked done")
 	}
 }

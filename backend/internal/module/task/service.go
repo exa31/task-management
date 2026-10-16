@@ -61,6 +61,7 @@ type service struct {
 	db                  database.Transactor
 	scheduler           notification.TaskDueScheduler
 	recurrenceScheduler notification.TaskRecurrenceScheduler
+	reminderScheduler   notification.ReminderScheduler
 	emailSender         notification.EmailSender
 	pushSender          notification.PushSender
 	reminderRepo        reminder.Repository
@@ -83,6 +84,9 @@ func (s *service) SetNotificationDependencies(
 	s.scheduler = scheduler
 	if rs, ok := scheduler.(notification.TaskRecurrenceScheduler); ok {
 		s.recurrenceScheduler = rs
+	}
+	if rems, ok := scheduler.(notification.ReminderScheduler); ok {
+		s.reminderScheduler = rems
 	}
 	s.emailSender = emailSender
 	s.pushSender = pushSender
@@ -330,15 +334,36 @@ func (s *service) Delete(ctx context.Context, userID string, id int64) error {
 			return errors.TaskNotFound()
 		}
 		deletedEntity = entity
+
+		// 1. Cancel Asynq jobs for any reminders associated with this task before cascading delete
+		if s.reminderRepo != nil && s.reminderScheduler != nil {
+			rems, _, remErr := s.reminderRepo.FindAll(txCtx, userID, reminder.ReminderFilter{
+				TaskID: &id,
+				Status: "all",
+				Limit:  100,
+			})
+			if remErr == nil {
+				for _, rem := range rems {
+					if cErr := s.reminderScheduler.CancelReminder(txCtx, rem.ID); cErr != nil && s.logger != nil {
+						s.logger.WarnContext(txCtx, "failed to cancel reminder asynq job on task delete", "error", cErr, "reminder_id", rem.ID)
+					}
+				}
+			} else if s.logger != nil {
+				s.logger.WarnContext(txCtx, "failed to query reminders for task on delete", "error", remErr, "task_id", id)
+			}
+		}
+
 		if err := s.repo.Delete(txCtx, userID, id); err != nil {
 			return err
 		}
 
+		// 2. Cancel Task Due Alert in Asynq
 		if s.scheduler != nil {
 			if err := s.scheduler.CancelTaskDueAlert(txCtx, id); err != nil && s.logger != nil {
 				s.logger.WarnContext(txCtx, "failed to cancel task due alert on delete", "error", err, "task_id", id)
 			}
 		}
+		// 3. Cancel Task Recurrence in Asynq
 		if s.recurrenceScheduler != nil {
 			if err := s.recurrenceScheduler.CancelTaskRecurrence(txCtx, id); err != nil && s.logger != nil {
 				s.logger.WarnContext(txCtx, "failed to cancel task recurrence on delete", "error", err, "task_id", id)
@@ -373,6 +398,12 @@ func (s *service) LogProgress(ctx context.Context, userID string, id int64, req 
 			return err
 		}
 		if res != nil {
+			if req.Status != nil && *req.Status == "done" && s.scheduler != nil {
+				if err := s.scheduler.CancelTaskDueAlert(txCtx, id); err != nil && s.logger != nil {
+					s.logger.WarnContext(txCtx, "failed to cancel task due alert on progress done", "error", err, "task_id", id)
+				}
+			}
+
 			changesMap := map[string]any{
 				"progress_note": req.ProgressNote,
 			}
