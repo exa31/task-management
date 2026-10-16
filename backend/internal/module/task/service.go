@@ -794,10 +794,12 @@ func (s *service) ProcessDueWarning(ctx context.Context, taskID int64) error {
 				"type":     "task:due_warning",
 			}
 			body := fmt.Sprintf("Task '%s' is approaching its deadline.", task.Title)
-			if err := s.pushSender.SendPushNotification(ctx, tokens, "Task Due Soon", body, fcmData); err != nil {
+			if res, err := s.pushSender.SendPushNotificationWithResult(ctx, tokens, "Task Due Soon", body, fcmData); err != nil {
 				if s.logger != nil {
 					s.logger.Warn("fcm push task due warning failed", "task_id", taskID, "error", err)
 				}
+			} else if res != nil && len(res.InvalidTokens) > 0 {
+				_ = s.reminderRepo.DeleteDeviceTokens(ctx, res.InvalidTokens)
 			}
 		}
 	}
@@ -1086,8 +1088,10 @@ func (s *service) notifyTaskDeadlineChanged(taskID int64, title string, dueDate 
 			"task_id": fmt.Sprintf("%d", taskID),
 			"title":   title,
 		}
-		if err := s.pushSender.SendPushNotification(bgCtx, tokens, "Pembaruan Batas Waktu", body, pushData); err != nil && s.logger != nil {
+		if res, err := s.pushSender.SendPushNotificationWithResult(bgCtx, tokens, "Pembaruan Batas Waktu", body, pushData); err != nil && s.logger != nil {
 			s.logger.WarnContext(bgCtx, "failed to dispatch task deadline push notification", "task_id", taskID, "error", err)
+		} else if res != nil && len(res.InvalidTokens) > 0 {
+			_ = s.reminderRepo.DeleteDeviceTokens(bgCtx, res.InvalidTokens)
 		}
 	}()
 }

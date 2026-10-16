@@ -188,11 +188,17 @@ func (s *service) ProcessReminder(ctx context.Context, reminderID int64) error {
 			if body == "" && rem.TaskTitle != nil {
 				body = fmt.Sprintf("Task: %s", *rem.TaskTitle)
 			}
-			if err := s.pushSender.SendPushNotification(ctx, tokens, rem.Title, body, data); err != nil {
+			if pushRes, err := s.pushSender.SendPushNotificationWithResult(ctx, tokens, rem.Title, body, data); err != nil {
 				s.logger.Warn("fcm push reminder failed",
 					slog.Int64("reminder_id", reminderID),
 					slog.String("error", err.Error()),
 				)
+			} else if pushRes != nil && len(pushRes.InvalidTokens) > 0 {
+				if delErr := s.repo.DeleteDeviceTokens(ctx, pushRes.InvalidTokens); delErr != nil {
+					s.logger.Warn("failed to delete invalid device tokens", slog.String("error", delErr.Error()))
+				} else {
+					s.logger.Info("pruned invalid device tokens", slog.Int("count", len(pushRes.InvalidTokens)))
+				}
 			}
 		}
 	}
@@ -305,6 +311,14 @@ func (s *service) TestFCM(ctx context.Context, callingUserID string, req TestFCM
 			Body:         body,
 			Data:         data,
 		}, nil
+	}
+
+	if len(pushResult.InvalidTokens) > 0 {
+		if delErr := s.repo.DeleteDeviceTokens(ctx, pushResult.InvalidTokens); delErr != nil {
+			s.logger.Warn("failed to auto-prune invalid device tokens", slog.String("error", delErr.Error()))
+		} else {
+			s.logger.Info("auto-pruned invalid device tokens", slog.Int("count", len(pushResult.InvalidTokens)))
+		}
 	}
 
 	success := pushResult.SuccessCount > 0

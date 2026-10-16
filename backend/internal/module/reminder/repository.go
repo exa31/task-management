@@ -24,6 +24,7 @@ type Repository interface {
 	FindByIDSystem(ctx context.Context, id int64) (*ReminderResponse, string, error) // Returns reminder + user email
 	RegisterDeviceToken(ctx context.Context, userID, token, platform string) error
 	GetUserDeviceTokens(ctx context.Context, userID string) ([]string, error)
+	DeleteDeviceTokens(ctx context.Context, tokens []string) error
 }
 
 type repository struct {
@@ -364,3 +365,17 @@ func (r *repository) GetUserDeviceTokens(ctx context.Context, userID string) ([]
 	}
 	return tokens, nil
 }
+
+func (r *repository) DeleteDeviceTokens(ctx context.Context, tokens []string) error {
+	if len(tokens) == 0 {
+		return nil
+	}
+	query, args, err := sqlx.In("DELETE FROM user_device_tokens WHERE token IN (?)", tokens)
+	if err != nil {
+		return err
+	}
+	query = r.db.Rebind(query)
+	_, err = r.exec(ctx).ExecContext(ctx, query, args...)
+	return err
+}
+

@@ -881,6 +881,10 @@ func (m *mockTaskReminderRepo) GetUserDeviceTokens(ctx context.Context, userID s
 	return m.tokens, nil
 }
 
+func (m *mockTaskReminderRepo) DeleteDeviceTokens(ctx context.Context, tokens []string) error {
+	return nil
+}
+
 func (m *mockTaskReminderRepo) FindAll(ctx context.Context, userID string, filter reminder.ReminderFilter) ([]reminder.ReminderResponse, int, error) {
 	if filter.TaskID != nil {
 		var matched []reminder.ReminderResponse

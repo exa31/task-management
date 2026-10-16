@@ -14,10 +14,11 @@ import (
 )
 
 type PushResult struct {
-	SuccessCount int      `json:"success_count"`
-	FailureCount int      `json:"failure_count"`
-	TotalTokens  int      `json:"total_tokens"`
-	Errors       []string `json:"errors,omitempty"`
+	SuccessCount  int      `json:"success_count"`
+	FailureCount  int      `json:"failure_count"`
+	TotalTokens   int      `json:"total_tokens"`
+	Errors        []string `json:"errors,omitempty"`
+	InvalidTokens []string `json:"invalid_tokens,omitempty"`
 }
 
 type PushSender interface {
@@ -144,6 +145,13 @@ func (s *FCMPushSender) SendPushNotificationWithResult(ctx context.Context, toke
 					slog.Int("index", i),
 					slog.String("error", r.Error.Error()),
 				)
+				if messaging.IsUnregistered(r.Error) || messaging.IsInvalidArgument(r.Error) ||
+					strings.Contains(r.Error.Error(), "not a valid FCM registration token") ||
+					strings.Contains(r.Error.Error(), "registration-token-not-registered") {
+					if i < len(tokens) {
+						res.InvalidTokens = append(res.InvalidTokens, tokens[i])
+					}
+				}
 			}
 		}
 	}

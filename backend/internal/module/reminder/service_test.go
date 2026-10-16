@@ -23,6 +23,7 @@ type mockRepository struct {
 	findByIDSystemFunc      func(ctx context.Context, id int64) (*ReminderResponse, string, error)
 	registerDeviceTokenFunc func(ctx context.Context, userID, token, platform string) error
 	getUserDeviceTokensFunc func(ctx context.Context, userID string) ([]string, error)
+	deleteDeviceTokensFunc func(ctx context.Context, tokens []string) error
 }
 
 func (m *mockRepository) Create(ctx context.Context, userID string, req CreateReminderRequest) (*ReminderResponse, error) {
@@ -100,6 +101,13 @@ func (m *mockRepository) GetUserDeviceTokens(ctx context.Context, userID string)
 		return m.getUserDeviceTokensFunc(ctx, userID)
 	}
 	return []string{}, nil
+}
+
+func (m *mockRepository) DeleteDeviceTokens(ctx context.Context, tokens []string) error {
+	if m.deleteDeviceTokensFunc != nil {
+		return m.deleteDeviceTokensFunc(ctx, tokens)
+	}
+	return nil
 }
 
 type mockScheduler struct {
