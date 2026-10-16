@@ -65,7 +65,6 @@ export default function RemindersPage() {
       const res = await taskApi.getById(reminder.task_id)
       if (res?.data) {
         openDrawer(res.data)
-        return
       }
     } catch {
       // Fallback

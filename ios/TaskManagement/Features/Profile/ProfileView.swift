@@ -25,6 +25,7 @@ public final class ProfileViewModel {
     // OAuth binding status
     public var googleBound: Bool = false
     public var appleBound: Bool = false
+    public var isAppleBinding: Bool = false
 
     private let apiClient = APIClient.shared
     private let keychain = KeychainManager.shared
@@ -150,6 +151,7 @@ public final class ProfileViewModel {
                let idToken = String(data: tokenData, encoding: .utf8) {
                 let fullName = [credential.fullName?.givenName, credential.fullName?.familyName]
                     .compactMap { $0 }.joined(separator: " ")
+                isAppleBinding = true
                 Task {
                     do {
                         let updated = try await apiClient.bindOAuth(
@@ -169,10 +171,16 @@ public final class ProfileViewModel {
                         AppLogger.error("Failed to bind Apple ID", error: error, category: .auth)
                         self.errorMessage = error.localizedDescription
                     }
+                    self.isAppleBinding = false
                 }
             }
         case .failure(let error):
-            self.errorMessage = error.localizedDescription
+            let authError = error as? ASAuthorizationError
+            if authError?.code != .canceled {
+                self.errorMessage = error.localizedDescription
+            } else {
+                AppLogger.info("User cancelled Apple ID bind sheet", category: .auth)
+            }
         }
     }
 
@@ -608,6 +616,18 @@ public struct ProfileView: View {
                     .padding(.horizontal, 10)
                     .padding(.vertical, 5)
                     .background(AppColors.priorityUrgent.opacity(0.12))
+                    .clipShape(Capsule())
+                } else if viewModel.isAppleBinding {
+                    HStack(spacing: 6) {
+                        ProgressView()
+                            .scaleEffect(0.75)
+                        Text(L10n.General.loading)
+                            .font(.system(size: 12, weight: .medium))
+                            .foregroundColor(.secondary)
+                    }
+                    .padding(.horizontal, 12)
+                    .padding(.vertical, 6)
+                    .background(Color(.tertiarySystemGroupedBackground))
                     .clipShape(Capsule())
                 } else {
                     SignInWithAppleButton(.continue) { request in

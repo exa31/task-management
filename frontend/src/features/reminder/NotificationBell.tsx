@@ -48,7 +48,6 @@ export const NotificationBell = () => {
       const res = await taskApi.getById(reminder.task_id)
       if (res?.data) {
         openDrawer(res.data)
-        return
       }
     } catch {
       // Fallback to tasks list

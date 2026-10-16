@@ -6,6 +6,8 @@ import GoogleSignIn
 @Observable
 public final class AuthViewModel {
     public var isLoading = false
+    public var isAppleLoading = false
+    public var isGoogleLoading = false
     public var errorMessage: String?
     public var isAuthenticated = false
 
@@ -45,6 +47,7 @@ public final class AuthViewModel {
     }
 
     public func handleAppleSignIn(result: Result<ASAuthorization, Error>) {
+        isAppleLoading = true
         isLoading = true
         errorMessage = nil
 
@@ -79,17 +82,25 @@ public final class AuthViewModel {
                         AppLogger.error("Apple Sign-In backend verification failed", error: error, category: .auth)
                         self.errorMessage = error.localizedDescription
                     }
+                    self.isAppleLoading = false
                     self.isLoading = false
                 }
             } else {
                 AppLogger.error("Failed to extract Apple ID Token from authorization credential", category: .auth)
+                isAppleLoading = false
                 isLoading = false
                 errorMessage = L10n.Auth.appleTokenFailed
             }
         case .failure(let error):
-            AppLogger.warn("Apple Sign-In authorization flow cancelled or failed", category: .auth, metadata: ["error": error.localizedDescription])
+            let authError = error as? ASAuthorizationError
+            if authError?.code != .canceled {
+                AppLogger.warn("Apple Sign-In authorization flow cancelled or failed", category: .auth, metadata: ["error": error.localizedDescription])
+                errorMessage = error.localizedDescription
+            } else {
+                AppLogger.info("User cancelled Apple Sign-In sheet", category: .auth)
+            }
+            isAppleLoading = false
             isLoading = false
-            errorMessage = error.localizedDescription
         }
     }
 
@@ -101,6 +112,7 @@ public final class AuthViewModel {
             return
         }
 
+        isGoogleLoading = true
         isLoading = true
         errorMessage = nil
         AppLogger.info("Presenting Google Sign-In dialog", category: .auth)
@@ -118,6 +130,7 @@ public final class AuthViewModel {
                     } else {
                         AppLogger.info("User cancelled Google Sign-In dialog", category: .auth)
                     }
+                    self.isGoogleLoading = false
                     self.isLoading = false
                     return
                 }
@@ -126,6 +139,7 @@ public final class AuthViewModel {
                       let idToken = user.idToken?.tokenString else {
                     AppLogger.error("Google Sign-In returned empty user or idToken", category: .auth)
                     self.errorMessage = L10n.Auth.googleTokenFailed
+                    self.isGoogleLoading = false
                     self.isLoading = false
                     return
                 }
@@ -153,6 +167,7 @@ public final class AuthViewModel {
                     AppLogger.error("Google Sign-In backend verification failed", error: error, category: .auth)
                     self.errorMessage = error.localizedDescription
                 }
+                self.isGoogleLoading = false
                 self.isLoading = false
             }
         }

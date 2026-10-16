@@ -143,13 +143,18 @@ public struct AuthView: View {
                                 .environment(\.locale, Locale(identifier: I18n.shared.currentLanguage.rawValue))
                                 .disabled(viewModel.isLoading)
 
-                                if viewModel.isLoading {
+                                if viewModel.isAppleLoading {
                                     RoundedRectangle(cornerRadius: 14, style: .continuous)
-                                        .fill(Color.black.opacity(0.65))
+                                        .fill(Color.black.opacity(0.85))
                                         .frame(height: 52)
                                         .overlay(
-                                            ProgressView()
-                                                .tint(.white)
+                                            HStack(spacing: 8) {
+                                                ProgressView()
+                                                    .tint(.white)
+                                                Text(L10n.General.loading)
+                                                    .font(.system(size: 15, weight: .semibold))
+                                                    .foregroundColor(.white)
+                                            }
                                         )
                                 }
                             }
@@ -159,7 +164,7 @@ public struct AuthView: View {
                                 viewModel.handleGoogleSignIn()
                             }) {
                                 HStack(spacing: 10) {
-                                    if viewModel.isLoading {
+                                    if viewModel.isGoogleLoading {
                                         ProgressView()
                                             .tint(.primary)
                                     } else {
@@ -168,7 +173,7 @@ public struct AuthView: View {
                                             .foregroundColor(AppColors.primary)
                                     }
 
-                                    Text(L10n.Auth.signInGoogle)
+                                    Text(viewModel.isGoogleLoading ? L10n.General.loading : L10n.Auth.signInGoogle)
                                         .font(.system(size: 16, weight: .semibold))
                                 }
                                 .frame(maxWidth: .infinity)

@@ -1,0 +1,437 @@
+{
+	"info": {
+		"_postman_id": "c7a8b9e0-1234-4567-89ab-cdef01234567",
+		"name": "Task Hub - FCM & Push Notification Testing Collection",
+		"description": "Koleksi lengkap Postman untuk pengujian Push Notification FCM (Firebase Cloud Messaging), pendaftaran device token, simulasi pengiriman notifikasi instan, serta trigger webhook reminder di Task Hub backend.",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "1. Authentication",
+			"item": [
+				{
+					"name": "Dev Login (Bypass Password)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"const res = pm.response.json();",
+									"if (res && res.data && res.data.access_token) {",
+									"    pm.environment.set(\"access_token\", res.data.access_token);",
+									"    pm.collectionVariables.set(\"access_token\", res.data.access_token);",
+									"    console.log(\"Access token saved:\", res.data.access_token);",
+									"}",
+									"if (res && res.data && res.data.user) {",
+									"    pm.environment.set(\"user_id\", res.data.user.id);",
+									"    pm.collectionVariables.set(\"user_id\", res.data.user.id);",
+									"    console.log(\"User ID saved:\", res.data.user.id);",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"email\": \"{{user_email}}\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/v1/auth/dev-login",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"auth",
+								"dev-login"
+							]
+						},
+						"description": "Login instan environment development untuk mendapatkan JWT Access Token tanpa password."
+					},
+					"response": []
+				},
+				{
+					"name": "Standard Login",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"const res = pm.response.json();",
+									"if (res && res.data && res.data.access_token) {",
+									"    pm.environment.set(\"access_token\", res.data.access_token);",
+									"    pm.collectionVariables.set(\"access_token\", res.data.access_token);",
+									"}",
+									"if (res && res.data && res.data.user) {",
+									"    pm.environment.set(\"user_id\", res.data.user.id);",
+									"    pm.collectionVariables.set(\"user_id\", res.data.user.id);",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"email\": \"{{user_email}}\",\n  \"password\": \"{{user_password}}\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/v1/auth/login",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"auth",
+								"login"
+							]
+						},
+						"description": "Login standar menggunakan email dan password."
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "2. FCM Device Token Management",
+			"item": [
+				{
+					"name": "Register Device Token (Web / Mobile)",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{access_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"token\": \"{{fcm_device_token}}\",\n  \"platform\": \"web\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/v1/reminders/device-token",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"reminders",
+								"device-token"
+							]
+						},
+						"description": "Mendaftarkan FCM device registration token dari browser (Web), iOS, atau Android ke database user yang sedang login."
+					},
+					"response": []
+				},
+				{
+					"name": "Register Device Token (Alias /notifications/device-token)",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{access_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"token\": \"{{fcm_device_token}}\",\n  \"platform\": \"ios\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/v1/notifications/device-token",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"notifications",
+								"device-token"
+							]
+						},
+						"description": "Alias endpoint untuk pendaftaran device token."
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "3. FCM Push Notification Testing",
+			"item": [
+				{
+					"name": "Test FCM Push Notification (To Self / Logged-in User)",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{access_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"title\": \"🔔 Test FCM Push Notification\",\n  \"body\": \"Halo! Push notification berhasil dikirim dari backend Task Hub via FCM.\",\n  \"data\": {\n    \"type\": \"test_fcm\",\n    \"source\": \"postman\",\n    \"priority\": \"high\"\n  }\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/v1/reminders/test-fcm",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"reminders",
+								"test-fcm"
+							]
+						},
+						"description": "Mengirimkan push notification percobaan ke seluruh device token yang tersimpan di DB untuk user yang sedang login."
+					},
+					"response": []
+				},
+				{
+					"name": "Test FCM Direct Token Dispatch",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{access_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"token\": \"{{fcm_device_token}}\",\n  \"title\": \"🚀 Direct Token Test\",\n  \"body\": \"Notifikasi ini dikirim langsung ke token FCM spesifik yang dimasukkan pada body.\",\n  \"data\": {\n    \"type\": \"direct_token_test\",\n    \"click_action\": \"OPEN_APP\"\n  }\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/v1/reminders/test-fcm",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"reminders",
+								"test-fcm"
+							]
+						},
+						"description": "Mengirimkan notifikasi langsung ke 1 token FCM spesifik tanpa harus tersimpan sebelumnya di DB."
+					},
+					"response": []
+				},
+				{
+					"name": "Test FCM via Alias (/notifications/test-fcm)",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{access_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"title\": \"⏰ Reminder Alert Test\",\n  \"body\": \"Periksa tugas penting Anda hari ini!\",\n  \"data\": {\n    \"type\": \"reminder_alert\",\n    \"reminder_id\": \"123\"\n  }\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/v1/notifications/test-fcm",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"notifications",
+								"test-fcm"
+							]
+						},
+						"description": "Alias endpoint untuk pengujian FCM."
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "4. Worker & Trigger Webhooks",
+			"item": [
+				{
+					"name": "Trigger Reminder Execution (Asynq Worker Webhook)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "X-Internal-Token",
+								"value": "{{webhook_secret}}",
+								"description": "Secret token yang diset pada config REMINDER_WEBHOOK_SECRET"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"reminder_id\": 1\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/v1/reminders/trigger",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"reminders",
+								"trigger"
+							]
+						},
+						"description": "Endpoint yang dipanggil oleh background scheduler/worker ketika waktu pengingat tiba. Mengirim email, push notification FCM, dan event WebSocket/SSE ke user."
+					},
+					"response": []
+				},
+				{
+					"name": "Trigger Task Due Warning (Asynq Worker Webhook)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "X-Internal-Token",
+								"value": "{{webhook_secret}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"task_id\": 1\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/v1/tasks/due-warning/trigger",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"tasks",
+								"due-warning",
+								"trigger"
+							]
+						},
+						"description": "Trigger webhook untuk tugas yang mendekati jatuh tempo (due warning notification)."
+					},
+					"response": []
+				}
+			]
+		}
+	],
+	"variable": [
+		{
+			"key": "baseUrl",
+			"value": "http://localhost:8080",
+			"type": "string"
+		},
+		{
+			"key": "access_token",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "user_id",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "user_email",
+			"value": "eka@eka-dev.cloud",
+			"type": "string"
+		},
+		{
+			"key": "user_password",
+			"value": "password123",
+			"type": "string"
+		},
+		{
+			"key": "fcm_device_token",
+			"value": "PASTE_YOUR_FCM_DEVICE_REGISTRATION_TOKEN_HERE",
+			"type": "string"
+		},
+		{
+			"key": "webhook_secret",
+			"value": "internal-secret-reminder-key-change-in-production",
+			"type": "string"
+		}
+	]
+}
