@@ -490,6 +490,10 @@ public enum L10n {
         public static var liveAlert: String { "reminders.liveAlert".localized }
         public static var dismiss: String { "alarm.dismiss".localized }
         public static func snooze(minutes: Int) -> String { "alarm.snoozeMinutes".localized(with: minutes) }
+        public static func scheduled(time: String) -> String { "alarm.scheduleAt".localized(with: time) }
+        public static var nearest: String { "alarm.nearest".localized }
+        public static var disabled: String { "alarm.disabled".localized }
+        public static var ringtoneSection: String { "alarm.ringtoneSection".localized }
     }
 
     public enum Sound {

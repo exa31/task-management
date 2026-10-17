@@ -42,6 +42,7 @@
 		DD0102030405060708090004 /* TaskManagement/Features/Mcp/McpSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DD0102030405060708090003 /* TaskManagement/Features/Mcp/McpSettingsView.swift */; };
 		CA0102030405060708090002 /* TaskManagement/Features/Calendar/CalendarView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CA0102030405060708090001 /* TaskManagement/Features/Calendar/CalendarView.swift */; };
 		WW0102030405060708090002 /* TaskManagement/Core/Shared/SharedWidgetDataManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = WW0102030405060708090001 /* TaskManagement/Core/Shared/SharedWidgetDataManager.swift */; };
+		DT0102030405060708090002 /* TaskManagement/Core/Shared/DateTimeHelper.swift in Sources */ = {isa = PBXBuildFile; fileRef = DT0102030405060708090001 /* TaskManagement/Core/Shared/DateTimeHelper.swift */; };
 		SN0102030405060708090002 /* TaskManagement/Core/Notification/SoundManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = SN0102030405060708090001 /* TaskManagement/Core/Notification/SoundManager.swift */; };
 		AL0102030405060708090002 /* TaskManagement/Core/Notification/ActiveAlarmManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = AL0102030405060708090001 /* TaskManagement/Core/Notification/ActiveAlarmManager.swift */; };
 		AL0102030405060708090004 /* TaskManagement/Features/Reminder/AlarmRingingOverlayView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AL0102030405060708090003 /* TaskManagement/Features/Reminder/AlarmRingingOverlayView.swift */; };
@@ -79,6 +80,7 @@
 		WB0102030405060708090018 /* TaskManagement/Core/Network/APIClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = ECD9BA6A132A72063EE28259 /* TaskManagement/Core/Network/APIClient.swift */; };
 		WB0102030405060708090019 /* TaskManagement/Core/Network/NetworkLogger.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6DE12D7279FE4F14230F285D /* TaskManagement/Core/Network/NetworkLogger.swift */; };
 		WB0102030405060708090020 /* TaskManagement/Core/Security/KeychainManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5DD760D112150DABFD231E73 /* TaskManagement/Core/Security/KeychainManager.swift */; };
+		WB0102030405060708090021 /* TaskManagement/Core/Shared/DateTimeHelper.swift in Sources */ = {isa = PBXBuildFile; fileRef = DT0102030405060708090001 /* TaskManagement/Core/Shared/DateTimeHelper.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -148,6 +150,7 @@
 		DD0102030405060708090003 /* TaskManagement/Features/Mcp/McpSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TaskManagement/Features/Mcp/McpSettingsView.swift; sourceTree = "<group>"; };
 		CA0102030405060708090001 /* TaskManagement/Features/Calendar/CalendarView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TaskManagement/Features/Calendar/CalendarView.swift; sourceTree = "<group>"; };
 		WW0102030405060708090001 /* TaskManagement/Core/Shared/SharedWidgetDataManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TaskManagement/Core/Shared/SharedWidgetDataManager.swift; sourceTree = "<group>"; };
+		DT0102030405060708090001 /* TaskManagement/Core/Shared/DateTimeHelper.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TaskManagement/Core/Shared/DateTimeHelper.swift; sourceTree = "<group>"; };
 		SN0102030405060708090001 /* TaskManagement/Core/Notification/SoundManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TaskManagement/Core/Notification/SoundManager.swift; sourceTree = "<group>"; };
 		AL0102030405060708090001 /* TaskManagement/Core/Notification/ActiveAlarmManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TaskManagement/Core/Notification/ActiveAlarmManager.swift; sourceTree = "<group>"; };
 		AL0102030405060708090003 /* TaskManagement/Features/Reminder/AlarmRingingOverlayView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TaskManagement/Features/Reminder/AlarmRingingOverlayView.swift; sourceTree = "<group>"; };
@@ -221,6 +224,7 @@
 				DD0102030405060708090003 /* TaskManagement/Features/Mcp/McpSettingsView.swift */,
 				CA0102030405060708090001 /* TaskManagement/Features/Calendar/CalendarView.swift */,
 				WW0102030405060708090001 /* TaskManagement/Core/Shared/SharedWidgetDataManager.swift */,
+				DT0102030405060708090001 /* TaskManagement/Core/Shared/DateTimeHelper.swift */,
 				IN0102030405060708090001 /* TaskManagementWidgets/Info.plist */,
 				EN0102030405060708090001 /* TaskManagementWidgets/TaskManagementWidgets.entitlements */,
 				PR0102030405060708090001 /* TaskManagementWidgets.appex */,
@@ -380,6 +384,7 @@
 				DD0102030405060708090004 /* TaskManagement/Features/Mcp/McpSettingsView.swift in Sources */,
 				CA0102030405060708090002 /* TaskManagement/Features/Calendar/CalendarView.swift in Sources */,
 				WW0102030405060708090002 /* TaskManagement/Core/Shared/SharedWidgetDataManager.swift in Sources */,
+				DT0102030405060708090002 /* TaskManagement/Core/Shared/DateTimeHelper.swift in Sources */,
 				SN0102030405060708090002 /* TaskManagement/Core/Notification/SoundManager.swift in Sources */,
 				AL0102030405060708090002 /* TaskManagement/Core/Notification/ActiveAlarmManager.swift in Sources */,
 				AL0102030405060708090004 /* TaskManagement/Features/Reminder/AlarmRingingOverlayView.swift in Sources */,
@@ -416,6 +421,7 @@
 				WB0102030405060708090018 /* TaskManagement/Core/Network/APIClient.swift in Sources */,
 				WB0102030405060708090019 /* TaskManagement/Core/Network/NetworkLogger.swift in Sources */,
 				WB0102030405060708090020 /* TaskManagement/Core/Security/KeychainManager.swift in Sources */,
+				WB0102030405060708090021 /* TaskManagement/Core/Shared/DateTimeHelper.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

@@ -131,7 +131,11 @@ public final class CalendarViewModel {
     }
 
     private func dateString(from date: Date) -> String {
-        CalendarViewModel.dayFormatter.string(from: date)
+        let fmt = DateFormatter()
+        fmt.dateFormat = "yyyy-MM-dd"
+        fmt.timeZone = DateTimeHelper.userTimeZone
+        fmt.locale = Locale(identifier: "en_US_POSIX")
+        return fmt.string(from: date)
     }
 
     public var selectedDateString: String {
@@ -149,8 +153,7 @@ public final class CalendarViewModel {
     public var remindersForSelectedDate: [GraphQLReminderItem] {
         let target = selectedDateString
         return reminders.filter { rem in
-            guard rem.remindAt.count >= 10 else { return false }
-            return String(rem.remindAt.prefix(10)) == target
+            return DateTimeHelper.toLocalDateKey(rem.remindAt) == target
         }
     }
 
@@ -173,8 +176,7 @@ public final class CalendarViewModel {
     public func hasReminders(on date: Date) -> Bool {
         let key = dateString(from: date)
         return reminders.contains { rem in
-            guard rem.remindAt.count >= 10 else { return false }
-            return String(rem.remindAt.prefix(10)) == key
+            return DateTimeHelper.toLocalDateKey(rem.remindAt) == key
         }
     }
 
@@ -792,13 +794,9 @@ public struct CalendarView: View {
                                     .foregroundStyle(Color.orange)
                             }
 
-                            if rem.remindAt.count >= 16 {
-                                Text(
-                                    "⏰ \(rem.remindAt.suffix(from: rem.remindAt.index(rem.remindAt.startIndex, offsetBy: 11)).prefix(5))"
-                                )
+                            Text("⏰ \(DateTimeHelper.formatTime(rem.remindAt))")
                                 .font(.caption2)
                                 .foregroundStyle(Color.secondary)
-                            }
                         }
 
                         Spacer()

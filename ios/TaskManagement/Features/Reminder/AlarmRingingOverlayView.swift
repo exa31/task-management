@@ -82,6 +82,18 @@ public struct AlarmRingingOverlayView: View {
                         Text(currentTimeString)
                             .font(.system(size: 48, weight: .heavy, design: .rounded))
                             .foregroundColor(.white)
+
+                        HStack(spacing: 6) {
+                            Image(systemName: "alarm.fill")
+                                .font(.system(size: 12))
+                            Text(L10n.Alarm.scheduled(time: DateTimeHelper.formatTime(reminder.remindAt)))
+                                .font(.system(size: 13, weight: .semibold))
+                        }
+                        .foregroundColor(.white.opacity(0.85))
+                        .padding(.horizontal, 10)
+                        .padding(.vertical, 4)
+                        .background(Color.white.opacity(0.12))
+                        .clipShape(Capsule())
                     }
 
                     // Reminder Info Card
@@ -224,6 +236,8 @@ public struct AlarmRingingOverlayView: View {
     private var currentTimeString: String {
         let formatter = DateFormatter()
         formatter.dateFormat = "HH:mm"
+        formatter.timeZone = DateTimeHelper.userTimeZone
+        formatter.locale = Locale(identifier: "en_US_POSIX")
         return formatter.string(from: Date())
     }
 }

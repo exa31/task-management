@@ -1,6 +1,8 @@
 import SwiftUI
+import UserNotifications
 
 @Observable
+@MainActor
 public final class ReminderViewModel {
     public var reminders: [Reminder] = []
     public var activeAlert: String?
@@ -26,6 +28,7 @@ public final class ReminderViewModel {
         do {
             self.reminders = try await apiClient.getReminders()
             AppLogger.info("Reminders loaded successfully", category: .reminder, metadata: ["count": reminders.count])
+            syncAllLocalAlarms()
         } catch {
             AppLogger.error("Failed to load reminders", error: error, category: .reminder)
             self.errorMessage = error.localizedDescription
@@ -66,12 +69,10 @@ public final class ReminderViewModel {
         isCreating = true
         errorMessage = nil
 
-        let formatter = ISO8601DateFormatter()
-        formatter.formatOptions = [.withInternetDateTime]
-        let remindAtStr = formatter.string(from: remindAt)
+        let remindAtStr = DateTimeHelper.toISOString(remindAt)
 
         do {
-            _ = try await apiClient.createReminder(
+            let created = try await apiClient.createReminder(
                 title: trimmedTitle,
                 description: description?.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty == true ? nil : description,
                 remindAt: remindAtStr,
@@ -79,6 +80,7 @@ public final class ReminderViewModel {
             )
             AppLogger.success("Reminder created successfully", category: .reminder, metadata: ["title": trimmedTitle])
             await loadReminders()
+            scheduleLocalAlarm(for: created)
             isCreating = false
             return true
         } catch {
@@ -107,9 +109,7 @@ public final class ReminderViewModel {
         isUpdating = true
         errorMessage = nil
 
-        let formatter = ISO8601DateFormatter()
-        formatter.formatOptions = [.withInternetDateTime]
-        let remindAtStr = formatter.string(from: remindAt)
+        let remindAtStr = DateTimeHelper.toISOString(remindAt)
 
         let req = UpdateReminderRequest(
             title: trimmedTitle,
@@ -128,6 +128,7 @@ public final class ReminderViewModel {
             } else {
                 await loadReminders()
             }
+            scheduleLocalAlarm(for: updated)
             isUpdating = false
             return true
         } catch {
@@ -139,12 +140,41 @@ public final class ReminderViewModel {
     }
 
     @MainActor
+    public func toggleAlarmStatus(reminder: Reminder, isEnabled: Bool) {
+        let newStatus = isEnabled ? "pending" : "dismissed"
+        let req = UpdateReminderRequest(
+            title: reminder.title,
+            description: reminder.description.isEmpty ? nil : reminder.description,
+            remindAt: reminder.remindAt,
+            status: newStatus,
+            taskId: reminder.taskId,
+            clearTaskId: false
+        )
+        Task {
+            do {
+                let updated = try await apiClient.updateReminder(id: reminder.id, req: req)
+                if let idx = reminders.firstIndex(where: { $0.id == reminder.id }) {
+                    reminders[idx] = updated
+                }
+                scheduleLocalAlarm(for: updated)
+                #if canImport(UIKit)
+                UIImpactFeedbackGenerator(style: .medium).impactOccurred()
+                #endif
+            } catch {
+                AppLogger.error("Failed to toggle alarm status", error: error, category: .reminder)
+                self.errorMessage = error.localizedDescription
+            }
+        }
+    }
+
+    @MainActor
     public func snooze(id: Int64) {
         Task {
             do {
-                _ = try await apiClient.snoozeReminder(id: id, minutes: 15)
+                let res = try await apiClient.snoozeReminder(id: id, minutes: 15)
                 AppLogger.success("Reminder snoozed for 15 minutes", category: .reminder, metadata: ["id": id])
                 await loadReminders()
+                scheduleLocalAlarm(for: res)
             } catch {
                 AppLogger.error("Failed to snooze reminder", error: error, category: .reminder, metadata: ["id": id])
                 self.errorMessage = error.localizedDescription
@@ -156,9 +186,10 @@ public final class ReminderViewModel {
     public func dismiss(id: Int64) {
         Task {
             do {
-                _ = try await apiClient.dismissReminder(id: id)
+                let res = try await apiClient.dismissReminder(id: id)
                 AppLogger.success("Reminder dismissed", category: .reminder, metadata: ["id": id])
                 await loadReminders()
+                scheduleLocalAlarm(for: res)
             } catch {
                 AppLogger.error("Failed to dismiss reminder", error: error, category: .reminder, metadata: ["id": id])
                 self.errorMessage = error.localizedDescription
@@ -172,11 +203,68 @@ public final class ReminderViewModel {
             do {
                 try await apiClient.deleteReminder(id: id)
                 AppLogger.success("Reminder deleted", category: .reminder, metadata: ["id": id])
+                UNUserNotificationCenter.current().removePendingNotificationRequests(withIdentifiers: ["alarm_reminder_\(id)"])
                 await loadReminders()
             } catch {
                 AppLogger.error("Failed to delete reminder", error: error, category: .reminder, metadata: ["id": id])
                 self.errorMessage = error.localizedDescription
             }
+        }
+    }
+
+    public func scheduleLocalAlarm(for reminder: Reminder) {
+        let center = UNUserNotificationCenter.current()
+        let identifier = "alarm_reminder_\(reminder.id)"
+
+        if reminder.status.lowercased() != "pending" {
+            center.removePendingNotificationRequests(withIdentifiers: [identifier])
+            return
+        }
+
+        guard let targetDate = DateTimeHelper.parseISO8601(reminder.remindAt),
+              targetDate > Date() else {
+            center.removePendingNotificationRequests(withIdentifiers: [identifier])
+            return
+        }
+
+        var calendar = Calendar.current
+        calendar.timeZone = DateTimeHelper.userTimeZone
+        let comps = calendar.dateComponents([.year, .month, .day, .hour, .minute], from: targetDate)
+        let trigger = UNCalendarNotificationTrigger(dateMatching: comps, repeats: false)
+
+        let content = UNMutableNotificationContent()
+        content.title = reminder.title
+        content.body = reminder.description.isEmpty ? "Waktunya alarm & pengingat tugas Anda." : reminder.description
+        content.categoryIdentifier = "ALARM_REMINDER"
+        content.interruptionLevel = .timeSensitive
+
+        let soundName = SoundManager.shared.selectedSound.fileName
+        if soundName != "default" {
+            content.sound = UNNotificationSound(named: UNNotificationSoundName(soundName))
+        } else {
+            content.sound = .default
+        }
+
+        content.userInfo = [
+            "reminder_id": NSNumber(value: reminder.id),
+            "title": reminder.title,
+            "task_title": reminder.taskTitle ?? "",
+            "body": reminder.description
+        ]
+
+        let request = UNNotificationRequest(identifier: identifier, content: content, trigger: trigger)
+        center.add(request) { error in
+            if let error = error {
+                AppLogger.warn("Failed to schedule local alarm request: \(error.localizedDescription)", category: .push)
+            } else {
+                AppLogger.info("Scheduled local alarm request for reminder #\(reminder.id)", category: .push)
+            }
+        }
+    }
+
+    public func syncAllLocalAlarms() {
+        for r in reminders {
+            scheduleLocalAlarm(for: r)
         }
     }
 
@@ -203,9 +291,55 @@ public struct ReminderListView: View {
         return viewModel.reminders.filter { $0.status.lowercased() == filterStatus }
     }
 
+    private var nextUpcomingAlarm: Reminder? {
+        let now = Date()
+        return viewModel.reminders
+            .filter { $0.status.lowercased() == "pending" }
+            .compactMap { rem -> (Reminder, Date)? in
+                guard let d = DateTimeHelper.parseISO8601(rem.remindAt), d > now else { return nil }
+                return (rem, d)
+            }
+            .min(by: { $0.1 < $1.1 })?.0
+    }
+
     public var body: some View {
         AdaptiveTabNavigationStack {
             VStack(spacing: 0) {
+                // Next Upcoming Alarm Banner
+                if let nextAlarm = nextUpcomingAlarm {
+                    HStack(spacing: 12) {
+                        ZStack {
+                            Circle()
+                                .fill(Color.orange.opacity(0.18))
+                                .frame(width: 38, height: 38)
+                            Image(systemName: "alarm.waves.left.and.right.fill")
+                                .font(.system(size: 16, weight: .bold))
+                                .foregroundColor(.orange)
+                        }
+
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text(L10n.Alarm.nearest)
+                                .font(.system(size: 11, weight: .bold))
+                                .foregroundColor(.orange)
+                            Text("\(nextAlarm.title) • \(DateTimeHelper.formatTime(nextAlarm.remindAt)) (\(DateTimeHelper.formatRelativeAlarmDate(nextAlarm.remindAt)))")
+                                .font(.system(size: 13, weight: .semibold))
+                                .foregroundColor(.primary)
+                                .lineLimit(1)
+                        }
+
+                        Spacer()
+                    }
+                    .padding(12)
+                    .background(Color.orange.opacity(0.08))
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 14)
+                            .stroke(Color.orange.opacity(0.25), lineWidth: 1)
+                    )
+                    .clipShape(RoundedRectangle(cornerRadius: 14))
+                    .padding(.horizontal, 16)
+                    .padding(.top, 10)
+                }
+
                 // Live Alert Banner (SSE Triggered)
                 if let alert = viewModel.activeAlert {
                     HStack(spacing: 12) {
@@ -414,71 +548,88 @@ public struct ReminderListView: View {
     }
 
     private func reminderCard(_ reminder: Reminder) -> some View {
-        VStack(alignment: .leading, spacing: 10) {
-            HStack(alignment: .top) {
+        let isDismissed = reminder.status.lowercased() == "dismissed"
+
+        return VStack(alignment: .leading, spacing: 10) {
+            HStack(alignment: .center) {
                 VStack(alignment: .leading, spacing: 4) {
+                    // Big digital alarm time & Date badge
+                    HStack(alignment: .firstTextBaseline, spacing: 8) {
+                        Text(DateTimeHelper.formatTime(reminder.remindAt))
+                            .font(.system(size: 38, weight: .bold, design: .rounded))
+                            .foregroundColor(isDismissed ? .secondary.opacity(0.4) : .primary)
+
+                        Text(DateTimeHelper.formatRelativeAlarmDate(reminder.remindAt))
+                            .font(.system(size: 13, weight: .semibold))
+                            .foregroundColor(isDismissed ? .secondary.opacity(0.4) : AppColors.primary)
+                    }
+
+                    // Alarm Title & Label
                     HStack(spacing: 6) {
                         Text(reminder.title)
-                            .font(.system(size: 16, weight: .semibold))
-                            .strikethrough(reminder.status == "dismissed")
-                            .foregroundColor(reminder.status == "dismissed" ? .secondary : .primary)
+                            .font(.system(size: 15, weight: .medium))
+                            .foregroundColor(isDismissed ? .secondary.opacity(0.6) : .primary)
+                            .lineLimit(1)
 
-                        // Status Badge
-                        statusBadge(reminder.status)
+                        if let snooze = reminder.snoozeCount, snooze > 0 {
+                            Text(L10n.Reminders.snoozed(count: snooze))
+                                .font(.system(size: 10, weight: .bold))
+                                .padding(.horizontal, 6)
+                                .padding(.vertical, 2)
+                                .background(Color.orange.opacity(0.15))
+                                .foregroundColor(.orange)
+                                .clipShape(Capsule())
+                        }
                     }
 
                     if !reminder.description.isEmpty {
                         Text(reminder.description)
-                            .font(.system(size: 13))
-                            .foregroundColor(.secondary)
+                            .font(.system(size: 12))
+                            .foregroundColor(.secondary.opacity(0.8))
                             .lineLimit(2)
                     }
 
-                    if let taskTitle = reminder.taskTitle {
-                        HStack(spacing: 4) {
-                            Image(systemName: "link")
-                                .font(.system(size: 10))
-                            Text(taskTitle)
-                                .font(.system(size: 11, weight: .medium))
+                    // Tags: Linked Task & Sound Info
+                    HStack(spacing: 8) {
+                        if let taskTitle = reminder.taskTitle {
+                            HStack(spacing: 4) {
+                                Image(systemName: "link")
+                                    .font(.system(size: 9))
+                                Text(taskTitle)
+                                    .font(.system(size: 11, weight: .medium))
+                            }
+                            .foregroundColor(AppColors.violet)
                         }
-                        .foregroundColor(AppColors.violet)
-                        .padding(.top, 2)
+
+                        HStack(spacing: 4) {
+                            Image(systemName: "bell.fill")
+                                .font(.system(size: 9))
+                            Text(SoundManager.shared.selectedSound.name)
+                                .font(.system(size: 11))
+                        }
+                        .foregroundColor(.secondary)
                     }
                 }
 
                 Spacer()
 
-                // Remind at pill & Edit button
-                HStack(spacing: 6) {
-                    HStack(spacing: 4) {
-                        Image(systemName: "clock.fill")
-                            .font(.system(size: 10))
-                        Text(reminder.remindAt.prefix(16))
-                            .font(.system(size: 11, weight: .medium))
+                // On/Off Toggle Switch (like Apple Clock app)
+                Toggle("", isOn: Binding(
+                    get: { reminder.status.lowercased() != "dismissed" },
+                    set: { isEnabled in
+                        viewModel.toggleAlarmStatus(reminder: reminder, isEnabled: isEnabled)
                     }
-                    .foregroundColor(AppColors.primary)
-                    .padding(.horizontal, 8)
-                    .padding(.vertical, 4)
-                    .background(AppColors.primary.opacity(0.1))
-                    .clipShape(Capsule())
-
-                    Button(action: { selectedReminderForEdit = reminder }) {
-                        Image(systemName: "pencil")
-                            .font(.system(size: 11, weight: .semibold))
-                            .foregroundColor(.secondary)
-                            .padding(6)
-                            .background(Color(.secondarySystemGroupedBackground))
-                            .clipShape(Circle())
-                    }
-                    .buttonStyle(.plain)
-                }
+                ))
+                .labelsHidden()
+                .tint(AppColors.primary)
             }
 
             Divider()
                 .padding(.vertical, 2)
 
+            // Bottom actions: Snooze & Dismiss / Edit
             HStack(spacing: 12) {
-                if reminder.status != "dismissed" {
+                if !isDismissed {
                     Button(action: { viewModel.snooze(id: reminder.id) }) {
                         HStack(spacing: 6) {
                             Image(systemName: "clock.arrow.circlepath")
@@ -510,9 +661,10 @@ public struct ReminderListView: View {
                     .buttonStyle(.plain)
                 } else {
                     HStack(spacing: 4) {
-                        Image(systemName: "checkmark.circle.fill")
-                            .foregroundColor(AppColors.statusDone)
-                        Text(L10n.Reminders.completedNotice)
+                        Image(systemName: "moon.fill")
+                            .font(.system(size: 11))
+                            .foregroundColor(.secondary)
+                        Text(L10n.Alarm.disabled)
                             .font(.system(size: 12, weight: .medium))
                             .foregroundColor(.secondary)
                     }
@@ -520,14 +672,28 @@ public struct ReminderListView: View {
 
                 Spacer()
 
-                if let snooze = reminder.snoozeCount, snooze > 0 {
-                    Text(L10n.Reminders.snoozed(count: snooze))
-                        .font(.system(size: 11))
-                        .foregroundColor(.secondary)
+                Button(action: { selectedReminderForEdit = reminder }) {
+                    HStack(spacing: 4) {
+                        Image(systemName: "pencil")
+                        Text(L10n.General.edit)
+                    }
+                    .font(.system(size: 11, weight: .semibold))
+                    .foregroundColor(AppColors.primary)
+                    .padding(.horizontal, 8)
+                    .padding(.vertical, 5)
+                    .background(AppColors.primary.opacity(0.08))
+                    .clipShape(Capsule())
                 }
+                .buttonStyle(.plain)
             }
         }
-        .glassCardStyle()
+        .padding(14)
+        .background(Color(.secondarySystemGroupedBackground))
+        .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
+        .overlay(
+            RoundedRectangle(cornerRadius: 18, style: .continuous)
+                .stroke(isDismissed ? Color.clear : AppColors.primary.opacity(0.12), lineWidth: 1)
+        )
     }
 
     private func statusBadge(_ status: String) -> some View {
@@ -558,6 +724,41 @@ public struct ReminderListView: View {
     }
 }
 
+// MARK: - Sound Option Row Helper View
+private struct SoundOptionRowView: View {
+    let sound: SoundOption
+    let isSelected: Bool
+    let onSelect: () -> Void
+
+    var body: some View {
+        HStack {
+            VStack(alignment: .leading, spacing: 2) {
+                Text(sound.name)
+                    .font(.system(size: 14, weight: .medium))
+                Text(sound.fileName)
+                    .font(.system(size: 11))
+                    .foregroundColor(.secondary)
+            }
+            Spacer()
+            if isSelected {
+                Image(systemName: "checkmark")
+                    .foregroundColor(AppColors.primary)
+                    .font(.system(size: 14, weight: .bold))
+            }
+            Button(action: {
+                SoundManager.shared.playPreview(sound: sound)
+            }) {
+                Image(systemName: "play.circle.fill")
+                    .font(.system(size: 22))
+                    .foregroundColor(AppColors.primary)
+            }
+            .buttonStyle(.plain)
+        }
+        .contentShape(Rectangle())
+        .onTapGesture(perform: onSelect)
+    }
+}
+
 // MARK: - Create Reminder Sheet Modal
 public struct CreateReminderSheet: View {
     @Bindable var viewModel: ReminderViewModel
@@ -569,6 +770,7 @@ public struct CreateReminderSheet: View {
     @State private var selectedTaskId: Int64? = nil
     @State private var selectedTaskTitle: String? = nil
     @State private var isShowingTaskPicker = false
+    @State private var selectedSoundId: String = SoundManager.shared.selectedSoundId
 
     public init(viewModel: ReminderViewModel) {
         self.viewModel = viewModel
@@ -597,6 +799,7 @@ public struct CreateReminderSheet: View {
                         in: Date()...,
                         displayedComponents: [.date, .hourAndMinute]
                     )
+                    .environment(\.timeZone, DateTimeHelper.userTimeZone)
 
                     // Quick Presets
                     VStack(alignment: .leading, spacing: 8) {
@@ -622,6 +825,22 @@ public struct CreateReminderSheet: View {
                     .padding(.vertical, 4)
                 } header: {
                     Text(L10n.Reminders.sectionSchedule)
+                }
+
+                // Section: Nada Dering Alarm
+                Section {
+                    ForEach(SoundManager.presetSounds) { sound in
+                        SoundOptionRowView(
+                            sound: sound,
+                            isSelected: selectedSoundId == sound.id,
+                            onSelect: {
+                                selectedSoundId = sound.id
+                                SoundManager.shared.selectedSoundId = sound.id
+                            }
+                        )
+                    }
+                } header: {
+                    Text(L10n.Alarm.ringtoneSection)
                 }
 
                 // Section 3: Link to Task (On-Demand Searchable)
@@ -746,7 +965,8 @@ public struct CreateReminderSheet: View {
     }
 
     private func applyTomorrowMorning() {
-        let calendar = Calendar.current
+        var calendar = Calendar.current
+        calendar.timeZone = DateTimeHelper.userTimeZone
         var comps = calendar.dateComponents([.year, .month, .day], from: Date().addingTimeInterval(86400))
         comps.hour = 9
         comps.minute = 0
@@ -770,6 +990,7 @@ public struct EditReminderSheet: View {
     @State private var selectedTaskId: Int64?
     @State private var selectedTaskTitle: String?
     @State private var isShowingTaskPicker = false
+    @State private var selectedSoundId: String = SoundManager.shared.selectedSoundId
     @State private var isSubmitting: Bool = false
     @State private var errorMessage: String? = nil
 
@@ -783,14 +1004,7 @@ public struct EditReminderSheet: View {
         _selectedTaskId = State(initialValue: reminder.taskId)
         _selectedTaskTitle = State(initialValue: reminder.taskTitle)
 
-        let formatter = ISO8601DateFormatter()
-        formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
-        var parsed = formatter.date(from: reminder.remindAt)
-        if parsed == nil {
-            let basic = ISO8601DateFormatter()
-            basic.formatOptions = [.withInternetDateTime]
-            parsed = basic.date(from: reminder.remindAt)
-        }
+        let parsed = DateTimeHelper.parseISO8601(reminder.remindAt)
         _remindAt = State(initialValue: parsed ?? Date().addingTimeInterval(3600))
     }
 
@@ -816,6 +1030,7 @@ public struct EditReminderSheet: View {
                         selection: $remindAt,
                         displayedComponents: [.date, .hourAndMinute]
                     )
+                    .environment(\.timeZone, DateTimeHelper.userTimeZone)
 
                     // Quick Presets
                     VStack(alignment: .leading, spacing: 8) {
@@ -841,6 +1056,22 @@ public struct EditReminderSheet: View {
                     .padding(.vertical, 4)
                 } header: {
                     Text(L10n.Reminders.sectionSchedule)
+                }
+
+                // Section: Nada Dering Alarm
+                Section {
+                    ForEach(SoundManager.presetSounds) { sound in
+                        SoundOptionRowView(
+                            sound: sound,
+                            isSelected: selectedSoundId == sound.id,
+                            onSelect: {
+                                selectedSoundId = sound.id
+                                SoundManager.shared.selectedSoundId = sound.id
+                            }
+                        )
+                    }
+                } header: {
+                    Text(L10n.Alarm.ringtoneSection)
                 }
 
                 // Section 3: Status
@@ -996,7 +1227,8 @@ public struct EditReminderSheet: View {
     }
 
     private func applyTomorrowMorning() {
-        let calendar = Calendar.current
+        var calendar = Calendar.current
+        calendar.timeZone = DateTimeHelper.userTimeZone
         var comps = calendar.dateComponents([.year, .month, .day], from: Date().addingTimeInterval(86400))
         comps.hour = 9
         comps.minute = 0

@@ -209,11 +209,14 @@ public actor APIClient {
         }
         keychain.save(key: "user_name", value: res.user.name)
         keychain.save(key: "user_email", value: res.user.email)
+        DateTimeHelper.setUserTimeZone(res.user.timezone)
         return res
     }
 
     public func getProfile() async throws -> User {
-        return try await request(endpoint: "auth/profile")
+        let user: User = try await request(endpoint: "auth/profile")
+        DateTimeHelper.setUserTimeZone(user.timezone)
+        return user
     }
 
     public func updateProfile(req: UpdateProfileRequest) async throws -> User {
@@ -221,6 +224,7 @@ public actor APIClient {
         let user: User = try await request(endpoint: "auth/profile", method: "PUT", body: body)
         keychain.save(key: "user_name", value: user.name)
         keychain.save(key: "user_email", value: user.email)
+        DateTimeHelper.setUserTimeZone(user.timezone)
         return user
     }
 

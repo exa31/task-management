@@ -524,6 +524,10 @@ public enum Translations {
             // Alarm Overlay
             "alarm.dismiss": "Dismiss Alarm",
             "alarm.snoozeMinutes": "Snooze %lld Min",
+            "alarm.scheduleAt": "Scheduled: %@",
+            "alarm.nearest": "Upcoming Alarm",
+            "alarm.disabled": "Alarm Inactive",
+            "alarm.ringtoneSection": "Alarm Ringtone",
 
             // Sound & Ringtone Settings
             "settings.alarmRingtone": "Alarm Ringtone",
@@ -970,6 +974,10 @@ public enum Translations {
             // Alarm Overlay
             "alarm.dismiss": "Selesai / Matikan Alarm",
             "alarm.snoozeMinutes": "Tunda %lld Menit",
+            "alarm.scheduleAt": "Jadwal: %@",
+            "alarm.nearest": "Alarm Terdekat",
+            "alarm.disabled": "Alarm Nonaktif",
+            "alarm.ringtoneSection": "Nada Dering Alarm",
 
             // Sound & Ringtone Settings
             "settings.alarmRingtone": "Nada Dering Alarm",
