@@ -8,7 +8,9 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.annotation.StringRes
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.compose.*
 import cloud.eka_dev.task_hub.core.designsystem.TaskManagementTheme
@@ -78,14 +80,14 @@ class MainActivity : ComponentActivity() {
     }
 }
 
-sealed class Screen(val route: String, val title: String) {
-    object Tasks : Screen("tasks", "Tugas")
-    object Projects : Screen("projects", "Proyek")
-    object Calendar : Screen("calendar", "Kalender")
-    object Notes : Screen("notes", "Catatan")
-    object Reminders : Screen("reminders", "Pengingat")
-    object Profile : Screen("profile", "Profil")
-    object Mcp : Screen("mcp", "MCP Tokens")
+sealed class Screen(val route: String, @StringRes val titleRes: Int) {
+    object Tasks : Screen("tasks", R.string.nav_tasks)
+    object Projects : Screen("projects", R.string.nav_projects)
+    object Calendar : Screen("calendar", R.string.nav_calendar)
+    object Notes : Screen("notes", R.string.nav_notes)
+    object Reminders : Screen("reminders", R.string.nav_reminders)
+    object Profile : Screen("profile", R.string.nav_profile)
+    object Mcp : Screen("mcp", R.string.nav_mcp)
 }
 
 @Composable
@@ -117,7 +119,7 @@ fun MainNavigationScaffold(
                             }
                         },
                         icon = { Icon(Icons.Default.Checklist, contentDescription = null) },
-                        label = { Text(Screen.Tasks.title) }
+                        label = { Text(stringResource(Screen.Tasks.titleRes)) }
                     )
                     NavigationBarItem(
                         selected = currentRoute == Screen.Projects.route,
@@ -129,7 +131,7 @@ fun MainNavigationScaffold(
                             }
                         },
                         icon = { Icon(Icons.Default.Folder, contentDescription = null) },
-                        label = { Text(Screen.Projects.title) }
+                        label = { Text(stringResource(Screen.Projects.titleRes)) }
                     )
                     NavigationBarItem(
                         selected = currentRoute == Screen.Calendar.route,
@@ -141,7 +143,7 @@ fun MainNavigationScaffold(
                             }
                         },
                         icon = { Icon(Icons.Default.CalendarMonth, contentDescription = null) },
-                        label = { Text(Screen.Calendar.title) }
+                        label = { Text(stringResource(Screen.Calendar.titleRes)) }
                     )
                     NavigationBarItem(
                         selected = currentRoute == Screen.Notes.route,
@@ -153,7 +155,7 @@ fun MainNavigationScaffold(
                             }
                         },
                         icon = { Icon(Icons.Default.EditNote, contentDescription = null) },
-                        label = { Text(Screen.Notes.title) }
+                        label = { Text(stringResource(Screen.Notes.titleRes)) }
                     )
                     NavigationBarItem(
                         selected = currentRoute == Screen.Reminders.route,
@@ -165,7 +167,7 @@ fun MainNavigationScaffold(
                             }
                         },
                         icon = { Icon(Icons.Default.Notifications, contentDescription = null) },
-                        label = { Text(Screen.Reminders.title) }
+                        label = { Text(stringResource(Screen.Reminders.titleRes)) }
                     )
                     NavigationBarItem(
                         selected = currentRoute == Screen.Profile.route,
@@ -177,7 +179,7 @@ fun MainNavigationScaffold(
                             }
                         },
                         icon = { Icon(Icons.Default.Person, contentDescription = null) },
-                        label = { Text(Screen.Profile.title) }
+                        label = { Text(stringResource(Screen.Profile.titleRes)) }
                     )
                 }
             }

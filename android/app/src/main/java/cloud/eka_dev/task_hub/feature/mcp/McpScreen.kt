@@ -7,10 +7,8 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
@@ -20,12 +18,14 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import cloud.eka_dev.task_hub.R
 import cloud.eka_dev.task_hub.core.designsystem.AppButton
 import cloud.eka_dev.task_hub.core.designsystem.BrandPrimary
 import cloud.eka_dev.task_hub.core.designsystem.TaskListSkeleton
@@ -130,10 +130,10 @@ fun McpScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("MCP Server Tokens", fontWeight = FontWeight.Bold) },
+                title = { Text(stringResource(R.string.mcp_screen_title), fontWeight = FontWeight.Bold) },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
-                        Icon(Icons.Default.ArrowBack, contentDescription = "Kembali")
+                        Icon(Icons.Default.ArrowBack, contentDescription = stringResource(R.string.back))
                     }
                 }
             )
@@ -145,7 +145,7 @@ fun McpScreen(
                 contentColor = Color.White,
                 shape = CircleShape
             ) {
-                Icon(Icons.Default.Add, contentDescription = "Buat Token")
+                Icon(Icons.Default.Add, contentDescription = stringResource(R.string.mcp_generate_btn))
             }
         },
         snackbarHost = { SnackbarHost(snackbarHostState) }
@@ -166,11 +166,11 @@ fun McpScreen(
                 Column(modifier = Modifier.padding(14.dp)) {
                     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         Icon(Icons.Default.IntegrationInstructions, contentDescription = null, tint = BrandPrimary, modifier = Modifier.size(20.dp))
-                        Text("Model Context Protocol (MCP)", fontWeight = FontWeight.Bold, fontSize = 14.sp)
+                        Text(stringResource(R.string.mcp_info_title), fontWeight = FontWeight.Bold, fontSize = 14.sp)
                     }
                     Spacer(modifier = Modifier.height(4.dp))
                     Text(
-                        "Gunakan token ini untuk menghubungkan AI Assistant (Claude Desktop, Cursor, Antigravity) langsung ke task management Anda.",
+                        stringResource(R.string.mcp_info_desc),
                         fontSize = 12.sp,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -186,8 +186,8 @@ fun McpScreen(
                         verticalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
                         Icon(Icons.Default.KeyOff, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(48.dp))
-                        Text("Belum Ada Token MCP", fontWeight = FontWeight.SemiBold)
-                        Text("Buat token pertama Anda untuk mengintegrasikan AI Agent.", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        Text(stringResource(R.string.mcp_empty_title), fontWeight = FontWeight.SemiBold)
+                        Text(stringResource(R.string.mcp_empty_desc), fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
                 }
             } else {
@@ -241,7 +241,7 @@ fun McpScreen(
                                 }
 
                                 IconButton(onClick = { deletingToken = token }) {
-                                    Icon(Icons.Default.DeleteOutline, contentDescription = "Hapus Token", tint = MaterialTheme.colorScheme.error.copy(alpha = 0.7f))
+                                    Icon(Icons.Default.DeleteOutline, contentDescription = stringResource(R.string.delete), tint = MaterialTheme.colorScheme.error.copy(alpha = 0.7f))
                                 }
                             }
                         }
@@ -255,12 +255,12 @@ fun McpScreen(
         var tokenName by remember { mutableStateOf("") }
         AlertDialog(
             onDismissRequest = { showCreateDialog = false },
-            title = { Text("Buat Token MCP Baru", fontWeight = FontWeight.Bold) },
+            title = { Text(stringResource(R.string.mcp_create_dialog_title), fontWeight = FontWeight.Bold) },
             text = {
                 OutlinedTextField(
                     value = tokenName,
                     onValueChange = { tokenName = it },
-                    label = { Text("Nama Token / Klien (misal: Claude Desktop)") },
+                    label = { Text(stringResource(R.string.mcp_token_name_label)) },
                     shape = RoundedCornerShape(12.dp),
                     modifier = Modifier.fillMaxWidth(),
                     singleLine = true
@@ -268,7 +268,7 @@ fun McpScreen(
             },
             confirmButton = {
                 AppButton(
-                    text = "Generate",
+                    text = stringResource(R.string.mcp_generate_btn),
                     enabled = tokenName.isNotBlank(),
                     onClick = {
                         viewModel.generateToken(tokenName.trim())
@@ -277,7 +277,7 @@ fun McpScreen(
                 )
             },
             dismissButton = {
-                TextButton(onClick = { showCreateDialog = false }) { Text("Batal") }
+                TextButton(onClick = { showCreateDialog = false }) { Text(stringResource(R.string.cancel)) }
             }
         )
     }
@@ -285,11 +285,11 @@ fun McpScreen(
     createdToken?.let { tokenString ->
         AlertDialog(
             onDismissRequest = { viewModel.dismissCreatedToken() },
-            title = { Text("Token MCP Berhasil Dibuat", fontWeight = FontWeight.Bold) },
+            title = { Text(stringResource(R.string.mcp_created_title), fontWeight = FontWeight.Bold) },
             text = {
                 Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
                     Text(
-                        "Salin token ini sekarang. Demi keamanan, token rahasia ini tidak akan ditampilkan lagi.",
+                        stringResource(R.string.mcp_created_desc),
                         fontSize = 12.sp,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -310,7 +310,7 @@ fun McpScreen(
             },
             confirmButton = {
                 AppButton(
-                    text = "Salin Token",
+                    text = stringResource(R.string.mcp_copy_token),
                     onClick = {
                         val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
                         val clip = ClipData.newPlainText("MCP Token", tokenString)
@@ -320,7 +320,7 @@ fun McpScreen(
                 )
             },
             dismissButton = {
-                TextButton(onClick = { viewModel.dismissCreatedToken() }) { Text("Tutup") }
+                TextButton(onClick = { viewModel.dismissCreatedToken() }) { Text(stringResource(R.string.close)) }
             }
         )
     }
@@ -328,8 +328,8 @@ fun McpScreen(
     deletingToken?.let { token ->
         AlertDialog(
             onDismissRequest = { deletingToken = null },
-            title = { Text("Hapus Token MCP?", fontWeight = FontWeight.Bold) },
-            text = { Text("Apakah Anda yakin ingin mencabut token '${token.name}'? AI Client yang menggunakan token ini tidak dapat mengakses task lagi.") },
+            title = { Text(stringResource(R.string.mcp_delete_title), fontWeight = FontWeight.Bold) },
+            text = { Text(stringResource(R.string.mcp_delete_desc, token.name)) },
             confirmButton = {
                 Button(
                     onClick = {
@@ -338,11 +338,11 @@ fun McpScreen(
                     },
                     colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error)
                 ) {
-                    Text("Cabut Token", color = Color.White)
+                    Text(stringResource(R.string.mcp_revoke_btn), color = Color.White)
                 }
             },
             dismissButton = {
-                TextButton(onClick = { deletingToken = null }) { Text("Batal") }
+                TextButton(onClick = { deletingToken = null }) { Text(stringResource(R.string.cancel)) }
             }
         )
     }

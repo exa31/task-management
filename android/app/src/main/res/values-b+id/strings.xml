@@ -4,46 +4,148 @@
     <!-- Navigation -->
     <string name="nav_tasks">Tugas</string>
     <string name="nav_projects">Proyek</string>
+    <string name="nav_calendar">Kalender</string>
     <string name="nav_notes">Catatan</string>
     <string name="nav_reminders">Pengingat</string>
     <string name="nav_profile">Profil</string>
+    <string name="nav_mcp">Token MCP</string>
 
     <!-- Auth -->
-    <string name="auth_title">Task Manager Native</string>
+    <string name="auth_title">Task Hub Native</string>
     <string name="auth_subtitle">Kelola tugas, ide, dan pengingat secara real-time tersinkronisasi dengan backend Go.</string>
     <string name="sign_in_google">Masuk dengan Google</string>
     <string name="sign_in_apple">Masuk dengan Apple</string>
     <string name="sign_out">Keluar (Sign Out)</string>
+    <string name="feature_realtime_title">Sinkronisasi Real-time</string>
+    <string name="feature_realtime_desc">Streaming SSE instan ke server backend Go</string>
+    <string name="feature_projects_title">Manajemen Proyek</string>
+    <string name="feature_projects_desc">Kelola modul &amp; checklist tugas terpadu</string>
+    <string name="feature_reminders_title">Pengingat Pintar</string>
+    <string name="feature_reminders_desc">Notifikasi alert push otomatis</string>
+
+    <!-- Common Actions -->
+    <string name="save">Simpan</string>
+    <string name="cancel">Batal</string>
+    <string name="delete">Hapus</string>
+    <string name="close">Tutup</string>
+    <string name="send">Kirim</string>
+    <string name="back">Kembali</string>
+    <string name="edit">Edit</string>
+    <string name="clear_search">Hapus pencarian</string>
 
     <!-- Tasks -->
     <string name="task_list_title">Daftar Tugas</string>
-    <string name="search_tasks_hint">Cari tugas…</string>
+    <string name="search_tasks_hint">Cari tugas atau tag…</string>
     <string name="filter_all">Semua</string>
     <string name="filter_todo">To Do</string>
     <string name="filter_in_progress">Dalam Proses</string>
+    <string name="filter_review">Review</string>
     <string name="filter_done">Selesai</string>
+    <string name="filter_focus">Fokus</string>
+    <string name="filter_focus_count">Fokus (%1$d)</string>
+    <string name="focus_horizon_title">FOKUS HARI INI</string>
+    <string name="focus_horizon_count">%1$d Tugas</string>
+    <string name="remove_focus">Hapus Fokus</string>
+    <string name="toggle_focus">Alihkan Fokus</string>
     <string name="empty_tasks">Belum ada tugas di kategori ini.</string>
+    <string name="empty_tasks_sub">Buat tugas baru untuk mulai melacak aktivitas Anda.</string>
     <string name="create_task">Buat Tugas Baru</string>
     <string name="task_title_label">Judul Tugas *</string>
     <string name="task_desc_label">Deskripsi (Opsional)</string>
-    <string name="save">Simpan</string>
-    <string name="cancel">Batal</string>
+    <string name="priority_label">Prioritas</string>
+    <string name="priority_low">Rendah</string>
+    <string name="priority_medium">Sedang</string>
+    <string name="priority_high">Tinggi</string>
+    <string name="priority_urgent">Mendesak</string>
+    <string name="focus_today">Fokus Hari Ini</string>
+    <string name="delete_task_confirm_title">Hapus Tugas?</string>
+    <string name="delete_task_confirm_desc">Apakah Anda yakin ingin menghapus tugas \'%1$s\'? Tindakan ini tidak dapat dibatalkan.</string>
+    <string name="delete_task_button">Hapus Tugas Ini</string>
+    <string name="task_detail_title">Detail Tugas</string>
+    <string name="edit_task">Edit Tugas</string>
+    <string name="status_header">STATUS TUGAS</string>
+    <string name="subtasks_header">SUBTASKS (%1$d/%2$d)</string>
+    <string name="no_subtasks">Belum ada checklist subtask.</string>
+    <string name="add_subtask_placeholder">Tambah checklist subtask…</string>
+    <string name="add_subtask">Tambah Subtask</string>
+    <string name="delete_subtask">Hapus Subtask</string>
+    <string name="tab_details_subtasks">Detail &amp; Subtask</string>
+    <string name="tab_activity_logs">Riwayat Log</string>
+    <string name="activity_logs_title">Riwayat Aktivitas</string>
+    <string name="activity_logs_empty">Belum Ada Riwayat Log</string>
+    <string name="activity_logs_empty_desc">Catatan progres dan perubahan tugas akan tercatat secara kronologis di sini.</string>
+    <string name="post_note_placeholder">Tulis catatan progres…</string>
     <string name="subtasks_count">%1$d/%2$d checklist</string>
+    <string name="quick_action_start">Mulai</string>
+    <string name="quick_action_review">Review</string>
+    <string name="quick_action_done">Selesai</string>
+    <string name="quick_action_revert">Revisi</string>
+    <string name="quick_action_redo">Kerjakan Lagi</string>
+
+    <!-- Activity Types -->
+    <string name="activity_task_created">Tugas Dibuat</string>
+    <string name="activity_task_updated">Tugas Diperbarui</string>
+    <string name="activity_progress_logged">Catatan Progres</string>
+    <string name="activity_subtask_created">Subtask Ditambahkan</string>
+    <string name="activity_subtask_toggled">Subtask Diperbarui</string>
+    <string name="activity_subtask_deleted">Subtask Dihapus</string>
+    <string name="activity_focus_toggled">Fokus Diubah</string>
+    <string name="activity_general_log">Catatan Log</string>
 
     <!-- Projects -->
     <string name="projects_title">Proyek &amp; Modul</string>
-    <string name="empty_projects">Belum ada proyek. Tambahkan proyek pertama Anda!</string>
-    <string name="create_project">Buat Proyek Baru</string>
-    <string name="project_name_label">Nama Proyek</string>
+    <string name="search_projects_hint">Cari proyek…</string>
+    <string name="project_metrics_active">Aktif</string>
+    <string name="project_metrics_completed">Selesai</string>
+    <string name="project_metrics_progress">Progres</string>
+    <string name="empty_projects">Belum ada proyek.</string>
+    <string name="empty_projects_sub">Tambahkan proyek pertama Anda untuk mengelompokkan tugas.</string>
+    <string name="create_project">Tambah Proyek Baru</string>
+    <string name="edit_project">Edit Proyek</string>
+    <string name="project_name_label">Nama Proyek *</string>
     <string name="project_desc_label">Deskripsi</string>
-    <string name="project_tasks_count">%1$d tugas</string>
+    <string name="choose_color">Pilih Warna</string>
+    <string name="delete_project_confirm_title">Hapus Proyek?</string>
+    <string name="delete_project_confirm_desc">Apakah Anda yakin ingin menghapus proyek \'%1$s\'? Tugas yang ada di dalamnya tidak akan terhapus.</string>
+    <string name="empty_project_tasks">Belum ada tugas di dalam proyek ini.</string>
+    <string name="tasks_count_badge">%1$d Tugas</string>
+
+    <!-- Calendar -->
+    <string name="calendar_title">Kalender &amp; Jadwal</string>
+    <string name="calendar_today">Hari Ini</string>
+    <string name="calendar_all_filter">Semua (%1$d)</string>
+    <string name="calendar_tasks_filter">Tugas (%1$d)</string>
+    <string name="calendar_reminders_filter">Pengingat (%1$d)</string>
+    <string name="calendar_activities_filter">Log (%1$d)</string>
+    <string name="calendar_agenda_title">Jadwal %1$s</string>
+    <string name="calendar_no_schedule">Tidak ada jadwal pada tanggal ini.</string>
+    <string name="calendar_tasks_due">TUGAS DEADLINE</string>
+    <string name="calendar_active_reminders">PENGINGAT AKTIF</string>
+    <string name="calendar_activity_history">RIWAYAT LOG AKTIVITAS</string>
 
     <!-- Notes -->
     <string name="notes_title">Catatan &amp; Ide</string>
+    <string name="search_notes_hint">Cari catatan atau ide…</string>
+    <string name="filter_all_count">Semua (%1$d)</string>
+    <string name="filter_actionable_count">Actionable (%1$d)</string>
+    <string name="filter_knowledge_count">Knowledge (%1$d)</string>
     <string name="empty_notes">Belum ada catatan.</string>
+    <string name="empty_notes_sub">Tulis ide atau scratchpad cepat dengan menekan tombol + di bawah.</string>
     <string name="create_note">Tulis Catatan</string>
-    <string name="note_title_label">Judul</string>
-    <string name="note_content_label">Isi Markdown</string>
+    <string name="create_note_title">Tulis Catatan Baru</string>
+    <string name="edit_note_title">Edit Catatan</string>
+    <string name="note_title_label">Judul Catatan *</string>
+    <string name="note_content_label">Isi Catatan</string>
+    <string name="note_type_label">Jenis Catatan</string>
+    <string name="note_type_actionable">Actionable</string>
+    <string name="note_type_knowledge">Knowledge</string>
+    <string name="pin_to_top">Pin ke paling atas</string>
+    <string name="convert_to_task">Jadikan Tugas</string>
+    <string name="convert_note_dialog_title">Konversi ke Tugas?</string>
+    <string name="convert_note_dialog_desc">Catatan \"%1$s\" akan dibuatkan tugas baru di daftar task Anda.</string>
+    <string name="convert_btn">Konversi</string>
+    <string name="delete_note_confirm_title">Hapus Catatan?</string>
+    <string name="delete_note_confirm_desc">Catatan \"%1$s\" akan dihapus secara permanen.</string>
 
     <!-- Reminders -->
     <string name="reminders_title">Pengingat &amp; Notifikasi</string>
@@ -51,12 +153,49 @@
     <string name="snooze_15m">Tunda 15 mnt</string>
     <string name="dismiss">Selesai</string>
     <string name="active_reminder_prefix">Pengingat Aktif: %1$s</string>
-    <string name="close">Tutup</string>
+    <string name="edit_reminder_title">Edit Pengingat</string>
+    <string name="reminder_title_label">Judul Pengingat *</string>
+    <string name="reminder_desc_label">Deskripsi / Catatan</string>
+    <string name="reminder_schedule_prefix">Jadwal: %1$s</string>
 
     <!-- Profile & Settings -->
-    <string name="profile_title">Profil &amp; Pengaturan</string>
-    <string name="account_info">Informasi Akun</string>
-    <string name="auth_status">Status: Terhubung via OAuth</string>
-    <string name="backend_status">Backend: Golang Fiber v2 + PostgreSQL</string>
-    <string name="language_setting">Bahasa</string>
+    <string name="profile_title">Pengaturan &amp; Profil</string>
+    <string name="account_active">Akun Aktif</string>
+    <string name="change_photo">Ganti Foto</string>
+    <string name="change_name">Ubah Nama</string>
+    <string name="edit_name_dialog_title">Ubah Nama Profil</string>
+    <string name="full_name_label">Nama Lengkap</string>
+    <string name="notification_preferences">Preferensi Notifikasi</string>
+    <string name="timezone_label">Zona Waktu</string>
+    <string name="warning_threshold_label">Peringatan Deadline Sebelum</string>
+    <string name="email_notifications_title">Notifikasi Email</string>
+    <string name="email_notifications_desc">Kirim email untuk tugas mendesak</string>
+    <string name="save_preferences">Simpan Preferensi</string>
+    <string name="connected_accounts">Akun Terhubung (OAuth)</string>
+    <string name="connected_status">Terhubung</string>
+    <string name="connected_on_login">Tersambung saat Login</string>
+    <string name="not_connected">Belum Ditautkan</string>
+    <string name="mcp_card_title">Integrasi MCP &amp; API Tokens</string>
+    <string name="mcp_card_desc">Kelola token integrasi model context protocol</string>
+    <string name="delete_account_button">Hapus Akun Permanen</string>
+    <string name="delete_account_dialog_title">Hapus Akun Permanen?</string>
+    <string name="delete_account_dialog_desc">Semua data tugas, proyek, catatan, dan pengingat Anda akan dihapus secara permanen dari server. Tindakan ini tidak dapat dibatalkan.</string>
+    <string name="delete_account_prompt">Ketik \'DELETE\' untuk konfirmasi:</string>
+    <string name="delete_account_confirm_btn">Hapus Akun</string>
+
+    <!-- MCP Tokens -->
+    <string name="mcp_screen_title">MCP Server Tokens</string>
+    <string name="mcp_info_title">Model Context Protocol (MCP)</string>
+    <string name="mcp_info_desc">Gunakan token ini untuk menghubungkan AI Assistant (Claude Desktop, Cursor, Antigravity) langsung ke task management Anda.</string>
+    <string name="mcp_empty_title">Belum Ada Token MCP</string>
+    <string name="mcp_empty_desc">Buat token pertama Anda untuk mengintegrasikan AI Agent.</string>
+    <string name="mcp_create_dialog_title">Buat Token MCP Baru</string>
+    <string name="mcp_token_name_label">Nama Token / Klien (misal: Claude Desktop)</string>
+    <string name="mcp_generate_btn">Generate</string>
+    <string name="mcp_created_title">Token MCP Berhasil Dibuat</string>
+    <string name="mcp_created_desc">Salin token ini sekarang. Demi keamanan, token rahasia ini tidak akan ditampilkan lagi.</string>
+    <string name="mcp_copy_token">Salin Token</string>
+    <string name="mcp_delete_title">Hapus Token MCP?</string>
+    <string name="mcp_delete_desc">Apakah Anda yakin ingin mencabut token \'%1$s\'? AI Client yang menggunakan token ini tidak dapat mengakses task lagi.</string>
+    <string name="mcp_revoke_btn">Cabut Token</string>
 </resources>

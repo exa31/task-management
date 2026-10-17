@@ -17,12 +17,14 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import cloud.eka_dev.task_hub.R
 import cloud.eka_dev.task_hub.core.designsystem.*
 import cloud.eka_dev.task_hub.core.model.*
 import cloud.eka_dev.task_hub.core.network.ApiClient
@@ -30,6 +32,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import java.time.DayOfWeek
 import java.time.LocalDate
 import java.time.YearMonth
 import java.time.format.DateTimeFormatter
@@ -228,12 +231,12 @@ fun CalendarScreen(
                         horizontalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
                         BrandLogo(size = 28.dp)
-                        Text("Kalender & Jadwal", fontWeight = FontWeight.Bold)
+                        Text(stringResource(R.string.calendar_title), fontWeight = FontWeight.Bold)
                     }
                 },
                 actions = {
                     TextButton(onClick = { viewModel.jumpToToday() }) {
-                        Text("Hari Ini", fontWeight = FontWeight.SemiBold, color = BrandPrimary)
+                        Text(stringResource(R.string.calendar_today), fontWeight = FontWeight.SemiBold, color = BrandPrimary)
                     }
                 }
             )
@@ -253,15 +256,15 @@ fun CalendarScreen(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 IconButton(onClick = { viewModel.prevMonth() }) {
-                    Icon(Icons.Default.ChevronLeft, contentDescription = "Bulan Sebelumnya")
+                    Icon(Icons.Default.ChevronLeft, contentDescription = null)
                 }
                 Text(
-                    text = "${currentMonth.month.getDisplayName(TextStyle.FULL, Locale("id", "ID"))} ${currentMonth.year}",
+                    text = "${currentMonth.month.getDisplayName(TextStyle.FULL, Locale.getDefault())} ${currentMonth.year}",
                     fontSize = 17.sp,
                     fontWeight = FontWeight.Bold
                 )
                 IconButton(onClick = { viewModel.nextMonth() }) {
-                    Icon(Icons.Default.ChevronRight, contentDescription = "Bulan Selanjutnya")
+                    Icon(Icons.Default.ChevronRight, contentDescription = null)
                 }
             }
 
@@ -274,11 +277,17 @@ fun CalendarScreen(
             ) {
                 Column(modifier = Modifier.padding(10.dp)) {
                     // Weekday Labels
+                    val weekdays = remember {
+                        listOf(
+                            DayOfWeek.SUNDAY, DayOfWeek.MONDAY, DayOfWeek.TUESDAY,
+                            DayOfWeek.WEDNESDAY, DayOfWeek.THURSDAY, DayOfWeek.FRIDAY, DayOfWeek.SATURDAY
+                        ).map { it.getDisplayName(TextStyle.SHORT, Locale.getDefault()) }
+                    }
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.SpaceAround
                     ) {
-                        listOf("Min", "Sen", "Sel", "Rab", "Kam", "Jum", "Sab").forEach { day ->
+                        weekdays.forEach { day ->
                             Text(
                                 text = day,
                                 fontSize = 11.sp,
@@ -381,31 +390,32 @@ fun CalendarScreen(
                 FilterChip(
                     selected = filterCategory == "all",
                     onClick = { viewModel.setFilterCategory("all") },
-                    label = { Text("Semua (${dayTasks.size + dayReminders.size + dayActivities.size})", fontSize = 11.sp) }
+                    label = { Text(stringResource(R.string.calendar_all_filter, dayTasks.size + dayReminders.size + dayActivities.size), fontSize = 11.sp) }
                 )
                 FilterChip(
                     selected = filterCategory == "tasks",
                     onClick = { viewModel.setFilterCategory("tasks") },
                     leadingIcon = { Box(modifier = Modifier.size(6.dp).clip(CircleShape).background(Color(0xFF3B82F6))) },
-                    label = { Text("Tugas (${dayTasks.size})", fontSize = 11.sp) }
+                    label = { Text(stringResource(R.string.calendar_tasks_filter, dayTasks.size), fontSize = 11.sp) }
                 )
                 FilterChip(
                     selected = filterCategory == "reminders",
                     onClick = { viewModel.setFilterCategory("reminders") },
                     leadingIcon = { Box(modifier = Modifier.size(6.dp).clip(CircleShape).background(Color(0xFFF59E0B))) },
-                    label = { Text("Pengingat (${dayReminders.size})", fontSize = 11.sp) }
+                    label = { Text(stringResource(R.string.calendar_reminders_filter, dayReminders.size), fontSize = 11.sp) }
                 )
                 FilterChip(
                     selected = filterCategory == "activities",
                     onClick = { viewModel.setFilterCategory("activities") },
                     leadingIcon = { Box(modifier = Modifier.size(6.dp).clip(CircleShape).background(Color(0xFF10B981))) },
-                    label = { Text("Log (${dayActivities.size})", fontSize = 11.sp) }
+                    label = { Text(stringResource(R.string.calendar_activities_filter, dayActivities.size), fontSize = 11.sp) }
                 )
             }
 
             // Day Agenda Timeline
+            val formattedDate = "${selectedDate.dayOfMonth} ${selectedDate.month.getDisplayName(TextStyle.FULL, Locale.getDefault())} ${selectedDate.year}"
             Text(
-                text = "Jadwal ${selectedDate.dayOfMonth} ${selectedDate.month.getDisplayName(TextStyle.FULL, Locale("id", "ID"))} ${selectedDate.year}",
+                text = stringResource(R.string.calendar_agenda_title, formattedDate),
                 fontSize = 14.sp,
                 fontWeight = FontWeight.Bold,
                 color = MaterialTheme.colorScheme.onSurface
@@ -433,7 +443,7 @@ fun CalendarScreen(
                         verticalArrangement = Arrangement.spacedBy(6.dp)
                     ) {
                         Icon(Icons.Default.EventAvailable, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(36.dp))
-                        Text("Tidak ada jadwal pada tanggal ini.", fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        Text(stringResource(R.string.calendar_no_schedule), fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
                 }
             } else {
@@ -445,7 +455,7 @@ fun CalendarScreen(
                 ) {
                     if (showTasks && dayTasks.isNotEmpty()) {
                         item {
-                            Text("TUGAS DEADLINE", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = Color(0xFF3B82F6))
+                            Text(stringResource(R.string.calendar_tasks_due), fontSize = 11.sp, fontWeight = FontWeight.Bold, color = Color(0xFF3B82F6))
                         }
                         items(dayTasks, key = { "task-${it.id}" }) { t ->
                             Card(
@@ -479,7 +489,7 @@ fun CalendarScreen(
                     if (showReminders && dayReminders.isNotEmpty()) {
                         item {
                             Spacer(modifier = Modifier.height(4.dp))
-                            Text("PENGINGAT AKTIF", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = Color(0xFFF59E0B))
+                            Text(stringResource(R.string.calendar_active_reminders), fontSize = 11.sp, fontWeight = FontWeight.Bold, color = Color(0xFFF59E0B))
                         }
                         items(dayReminders, key = { "rem-${it.id}" }) { r ->
                             Card(
@@ -495,7 +505,7 @@ fun CalendarScreen(
                                     Spacer(modifier = Modifier.width(10.dp))
                                     Column(modifier = Modifier.weight(1f)) {
                                         Text(r.title, fontWeight = FontWeight.SemiBold, fontSize = 13.sp)
-                                        Text("Waktu: ${r.remindAt.take(16).replace("T", " ")}", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                        Text(stringResource(R.string.reminder_schedule_prefix, r.remindAt.take(16).replace("T", " ")), fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                                     }
                                     Surface(
                                         shape = CircleShape,
@@ -517,7 +527,7 @@ fun CalendarScreen(
                     if (showActivities && dayActivities.isNotEmpty()) {
                         item {
                             Spacer(modifier = Modifier.height(4.dp))
-                            Text("RIWAYAT LOG AKTIVITAS", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = Color(0xFF10B981))
+                            Text(stringResource(R.string.calendar_activity_history), fontSize = 11.sp, fontWeight = FontWeight.Bold, color = Color(0xFF10B981))
                         }
                         items(dayActivities, key = { "act-${it.id}" }) { a ->
                             Card(

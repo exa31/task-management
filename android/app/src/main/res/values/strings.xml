@@ -1,49 +1,151 @@
 <resources>
-    <string name="app_name">Task Management</string>
+    <string name="app_name">Task Hub</string>
 
     <!-- Navigation -->
     <string name="nav_tasks">Tasks</string>
     <string name="nav_projects">Projects</string>
+    <string name="nav_calendar">Calendar</string>
     <string name="nav_notes">Notes</string>
     <string name="nav_reminders">Reminders</string>
     <string name="nav_profile">Profile</string>
+    <string name="nav_mcp">MCP Tokens</string>
 
     <!-- Auth -->
-    <string name="auth_title">Task Manager Native</string>
+    <string name="auth_title">Task Hub Native</string>
     <string name="auth_subtitle">Manage tasks, ideas, and reminders in real-time synced with Go backend.</string>
     <string name="sign_in_google">Sign in with Google</string>
     <string name="sign_in_apple">Sign in with Apple</string>
     <string name="sign_out">Sign Out</string>
+    <string name="feature_realtime_title">Real-time Live Sync</string>
+    <string name="feature_realtime_desc">Instant SSE streaming to Go backend</string>
+    <string name="feature_projects_title">Project Management</string>
+    <string name="feature_projects_desc">Manage modules &amp; task checklists</string>
+    <string name="feature_reminders_title">Smart Reminders</string>
+    <string name="feature_reminders_desc">Automatic push notification alerts</string>
+
+    <!-- Common Actions -->
+    <string name="save">Save</string>
+    <string name="cancel">Cancel</string>
+    <string name="delete">Delete</string>
+    <string name="close">Close</string>
+    <string name="send">Send</string>
+    <string name="back">Back</string>
+    <string name="edit">Edit</string>
+    <string name="clear_search">Clear search</string>
 
     <!-- Tasks -->
     <string name="task_list_title">Task List</string>
-    <string name="search_tasks_hint">Search tasks…</string>
+    <string name="search_tasks_hint">Search tasks or tags…</string>
     <string name="filter_all">All</string>
     <string name="filter_todo">To Do</string>
     <string name="filter_in_progress">In Progress</string>
-    <string name="filter_done">Done</string>
+    <string name="filter_review">Review</string>
+    <string name="filter_done">Completed</string>
+    <string name="filter_focus">Focus</string>
+    <string name="filter_focus_count">Focus (%1$d)</string>
+    <string name="focus_horizon_title">TODAY\'S FOCUS</string>
+    <string name="focus_horizon_count">%1$d Tasks</string>
+    <string name="remove_focus">Remove Focus</string>
+    <string name="toggle_focus">Toggle Focus</string>
     <string name="empty_tasks">No tasks found in this category.</string>
+    <string name="empty_tasks_sub">Create a new task to start tracking your activities.</string>
     <string name="create_task">Create New Task</string>
     <string name="task_title_label">Task Title *</string>
     <string name="task_desc_label">Description (Optional)</string>
-    <string name="save">Save</string>
-    <string name="cancel">Cancel</string>
-    <string name="subtasks_count">%1$d/%2$d subtasks</string>
+    <string name="priority_label">Priority</string>
+    <string name="priority_low">Low</string>
+    <string name="priority_medium">Med</string>
+    <string name="priority_high">High</string>
+    <string name="priority_urgent">Urg</string>
+    <string name="focus_today">Focus Today</string>
+    <string name="delete_task_confirm_title">Delete Task?</string>
+    <string name="delete_task_confirm_desc">Are you sure you want to delete task \'%1$s\'? This action cannot be undone.</string>
+    <string name="delete_task_button">Delete This Task</string>
+    <string name="task_detail_title">Task Detail</string>
+    <string name="edit_task">Edit Task</string>
+    <string name="status_header">TASK STATUS</string>
+    <string name="subtasks_header">SUBTASKS (%1$d/%2$d)</string>
+    <string name="no_subtasks">No subtask checklist.</string>
+    <string name="add_subtask_placeholder">Add checklist subtask…</string>
+    <string name="add_subtask">Add Subtask</string>
+    <string name="delete_subtask">Delete Subtask</string>
+    <string name="tab_details_subtasks">Details &amp; Subtasks</string>
+    <string name="tab_activity_logs">Activity Logs</string>
+    <string name="activity_logs_title">Activity History</string>
+    <string name="activity_logs_empty">No Activity Records</string>
+    <string name="activity_logs_empty_desc">Progress notes and task updates will be recorded chronologically here.</string>
+    <string name="post_note_placeholder">Write a progress note…</string>
+    <string name="subtasks_count">%1$d/%2$d checklist</string>
+    <string name="quick_action_start">Start</string>
+    <string name="quick_action_review">Review</string>
+    <string name="quick_action_done">Complete</string>
+    <string name="quick_action_revert">Revert</string>
+    <string name="quick_action_redo">Redo</string>
+
+    <!-- Activity Types -->
+    <string name="activity_task_created">Task Created</string>
+    <string name="activity_task_updated">Task Updated</string>
+    <string name="activity_progress_logged">Progress Note</string>
+    <string name="activity_subtask_created">Subtask Added</string>
+    <string name="activity_subtask_toggled">Subtask Updated</string>
+    <string name="activity_subtask_deleted">Subtask Deleted</string>
+    <string name="activity_focus_toggled">Focus Changed</string>
+    <string name="activity_general_log">Activity Log</string>
 
     <!-- Projects -->
     <string name="projects_title">Projects &amp; Modules</string>
-    <string name="empty_projects">No projects yet. Create your first project!</string>
+    <string name="search_projects_hint">Search projects…</string>
+    <string name="project_metrics_active">Active</string>
+    <string name="project_metrics_completed">Completed</string>
+    <string name="project_metrics_progress">Progress</string>
+    <string name="empty_projects">No projects yet.</string>
+    <string name="empty_projects_sub">Create your first project to organize tasks.</string>
     <string name="create_project">Create New Project</string>
-    <string name="project_name_label">Project Name</string>
+    <string name="edit_project">Edit Project</string>
+    <string name="project_name_label">Project Name *</string>
     <string name="project_desc_label">Description</string>
-    <string name="project_tasks_count">%1$d tasks</string>
+    <string name="choose_color">Choose Color</string>
+    <string name="delete_project_confirm_title">Delete Project?</string>
+    <string name="delete_project_confirm_desc">Are you sure you want to delete project \'%1$s\'? Tasks linked to this project will not be deleted.</string>
+    <string name="empty_project_tasks">No tasks in this project yet.</string>
+    <string name="tasks_count_badge">%1$d Tasks</string>
+
+    <!-- Calendar -->
+    <string name="calendar_title">Calendar &amp; Schedule</string>
+    <string name="calendar_today">Today</string>
+    <string name="calendar_all_filter">All (%1$d)</string>
+    <string name="calendar_tasks_filter">Tasks (%1$d)</string>
+    <string name="calendar_reminders_filter">Reminders (%1$d)</string>
+    <string name="calendar_activities_filter">Logs (%1$d)</string>
+    <string name="calendar_agenda_title">Schedule for %1$s</string>
+    <string name="calendar_no_schedule">No scheduled items for this date.</string>
+    <string name="calendar_tasks_due">TASKS DUE</string>
+    <string name="calendar_active_reminders">ACTIVE REMINDERS</string>
+    <string name="calendar_activity_history">ACTIVITY LOG HISTORY</string>
 
     <!-- Notes -->
     <string name="notes_title">Notes &amp; Ideas</string>
+    <string name="search_notes_hint">Search notes or ideas…</string>
+    <string name="filter_all_count">All (%1$d)</string>
+    <string name="filter_actionable_count">Actionable (%1$d)</string>
+    <string name="filter_knowledge_count">Knowledge (%1$d)</string>
     <string name="empty_notes">No notes available.</string>
+    <string name="empty_notes_sub">Write quick ideas or scratchpads with the + button below.</string>
     <string name="create_note">New Note</string>
-    <string name="note_title_label">Title</string>
+    <string name="create_note_title">Write New Note</string>
+    <string name="edit_note_title">Edit Note</string>
+    <string name="note_title_label">Title *</string>
     <string name="note_content_label">Markdown Content</string>
+    <string name="note_type_label">Note Type</string>
+    <string name="note_type_actionable">Actionable</string>
+    <string name="note_type_knowledge">Knowledge</string>
+    <string name="pin_to_top">Pin to top</string>
+    <string name="convert_to_task">Convert to Task</string>
+    <string name="convert_note_dialog_title">Convert to Task?</string>
+    <string name="convert_note_dialog_desc">Note \"%1$s\" will be converted into a new task in your task list.</string>
+    <string name="convert_btn">Convert</string>
+    <string name="delete_note_confirm_title">Delete Note?</string>
+    <string name="delete_note_confirm_desc">Note \"%1$s\" will be permanently deleted.</string>
 
     <!-- Reminders -->
     <string name="reminders_title">Reminders &amp; Alerts</string>
@@ -51,18 +153,49 @@
     <string name="snooze_15m">Snooze 15m</string>
     <string name="dismiss">Dismiss</string>
     <string name="active_reminder_prefix">Active Reminder: %1$s</string>
-    <string name="close">Close</string>
+    <string name="edit_reminder_title">Edit Reminder</string>
+    <string name="reminder_title_label">Reminder Title *</string>
+    <string name="reminder_desc_label">Description / Notes</string>
+    <string name="reminder_schedule_prefix">Schedule: %1$s</string>
 
     <!-- Profile & Settings -->
-    <string name="profile_title">Profile &amp; Settings</string>
-    <string name="account_info">Account Info</string>
-    <string name="auth_status">Status: Connected via OAuth</string>
-    <string name="language_setting">Language</string>
-    <string name="tab_details_subtasks">Details &amp; Subtasks</string>
-    <string name="tab_activity_logs">Activity Logs</string>
-    <string name="activity_logs_title">Activity History</string>
-    <string name="activity_logs_empty">No activity records yet.</string>
-    <string name="activity_logs_empty_desc">All status changes, subtasks, and progress notes will appear here chronologically.</string>
-    <string name="post_note_placeholder">Write a progress note or update log…</string>
-    <string name="send">Send</string>
+    <string name="profile_title">Settings &amp; Profile</string>
+    <string name="account_active">Active Account</string>
+    <string name="change_photo">Change Photo</string>
+    <string name="change_name">Edit Name</string>
+    <string name="edit_name_dialog_title">Edit Profile Name</string>
+    <string name="full_name_label">Full Name</string>
+    <string name="notification_preferences">Notification Preferences</string>
+    <string name="timezone_label">Time Zone</string>
+    <string name="warning_threshold_label">Deadline Warning Before</string>
+    <string name="email_notifications_title">Email Notifications</string>
+    <string name="email_notifications_desc">Send email for urgent deadlines</string>
+    <string name="save_preferences">Save Preferences</string>
+    <string name="connected_accounts">Connected Accounts (OAuth)</string>
+    <string name="connected_status">Connected</string>
+    <string name="connected_on_login">Connected on Login</string>
+    <string name="not_connected">Not Linked</string>
+    <string name="mcp_card_title">MCP &amp; API Tokens Integration</string>
+    <string name="mcp_card_desc">Manage model context protocol integration tokens</string>
+    <string name="delete_account_button">Permanently Delete Account</string>
+    <string name="delete_account_dialog_title">Permanently Delete Account?</string>
+    <string name="delete_account_dialog_desc">All your tasks, projects, notes, and reminders will be permanently erased from the server. This cannot be undone.</string>
+    <string name="delete_account_prompt">Type \'DELETE\' to confirm:</string>
+    <string name="delete_account_confirm_btn">Delete Account</string>
+
+    <!-- MCP Tokens -->
+    <string name="mcp_screen_title">MCP Server Tokens</string>
+    <string name="mcp_info_title">Model Context Protocol (MCP)</string>
+    <string name="mcp_info_desc">Use this token to connect AI assistants (Claude Desktop, Cursor, Antigravity) directly to your task management.</string>
+    <string name="mcp_empty_title">No MCP Tokens Yet</string>
+    <string name="mcp_empty_desc">Create your first token to integrate AI agents.</string>
+    <string name="mcp_create_dialog_title">Create New MCP Token</string>
+    <string name="mcp_token_name_label">Token / Client Name (e.g. Claude Desktop)</string>
+    <string name="mcp_generate_btn">Generate</string>
+    <string name="mcp_created_title">MCP Token Created</string>
+    <string name="mcp_created_desc">Copy this token now. For security, this secret token will not be shown again.</string>
+    <string name="mcp_copy_token">Copy Token</string>
+    <string name="mcp_delete_title">Revoke MCP Token?</string>
+    <string name="mcp_delete_desc">Are you sure you want to revoke token \'%1$s\'? AI clients using this token will no longer be able to access your tasks.</string>
+    <string name="mcp_revoke_btn">Revoke Token</string>
 </resources>

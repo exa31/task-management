@@ -16,10 +16,12 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import cloud.eka_dev.task_hub.R
 import cloud.eka_dev.task_hub.core.designsystem.*
 import cloud.eka_dev.task_hub.core.model.Task
 
@@ -42,7 +44,7 @@ fun TaskListScreen(
                     ) {
                         BrandLogo(size = 28.dp)
                         Text(
-                            "Daftar Tugas",
+                            stringResource(R.string.task_list_title),
                             fontSize = 20.sp,
                             fontWeight = FontWeight.Bold
                         )
@@ -60,7 +62,7 @@ fun TaskListScreen(
                 contentColor = Color.White,
                 shape = CircleShape
             ) {
-                Icon(Icons.Default.Add, contentDescription = "Tambah Tugas")
+                Icon(Icons.Default.Add, contentDescription = stringResource(R.string.create_task))
             }
         }
     ) { padding ->
@@ -74,7 +76,7 @@ fun TaskListScreen(
             OutlinedTextField(
                 value = uiState.searchQuery,
                 onValueChange = { viewModel.setSearchQuery(it) },
-                placeholder = { Text("Cari tugas atau tag…", fontSize = 14.sp) },
+                placeholder = { Text(stringResource(R.string.search_tasks_hint), fontSize = 14.sp) },
                 leadingIcon = { Icon(Icons.Default.Search, contentDescription = null, tint = BrandPrimary) },
                 shape = RoundedCornerShape(14.dp),
                 modifier = Modifier.fillMaxWidth(),
@@ -98,31 +100,31 @@ fun TaskListScreen(
                     selected = uiState.selectedStatus == null,
                     onClick = { viewModel.setStatusFilter(null) },
                     leadingIcon = { Icon(Icons.Default.Inbox, contentDescription = null, modifier = Modifier.size(14.dp)) },
-                    label = { Text("Semua") }
+                    label = { Text(stringResource(R.string.filter_all)) }
                 )
                 FilterChip(
                     selected = uiState.selectedStatus == "todo",
                     onClick = { viewModel.setStatusFilter("todo") },
                     leadingIcon = { Icon(Icons.Default.RadioButtonUnchecked, contentDescription = null, modifier = Modifier.size(14.dp)) },
-                    label = { Text("To Do") }
+                    label = { Text(stringResource(R.string.filter_todo)) }
                 )
                 FilterChip(
                     selected = uiState.selectedStatus == "in_progress",
                     onClick = { viewModel.setStatusFilter("in_progress") },
                     leadingIcon = { Icon(Icons.Default.Sync, contentDescription = null, modifier = Modifier.size(14.dp)) },
-                    label = { Text("In Progress") }
+                    label = { Text(stringResource(R.string.filter_in_progress)) }
                 )
                 FilterChip(
                     selected = uiState.selectedStatus == "review",
                     onClick = { viewModel.setStatusFilter("review") },
                     leadingIcon = { Icon(Icons.Default.Visibility, contentDescription = null, modifier = Modifier.size(14.dp)) },
-                    label = { Text("Review") }
+                    label = { Text(stringResource(R.string.filter_review)) }
                 )
                 FilterChip(
                     selected = uiState.selectedStatus == "done",
                     onClick = { viewModel.setStatusFilter("done") },
                     leadingIcon = { Icon(Icons.Default.CheckCircle, contentDescription = null, modifier = Modifier.size(14.dp)) },
-                    label = { Text("Selesai") }
+                    label = { Text(stringResource(R.string.filter_done)) }
                 )
                 FilterChip(
                     selected = uiState.filterFocusOnly,
@@ -137,7 +139,7 @@ fun TaskListScreen(
                     },
                     label = {
                         val count = viewModel.focusTasks.size
-                        Text(if (count > 0) "Fokus ($count)" else "Fokus")
+                        Text(if (count > 0) stringResource(R.string.filter_focus_count, count) else stringResource(R.string.filter_focus))
                     }
                 )
             }
@@ -168,12 +170,12 @@ fun TaskListScreen(
                             )
                         }
                         Text(
-                            "Belum ada tugas di kategori ini.",
+                            stringResource(R.string.empty_tasks),
                             fontSize = 15.sp,
                             fontWeight = FontWeight.SemiBold
                         )
                         Text(
-                            "Buat tugas baru untuk mulai melacak aktivitas Anda.",
+                            stringResource(R.string.empty_tasks_sub),
                             fontSize = 13.sp,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                             textAlign = TextAlign.Center
@@ -289,31 +291,38 @@ fun CreateTaskDialog(
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Buat Tugas Baru", fontWeight = FontWeight.Bold) },
+        title = { Text(stringResource(R.string.create_task), fontWeight = FontWeight.Bold) },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 OutlinedTextField(
                     value = title,
                     onValueChange = { title = it },
-                    label = { Text("Judul Tugas *") },
+                    label = { Text(stringResource(R.string.task_title_label)) },
                     shape = RoundedCornerShape(12.dp),
                     modifier = Modifier.fillMaxWidth()
                 )
                 OutlinedTextField(
                     value = description,
                     onValueChange = { description = it },
-                    label = { Text("Deskripsi (Opsional)") },
+                    label = { Text(stringResource(R.string.task_desc_label)) },
                     shape = RoundedCornerShape(12.dp),
                     modifier = Modifier.fillMaxWidth(),
                     maxLines = 3
                 )
-                Text("Prioritas", fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
+                Text(stringResource(R.string.priority_label), fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
                 Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                     listOf("low", "medium", "high", "urgent").forEach { p ->
+                        val pLabel = when (p) {
+                            "low" -> stringResource(R.string.priority_low)
+                            "medium" -> stringResource(R.string.priority_medium)
+                            "high" -> stringResource(R.string.priority_high)
+                            "urgent" -> stringResource(R.string.priority_urgent)
+                            else -> p
+                        }
                         FilterChip(
                             selected = priority == p,
                             onClick = { priority = p },
-                            label = { Text(p.replaceFirstChar { it.uppercase() }, fontSize = 11.sp) }
+                            label = { Text(pLabel, fontSize = 11.sp) }
                         )
                     }
                 }
@@ -322,7 +331,7 @@ fun CreateTaskDialog(
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.SpaceBetween
                 ) {
-                    Text("Fokus Hari Ini", fontSize = 13.sp)
+                    Text(stringResource(R.string.focus_today), fontSize = 13.sp)
                     Switch(
                         checked = isFocus,
                         onCheckedChange = { isFocus = it }
@@ -332,14 +341,14 @@ fun CreateTaskDialog(
         },
         confirmButton = {
             AppButton(
-                text = "Simpan",
+                text = stringResource(R.string.save),
                 enabled = title.isNotBlank(),
                 onClick = { onCreate(title, description, priority, isFocus) }
             )
         },
         dismissButton = {
             TextButton(onClick = onDismiss) {
-                Text("Batal")
+                Text(stringResource(R.string.cancel))
             }
         }
     )

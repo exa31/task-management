@@ -15,11 +15,13 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import cloud.eka_dev.task_hub.R
 import cloud.eka_dev.task_hub.core.designsystem.*
 import cloud.eka_dev.task_hub.core.model.*
 import cloud.eka_dev.task_hub.core.network.ApiClient
@@ -114,14 +116,12 @@ class NoteViewModel(private val apiClient: ApiClient) : ViewModel() {
         }
     }
 
-    fun togglePin(note: Note) {
+    fun deleteNote(id: Long) {
         viewModelScope.launch {
             try {
-                val res = apiClient.apiService.updateNote(
-                    note.id,
-                    UpdateNoteRequest(isPinned = !note.isPinned)
-                )
+                val res = apiClient.apiService.deleteNote(id)
                 if (res.success) {
+                    _uiState.value = _uiState.value.copy(feedbackMessage = "Catatan berhasil dihapus!")
                     loadNotes()
                 }
             } catch (e: Exception) {
@@ -130,12 +130,14 @@ class NoteViewModel(private val apiClient: ApiClient) : ViewModel() {
         }
     }
 
-    fun deleteNote(id: Long) {
+    fun togglePin(note: Note) {
         viewModelScope.launch {
             try {
-                val res = apiClient.apiService.deleteNote(id)
+                val res = apiClient.apiService.updateNote(
+                    note.id,
+                    UpdateNoteRequest(isPinned = !note.isPinned)
+                )
                 if (res.success) {
-                    _uiState.value = _uiState.value.copy(feedbackMessage = "Catatan berhasil dihapus!")
                     loadNotes()
                 }
             } catch (e: Exception) {
@@ -175,7 +177,7 @@ fun NoteScreen(viewModel: NoteViewModel) {
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Catatan & Ide", fontWeight = FontWeight.Bold) }
+                title = { Text(stringResource(R.string.notes_title), fontWeight = FontWeight.Bold) }
             )
         },
         floatingActionButton = {
@@ -184,7 +186,7 @@ fun NoteScreen(viewModel: NoteViewModel) {
                 containerColor = BrandPrimary,
                 contentColor = Color.White
             ) {
-                Icon(Icons.Default.Add, contentDescription = "Tambah Catatan")
+                Icon(Icons.Default.Add, contentDescription = stringResource(R.string.create_note))
             }
         }
     ) { padding ->
@@ -203,12 +205,12 @@ fun NoteScreen(viewModel: NoteViewModel) {
                 OutlinedTextField(
                     value = uiState.searchQuery,
                     onValueChange = { viewModel.setSearchQuery(it) },
-                    placeholder = { Text("Cari catatan atau ide…") },
+                    placeholder = { Text(stringResource(R.string.search_notes_hint)) },
                     leadingIcon = { Icon(Icons.Default.Search, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant) },
                     trailingIcon = {
                         if (uiState.searchQuery.isNotEmpty()) {
                             IconButton(onClick = { viewModel.setSearchQuery("") }) {
-                                Icon(Icons.Default.Close, contentDescription = "Hapus pencarian")
+                                Icon(Icons.Default.Close, contentDescription = stringResource(R.string.clear_search))
                             }
                         }
                     },
@@ -222,21 +224,21 @@ fun NoteScreen(viewModel: NoteViewModel) {
                         FilterChip(
                             selected = uiState.selectedType == null,
                             onClick = { viewModel.setSelectedType(null) },
-                            label = { Text("Semua (${uiState.notes.size})") }
+                            label = { Text(stringResource(R.string.filter_all_count, uiState.notes.size)) }
                         )
                     }
                     item {
                         FilterChip(
                             selected = uiState.selectedType == "actionable",
                             onClick = { viewModel.setSelectedType("actionable") },
-                            label = { Text("Actionable (${uiState.notes.count { it.type == "actionable" }})") }
+                            label = { Text(stringResource(R.string.filter_actionable_count, uiState.notes.count { it.type == "actionable" })) }
                         )
                     }
                     item {
                         FilterChip(
                             selected = uiState.selectedType == "knowledge",
                             onClick = { viewModel.setSelectedType("knowledge") },
-                            label = { Text("Knowledge (${uiState.notes.count { it.type == "knowledge" }})") }
+                            label = { Text(stringResource(R.string.filter_knowledge_count, uiState.notes.count { it.type == "knowledge" })) }
                         )
                     }
                 }
@@ -302,12 +304,12 @@ fun NoteScreen(viewModel: NoteViewModel) {
                             tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)
                         )
                         Text(
-                            text = "Belum ada catatan.",
+                            text = stringResource(R.string.empty_notes),
                             fontWeight = FontWeight.SemiBold,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                         Text(
-                            text = "Tulis ide atau scratchpad cepat dengan menekan tombol + di bawah.",
+                            text = stringResource(R.string.empty_notes_sub),
                             fontSize = 13.sp,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
@@ -406,7 +408,7 @@ fun NoteScreen(viewModel: NoteViewModel) {
                                             ) {
                                                 Icon(Icons.Default.ArrowForward, contentDescription = null, modifier = Modifier.size(14.dp))
                                                 Spacer(modifier = Modifier.width(4.dp))
-                                                Text("Jadikan Tugas", fontSize = 11.sp, fontWeight = FontWeight.SemiBold)
+                                                Text(stringResource(R.string.convert_to_task), fontSize = 11.sp, fontWeight = FontWeight.SemiBold)
                                             }
                                         } else {
                                             Spacer(modifier = Modifier.width(1.dp))
@@ -417,14 +419,14 @@ fun NoteScreen(viewModel: NoteViewModel) {
                                                 onClick = { noteToEdit = note },
                                                 modifier = Modifier.size(32.dp)
                                             ) {
-                                                Icon(Icons.Default.Edit, contentDescription = "Edit", tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(18.dp))
+                                                Icon(Icons.Default.Edit, contentDescription = stringResource(R.string.edit), tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(18.dp))
                                             }
 
                                             IconButton(
                                                 onClick = { noteToDelete = note },
                                                 modifier = Modifier.size(32.dp)
                                             ) {
-                                                Icon(Icons.Default.Delete, contentDescription = "Hapus", tint = Color.Red.copy(alpha = 0.8f), modifier = Modifier.size(18.dp))
+                                                Icon(Icons.Default.Delete, contentDescription = stringResource(R.string.delete), tint = Color.Red.copy(alpha = 0.8f), modifier = Modifier.size(18.dp))
                                             }
                                         }
                                     }
@@ -446,28 +448,28 @@ fun NoteScreen(viewModel: NoteViewModel) {
 
         AlertDialog(
             onDismissRequest = { showAddDialog = false },
-            title = { Text("Tulis Catatan Baru", fontWeight = FontWeight.Bold) },
+            title = { Text(stringResource(R.string.create_note_title), fontWeight = FontWeight.Bold) },
             text = {
                 Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
                     OutlinedTextField(
                         value = title,
                         onValueChange = { title = it },
-                        label = { Text("Judul Catatan *") },
+                        label = { Text(stringResource(R.string.note_title_label)) },
                         modifier = Modifier.fillMaxWidth(),
                         singleLine = true
                     )
 
-                    Text("Jenis Catatan", fontWeight = FontWeight.SemiBold, fontSize = 12.sp)
+                    Text(stringResource(R.string.note_type_label), fontWeight = FontWeight.SemiBold, fontSize = 12.sp)
                     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         FilterChip(
                             selected = type == "actionable",
                             onClick = { type = "actionable" },
-                            label = { Text("Actionable") }
+                            label = { Text(stringResource(R.string.note_type_actionable)) }
                         )
                         FilterChip(
                             selected = type == "knowledge",
                             onClick = { type = "knowledge" },
-                            label = { Text("Knowledge") }
+                            label = { Text(stringResource(R.string.note_type_knowledge)) }
                         )
                     }
 
@@ -476,14 +478,14 @@ fun NoteScreen(viewModel: NoteViewModel) {
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.SpaceBetween
                     ) {
-                        Text("Pin ke paling atas", fontSize = 13.sp)
+                        Text(stringResource(R.string.pin_to_top), fontSize = 13.sp)
                         Switch(checked = isPinned, onCheckedChange = { isPinned = it })
                     }
 
                     OutlinedTextField(
                         value = content,
                         onValueChange = { content = it },
-                        label = { Text("Isi Catatan") },
+                        label = { Text(stringResource(R.string.note_content_label)) },
                         modifier = Modifier.fillMaxWidth(),
                         minLines = 4
                     )
@@ -491,7 +493,7 @@ fun NoteScreen(viewModel: NoteViewModel) {
             },
             confirmButton = {
                 AppButton(
-                    text = "Simpan",
+                    text = stringResource(R.string.save),
                     enabled = title.isNotBlank(),
                     onClick = {
                         viewModel.createNote(title.trim(), content.trim(), type, isPinned)
@@ -500,7 +502,7 @@ fun NoteScreen(viewModel: NoteViewModel) {
                 )
             },
             dismissButton = {
-                TextButton(onClick = { showAddDialog = false }) { Text("Batal") }
+                TextButton(onClick = { showAddDialog = false }) { Text(stringResource(R.string.cancel)) }
             }
         )
     }
@@ -513,35 +515,35 @@ fun NoteScreen(viewModel: NoteViewModel) {
 
         AlertDialog(
             onDismissRequest = { noteToEdit = null },
-            title = { Text("Edit Catatan", fontWeight = FontWeight.Bold) },
+            title = { Text(stringResource(R.string.edit_note_title), fontWeight = FontWeight.Bold) },
             text = {
                 Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
                     OutlinedTextField(
                         value = editTitle,
                         onValueChange = { editTitle = it },
-                        label = { Text("Judul Catatan *") },
+                        label = { Text(stringResource(R.string.note_title_label)) },
                         modifier = Modifier.fillMaxWidth(),
                         singleLine = true
                     )
 
-                    Text("Jenis Catatan", fontWeight = FontWeight.SemiBold, fontSize = 12.sp)
+                    Text(stringResource(R.string.note_type_label), fontWeight = FontWeight.SemiBold, fontSize = 12.sp)
                     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         FilterChip(
                             selected = editType == "actionable",
                             onClick = { editType = "actionable" },
-                            label = { Text("Actionable") }
+                            label = { Text(stringResource(R.string.note_type_actionable)) }
                         )
                         FilterChip(
                             selected = editType == "knowledge",
                             onClick = { editType = "knowledge" },
-                            label = { Text("Knowledge") }
+                            label = { Text(stringResource(R.string.note_type_knowledge)) }
                         )
                     }
 
                     OutlinedTextField(
                         value = editContent,
                         onValueChange = { editContent = it },
-                        label = { Text("Isi Catatan") },
+                        label = { Text(stringResource(R.string.note_content_label)) },
                         modifier = Modifier.fillMaxWidth(),
                         minLines = 4
                     )
@@ -549,7 +551,7 @@ fun NoteScreen(viewModel: NoteViewModel) {
             },
             confirmButton = {
                 AppButton(
-                    text = "Simpan",
+                    text = stringResource(R.string.save),
                     enabled = editTitle.isNotBlank(),
                     onClick = {
                         viewModel.updateNote(note.id, editTitle.trim(), editContent.trim(), editType)
@@ -558,7 +560,7 @@ fun NoteScreen(viewModel: NoteViewModel) {
                 )
             },
             dismissButton = {
-                TextButton(onClick = { noteToEdit = null }) { Text("Batal") }
+                TextButton(onClick = { noteToEdit = null }) { Text(stringResource(R.string.cancel)) }
             }
         )
     }
@@ -567,8 +569,8 @@ fun NoteScreen(viewModel: NoteViewModel) {
     noteToDelete?.let { note ->
         AlertDialog(
             onDismissRequest = { noteToDelete = null },
-            title = { Text("Hapus Catatan?", fontWeight = FontWeight.Bold) },
-            text = { Text("Catatan \"${note.title}\" akan dihapus secara permanen.") },
+            title = { Text(stringResource(R.string.delete_note_confirm_title), fontWeight = FontWeight.Bold) },
+            text = { Text(stringResource(R.string.delete_note_confirm_desc, note.title)) },
             confirmButton = {
                 Button(
                     onClick = {
@@ -577,11 +579,11 @@ fun NoteScreen(viewModel: NoteViewModel) {
                     },
                     colors = ButtonDefaults.buttonColors(containerColor = Color.Red)
                 ) {
-                    Text("Hapus", color = Color.White)
+                    Text(stringResource(R.string.delete), color = Color.White)
                 }
             },
             dismissButton = {
-                TextButton(onClick = { noteToDelete = null }) { Text("Batal") }
+                TextButton(onClick = { noteToDelete = null }) { Text(stringResource(R.string.cancel)) }
             }
         )
     }
@@ -590,11 +592,11 @@ fun NoteScreen(viewModel: NoteViewModel) {
     noteToConvert?.let { note ->
         AlertDialog(
             onDismissRequest = { noteToConvert = null },
-            title = { Text("Konversi ke Tugas?", fontWeight = FontWeight.Bold) },
-            text = { Text("Catatan \"${note.title}\" akan dibuatkan tugas baru di daftar task Anda.") },
+            title = { Text(stringResource(R.string.convert_note_dialog_title), fontWeight = FontWeight.Bold) },
+            text = { Text(stringResource(R.string.convert_note_dialog_desc, note.title)) },
             confirmButton = {
                 AppButton(
-                    text = "Konversi",
+                    text = stringResource(R.string.convert_btn),
                     onClick = {
                         viewModel.convertNoteToTask(note)
                         noteToConvert = null
@@ -602,7 +604,7 @@ fun NoteScreen(viewModel: NoteViewModel) {
                 )
             },
             dismissButton = {
-                TextButton(onClick = { noteToConvert = null }) { Text("Batal") }
+                TextButton(onClick = { noteToConvert = null }) { Text(stringResource(R.string.cancel)) }
             }
         )
     }

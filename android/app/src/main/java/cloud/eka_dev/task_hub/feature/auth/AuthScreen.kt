@@ -18,10 +18,12 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import cloud.eka_dev.task_hub.R
 import cloud.eka_dev.task_hub.core.designsystem.*
 
 @Composable
@@ -87,20 +89,20 @@ fun AuthScreen(
                 ) {
                     FeatureHighlightRow(
                         icon = Icons.Default.Bolt,
-                        title = "Real-time Live Sync",
-                        desc = "Streaming SSE instan ke server Go",
+                        title = stringResource(R.string.feature_realtime_title),
+                        desc = stringResource(R.string.feature_realtime_desc),
                         color = BrandPrimary
                     )
                     FeatureHighlightRow(
                         icon = Icons.Default.Folder,
-                        title = "Manajemen Proyek",
-                        desc = "Kelola modul & checklist tugas",
+                        title = stringResource(R.string.feature_projects_title),
+                        desc = stringResource(R.string.feature_projects_desc),
                         color = BrandViolet
                     )
                     FeatureHighlightRow(
                         icon = Icons.Default.NotificationsActive,
-                        title = "Smart Reminder",
-                        desc = "Push notification alert otomatis",
+                        title = stringResource(R.string.feature_reminders_title),
+                        desc = stringResource(R.string.feature_reminders_desc),
                         color = PriorityUrgent
                     )
                 }
@@ -125,7 +127,7 @@ fun AuthScreen(
 
             // Google 1-Tap Sign-In
             AppButton(
-                text = "Lanjutkan dengan Google",
+                text = stringResource(R.string.sign_in_google),
                 onClick = {
                     viewModel.signInWithGoogle(context, "YOUR_GOOGLE_WEB_CLIENT_ID.apps.googleusercontent.com")
                 },
@@ -145,7 +147,7 @@ fun AuthScreen(
                 colors = ButtonDefaults.buttonColors(containerColor = Color.Black)
             ) {
                 Text(
-                    text = "Sign in with Apple",
+                    text = stringResource(R.string.sign_in_apple),
                     color = Color.White,
                     fontSize = 15.sp,
                     fontWeight = FontWeight.SemiBold

@@ -20,11 +20,13 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import cloud.eka_dev.task_hub.R
 import cloud.eka_dev.task_hub.core.designsystem.*
 import cloud.eka_dev.task_hub.core.model.*
 import cloud.eka_dev.task_hub.core.network.ApiClient
@@ -173,7 +175,7 @@ fun ProjectScreen(viewModel: ProjectViewModel) {
                         horizontalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
                         BrandLogo(size = 28.dp)
-                        Text("Proyek & Modul", fontWeight = FontWeight.Bold)
+                        Text(stringResource(R.string.projects_title), fontWeight = FontWeight.Bold)
                     }
                 }
             )
@@ -185,7 +187,7 @@ fun ProjectScreen(viewModel: ProjectViewModel) {
                 contentColor = Color.White,
                 shape = CircleShape
             ) {
-                Icon(Icons.Default.Add, contentDescription = "Tambah Proyek")
+                Icon(Icons.Default.Add, contentDescription = stringResource(R.string.create_project))
             }
         }
     ) { padding ->
@@ -200,7 +202,7 @@ fun ProjectScreen(viewModel: ProjectViewModel) {
             OutlinedTextField(
                 value = searchQuery,
                 onValueChange = { viewModel.setSearchQuery(it) },
-                placeholder = { Text("Cari proyek...", fontSize = 14.sp) },
+                placeholder = { Text(stringResource(R.string.search_projects_hint), fontSize = 14.sp) },
                 leadingIcon = { Icon(Icons.Default.Search, contentDescription = null, tint = BrandPrimary) },
                 shape = RoundedCornerShape(14.dp),
                 modifier = Modifier.fillMaxWidth(),
@@ -224,17 +226,17 @@ fun ProjectScreen(viewModel: ProjectViewModel) {
                     horizontalArrangement = Arrangement.SpaceAround
                 ) {
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        Text("Aktif", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        Text(stringResource(R.string.project_metrics_active), fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                         Text("$activeCount", fontSize = 18.sp, fontWeight = FontWeight.Bold, color = BrandPrimary)
                     }
                     Divider(modifier = Modifier.height(32.dp).width(1.dp))
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        Text("Selesai", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        Text(stringResource(R.string.project_metrics_completed), fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                         Text("$completedCount", fontSize = 18.sp, fontWeight = FontWeight.Bold, color = StatusDone)
                     }
                     Divider(modifier = Modifier.height(32.dp).width(1.dp))
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        Text("Progres", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        Text(stringResource(R.string.project_metrics_progress), fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                         Text("$completionRate%", fontSize = 18.sp, fontWeight = FontWeight.Bold, color = Color(0xFFF59E0B))
                     }
                 }
@@ -250,8 +252,8 @@ fun ProjectScreen(viewModel: ProjectViewModel) {
                         verticalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
                         Icon(Icons.Default.FolderOpen, contentDescription = null, modifier = Modifier.size(48.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant)
-                        Text("Belum ada proyek.", fontWeight = FontWeight.SemiBold)
-                        Text("Tambahkan proyek pertama Anda untuk mengelompokkan tugas.", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        Text(stringResource(R.string.empty_projects), fontWeight = FontWeight.SemiBold)
+                        Text(stringResource(R.string.empty_projects_sub), fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
                 }
             } else {
@@ -305,7 +307,7 @@ fun ProjectScreen(viewModel: ProjectViewModel) {
                                         color = projColor.copy(alpha = 0.12f)
                                     ) {
                                         Text(
-                                            "${projectTasksList.size} Tugas",
+                                            stringResource(R.string.tasks_count_badge, projectTasksList.size),
                                             fontSize = 11.sp,
                                             fontWeight = FontWeight.SemiBold,
                                             color = projColor,
@@ -319,14 +321,14 @@ fun ProjectScreen(viewModel: ProjectViewModel) {
                                         onClick = { editingProject = proj },
                                         modifier = Modifier.size(28.dp)
                                     ) {
-                                        Icon(Icons.Default.Edit, contentDescription = "Edit Proyek", tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(16.dp))
+                                        Icon(Icons.Default.Edit, contentDescription = stringResource(R.string.edit_project), tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(16.dp))
                                     }
 
                                     IconButton(
                                         onClick = { deletingProject = proj },
                                         modifier = Modifier.size(28.dp)
                                     ) {
-                                        Icon(Icons.Default.DeleteOutline, contentDescription = "Hapus Proyek", tint = MaterialTheme.colorScheme.error.copy(alpha = 0.7f), modifier = Modifier.size(16.dp))
+                                        Icon(Icons.Default.DeleteOutline, contentDescription = stringResource(R.string.delete_project_confirm_title), tint = MaterialTheme.colorScheme.error.copy(alpha = 0.7f), modifier = Modifier.size(16.dp))
                                     }
 
                                     Icon(
@@ -345,7 +347,7 @@ fun ProjectScreen(viewModel: ProjectViewModel) {
 
                                     if (projectTasksList.isEmpty()) {
                                         Text(
-                                            "Belum ada tugas di dalam proyek ini.",
+                                            stringResource(R.string.empty_project_tasks),
                                             fontSize = 12.sp,
                                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                                             modifier = Modifier.padding(vertical = 6.dp)
@@ -393,7 +395,7 @@ fun ProjectScreen(viewModel: ProjectViewModel) {
 
     if (showAddDialog) {
         ProjectFormDialog(
-            title = "Tambah Proyek Baru",
+            title = stringResource(R.string.create_project),
             initialName = "",
             initialColor = PROJECT_PRESET_COLORS.first(),
             initialDesc = "",
@@ -407,7 +409,7 @@ fun ProjectScreen(viewModel: ProjectViewModel) {
 
     editingProject?.let { proj ->
         ProjectFormDialog(
-            title = "Edit Proyek",
+            title = stringResource(R.string.edit_project),
             initialName = proj.name,
             initialColor = proj.color,
             initialDesc = proj.description,
@@ -422,8 +424,8 @@ fun ProjectScreen(viewModel: ProjectViewModel) {
     deletingProject?.let { proj ->
         AlertDialog(
             onDismissRequest = { deletingProject = null },
-            title = { Text("Hapus Proyek?", fontWeight = FontWeight.Bold) },
-            text = { Text("Apakah Anda yakin ingin menghapus proyek '${proj.name}'? Tugas yang ada di dalamnya tidak akan terhapus.") },
+            title = { Text(stringResource(R.string.delete_project_confirm_title), fontWeight = FontWeight.Bold) },
+            text = { Text(stringResource(R.string.delete_project_confirm_desc, proj.name)) },
             confirmButton = {
                 Button(
                     onClick = {
@@ -432,12 +434,12 @@ fun ProjectScreen(viewModel: ProjectViewModel) {
                     },
                     colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error)
                 ) {
-                    Text("Hapus", color = Color.White)
+                    Text(stringResource(R.string.delete), color = Color.White)
                 }
             },
             dismissButton = {
                 TextButton(onClick = { deletingProject = null }) {
-                    Text("Batal")
+                    Text(stringResource(R.string.cancel))
                 }
             }
         )
@@ -468,7 +470,7 @@ fun ProjectFormDialog(
                 OutlinedTextField(
                     value = name,
                     onValueChange = { name = it },
-                    label = { Text("Nama Proyek *") },
+                    label = { Text(stringResource(R.string.project_name_label)) },
                     shape = RoundedCornerShape(12.dp),
                     modifier = Modifier.fillMaxWidth(),
                     singleLine = true
@@ -477,13 +479,13 @@ fun ProjectFormDialog(
                 OutlinedTextField(
                     value = desc,
                     onValueChange = { desc = it },
-                    label = { Text("Deskripsi") },
+                    label = { Text(stringResource(R.string.project_desc_label)) },
                     shape = RoundedCornerShape(12.dp),
                     modifier = Modifier.fillMaxWidth(),
                     maxLines = 3
                 )
 
-                Text("Pilih Warna", fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
+                Text(stringResource(R.string.choose_color), fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -520,13 +522,13 @@ fun ProjectFormDialog(
         },
         confirmButton = {
             AppButton(
-                text = "Simpan",
+                text = stringResource(R.string.save),
                 enabled = name.isNotBlank(),
                 onClick = { onConfirm(name.trim(), color, desc.trim()) }
             )
         },
         dismissButton = {
-            TextButton(onClick = onDismiss) { Text("Batal") }
+            TextButton(onClick = onDismiss) { Text(stringResource(R.string.cancel)) }
         }
     )
 }

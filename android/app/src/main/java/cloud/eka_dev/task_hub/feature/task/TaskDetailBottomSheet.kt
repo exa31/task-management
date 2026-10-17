@@ -1,10 +1,12 @@
 package cloud.eka_dev.task_hub.feature.task
 
+import androidx.annotation.StringRes
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
-import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -17,10 +19,12 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import cloud.eka_dev.task_hub.R
 import cloud.eka_dev.task_hub.core.designsystem.*
 import cloud.eka_dev.task_hub.core.model.Task
 import cloud.eka_dev.task_hub.core.model.TaskActivity
@@ -72,7 +76,7 @@ fun TaskDetailBottomSheet(
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             if (!currentTask.projectName.isNullOrEmpty()) {
-                                ProjectPill(name = currentTask.projectName, hexColor = currentTask.projectColor)
+                                ProjectPill(name = currentTask.projectName, colorHex = currentTask.projectColor)
                             }
                             PriorityBadge(priority = currentTask.priority)
                             StatusBadge(status = currentTask.status)
@@ -83,14 +87,14 @@ fun TaskDetailBottomSheet(
                         IconButton(onClick = { viewModel.toggleTaskFocus(currentTask) }) {
                             Icon(
                                 imageVector = if (currentTask.isFocus) Icons.Default.Star else Icons.Default.StarBorder,
-                                contentDescription = "Fokus",
+                                contentDescription = stringResource(R.string.filter_focus),
                                 tint = if (currentTask.isFocus) Color(0xFFF59E0B) else MaterialTheme.colorScheme.onSurfaceVariant
                             )
                         }
                         IconButton(onClick = { showEditDialog = true }) {
                             Icon(
                                 imageVector = Icons.Default.Edit,
-                                contentDescription = "Edit Tugas",
+                                contentDescription = stringResource(R.string.edit_task),
                                 tint = BrandPrimary
                             )
                         }
@@ -121,7 +125,7 @@ fun TaskDetailBottomSheet(
                     selected = selectedTab == 0,
                     onClick = { selectedTab = 0 },
                     leadingIcon = { Icon(Icons.Default.Checklist, contentDescription = null, modifier = Modifier.size(16.dp)) },
-                    label = { Text("Detail & Subtask") },
+                    label = { Text(stringResource(R.string.tab_details_subtasks)) },
                     modifier = Modifier.weight(1f)
                 )
 
@@ -131,7 +135,7 @@ fun TaskDetailBottomSheet(
                     leadingIcon = { Icon(Icons.Default.History, contentDescription = null, modifier = Modifier.size(16.dp)) },
                     label = {
                         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                            Text("Riwayat Log")
+                            Text(stringResource(R.string.tab_activity_logs))
                             if (uiState.taskActivities.isNotEmpty()) {
                                 Surface(
                                     shape = CircleShape,
@@ -214,7 +218,7 @@ private fun DetailTabContent(
         // Status Stepper / Selector
         Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
             Text(
-                "STATUS TUGAS",
+                stringResource(R.string.status_header),
                 fontSize = 11.sp,
                 fontWeight = FontWeight.Bold,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
@@ -226,10 +230,10 @@ private fun DetailTabContent(
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 listOf(
-                    Triple("todo", "To Do", StatusTodo),
-                    Triple("in_progress", "In Progress", StatusInProgress),
-                    Triple("review", "Review", StatusReview),
-                    Triple("done", "Selesai", StatusDone)
+                    Triple("todo", stringResource(R.string.filter_todo), StatusTodo),
+                    Triple("in_progress", stringResource(R.string.filter_in_progress), StatusInProgress),
+                    Triple("review", stringResource(R.string.filter_review), StatusReview),
+                    Triple("done", stringResource(R.string.filter_done), StatusDone)
                 ).forEach { (st, label, color) ->
                     val isSelected = task.status.lowercase() == st
                     FilterChip(
@@ -267,7 +271,7 @@ private fun DetailTabContent(
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
                 Text(
-                    "SUBTASKS (${task.subtasksCompleted}/${task.subtasksCount})",
+                    stringResource(R.string.subtasks_header, task.subtasksCompleted, task.subtasksCount),
                     fontSize = 12.sp,
                     fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
@@ -303,7 +307,7 @@ private fun DetailTabContent(
             OutlinedTextField(
                 value = newSubtaskText,
                 onValueChange = { newSubtaskText = it },
-                placeholder = { Text("Tambah checklist subtask...", fontSize = 12.sp) },
+                placeholder = { Text(stringResource(R.string.add_subtask_placeholder), fontSize = 12.sp) },
                 modifier = Modifier.weight(1f),
                 singleLine = true,
                 colors = OutlinedTextFieldDefaults.colors(
@@ -324,7 +328,7 @@ private fun DetailTabContent(
             ) {
                 Icon(
                     Icons.Default.AddCircle,
-                    contentDescription = "Tambah Subtask",
+                    contentDescription = stringResource(R.string.add_subtask),
                     tint = if (newSubtaskText.isNotBlank()) BrandPrimary else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f)
                 )
             }
@@ -381,7 +385,7 @@ private fun DetailTabContent(
                         ) {
                             Icon(
                                 Icons.Default.DeleteOutline,
-                                contentDescription = "Hapus Subtask",
+                                contentDescription = stringResource(R.string.delete_subtask),
                                 tint = MaterialTheme.colorScheme.error.copy(alpha = 0.7f),
                                 modifier = Modifier.size(16.dp)
                             )
@@ -391,7 +395,7 @@ private fun DetailTabContent(
             }
         } else {
             Text(
-                "Tidak ada subtask checklist.",
+                stringResource(R.string.no_subtasks),
                 fontSize = 13.sp,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
@@ -409,15 +413,15 @@ private fun DetailTabContent(
         ) {
             Icon(Icons.Default.Delete, contentDescription = null, modifier = Modifier.size(16.dp))
             Spacer(modifier = Modifier.width(6.dp))
-            Text("Hapus Tugas Ini", fontWeight = FontWeight.SemiBold)
+            Text(stringResource(R.string.delete_task_button), fontWeight = FontWeight.SemiBold)
         }
     }
 
     if (showDeleteDialog) {
         AlertDialog(
             onDismissRequest = { showDeleteDialog = false },
-            title = { Text("Hapus Tugas?", fontWeight = FontWeight.Bold) },
-            text = { Text("Apakah Anda yakin ingin menghapus tugas '${task.title}'? Tindakan ini tidak dapat dibatalkan.") },
+            title = { Text(stringResource(R.string.delete_task_confirm_title), fontWeight = FontWeight.Bold) },
+            text = { Text(stringResource(R.string.delete_task_confirm_desc, task.title)) },
             confirmButton = {
                 Button(
                     onClick = {
@@ -428,12 +432,12 @@ private fun DetailTabContent(
                     },
                     colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error)
                 ) {
-                    Text("Hapus", color = Color.White)
+                    Text(stringResource(R.string.delete), color = Color.White)
                 }
             },
             dismissButton = {
                 TextButton(onClick = { showDeleteDialog = false }) {
-                    Text("Batal")
+                    Text(stringResource(R.string.cancel))
                 }
             }
         )
@@ -465,8 +469,8 @@ private fun ActivityLogsTabContent(
         ) {
             OutlinedTextField(
                 value = newNoteText,
-                onValueChange = onNoteChange,
-                placeholder = { Text("Tulis catatan progres...", fontSize = 12.sp) },
+                onNoteChange = onNoteChange,
+                placeholder = { Text(stringResource(R.string.post_note_placeholder), fontSize = 12.sp) },
                 shape = RoundedCornerShape(10.dp),
                 modifier = Modifier.weight(1f),
                 singleLine = true,
@@ -482,7 +486,7 @@ private fun ActivityLogsTabContent(
                 shape = RoundedCornerShape(10.dp),
                 colors = ButtonDefaults.buttonColors(containerColor = BrandPrimary)
             ) {
-                Icon(Icons.Default.Send, contentDescription = "Kirim", modifier = Modifier.size(14.dp))
+                Icon(Icons.Default.Send, contentDescription = stringResource(R.string.send), modifier = Modifier.size(14.dp))
             }
         }
 
@@ -500,9 +504,9 @@ private fun ActivityLogsTabContent(
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 Icon(Icons.Default.History, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(36.dp))
-                Text("Belum Ada Riwayat Log", fontWeight = FontWeight.SemiBold, fontSize = 15.sp)
+                Text(stringResource(R.string.activity_logs_empty), fontWeight = FontWeight.SemiBold, fontSize = 15.sp)
                 Text(
-                    "Catatan progres dan perubahan tugas akan tercatat secara kronologis di sini.",
+                    stringResource(R.string.activity_logs_empty_desc),
                     fontSize = 12.sp,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     textAlign = androidx.compose.ui.text.style.TextAlign.Center
@@ -539,7 +543,7 @@ private fun ActivityLogsTabContent(
                                 horizontalArrangement = Arrangement.SpaceBetween
                             ) {
                                 Text(
-                                    text = badge.label,
+                                    text = stringResource(badge.labelRes),
                                     fontSize = 12.sp,
                                     fontWeight = FontWeight.Bold,
                                     color = badge.color
@@ -564,18 +568,18 @@ private fun ActivityLogsTabContent(
     }
 }
 
-private data class ActivityBadge(val icon: androidx.compose.ui.graphics.vector.ImageVector, val color: Color, val label: String)
+private data class ActivityBadge(val icon: androidx.compose.ui.graphics.vector.ImageVector, val color: Color, @StringRes val labelRes: Int)
 
 private fun getActivityBadge(type: String): ActivityBadge {
     return when (type) {
-        "task_created" -> ActivityBadge(Icons.Default.AutoAwesome, Color(0xFF10B981), "Tugas Dibuat")
-        "task_updated" -> ActivityBadge(Icons.Default.Edit, Color(0xFF3B82F6), "Tugas Diperbarui")
-        "progress_logged" -> ActivityBadge(Icons.Default.History, Color(0xFF6366F1), "Catatan Progres")
-        "subtask_created" -> ActivityBadge(Icons.Default.Add, Color(0xFF06B6D4), "Subtask Ditambahkan")
-        "subtask_toggled" -> ActivityBadge(Icons.Default.CheckCircle, Color(0xFF14B8A6), "Subtask Diperbarui")
-        "subtask_deleted" -> ActivityBadge(Icons.Default.Delete, Color(0xFFF43F5E), "Subtask Dihapus")
-        "focus_toggled" -> ActivityBadge(Icons.Default.Star, Color(0xFFF59E0B), "Fokus Diubah")
-        else -> ActivityBadge(Icons.Default.Comment, Color(0xFF64748B), "Catatan Log")
+        "task_created" -> ActivityBadge(Icons.Default.AutoAwesome, Color(0xFF10B981), R.string.activity_task_created)
+        "task_updated" -> ActivityBadge(Icons.Default.Edit, Color(0xFF3B82F6), R.string.activity_task_updated)
+        "progress_logged" -> ActivityBadge(Icons.Default.History, Color(0xFF6366F1), R.string.activity_progress_logged)
+        "subtask_created" -> ActivityBadge(Icons.Default.Add, Color(0xFF06B6D4), R.string.activity_subtask_created)
+        "subtask_toggled" -> ActivityBadge(Icons.Default.CheckCircle, Color(0xFF14B8A6), R.string.activity_subtask_toggled)
+        "subtask_deleted" -> ActivityBadge(Icons.Default.Delete, Color(0xFFF43F5E), R.string.activity_subtask_deleted)
+        "focus_toggled" -> ActivityBadge(Icons.Default.Star, Color(0xFFF59E0B), R.string.activity_focus_toggled)
+        else -> ActivityBadge(Icons.Default.Comment, Color(0xFF64748B), R.string.activity_general_log)
     }
 }
 
@@ -594,7 +598,7 @@ fun EditTaskDialog(
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Edit Tugas", fontWeight = FontWeight.Bold) },
+        title = { Text(stringResource(R.string.edit_task), fontWeight = FontWeight.Bold) },
         text = {
             Column(
                 modifier = Modifier
@@ -605,7 +609,7 @@ fun EditTaskDialog(
                 OutlinedTextField(
                     value = title,
                     onValueChange = { title = it },
-                    label = { Text("Judul Tugas *") },
+                    label = { Text(stringResource(R.string.task_title_label)) },
                     modifier = Modifier.fillMaxWidth(),
                     singleLine = true
                 )
@@ -613,18 +617,23 @@ fun EditTaskDialog(
                 OutlinedTextField(
                     value = description,
                     onValueChange = { description = it },
-                    label = { Text("Deskripsi") },
+                    label = { Text(stringResource(R.string.task_desc_label)) },
                     modifier = Modifier.fillMaxWidth(),
                     minLines = 3,
                     maxLines = 5
                 )
 
-                Text("Status", fontWeight = FontWeight.SemiBold, fontSize = 13.sp)
+                Text(stringResource(R.string.status_header), fontWeight = FontWeight.SemiBold, fontSize = 13.sp)
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.spacedBy(6.dp)
                 ) {
-                    listOf("todo" to "To Do", "in_progress" to "In Progress", "review" to "Review", "done" to "Done").forEach { (st, label) ->
+                    listOf(
+                        "todo" to stringResource(R.string.filter_todo),
+                        "in_progress" to stringResource(R.string.filter_in_progress),
+                        "review" to stringResource(R.string.filter_review),
+                        "done" to stringResource(R.string.filter_done)
+                    ).forEach { (st, label) ->
                         FilterChip(
                             selected = status == st,
                             onClick = { status = st },
@@ -633,12 +642,17 @@ fun EditTaskDialog(
                     }
                 }
 
-                Text("Prioritas", fontWeight = FontWeight.SemiBold, fontSize = 13.sp)
+                Text(stringResource(R.string.priority_label), fontWeight = FontWeight.SemiBold, fontSize = 13.sp)
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.spacedBy(6.dp)
                 ) {
-                    listOf("low" to "Low", "medium" to "Med", "high" to "High", "urgent" to "Urg").forEach { (pr, label) ->
+                    listOf(
+                        "low" to stringResource(R.string.priority_low),
+                        "medium" to stringResource(R.string.priority_medium),
+                        "high" to stringResource(R.string.priority_high),
+                        "urgent" to stringResource(R.string.priority_urgent)
+                    ).forEach { (pr, label) ->
                         FilterChip(
                             selected = priority == pr,
                             onClick = { priority = pr },
@@ -652,7 +666,7 @@ fun EditTaskDialog(
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.SpaceBetween
                 ) {
-                    Text("Fokus Hari Ini", fontSize = 13.sp)
+                    Text(stringResource(R.string.focus_today), fontSize = 13.sp)
                     Switch(
                         checked = isFocus,
                         onCheckedChange = { isFocus = it }
@@ -662,7 +676,7 @@ fun EditTaskDialog(
         },
         confirmButton = {
             AppButton(
-                text = "Simpan",
+                text = stringResource(R.string.save),
                 onClick = {
                     if (title.isNotBlank()) {
                         onSave(title.trim(), description.trim(), status, priority, isFocus)
@@ -673,9 +687,8 @@ fun EditTaskDialog(
         },
         dismissButton = {
             TextButton(onClick = onDismiss) {
-                Text("Batal")
+                Text(stringResource(R.string.cancel))
             }
         }
     )
 }
-

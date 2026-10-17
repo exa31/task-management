@@ -8,11 +8,13 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import cloud.eka_dev.task_hub.R
 import cloud.eka_dev.task_hub.core.designsystem.AppButton
 import cloud.eka_dev.task_hub.core.model.RegisterDeviceTokenRequest
 import cloud.eka_dev.task_hub.core.model.Reminder
@@ -36,7 +38,7 @@ class ReminderViewModel(
 
     init {
         loadReminders()
-        startSSEListener()
+        listenToAlerts()
     }
 
     fun loadReminders() {
@@ -52,17 +54,13 @@ class ReminderViewModel(
         }
     }
 
-    private fun startSSEListener() {
+    private fun listenToAlerts() {
         viewModelScope.launch {
-            try {
-                sseClient.observeEvents().collect { event ->
-                    if (event.type == "reminder:triggered") {
-                        _activeAlert.value = "Pengingat Aktif: ${event.data}"
-                        loadReminders()
-                    }
+            sseClient.events.collect { event ->
+                if (event.contains("reminder")) {
+                    _activeAlert.value = "Pengingat Baru Diterima: $event"
+                    loadReminders()
                 }
-            } catch (e: Exception) {
-                // SSE error / auto reconnect
             }
         }
     }
@@ -70,43 +68,7 @@ class ReminderViewModel(
     fun snooze(id: Long) {
         viewModelScope.launch {
             try {
-                apiClient.apiService.snoozeReminder(id, 15)
-                loadReminders()
-            } catch (e: Exception) {
-                // handle error
-            }
-        }
-    }
-
-    fun updateReminder(
-        id: Long,
-        title: String,
-        description: String?,
-        remindAt: String? = null,
-        status: String? = null
-    ) {
-        viewModelScope.launch {
-            try {
-                apiClient.apiService.updateReminder(
-                    id,
-                    cloud.eka_dev.task_hub.core.model.UpdateReminderRequest(
-                        title = title,
-                        description = description,
-                        remindAt = remindAt,
-                        status = status
-                    )
-                )
-                loadReminders()
-            } catch (e: Exception) {
-                // handle error
-            }
-        }
-    }
-
-    fun deleteReminder(id: Long) {
-        viewModelScope.launch {
-            try {
-                apiClient.apiService.deleteReminder(id)
+                apiClient.apiService.snoozeReminder(id)
                 loadReminders()
             } catch (e: Exception) {
                 // handle error
@@ -125,16 +87,33 @@ class ReminderViewModel(
         }
     }
 
+    fun registerPushToken(fcmToken: String) {
+        viewModelScope.launch {
+            try {
+                apiClient.apiService.registerDeviceToken(
+                    RegisterDeviceTokenRequest(token = fcmToken, platform = "android")
+                )
+            } catch (e: Exception) {
+                // handle error
+            }
+        }
+    }
+
     fun clearActiveAlert() {
         _activeAlert.value = null
     }
 
-    fun registerFcmToken(token: String) {
+    fun updateReminder(id: Long, title: String, description: String) {
         viewModelScope.launch {
             try {
-                apiClient.apiService.registerDeviceToken(
-                    RegisterDeviceTokenRequest(token = token, platform = "android")
+                apiClient.apiService.updateReminder(
+                    id = id,
+                    req = cloud.eka_dev.task_hub.core.model.UpdateReminderRequest(
+                        title = title,
+                        description = description
+                    )
                 )
+                loadReminders()
             } catch (e: Exception) {
                 // handle error
             }
@@ -150,7 +129,7 @@ fun ReminderScreen(viewModel: ReminderViewModel) {
     var editingReminder by remember { mutableStateOf<Reminder?>(null) }
 
     Scaffold(
-        topBar = { TopAppBar(title = { Text("Pengingat & Notifikasi") }) }
+        topBar = { TopAppBar(title = { Text(stringResource(R.string.reminders_title)) }) }
     ) { padding ->
         Column(
             modifier = Modifier
@@ -172,7 +151,7 @@ fun ReminderScreen(viewModel: ReminderViewModel) {
                     ) {
                         Text(activeAlert ?: "", modifier = Modifier.weight(1f), fontSize = 14.sp)
                         TextButton(onClick = { viewModel.clearActiveAlert() }) {
-                            Text("Tutup")
+                            Text(stringResource(R.string.close))
                         }
                     }
                 }
@@ -180,7 +159,7 @@ fun ReminderScreen(viewModel: ReminderViewModel) {
 
             if (reminders.isEmpty()) {
                 Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    Text("Tidak ada pengingat tertunda.", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Text(stringResource(R.string.empty_reminders), color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
             } else {
                 LazyColumn(verticalArrangement = Arrangement.spacedBy(10.dp)) {
@@ -195,7 +174,7 @@ fun ReminderScreen(viewModel: ReminderViewModel) {
                                     Text(reminder.description, fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                                 }
                                 Spacer(modifier = Modifier.height(6.dp))
-                                Text("Jadwal: ${reminder.remindAt}", fontSize = 12.sp, color = MaterialTheme.colorScheme.primary)
+                                Text(stringResource(R.string.reminder_schedule_prefix, reminder.remindAt), fontSize = 12.sp, color = MaterialTheme.colorScheme.primary)
 
                                 Spacer(modifier = Modifier.height(12.dp))
                                 Row(
@@ -203,13 +182,13 @@ fun ReminderScreen(viewModel: ReminderViewModel) {
                                     verticalAlignment = Alignment.CenterVertically
                                 ) {
                                     OutlinedButton(onClick = { editingReminder = reminder }) {
-                                        Text("Edit")
+                                        Text(stringResource(R.string.edit))
                                     }
                                     OutlinedButton(onClick = { viewModel.snooze(reminder.id) }) {
-                                        Text("Tunda 15 mnt")
+                                        Text(stringResource(R.string.snooze_15m))
                                     }
                                     Button(onClick = { viewModel.dismiss(reminder.id) }) {
-                                        Text("Selesai")
+                                        Text(stringResource(R.string.dismiss))
                                     }
                                 }
                             }
@@ -227,19 +206,19 @@ fun ReminderScreen(viewModel: ReminderViewModel) {
 
         AlertDialog(
             onDismissRequest = { editingReminder = null },
-            title = { Text("Edit Pengingat") },
+            title = { Text(stringResource(R.string.edit_reminder_title)) },
             text = {
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     OutlinedTextField(
                         value = editTitle,
                         onValueChange = { editTitle = it },
-                        label = { Text("Judul Pengingat") },
+                        label = { Text(stringResource(R.string.reminder_title_label)) },
                         modifier = Modifier.fillMaxWidth()
                     )
                     OutlinedTextField(
                         value = editDescription,
                         onValueChange = { editDescription = it },
-                        label = { Text("Deskripsi / Catatan") },
+                        label = { Text(stringResource(R.string.reminder_desc_label)) },
                         modifier = Modifier.fillMaxWidth(),
                         maxLines = 3
                     )
@@ -259,12 +238,12 @@ fun ReminderScreen(viewModel: ReminderViewModel) {
                     },
                     enabled = editTitle.isNotBlank()
                 ) {
-                    Text("Simpan")
+                    Text(stringResource(R.string.save))
                 }
             },
             dismissButton = {
                 TextButton(onClick = { editingReminder = null }) {
-                    Text("Batal")
+                    Text(stringResource(R.string.cancel))
                 }
             }
         )

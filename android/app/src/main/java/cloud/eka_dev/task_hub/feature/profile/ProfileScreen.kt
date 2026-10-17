@@ -20,11 +20,13 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import cloud.eka_dev.task_hub.R
 import cloud.eka_dev.task_hub.core.datastore.TokenManager
 import cloud.eka_dev.task_hub.core.designsystem.AppButton
 import cloud.eka_dev.task_hub.core.designsystem.BrandLogo
@@ -210,7 +212,7 @@ fun ProfileScreen(
                         horizontalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
                         BrandLogo(size = 28.dp)
-                        Text("Pengaturan & Profil", fontWeight = FontWeight.Bold)
+                        Text(stringResource(R.string.profile_title), fontWeight = FontWeight.Bold)
                     }
                 }
             )
@@ -261,7 +263,7 @@ fun ProfileScreen(
                         ) {
                             Icon(
                                 Icons.Default.CameraAlt,
-                                contentDescription = "Ganti Foto",
+                                contentDescription = stringResource(R.string.change_photo),
                                 tint = Color.White,
                                 modifier = Modifier
                                     .padding(4.dp)
@@ -274,7 +276,7 @@ fun ProfileScreen(
 
                     Column(modifier = Modifier.weight(1f)) {
                         Text(
-                            text = user?.name ?: "Pengguna",
+                            text = user?.name ?: "User",
                             fontSize = 17.sp,
                             fontWeight = FontWeight.Bold
                         )
@@ -290,7 +292,7 @@ fun ProfileScreen(
                             color = Color(0xFF10B981).copy(alpha = 0.12f)
                         ) {
                             Text(
-                                "Akun Aktif",
+                                stringResource(R.string.account_active),
                                 fontSize = 11.sp,
                                 fontWeight = FontWeight.Bold,
                                 color = Color(0xFF10B981),
@@ -300,7 +302,7 @@ fun ProfileScreen(
                     }
 
                     IconButton(onClick = { showEditNameDialog = true }) {
-                        Icon(Icons.Default.Edit, contentDescription = "Ubah Nama", tint = BrandPrimary)
+                        Icon(Icons.Default.Edit, contentDescription = stringResource(R.string.change_name), tint = BrandPrimary)
                     }
                 }
             }
@@ -316,11 +318,11 @@ fun ProfileScreen(
                     modifier = Modifier.padding(16.dp),
                     verticalArrangement = Arrangement.spacedBy(14.dp)
                 ) {
-                    Text("Preferensi Notifikasi", fontWeight = FontWeight.Bold, fontSize = 15.sp)
+                    Text(stringResource(R.string.notification_preferences), fontWeight = FontWeight.Bold, fontSize = 15.sp)
 
                     // Timezone Picker
                     Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                        Text("Zona Waktu", fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        Text(stringResource(R.string.timezone_label), fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                         Row(
                             modifier = Modifier.fillMaxWidth(),
                             horizontalArrangement = Arrangement.spacedBy(8.dp)
@@ -337,12 +339,12 @@ fun ProfileScreen(
 
                     // Due Date Warning Threshold
                     Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                        Text("Peringatan Deadline Sebelum", fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        Text(stringResource(R.string.warning_threshold_label), fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                         Row(
                             modifier = Modifier.fillMaxWidth(),
                             horizontalArrangement = Arrangement.spacedBy(6.dp)
                         ) {
-                            listOf(1 to "1 Jam", 6 to "6 Jam", 12 to "12 Jam", 24 to "24 Jam", 48 to "48 Jam").forEach { (th, label) ->
+                            listOf(1 to "1h", 6 to "6h", 12 to "12h", 24 to "24h", 48 to "48h").forEach { (th, label) ->
                                 FilterChip(
                                     selected = warningThreshold == th,
                                     onClick = { warningThreshold = th },
@@ -359,8 +361,8 @@ fun ProfileScreen(
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Column {
-                            Text("Notifikasi Email", fontSize = 14.sp, fontWeight = FontWeight.Medium)
-                            Text("Kirim email untuk tugas mendesak", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            Text(stringResource(R.string.email_notifications_title), fontSize = 14.sp, fontWeight = FontWeight.Medium)
+                            Text(stringResource(R.string.email_notifications_desc), fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                         }
                         Switch(
                             checked = emailNotifications,
@@ -369,7 +371,7 @@ fun ProfileScreen(
                     }
 
                     AppButton(
-                        text = "Simpan Preferensi",
+                        text = stringResource(R.string.save_preferences),
                         onClick = {
                             viewModel.updatePreferences(selectedTimezone, warningThreshold, emailNotifications)
                         }
@@ -388,7 +390,7 @@ fun ProfileScreen(
                     modifier = Modifier.padding(16.dp),
                     verticalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
-                    Text("Akun Terhubung (OAuth)", fontWeight = FontWeight.Bold, fontSize = 15.sp)
+                    Text(stringResource(R.string.connected_accounts), fontWeight = FontWeight.Bold, fontSize = 15.sp)
 
                     Row(
                         modifier = Modifier.fillMaxWidth(),
@@ -400,7 +402,7 @@ fun ProfileScreen(
                             Text("Google", fontWeight = FontWeight.Medium, fontSize = 14.sp)
                         }
                         Text(
-                            text = if (user?.googleBound == true) "Terhubung" else "Tersambung saat Login",
+                            text = if (user?.googleBound == true) stringResource(R.string.connected_status) else stringResource(R.string.connected_on_login),
                             fontSize = 12.sp,
                             color = if (user?.googleBound == true) Color(0xFF10B981) else MaterialTheme.colorScheme.onSurfaceVariant
                         )
@@ -418,7 +420,7 @@ fun ProfileScreen(
                             Text("Apple ID", fontWeight = FontWeight.Medium, fontSize = 14.sp)
                         }
                         Text(
-                            text = if (user?.appleBound == true) "Terhubung" else "Belum Ditautkan",
+                            text = if (user?.appleBound == true) stringResource(R.string.connected_status) else stringResource(R.string.not_connected),
                             fontSize = 12.sp,
                             color = if (user?.appleBound == true) Color(0xFF10B981) else MaterialTheme.colorScheme.onSurfaceVariant
                         )
@@ -446,8 +448,8 @@ fun ProfileScreen(
                     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                         Icon(Icons.Default.Key, contentDescription = null, tint = BrandPrimary, modifier = Modifier.size(24.dp))
                         Column {
-                            Text("Integrasi MCP & API Tokens", fontWeight = FontWeight.SemiBold, fontSize = 14.sp)
-                            Text("Kelola token integrasi model context protocol", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            Text(stringResource(R.string.mcp_card_title), fontWeight = FontWeight.SemiBold, fontSize = 14.sp)
+                            Text(stringResource(R.string.mcp_card_desc), fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                         }
                     }
                     Icon(Icons.Default.ChevronRight, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
@@ -463,7 +465,7 @@ fun ProfileScreen(
             ) {
                 Icon(Icons.Default.Logout, contentDescription = null, tint = MaterialTheme.colorScheme.onSurface)
                 Spacer(modifier = Modifier.width(8.dp))
-                Text("Keluar (Sign Out)", color = MaterialTheme.colorScheme.onSurface)
+                Text(stringResource(R.string.sign_out), color = MaterialTheme.colorScheme.onSurface)
             }
 
             // Danger Zone: Delete Account
@@ -476,7 +478,7 @@ fun ProfileScreen(
             ) {
                 Icon(Icons.Default.DeleteForever, contentDescription = null, modifier = Modifier.size(18.dp))
                 Spacer(modifier = Modifier.width(6.dp))
-                Text("Hapus Akun Permanen", fontWeight = FontWeight.SemiBold)
+                Text(stringResource(R.string.delete_account_button), fontWeight = FontWeight.SemiBold)
             }
         }
     }
@@ -485,19 +487,19 @@ fun ProfileScreen(
         var newName by remember { mutableStateOf(user?.name ?: "") }
         AlertDialog(
             onDismissRequest = { showEditNameDialog = false },
-            title = { Text("Ubah Nama Profil", fontWeight = FontWeight.Bold) },
+            title = { Text(stringResource(R.string.edit_name_dialog_title), fontWeight = FontWeight.Bold) },
             text = {
                 OutlinedTextField(
                     value = newName,
                     onValueChange = { newName = it },
-                    label = { Text("Nama Lengkap") },
+                    label = { Text(stringResource(R.string.full_name_label)) },
                     modifier = Modifier.fillMaxWidth(),
                     singleLine = true
                 )
             },
             confirmButton = {
                 AppButton(
-                    text = "Simpan",
+                    text = stringResource(R.string.save),
                     enabled = newName.isNotBlank(),
                     onClick = {
                         viewModel.updateProfile(newName.trim())
@@ -506,7 +508,7 @@ fun ProfileScreen(
                 )
             },
             dismissButton = {
-                TextButton(onClick = { showEditNameDialog = false }) { Text("Batal") }
+                TextButton(onClick = { showEditNameDialog = false }) { Text(stringResource(R.string.cancel)) }
             }
         )
     }
@@ -515,14 +517,14 @@ fun ProfileScreen(
         var confirmText by remember { mutableStateOf("") }
         AlertDialog(
             onDismissRequest = { showDeleteAccountDialog = false },
-            title = { Text("Hapus Akun Permanen?", fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.error) },
+            title = { Text(stringResource(R.string.delete_account_dialog_title), fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.error) },
             text = {
                 Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
                     Text(
-                        "Semua data tugas, proyek, catatan, dan pengingat Anda akan dihapus secara permanen dari server. Tindakan ini tidak dapat dibatalkan.",
+                        stringResource(R.string.delete_account_dialog_desc),
                         fontSize = 13.sp
                     )
-                    Text("Ketik 'DELETE' untuk konfirmasi:", fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
+                    Text(stringResource(R.string.delete_account_prompt), fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
                     OutlinedTextField(
                         value = confirmText,
                         onValueChange = { confirmText = it },
@@ -543,11 +545,11 @@ fun ProfileScreen(
                     enabled = confirmText == "DELETE",
                     colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error)
                 ) {
-                    Text("Hapus Akun", color = Color.White)
+                    Text(stringResource(R.string.delete_account_confirm_btn), color = Color.White)
                 }
             },
             dismissButton = {
-                TextButton(onClick = { showDeleteAccountDialog = false }) { Text("Batal") }
+                TextButton(onClick = { showDeleteAccountDialog = false }) { Text(stringResource(R.string.cancel)) }
             }
         )
     }
