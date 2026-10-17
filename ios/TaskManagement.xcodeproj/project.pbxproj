@@ -43,6 +43,13 @@
 		CA0102030405060708090002 /* TaskManagement/Features/Calendar/CalendarView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CA0102030405060708090001 /* TaskManagement/Features/Calendar/CalendarView.swift */; };
 		WW0102030405060708090002 /* TaskManagement/Core/Shared/SharedWidgetDataManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = WW0102030405060708090001 /* TaskManagement/Core/Shared/SharedWidgetDataManager.swift */; };
 		SN0102030405060708090002 /* TaskManagement/Core/Notification/SoundManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = SN0102030405060708090001 /* TaskManagement/Core/Notification/SoundManager.swift */; };
+		AL0102030405060708090002 /* TaskManagement/Core/Notification/ActiveAlarmManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = AL0102030405060708090001 /* TaskManagement/Core/Notification/ActiveAlarmManager.swift */; };
+		AL0102030405060708090004 /* TaskManagement/Features/Reminder/AlarmRingingOverlayView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AL0102030405060708090003 /* TaskManagement/Features/Reminder/AlarmRingingOverlayView.swift */; };
+		AL0102030405060708090006 /* TaskManagement/Features/Profile/SoundSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AL0102030405060708090005 /* TaskManagement/Features/Profile/SoundSettingsView.swift */; };
+		SB0102030405060708090001 /* TaskManagement/Resources/classic_alarm.aiff in Resources */ = {isa = PBXBuildFile; fileRef = SA0102030405060708090001 /* TaskManagement/Resources/classic_alarm.aiff */; };
+		SB0102030405060708090002 /* TaskManagement/Resources/gentle_bell.aiff in Resources */ = {isa = PBXBuildFile; fileRef = SA0102030405060708090002 /* TaskManagement/Resources/gentle_bell.aiff */; };
+		SB0102030405060708090003 /* TaskManagement/Resources/lofi_chime.aiff in Resources */ = {isa = PBXBuildFile; fileRef = SA0102030405060708090003 /* TaskManagement/Resources/lofi_chime.aiff */; };
+		SB0102030405060708090004 /* TaskManagement/Resources/energetic_synth.aiff in Resources */ = {isa = PBXBuildFile; fileRef = SA0102030405060708090004 /* TaskManagement/Resources/energetic_synth.aiff */; };
 		WI0102030405060708090002 /* TaskManagement/Widgets/QuickCreateTaskIntent.swift in Sources */ = {isa = PBXBuildFile; fileRef = WI0102030405060708090001 /* TaskManagement/Widgets/QuickCreateTaskIntent.swift */; };
 		WI0102030405060708090004 /* TaskManagement/Widgets/ToggleSubtaskIntent.swift in Sources */ = {isa = PBXBuildFile; fileRef = WI0102030405060708090003 /* TaskManagement/Widgets/ToggleSubtaskIntent.swift */; };
 		WI0102030405060708090006 /* TaskManagement/Widgets/TaskWidgetTimelineProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = WI0102030405060708090005 /* TaskManagement/Widgets/TaskWidgetTimelineProvider.swift */; };
@@ -142,6 +149,13 @@
 		CA0102030405060708090001 /* TaskManagement/Features/Calendar/CalendarView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TaskManagement/Features/Calendar/CalendarView.swift; sourceTree = "<group>"; };
 		WW0102030405060708090001 /* TaskManagement/Core/Shared/SharedWidgetDataManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TaskManagement/Core/Shared/SharedWidgetDataManager.swift; sourceTree = "<group>"; };
 		SN0102030405060708090001 /* TaskManagement/Core/Notification/SoundManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TaskManagement/Core/Notification/SoundManager.swift; sourceTree = "<group>"; };
+		AL0102030405060708090001 /* TaskManagement/Core/Notification/ActiveAlarmManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TaskManagement/Core/Notification/ActiveAlarmManager.swift; sourceTree = "<group>"; };
+		AL0102030405060708090003 /* TaskManagement/Features/Reminder/AlarmRingingOverlayView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TaskManagement/Features/Reminder/AlarmRingingOverlayView.swift; sourceTree = "<group>"; };
+		AL0102030405060708090005 /* TaskManagement/Features/Profile/SoundSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TaskManagement/Features/Profile/SoundSettingsView.swift; sourceTree = "<group>"; };
+		SA0102030405060708090001 /* TaskManagement/Resources/classic_alarm.aiff */ = {isa = PBXFileReference; lastKnownFileType = audio.aiff; path = TaskManagement/Resources/classic_alarm.aiff; sourceTree = "<group>"; };
+		SA0102030405060708090002 /* TaskManagement/Resources/gentle_bell.aiff */ = {isa = PBXFileReference; lastKnownFileType = audio.aiff; path = TaskManagement/Resources/gentle_bell.aiff; sourceTree = "<group>"; };
+		SA0102030405060708090003 /* TaskManagement/Resources/lofi_chime.aiff */ = {isa = PBXFileReference; lastKnownFileType = audio.aiff; path = TaskManagement/Resources/lofi_chime.aiff; sourceTree = "<group>"; };
+		SA0102030405060708090004 /* TaskManagement/Resources/energetic_synth.aiff */ = {isa = PBXFileReference; lastKnownFileType = audio.aiff; path = TaskManagement/Resources/energetic_synth.aiff; sourceTree = "<group>"; };
 		WI0102030405060708090001 /* TaskManagement/Widgets/QuickCreateTaskIntent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TaskManagement/Widgets/QuickCreateTaskIntent.swift; sourceTree = "<group>"; };
 		WI0102030405060708090003 /* TaskManagement/Widgets/ToggleSubtaskIntent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TaskManagement/Widgets/ToggleSubtaskIntent.swift; sourceTree = "<group>"; };
 		WI0102030405060708090005 /* TaskManagement/Widgets/TaskWidgetTimelineProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TaskManagement/Widgets/TaskWidgetTimelineProvider.swift; sourceTree = "<group>"; };
@@ -211,6 +225,13 @@
 				EN0102030405060708090001 /* TaskManagementWidgets/TaskManagementWidgets.entitlements */,
 				PR0102030405060708090001 /* TaskManagementWidgets.appex */,
 				SN0102030405060708090001 /* TaskManagement/Core/Notification/SoundManager.swift */,
+				AL0102030405060708090001 /* TaskManagement/Core/Notification/ActiveAlarmManager.swift */,
+				AL0102030405060708090003 /* TaskManagement/Features/Reminder/AlarmRingingOverlayView.swift */,
+				AL0102030405060708090005 /* TaskManagement/Features/Profile/SoundSettingsView.swift */,
+				SA0102030405060708090001 /* TaskManagement/Resources/classic_alarm.aiff */,
+				SA0102030405060708090002 /* TaskManagement/Resources/gentle_bell.aiff */,
+				SA0102030405060708090003 /* TaskManagement/Resources/lofi_chime.aiff */,
+				SA0102030405060708090004 /* TaskManagement/Resources/energetic_synth.aiff */,
 				WI0102030405060708090001 /* TaskManagement/Widgets/QuickCreateTaskIntent.swift */,
 				WI0102030405060708090003 /* TaskManagement/Widgets/ToggleSubtaskIntent.swift */,
 				WI0102030405060708090005 /* TaskManagement/Widgets/TaskWidgetTimelineProvider.swift */,
@@ -317,6 +338,10 @@
 				CC0102030405060708090002 /* TaskManagement/GoogleService-Info.plist in Resources */,
 				3E7E1AB89BE89DD2BDE8D69B /* TaskManagement/Resources/Localizable.xcstrings in Resources */,
 				AA0102030405060708090002 /* TaskManagement/Resources/Assets.xcassets in Resources */,
+				SB0102030405060708090001 /* TaskManagement/Resources/classic_alarm.aiff in Resources */,
+				SB0102030405060708090002 /* TaskManagement/Resources/gentle_bell.aiff in Resources */,
+				SB0102030405060708090003 /* TaskManagement/Resources/lofi_chime.aiff in Resources */,
+				SB0102030405060708090004 /* TaskManagement/Resources/energetic_synth.aiff in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -356,6 +381,9 @@
 				CA0102030405060708090002 /* TaskManagement/Features/Calendar/CalendarView.swift in Sources */,
 				WW0102030405060708090002 /* TaskManagement/Core/Shared/SharedWidgetDataManager.swift in Sources */,
 				SN0102030405060708090002 /* TaskManagement/Core/Notification/SoundManager.swift in Sources */,
+				AL0102030405060708090002 /* TaskManagement/Core/Notification/ActiveAlarmManager.swift in Sources */,
+				AL0102030405060708090004 /* TaskManagement/Features/Reminder/AlarmRingingOverlayView.swift in Sources */,
+				AL0102030405060708090006 /* TaskManagement/Features/Profile/SoundSettingsView.swift in Sources */,
 				WI0102030405060708090002 /* TaskManagement/Widgets/QuickCreateTaskIntent.swift in Sources */,
 				WI0102030405060708090004 /* TaskManagement/Widgets/ToggleSubtaskIntent.swift in Sources */,
 				WI0102030405060708090006 /* TaskManagement/Widgets/TaskWidgetTimelineProvider.swift in Sources */,

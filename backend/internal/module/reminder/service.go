@@ -180,6 +180,8 @@ func (s *service) ProcessReminder(ctx context.Context, reminderID int64) error {
 			data := map[string]string{
 				"reminder_id": fmt.Sprintf("%d", rem.ID),
 				"title":       rem.Title,
+				"category":    "ALARM_REMINDER",
+				"sound":       "classic_alarm.aiff",
 			}
 			if rem.TaskID != nil {
 				data["task_id"] = fmt.Sprintf("%d", *rem.TaskID)
@@ -261,6 +263,12 @@ func (s *service) TestFCM(ctx context.Context, callingUserID string, req TestFCM
 	}
 	if _, ok := data["timestamp"]; !ok {
 		data["timestamp"] = time.Now().UTC().Format(time.RFC3339)
+	}
+	if _, ok := data["category"]; !ok {
+		data["category"] = "ALARM_REMINDER"
+	}
+	if _, ok := data["sound"]; !ok {
+		data["sound"] = "classic_alarm.aiff"
 	}
 
 	// Mask tokens for secure response preview

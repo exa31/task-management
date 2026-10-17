@@ -131,14 +131,18 @@ public final class PushNotificationManager: NSObject, UNUserNotificationCenterDe
 
     // MARK: - UNUserNotificationCenterDelegate
 
-    /// Allows notifications to be displayed as banners and play sounds even when the app is active in foreground.
+    /// Allows notifications to be displayed as banners and triggers the in-app alarm overlay when app is active in foreground.
     public nonisolated func userNotificationCenter(
         _ center: UNUserNotificationCenter,
         willPresent notification: UNNotification,
         withCompletionHandler completionHandler: @escaping (UNNotificationPresentationOptions) -> Void
     ) {
-        Task {
+        let userInfo = notification.request.content.userInfo
+        Task { @MainActor in
             await SharedWidgetDataManager.shared.syncWithBackend()
+            if userInfo["reminder_id"] != nil || (userInfo["category"] as? String) == "ALARM_REMINDER" {
+                ActiveAlarmManager.shared.triggerAlarm(fromUserInfo: userInfo)
+            }
         }
         completionHandler([.banner, .badge, .sound])
     }
@@ -165,14 +169,20 @@ public final class PushNotificationManager: NSObject, UNUserNotificationCenterDe
 
         if let rid = reminderId {
             if actionId == "SNOOZE_10_MIN" {
-                Task {
+                Task { @MainActor in
+                    SoundManager.shared.stopAlarm()
                     _ = try? await APIClient.shared.snoozeReminder(id: rid, minutes: 10)
                     AppLogger.success("Reminder \(rid) snoozed for 10 minutes via notification action", category: .push)
                 }
             } else if actionId == "DISMISS_ALARM" {
-                Task {
+                Task { @MainActor in
+                    SoundManager.shared.stopAlarm()
                     _ = try? await APIClient.shared.dismissReminder(id: rid)
                     AppLogger.success("Reminder \(rid) dismissed via notification action", category: .push)
+                }
+            } else if actionId == UNNotificationDefaultActionIdentifier {
+                Task { @MainActor in
+                    ActiveAlarmManager.shared.triggerAlarm(fromUserInfo: userInfo)
                 }
             }
         }

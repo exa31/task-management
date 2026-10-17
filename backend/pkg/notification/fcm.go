@@ -107,6 +107,20 @@ func (s *FCMPushSender) SendPushNotificationWithResult(ctx context.Context, toke
 		return &PushResult{SuccessCount: 0, FailureCount: 0, TotalTokens: 0}, nil
 	}
 
+	apnsCategory := ""
+	apnsSound := "default"
+	if cat, ok := data["category"]; ok && cat != "" {
+		apnsCategory = cat
+	} else if _, ok := data["reminder_id"]; ok {
+		apnsCategory = "ALARM_REMINDER"
+	}
+
+	if snd, ok := data["sound"]; ok && snd != "" {
+		apnsSound = snd
+	} else if apnsCategory == "ALARM_REMINDER" {
+		apnsSound = "classic_alarm.aiff"
+	}
+
 	msg := &messaging.MulticastMessage{
 		Tokens: tokens,
 		Notification: &messaging.Notification{
@@ -115,11 +129,24 @@ func (s *FCMPushSender) SendPushNotificationWithResult(ctx context.Context, toke
 		},
 		Data: data,
 		APNS: &messaging.APNSConfig{
+			Headers: map[string]string{
+				"apns-priority": "10",
+			},
 			Payload: &messaging.APNSPayload{
 				Aps: &messaging.Aps{
-					Sound:            "default",
+					Sound:            apnsSound,
+					Category:         apnsCategory,
 					ContentAvailable: true,
 				},
+			},
+		},
+		Android: &messaging.AndroidConfig{
+			Priority: "high",
+			Notification: &messaging.AndroidNotification{
+				ChannelID:             "task_hub_alarms",
+				Sound:                 "default",
+				Priority:              messaging.PriorityHigh,
+				DefaultVibrateTimings: true,
 			},
 		},
 	}

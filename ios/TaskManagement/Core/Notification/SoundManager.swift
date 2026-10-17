@@ -1,5 +1,9 @@
 import Foundation
 import AVFoundation
+import Observation
+#if canImport(UIKit)
+import UIKit
+#endif
 
 public struct SoundOption: Identifiable, Hashable, Sendable {
     public let id: String
@@ -15,23 +19,49 @@ public struct SoundOption: Identifiable, Hashable, Sendable {
     }
 }
 
+@Observable
 @MainActor
-public final class SoundManager: ObservableObject {
+public final class SoundManager {
     public static let shared = SoundManager()
 
+    public static let soundStorageKey = "selected_alarm_sound"
+
     public static let presetSounds: [SoundOption] = [
-        SoundOption(id: "default", name: "Default (Sistem)", fileName: "default"),
+        SoundOption(id: "classic_alarm", name: "Alarm Tegas (Penting)", fileName: "classic_alarm.aiff"),
         SoundOption(id: "gentle_bell", name: "Lonceng Lembut (Tenang)", fileName: "gentle_bell.aiff"),
         SoundOption(id: "lofi_chime", name: "Lo-Fi Melody (Santai)", fileName: "lofi_chime.aiff"),
         SoundOption(id: "energetic_synth", name: "Energetic Beat (Fokus)", fileName: "energetic_synth.aiff"),
-        SoundOption(id: "classic_alarm", name: "Alarm Tegas (Penting)", fileName: "classic_alarm.aiff")
+        SoundOption(id: "default", name: "Default (Bip Sistem)", fileName: "default")
     ]
 
-    private var audioPlayer: AVAudioPlayer?
-    private let soundsDirectoryName = "Sounds"
+    public var isAlarmPlaying: Bool = false
+    public var currentPlayingSoundId: String? = nil
+
+    @ObservationIgnored private var audioPlayer: AVAudioPlayer?
+    @ObservationIgnored private var hapticTimer: Timer?
+    @ObservationIgnored private let soundsDirectoryName = "Sounds"
 
     private init() {
         createSoundsDirectoryIfNeeded()
+    }
+
+    public var selectedSoundId: String {
+        get {
+            UserDefaults.standard.string(forKey: Self.soundStorageKey) ?? "classic_alarm"
+        }
+        set {
+            UserDefaults.standard.set(newValue, forKey: Self.soundStorageKey)
+        }
+    }
+
+    public var selectedSound: SoundOption {
+        let currentId = selectedSoundId
+        let all = getAllSounds()
+        return all.first(where: { $0.id == currentId }) ?? Self.presetSounds[0]
+    }
+
+    public func getAllSounds() -> [SoundOption] {
+        return Self.presetSounds + getCustomSounds()
     }
 
     private var soundsDirectoryURL: URL? {
@@ -85,28 +115,54 @@ public final class SoundManager: ObservableObject {
         return SoundOption(id: "custom_\(sanitizedName)", name: "Musik: \(displayName)", fileName: sanitizedName, isCustom: true)
     }
 
-    /// Preview/Play a sound option
+    /// Resolves the URL of an audio resource whether from SPM module, App Bundle, or Library/Sounds
+    private func resolveSoundURL(sound: SoundOption) -> URL? {
+        if sound.isCustom, let dir = soundsDirectoryURL {
+            let customURL = dir.appendingPathComponent(sound.fileName)
+            if FileManager.default.fileExists(atPath: customURL.path) {
+                return customURL
+            }
+        }
+
+        let name = (sound.fileName as NSString).deletingPathExtension
+        let ext = (sound.fileName as NSString).pathExtension
+
+        #if SWIFT_PACKAGE
+        if let moduleURL = Bundle.module.url(forResource: name, withExtension: ext) {
+            return moduleURL
+        }
+        #endif
+
+        if let mainURL = Bundle.main.url(forResource: name, withExtension: ext) {
+            return mainURL
+        }
+
+        return nil
+    }
+
+    /// Preview/Play a sound option (plays once)
     public func playPreview(sound: SoundOption) {
-        audioPlayer?.stop()
+        stopAlarm()
+        currentPlayingSoundId = sound.id
+
         if sound.id == "default" {
             AudioServicesPlaySystemSound(1007) // Standard SMS/alert beep
             return
         }
 
-        let fileURL: URL?
-        if sound.isCustom, let dir = soundsDirectoryURL {
-            fileURL = dir.appendingPathComponent(sound.fileName)
-        } else {
-            fileURL = Bundle.main.url(forResource: (sound.fileName as NSString).deletingPathExtension, withExtension: (sound.fileName as NSString).pathExtension)
-        }
-
-        guard let targetURL = fileURL, FileManager.default.fileExists(atPath: targetURL.path) else {
+        guard let targetURL = resolveSoundURL(sound: sound) else {
             AudioServicesPlaySystemSound(1005)
             return
         }
 
         do {
+            #if canImport(UIKit)
+            try AVAudioSession.sharedInstance().setCategory(.ambient, mode: .default)
+            try AVAudioSession.sharedInstance().setActive(true)
+            #endif
+
             audioPlayer = try AVAudioPlayer(contentsOf: targetURL)
+            audioPlayer?.numberOfLoops = 0
             audioPlayer?.prepareToPlay()
             audioPlayer?.play()
         } catch {
@@ -114,7 +170,94 @@ public final class SoundManager: ObservableObject {
         }
     }
 
-    public func stopPreview() {
+    /// Starts playing the continuous alarm (infinite loop) with haptics
+    public func startAlarm(soundId: String? = nil) {
+        stopAlarm()
+
+        let targetId = soundId ?? selectedSoundId
+        let sound = getAllSounds().first(where: { $0.id == targetId }) ?? Self.presetSounds[0]
+        currentPlayingSoundId = sound.id
+
+        if sound.id == "default" {
+            AudioServicesPlaySystemSound(1005)
+            startHapticLoop()
+            isAlarmPlaying = true
+            return
+        }
+
+        guard let targetURL = resolveSoundURL(sound: sound) else {
+            AudioServicesPlaySystemSound(1005)
+            startHapticLoop()
+            isAlarmPlaying = true
+            return
+        }
+
+        do {
+            #if canImport(UIKit)
+            try AVAudioSession.sharedInstance().setCategory(.playback, mode: .default, options: [.duckOthers])
+            try AVAudioSession.sharedInstance().setActive(true)
+            #endif
+
+            audioPlayer = try AVAudioPlayer(contentsOf: targetURL)
+            audioPlayer?.numberOfLoops = -1 // Infinite loop
+            audioPlayer?.volume = 1.0
+            audioPlayer?.prepareToPlay()
+            audioPlayer?.play()
+
+            startHapticLoop()
+            isAlarmPlaying = true
+            AppLogger.info("Alarm playback started: \(sound.name)", category: .push)
+        } catch {
+            AppLogger.warn("Failed to start alarm sound: \(error.localizedDescription)", category: .push)
+            AudioServicesPlaySystemSound(1005)
+            startHapticLoop()
+            isAlarmPlaying = true
+        }
+    }
+
+    /// Stops any ringing alarm or preview sound, terminates haptics
+    public func stopAlarm() {
         audioPlayer?.stop()
+        audioPlayer = nil
+        stopHapticLoop()
+        isAlarmPlaying = false
+        currentPlayingSoundId = nil
+
+        #if canImport(UIKit)
+        try? AVAudioSession.sharedInstance().setActive(false, options: .notifyOthersOnDeactivation)
+        #endif
+    }
+
+    /// Stops audio preview playback
+    public func stopPreview() {
+        stopAlarm()
+    }
+
+    private func startHapticLoop() {
+        stopHapticLoop()
+        #if canImport(UIKit)
+        triggerHaptic()
+        hapticTimer = Timer.scheduledTimer(withTimeInterval: 1.2, repeats: true) { [weak self] _ in
+            Task { @MainActor [weak self] in
+                guard self?.isAlarmPlaying == true else {
+                    self?.stopHapticLoop()
+                    return
+                }
+                self?.triggerHaptic()
+            }
+        }
+        #endif
+    }
+
+    private func stopHapticLoop() {
+        hapticTimer?.invalidate()
+        hapticTimer = nil
+    }
+
+    private func triggerHaptic() {
+        #if canImport(UIKit)
+        let feedback = UINotificationFeedbackGenerator()
+        feedback.notificationOccurred(.warning)
+        #endif
     }
 }

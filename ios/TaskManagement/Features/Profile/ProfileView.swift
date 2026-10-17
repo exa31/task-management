@@ -723,6 +723,39 @@ public struct ProfileView: View {
             .tint(AppColors.primary)
             .padding(.vertical, 2)
 
+            Divider()
+
+            // Alarm Ringtone Setting
+            NavigationLink(destination: SoundSettingsView()) {
+                HStack(spacing: 12) {
+                    ZStack {
+                        Circle()
+                            .fill(Color.orange.opacity(0.15))
+                            .frame(width: 32, height: 32)
+                        Image(systemName: "speaker.wave.3.fill")
+                            .font(.system(size: 14))
+                            .foregroundColor(.orange)
+                    }
+
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text("Nada Dering Alarm")
+                            .font(.system(size: 14, weight: .medium))
+                            .foregroundColor(.primary)
+                        Text(SoundManager.shared.selectedSound.name)
+                            .font(.system(size: 12))
+                            .foregroundColor(.secondary)
+                    }
+
+                    Spacer()
+
+                    Image(systemName: "chevron.right")
+                        .font(.system(size: 12, weight: .semibold))
+                        .foregroundColor(.secondary)
+                }
+                .padding(.vertical, 4)
+            }
+            .buttonStyle(.plain)
+
             // Save Notification Preferences Button
             Button(action: {
                 Task { _ = await viewModel.saveNotifications() }
