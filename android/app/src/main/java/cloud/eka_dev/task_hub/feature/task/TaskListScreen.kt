@@ -4,6 +4,7 @@ import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -164,7 +165,24 @@ fun TaskListScreen(
                     }
                 }
             } else {
+                val listState = rememberLazyListState()
+
+                val shouldLoadMore = remember {
+                    derivedStateOf {
+                        val total = listState.layoutInfo.totalItemsCount
+                        val lastVisible = listState.layoutInfo.visibleItemsInfo.lastOrNull()?.index ?: 0
+                        total > 0 && lastVisible >= total - 3
+                    }
+                }
+
+                LaunchedEffect(shouldLoadMore.value) {
+                    if (shouldLoadMore.value && uiState.hasMore && !uiState.isLoadingMore) {
+                        viewModel.loadMoreTasks()
+                    }
+                }
+
                 LazyColumn(
+                    state = listState,
                     verticalArrangement = Arrangement.spacedBy(10.dp),
                     modifier = Modifier.fillMaxSize()
                 ) {
@@ -178,6 +196,23 @@ fun TaskListScreen(
                             onStatusToggle = { viewModel.toggleTaskStatus(task) },
                             onStatusChange = { newStatus -> viewModel.updateTaskStatus(task, newStatus) }
                         )
+                    }
+
+                    if (uiState.isLoadingMore) {
+                        item {
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(16.dp),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                CircularProgressIndicator(
+                                    modifier = Modifier.size(24.dp),
+                                    strokeWidth = 2.dp,
+                                    color = BrandPrimary
+                                )
+                            }
+                        }
                     }
                 }
             }

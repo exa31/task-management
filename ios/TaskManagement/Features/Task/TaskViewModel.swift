@@ -4,6 +4,8 @@ import SwiftUI
 public final class TaskViewModel {
     public var tasks: [TaskItem] = []
     public var isLoading = false
+    public var hasMore = false
+    public var isLoadingMore = false
     public var errorMessage: String?
     public var selectedStatus: String? = nil
     public var selectedProjectId: Int64? = nil
@@ -15,6 +17,7 @@ public final class TaskViewModel {
     public var isLoadingActivities = false
     public var selectedTaskForDetail: TaskItem? = nil
 
+    private var nextCursor: Int64? = nil
     private let apiClient = APIClient.shared
 
     public init() {
@@ -25,15 +28,32 @@ public final class TaskViewModel {
     }
 
     @MainActor
-    public func loadTasks() async {
-        isLoading = true
+    public func loadTasks(reset: Bool = true) async {
+        if reset {
+            isLoading = true
+            nextCursor = nil
+            hasMore = false
+        }
         errorMessage = nil
         do {
-            let fetched = try await apiClient.getTasks()
+            let res = try await apiClient.getTasksPaginated(
+                status: selectedStatus,
+                search: searchQuery.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? nil : searchQuery,
+                projectId: selectedProjectId,
+                priority: selectedPriority,
+                limit: 15,
+                cursor: reset ? nil : nextCursor
+            )
             var seen = Set<Int64>()
-            self.tasks = fetched.filter { seen.insert($0.id).inserted }
+            let combined = reset ? res.items : (self.tasks + res.items)
+            self.tasks = combined.filter { seen.insert($0.id).inserted }
+            self.nextCursor = res.nextCursor
+            self.hasMore = res.hasMore
+
             AppLogger.info(
-                "Tasks loaded successfully", category: .task, metadata: ["count": tasks.count])
+                "Tasks loaded successfully", category: .task,
+                metadata: ["count": tasks.count, "hasMore": hasMore, "nextCursor": nextCursor ?? -1]
+            )
             SharedWidgetDataManager.shared.syncWithTaskList(self.tasks)
             Task {
                 await SharedWidgetDataManager.shared.syncWithBackend()
@@ -43,7 +63,45 @@ public final class TaskViewModel {
             AppLogger.error("Failed to load tasks", error: error, category: .task)
             self.errorMessage = error.localizedDescription
         }
-        self.isLoading = false
+        if reset {
+            self.isLoading = false
+        }
+    }
+
+    @MainActor
+    public func loadMoreTasksIfNeeded(currentTask: TaskItem? = nil) async {
+        guard !isLoading, !isLoadingMore, hasMore, nextCursor != nil else { return }
+        if let current = currentTask {
+            guard let index = tasks.firstIndex(where: { $0.id == current.id }),
+                  index >= tasks.count - 3 else {
+                return
+            }
+        }
+        isLoadingMore = true
+        do {
+            let res = try await apiClient.getTasksPaginated(
+                status: selectedStatus,
+                search: searchQuery.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? nil : searchQuery,
+                projectId: selectedProjectId,
+                priority: selectedPriority,
+                limit: 15,
+                cursor: nextCursor
+            )
+            var seen = Set<Int64>()
+            let combined = self.tasks + res.items
+            self.tasks = combined.filter { seen.insert($0.id).inserted }
+            self.nextCursor = res.nextCursor
+            self.hasMore = res.hasMore
+
+            AppLogger.info(
+                "More tasks loaded successfully", category: .task,
+                metadata: ["count": tasks.count, "hasMore": hasMore, "nextCursor": nextCursor ?? -1]
+            )
+            SharedWidgetDataManager.shared.syncWithTaskList(self.tasks)
+        } catch {
+            AppLogger.error("Failed to load more tasks", error: error, category: .task)
+        }
+        isLoadingMore = false
     }
 
     @MainActor
@@ -177,17 +235,24 @@ public final class TaskViewModel {
         return count
     }
 
+    @MainActor
     public func resetFilters() {
         selectedStatus = nil
         selectedProjectId = nil
         selectedPriority = nil
         filterFocusOnly = false
         searchQuery = ""
+        Task {
+            await loadTasks(reset: true)
+        }
     }
 
     @MainActor
     public func setStatusFilter(_ status: String?) {
         self.selectedStatus = status
+        Task {
+            await loadTasks(reset: true)
+        }
     }
 
     @MainActor

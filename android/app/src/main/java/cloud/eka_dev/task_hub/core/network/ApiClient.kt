@@ -32,6 +32,17 @@ interface ApiService {
         @Query("search") search: String? = null
     ): BaseResponse<List<Task>>
 
+    @GET("tasks")
+    suspend fun getTasksPaginated(
+        @Query("paginate") paginate: String = "cursor",
+        @Query("limit") limit: Int = 15,
+        @Query("cursor") cursor: Long? = null,
+        @Query("status") status: String? = null,
+        @Query("priority") priority: String? = null,
+        @Query("project_id") projectId: Long? = null,
+        @Query("search") search: String? = null
+    ): BaseResponse<TaskCursorResponse>
+
     @POST("tasks")
     suspend fun createTask(@Body req: CreateTaskRequest): BaseResponse<Task>
 

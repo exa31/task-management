@@ -79,6 +79,13 @@ data class Task(
 )
 
 @Serializable
+data class TaskCursorResponse(
+    val items: List<Task> = emptyList(),
+    @SerialName("next_cursor") val nextCursor: Long? = null,
+    @SerialName("has_more") val hasMore: Boolean = false
+)
+
+@Serializable
 data class CreateTaskRequest(
     val title: String,
     val description: String = "",

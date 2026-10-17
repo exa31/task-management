@@ -207,6 +207,18 @@ public struct TaskItem: Codable, Identifiable, Sendable {
     }
 }
 
+public struct TaskCursorResponse: Codable {
+    public let items: [TaskItem]
+    public let nextCursor: Int64?
+    public let hasMore: Bool
+
+    enum CodingKeys: String, CodingKey {
+        case items
+        case nextCursor = "next_cursor"
+        case hasMore = "has_more"
+    }
+}
+
 public struct CreateTaskRequest: Codable {
     public let title: String
     public let description: String

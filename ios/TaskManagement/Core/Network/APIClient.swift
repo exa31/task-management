@@ -290,6 +290,42 @@ public actor APIClient {
         return try await request(endpoint: endpoint)
     }
 
+    public func getTasksPaginated(
+        status: String? = nil,
+        search: String? = nil,
+        projectId: Int64? = nil,
+        priority: String? = nil,
+        limit: Int = 15,
+        cursor: Int64? = nil
+    ) async throws -> TaskCursorResponse {
+        var queryItems: [URLQueryItem] = [
+            URLQueryItem(name: "paginate", value: "cursor"),
+            URLQueryItem(name: "limit", value: String(limit))
+        ]
+        if let status = status, !status.isEmpty {
+            queryItems.append(URLQueryItem(name: "status", value: status))
+        }
+        if let search = search, !search.isEmpty {
+            queryItems.append(URLQueryItem(name: "search", value: search))
+        }
+        if let projectId = projectId {
+            queryItems.append(URLQueryItem(name: "project_id", value: String(projectId)))
+        }
+        if let priority = priority, !priority.isEmpty {
+            queryItems.append(URLQueryItem(name: "priority", value: priority))
+        }
+        if let cursor = cursor {
+            queryItems.append(URLQueryItem(name: "cursor", value: String(cursor)))
+        }
+        var endpoint = "tasks"
+        var components = URLComponents()
+        components.queryItems = queryItems
+        if let queryString = components.percentEncodedQuery {
+            endpoint += "?\(queryString)"
+        }
+        return try await request(endpoint: endpoint)
+    }
+
     public func getTask(id: Int64) async throws -> TaskItem {
         return try await request(endpoint: "tasks/\(id)")
     }

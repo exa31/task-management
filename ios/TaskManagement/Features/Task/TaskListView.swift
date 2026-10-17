@@ -434,6 +434,24 @@ public struct TaskListView: View {
                             .listRowSeparator(.hidden)
                             .listRowBackground(Color.clear)
                             .listRowInsets(EdgeInsets(top: 6, leading: 16, bottom: 6, trailing: 16))
+                            .onAppear {
+                                if task.id == viewModel.filteredTasks.last?.id {
+                                    Task {
+                                        await viewModel.loadMoreTasksIfNeeded(currentTask: task)
+                                    }
+                                }
+                            }
+                        }
+
+                        if viewModel.isLoadingMore {
+                            HStack {
+                                Spacer()
+                                ProgressView()
+                                    .padding(.vertical, 12)
+                                Spacer()
+                            }
+                            .listRowSeparator(.hidden)
+                            .listRowBackground(Color.clear)
                         }
                     }
                     .listStyle(.plain)

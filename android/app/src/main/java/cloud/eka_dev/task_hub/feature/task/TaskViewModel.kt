@@ -11,6 +11,9 @@ import kotlinx.coroutines.launch
 
 data class TaskUiState(
     val isLoading: Boolean = false,
+    val isLoadingMore: Boolean = false,
+    val hasMore: Boolean = false,
+    val nextCursor: Long? = null,
     val tasks: List<Task> = emptyList(),
     val selectedStatus: String? = null,
     val searchQuery: String = "",
@@ -26,45 +29,90 @@ class TaskViewModel(private val apiClient: ApiClient) : ViewModel() {
     val uiState: StateFlow<TaskUiState> = _uiState.asStateFlow()
 
     init {
-        loadTasks()
+        loadTasks(reset = true)
     }
 
-    fun loadTasks() {
+    fun loadTasks(reset: Boolean = true) {
         viewModelScope.launch {
-            _uiState.value = _uiState.value.copy(isLoading = true, error = null)
+            if (reset) {
+                _uiState.value = _uiState.value.copy(
+                    isLoading = true,
+                    nextCursor = null,
+                    hasMore = false,
+                    error = null
+                )
+            }
             try {
-                val res = apiClient.apiService.getTasks(
+                val res = apiClient.apiService.getTasksPaginated(
                     status = _uiState.value.selectedStatus,
-                    search = _uiState.value.searchQuery.ifEmpty { null }
+                    search = _uiState.value.searchQuery.ifEmpty { null },
+                    limit = 15,
+                    cursor = if (reset) null else _uiState.value.nextCursor
                 )
                 if (res.success && res.data != null) {
+                    val newItems = res.data.items
+                    val combined = if (reset) newItems else (_uiState.value.tasks + newItems)
                     _uiState.value = _uiState.value.copy(
                         isLoading = false,
-                        tasks = res.data.distinctBy { it.id }
+                        isLoadingMore = false,
+                        tasks = combined.distinctBy { it.id },
+                        nextCursor = res.data.nextCursor,
+                        hasMore = res.data.hasMore
                     )
                 } else {
                     _uiState.value = _uiState.value.copy(
                         isLoading = false,
+                        isLoadingMore = false,
                         error = res.message
                     )
                 }
             } catch (e: Exception) {
                 _uiState.value = _uiState.value.copy(
                     isLoading = false,
+                    isLoadingMore = false,
                     error = e.localizedMessage ?: "Failed to load tasks"
                 )
             }
         }
     }
 
+    fun loadMoreTasks() {
+        val state = _uiState.value
+        if (state.isLoading || state.isLoadingMore || !state.hasMore || state.nextCursor == null) return
+        viewModelScope.launch {
+            _uiState.value = _uiState.value.copy(isLoadingMore = true)
+            try {
+                val res = apiClient.apiService.getTasksPaginated(
+                    status = state.selectedStatus,
+                    search = state.searchQuery.ifEmpty { null },
+                    limit = 15,
+                    cursor = state.nextCursor
+                )
+                if (res.success && res.data != null) {
+                    val combined = state.tasks + res.data.items
+                    _uiState.value = _uiState.value.copy(
+                        isLoadingMore = false,
+                        tasks = combined.distinctBy { it.id },
+                        nextCursor = res.data.nextCursor,
+                        hasMore = res.data.hasMore
+                    )
+                } else {
+                    _uiState.value = _uiState.value.copy(isLoadingMore = false)
+                }
+            } catch (e: Exception) {
+                _uiState.value = _uiState.value.copy(isLoadingMore = false)
+            }
+        }
+    }
+
     fun setStatusFilter(status: String?) {
         _uiState.value = _uiState.value.copy(selectedStatus = status)
-        loadTasks()
+        loadTasks(reset = true)
     }
 
     fun setSearchQuery(query: String) {
         _uiState.value = _uiState.value.copy(searchQuery = query)
-        loadTasks()
+        loadTasks(reset = true)
     }
 
     fun toggleTaskStatus(task: Task) {
