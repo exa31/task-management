@@ -61,7 +61,13 @@ export const TaskListView: React.FC = () => {
 
   const tasks = useMemo(() => {
     const raw = data?.pages.flatMap((page) => (Array.isArray(page?.items) ? page.items : [])) || []
-    return [...raw].sort(compareTasks)
+    const uniqueMap = new Map<number, (typeof raw)[number]>()
+    for (const item of raw) {
+      if (item && item.id != null && !uniqueMap.has(item.id)) {
+        uniqueMap.set(item.id, item)
+      }
+    }
+    return Array.from(uniqueMap.values()).sort(compareTasks)
   }, [data])
 
   const sentinelRef = useRef<HTMLDivElement | null>(null)
