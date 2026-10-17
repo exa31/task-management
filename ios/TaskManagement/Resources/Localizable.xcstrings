@@ -544,6 +544,278 @@
           }
         }
       }
+    },
+    "alarm.dismiss" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dismiss Alarm"
+          }
+        },
+        "id" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Selesai / Matikan Alarm"
+          }
+        }
+      }
+    },
+    "alarm.snoozeMinutes" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Snooze %lld Min"
+          }
+        },
+        "id" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tunda %lld Menit"
+          }
+        }
+      }
+    },
+    "settings.alarmRingtone" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Alarm Ringtone"
+          }
+        },
+        "id" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nada Dering Alarm"
+          }
+        }
+      }
+    },
+    "settings.alarmRingtoneDefaultSection" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Default Alarm Ringtones"
+          }
+        },
+        "id" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nada Dering Alarm Bawaan"
+          }
+        }
+      }
+    },
+    "settings.alarmRingtoneDefaultDesc" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Choose the ringtone to play when a reminder is due."
+          }
+        },
+        "id" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pilih nada dering yang akan diputar saat pengingat jatuh tempo."
+          }
+        }
+      }
+    },
+    "settings.alarmRingtoneCustomSection" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Custom Ringtones"
+          }
+        },
+        "id" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nada Dering Kustom"
+          }
+        }
+      }
+    },
+    "settings.alarmRingtoneImport" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Import Custom Sound / Music"
+          }
+        },
+        "id" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Impor Suara / Musik Kustom"
+          }
+        }
+      }
+    },
+    "settings.alarmRingtoneImportDesc" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Supported audio formats: .aiff, .caf, .wav, .m4a"
+          }
+        },
+        "id" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Format audio yang didukung: .aiff, .caf, .wav, .m4a"
+          }
+        }
+      }
+    },
+    "settings.alarmRingtoneCustomBadge" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Custom File"
+          }
+        },
+        "id" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "File Kustom"
+          }
+        }
+      }
+    },
+    "settings.alarmRingtoneImportError" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Failed to import audio file: %@"
+          }
+        },
+        "id" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gagal mengimpor file audio: %@"
+          }
+        }
+      }
+    },
+    "sound.classicAlarm" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Classic Alarm (Urgent)"
+          }
+        },
+        "id" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Alarm Tegas (Penting)"
+          }
+        }
+      }
+    },
+    "sound.gentleBell" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gentle Bell (Calm)"
+          }
+        },
+        "id" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Lonceng Lembut (Tenang)"
+          }
+        }
+      }
+    },
+    "sound.lofiChime" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Lo-Fi Melody (Relaxed)"
+          }
+        },
+        "id" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Lo-Fi Melody (Santai)"
+          }
+        }
+      }
+    },
+    "sound.energeticSynth" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Energetic Beat (Focus)"
+          }
+        },
+        "id" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Energetic Beat (Fokus)"
+          }
+        }
+      }
+    },
+    "sound.defaultBeep" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "System Default (Beep)"
+          }
+        },
+        "id" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Default (Bip Sistem)"
+          }
+        }
+      }
+    },
+    "sound.customMusic" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Music: %@"
+          }
+        },
+        "id" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Musik: %@"
+          }
+        }
+      }
+    },
+    "sound.folderNotFound" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sound directory not found"
+          }
+        },
+        "id" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Folder suara tidak ditemukan"
+          }
+        }
+      }
     }
   },
   "version" : "1.0"

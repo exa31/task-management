@@ -203,3 +203,26 @@
 "settings.threshold24h" = "24 hours (1 day) before due date";
 "settings.threshold48h" = "48 hours (2 days) before due date";
 "settings.deleteConfirmTitle" = "Confirm Deletion";
+
+/* Alarm Ringtone Settings */
+"settings.alarmRingtone" = "Alarm Ringtone";
+"settings.alarmRingtoneDefaultSection" = "Default Alarm Ringtones";
+"settings.alarmRingtoneDefaultDesc" = "Choose the ringtone to play when a reminder is due.";
+"settings.alarmRingtoneCustomSection" = "Custom Ringtones";
+"settings.alarmRingtoneImport" = "Import Custom Sound / Music";
+"settings.alarmRingtoneImportDesc" = "Supported audio formats: .aiff, .caf, .wav, .m4a";
+"settings.alarmRingtoneCustomBadge" = "Custom File";
+"settings.alarmRingtoneImportError" = "Failed to import audio file: %@";
+
+/* Alarm Overlay */
+"alarm.dismiss" = "Dismiss Alarm";
+"alarm.snoozeMinutes" = "Snooze %lld Min";
+
+/* Sounds */
+"sound.classicAlarm" = "Classic Alarm (Urgent)";
+"sound.gentleBell" = "Gentle Bell (Calm)";
+"sound.lofiChime" = "Lo-Fi Melody (Relaxed)";
+"sound.energeticSynth" = "Energetic Beat (Focus)";
+"sound.defaultBeep" = "System Default (Beep)";
+"sound.customMusic" = "Music: %@";
+"sound.folderNotFound" = "Sound directory not found";

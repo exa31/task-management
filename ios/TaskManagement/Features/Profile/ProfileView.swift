@@ -738,10 +738,10 @@ public struct ProfileView: View {
                     }
 
                     VStack(alignment: .leading, spacing: 2) {
-                        Text("Nada Dering Alarm")
+                        Text(L10n.Settings.alarmRingtone)
                             .font(.system(size: 14, weight: .medium))
                             .foregroundColor(.primary)
-                        Text(SoundManager.shared.selectedSound.name)
+                        Text(SoundManager.shared.selectedSound.localizedName)
                             .font(.system(size: 12))
                             .foregroundColor(.secondary)
                     }

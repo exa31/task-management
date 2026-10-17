@@ -11,8 +11,8 @@ public struct SoundSettingsView: View {
     public var body: some View {
         List {
             Section(
-                header: Text("Nada Dering Alarm Bawaan"),
-                footer: Text("Pilih nada dering yang akan diputar saat pengingat jatuh tempo.")
+                header: Text(L10n.Settings.alarmRingtoneDefaultSection),
+                footer: Text(L10n.Settings.alarmRingtoneDefaultDesc)
             ) {
                 ForEach(SoundManager.presetSounds) { sound in
                     soundRow(sound: sound)
@@ -21,7 +21,7 @@ public struct SoundSettingsView: View {
 
             let customSounds = soundManager.getCustomSounds()
             if !customSounds.isEmpty {
-                Section(header: Text("Nada Dering Kustom")) {
+                Section(header: Text(L10n.Settings.alarmRingtoneCustomSection)) {
                     ForEach(customSounds) { sound in
                         soundRow(sound: sound)
                     }
@@ -36,13 +36,13 @@ public struct SoundSettingsView: View {
                         Image(systemName: "plus.circle.fill")
                             .font(.system(size: 16))
                             .foregroundColor(AppColors.primary)
-                        Text("Impor Suara / Musik Kustom")
+                        Text(L10n.Settings.alarmRingtoneImport)
                             .font(.system(size: 15, weight: .medium))
                             .foregroundColor(.primary)
                     }
                 }
             } footer: {
-                Text("Format audio yang didukung: .aiff, .caf, .wav, .m4a")
+                Text(L10n.Settings.alarmRingtoneImportDesc)
             }
 
             if let error = importErrorMessage {
@@ -53,7 +53,7 @@ public struct SoundSettingsView: View {
                 }
             }
         }
-        .navigationTitle("Nada Dering Alarm")
+        .navigationTitle(L10n.Settings.alarmRingtone)
         #if canImport(UIKit)
         .navigationBarTitleDisplayMode(.inline)
         #endif
@@ -73,7 +73,7 @@ public struct SoundSettingsView: View {
                     soundManager.selectedSoundId = imported.id
                 }
             } catch {
-                importErrorMessage = "Gagal mengimpor file audio: \(error.localizedDescription)"
+                importErrorMessage = L10n.Settings.alarmRingtoneImportError(message: error.localizedDescription)
             }
         }
     }
@@ -106,12 +106,12 @@ public struct SoundSettingsView: View {
 
             // Sound Name
             VStack(alignment: .leading, spacing: 2) {
-                Text(sound.name)
+                Text(sound.localizedName)
                     .font(.system(size: 15, weight: isSelected ? .bold : .regular))
                     .foregroundColor(.primary)
 
                 if sound.isCustom {
-                    Text("File Kustom")
+                    Text(L10n.Settings.alarmRingtoneCustomBadge)
                         .font(.system(size: 11))
                         .foregroundColor(.secondary)
                 }

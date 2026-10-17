@@ -519,7 +519,30 @@ public enum Translations {
             "widget.lockscreen.duePrefix": "Due: %@",
             "widget.lockscreen.allDone": "All tasks done!",
             "widget.lockscreen.configName": "Task Hub Lock Screen",
-            "widget.lockscreen.configDesc": "Monitor progress and urgent tasks directly on your Lock Screen or StandBy mode."
+            "widget.lockscreen.configDesc": "Monitor progress and urgent tasks directly on your Lock Screen or StandBy mode.",
+
+            // Alarm Overlay
+            "alarm.dismiss": "Dismiss Alarm",
+            "alarm.snoozeMinutes": "Snooze %lld Min",
+
+            // Sound & Ringtone Settings
+            "settings.alarmRingtone": "Alarm Ringtone",
+            "settings.alarmRingtoneDefaultSection": "Default Alarm Ringtones",
+            "settings.alarmRingtoneDefaultDesc": "Choose the ringtone to play when a reminder is due.",
+            "settings.alarmRingtoneCustomSection": "Custom Ringtones",
+            "settings.alarmRingtoneImport": "Import Custom Sound / Music",
+            "settings.alarmRingtoneImportDesc": "Supported audio formats: .aiff, .caf, .wav, .m4a",
+            "settings.alarmRingtoneCustomBadge": "Custom File",
+            "settings.alarmRingtoneImportError": "Failed to import audio file: %@",
+
+            // Sounds
+            "sound.classicAlarm": "Classic Alarm (Urgent)",
+            "sound.gentleBell": "Gentle Bell (Calm)",
+            "sound.lofiChime": "Lo-Fi Melody (Relaxed)",
+            "sound.energeticSynth": "Energetic Beat (Focus)",
+            "sound.defaultBeep": "System Default (Beep)",
+            "sound.customMusic": "Music: %@",
+            "sound.folderNotFound": "Sound directory not found"
         ],
         .id: [
             // Nav
@@ -942,7 +965,30 @@ public enum Translations {
             "widget.overview.configName": "Ringkasan Harian",
             "widget.overview.configDesc": "Lihat rasio penyelesaian tugas harianmu dengan progress ring yang memotivasi.",
             "widget.lockscreen.configName": "Layar Kunci Task Hub",
-            "widget.lockscreen.configDesc": "Pantau progres dan tugas terdekatmu langsung di Lock Screen atau StandBy Mode."
+            "widget.lockscreen.configDesc": "Pantau progres dan tugas terdekatmu langsung di Lock Screen atau StandBy Mode.",
+
+            // Alarm Overlay
+            "alarm.dismiss": "Selesai / Matikan Alarm",
+            "alarm.snoozeMinutes": "Tunda %lld Menit",
+
+            // Sound & Ringtone Settings
+            "settings.alarmRingtone": "Nada Dering Alarm",
+            "settings.alarmRingtoneDefaultSection": "Nada Dering Alarm Bawaan",
+            "settings.alarmRingtoneDefaultDesc": "Pilih nada dering yang akan diputar saat pengingat jatuh tempo.",
+            "settings.alarmRingtoneCustomSection": "Nada Dering Kustom",
+            "settings.alarmRingtoneImport": "Impor Suara / Musik Kustom",
+            "settings.alarmRingtoneImportDesc": "Format audio yang didukung: .aiff, .caf, .wav, .m4a",
+            "settings.alarmRingtoneCustomBadge": "File Kustom",
+            "settings.alarmRingtoneImportError": "Gagal mengimpor file audio: %@",
+
+            // Sounds
+            "sound.classicAlarm": "Alarm Tegas (Penting)",
+            "sound.gentleBell": "Lonceng Lembut (Tenang)",
+            "sound.lofiChime": "Lo-Fi Melody (Santai)",
+            "sound.energeticSynth": "Energetic Beat (Fokus)",
+            "sound.defaultBeep": "Default (Bip Sistem)",
+            "sound.customMusic": "Musik: %@",
+            "sound.folderNotFound": "Folder suara tidak ditemukan"
         ]
     ]
 }

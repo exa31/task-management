@@ -203,3 +203,26 @@
 "settings.threshold24h" = "24 Jam (1 hari) sebelum jatuh tempo";
 "settings.threshold48h" = "48 Jam (2 hari) sebelum jatuh tempo";
 "settings.deleteConfirmTitle" = "Konfirmasi Penghapusan";
+
+/* Alarm Ringtone Settings */
+"settings.alarmRingtone" = "Nada Dering Alarm";
+"settings.alarmRingtoneDefaultSection" = "Nada Dering Alarm Bawaan";
+"settings.alarmRingtoneDefaultDesc" = "Pilih nada dering yang akan diputar saat pengingat jatuh tempo.";
+"settings.alarmRingtoneCustomSection" = "Nada Dering Kustom";
+"settings.alarmRingtoneImport" = "Impor Suara / Musik Kustom";
+"settings.alarmRingtoneImportDesc" = "Format audio yang didukung: .aiff, .caf, .wav, .m4a";
+"settings.alarmRingtoneCustomBadge" = "File Kustom";
+"settings.alarmRingtoneImportError" = "Gagal mengimpor file audio: %@";
+
+/* Alarm Overlay */
+"alarm.dismiss" = "Selesai / Matikan Alarm";
+"alarm.snoozeMinutes" = "Tunda %lld Menit";
+
+/* Sounds */
+"sound.classicAlarm" = "Alarm Tegas (Penting)";
+"sound.gentleBell" = "Lonceng Lembut (Tenang)";
+"sound.lofiChime" = "Lo-Fi Melody (Santai)";
+"sound.energeticSynth" = "Energetic Beat (Fokus)";
+"sound.defaultBeep" = "Default (Bip Sistem)";
+"sound.customMusic" = "Musik: %@";
+"sound.folderNotFound" = "Folder suara tidak ditemukan";

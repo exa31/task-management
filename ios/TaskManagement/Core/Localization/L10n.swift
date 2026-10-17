@@ -323,6 +323,16 @@ public enum L10n {
         public static var widgetAutoSelectBadge: String { "settings.widgetAutoSelectBadge".localized }
         public static var widgetManualBadge: String { "settings.widgetManualBadge".localized }
         public static var widgetAutoSelectHint: String { "settings.widgetAutoSelectHint".localized }
+
+        // Alarm Ringtone Settings
+        public static var alarmRingtone: String { "settings.alarmRingtone".localized }
+        public static var alarmRingtoneDefaultSection: String { "settings.alarmRingtoneDefaultSection".localized }
+        public static var alarmRingtoneDefaultDesc: String { "settings.alarmRingtoneDefaultDesc".localized }
+        public static var alarmRingtoneCustomSection: String { "settings.alarmRingtoneCustomSection".localized }
+        public static var alarmRingtoneImport: String { "settings.alarmRingtoneImport".localized }
+        public static var alarmRingtoneImportDesc: String { "settings.alarmRingtoneImportDesc".localized }
+        public static var alarmRingtoneCustomBadge: String { "settings.alarmRingtoneCustomBadge".localized }
+        public static func alarmRingtoneImportError(message: String) -> String { "settings.alarmRingtoneImportError".localized(with: message) }
     }
 
     public enum Mcp {
@@ -474,5 +484,21 @@ public enum L10n {
         public static var lockscreenAllDone: String { "widget.lockscreen.allDone".localized }
         public static var lockscreenConfigName: String { "widget.lockscreen.configName".localized }
         public static var lockscreenConfigDesc: String { "widget.lockscreen.configDesc".localized }
+    }
+
+    public enum Alarm {
+        public static var liveAlert: String { "reminders.liveAlert".localized }
+        public static var dismiss: String { "alarm.dismiss".localized }
+        public static func snooze(minutes: Int) -> String { "alarm.snoozeMinutes".localized(with: minutes) }
+    }
+
+    public enum Sound {
+        public static var classicAlarm: String { "sound.classicAlarm".localized }
+        public static var gentleBell: String { "sound.gentleBell".localized }
+        public static var lofiChime: String { "sound.lofiChime".localized }
+        public static var energeticSynth: String { "sound.energeticSynth".localized }
+        public static var defaultBeep: String { "sound.defaultBeep".localized }
+        public static func customMusic(name: String) -> String { "sound.customMusic".localized(with: name) }
+        public static var folderNotFound: String { "sound.folderNotFound".localized }
     }
 }

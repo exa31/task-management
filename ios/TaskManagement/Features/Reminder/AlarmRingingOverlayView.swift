@@ -142,7 +142,7 @@ public struct AlarmRingingOverlayView: View {
                                 } else {
                                     Image(systemName: "checkmark.circle.fill")
                                         .font(.system(size: 20, weight: .bold))
-                                    Text("Selesai / Matikan Alarm")
+                                    Text(L10n.Alarm.dismiss)
                                         .font(.system(size: 17, weight: .bold, design: .rounded))
                                 }
                             }
@@ -171,7 +171,7 @@ public struct AlarmRingingOverlayView: View {
                                 HStack(spacing: 8) {
                                     Image(systemName: "clock.arrow.circlepath")
                                         .font(.system(size: 16, weight: .bold))
-                                    Text("Tunda \(selectedSnoozeMinutes) Menit")
+                                    Text(L10n.Alarm.snooze(minutes: selectedSnoozeMinutes))
                                         .font(.system(size: 15, weight: .semibold))
                                 }
                                 .frame(maxWidth: .infinity)
@@ -184,19 +184,19 @@ public struct AlarmRingingOverlayView: View {
 
                             // Menu for custom snooze duration
                             Menu {
-                                Button("Tunda 5 Menit") {
+                                Button(L10n.Alarm.snooze(minutes: 5)) {
                                     selectedSnoozeMinutes = 5
                                     Task { await alarmManager.snooze(minutes: 5) }
                                 }
-                                Button("Tunda 10 Menit") {
+                                Button(L10n.Alarm.snooze(minutes: 10)) {
                                     selectedSnoozeMinutes = 10
                                     Task { await alarmManager.snooze(minutes: 10) }
                                 }
-                                Button("Tunda 15 Menit") {
+                                Button(L10n.Alarm.snooze(minutes: 15)) {
                                     selectedSnoozeMinutes = 15
                                     Task { await alarmManager.snooze(minutes: 15) }
                                 }
-                                Button("Tunda 30 Menit") {
+                                Button(L10n.Alarm.snooze(minutes: 30)) {
                                     selectedSnoozeMinutes = 30
                                     Task { await alarmManager.snooze(minutes: 30) }
                                 }

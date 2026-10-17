@@ -17,6 +17,22 @@ public struct SoundOption: Identifiable, Hashable, Sendable {
         self.fileName = fileName
         self.isCustom = isCustom
     }
+
+    public var localizedName: String {
+        switch id {
+        case "classic_alarm": return L10n.Sound.classicAlarm
+        case "gentle_bell": return L10n.Sound.gentleBell
+        case "lofi_chime": return L10n.Sound.lofiChime
+        case "energetic_synth": return L10n.Sound.energeticSynth
+        case "default": return L10n.Sound.defaultBeep
+        default:
+            if isCustom {
+                let base = (fileName as NSString).deletingPathExtension
+                return L10n.Sound.customMusic(name: base)
+            }
+            return name
+        }
+    }
 }
 
 @Observable
@@ -97,7 +113,7 @@ public final class SoundManager {
     public func importCustomSound(from sourceURL: URL) throws -> SoundOption {
         createSoundsDirectoryIfNeeded()
         guard let targetDir = soundsDirectoryURL else {
-            throw NSError(domain: "SoundManager", code: 1, userInfo: [NSLocalizedDescriptionKey: "Folder suara tidak ditemukan"])
+            throw NSError(domain: "SoundManager", code: 1, userInfo: [NSLocalizedDescriptionKey: L10n.Sound.folderNotFound])
         }
 
         let originalName = sourceURL.lastPathComponent
