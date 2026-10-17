@@ -36,6 +36,8 @@
 		CC0102030405060708090002 /* TaskManagement/GoogleService-Info.plist in Resources */ = {isa = PBXBuildFile; fileRef = CC0102030405060708090001 /* TaskManagement/GoogleService-Info.plist */; };
 		CC0102030405060708090013 /* GoogleSignIn in Frameworks */ = {isa = PBXBuildFile; productRef = CC0102030405060708090011 /* GoogleSignIn */; };
 		CC0102030405060708090014 /* GoogleSignInSwift in Frameworks */ = {isa = PBXBuildFile; productRef = CC0102030405060708090012 /* GoogleSignInSwift */; };
+		FB0102030405060708090013 /* FirebaseCore in Frameworks */ = {isa = PBXBuildFile; productRef = FB0102030405060708090011 /* FirebaseCore */; };
+		FB0102030405060708090014 /* FirebaseMessaging in Frameworks */ = {isa = PBXBuildFile; productRef = FB0102030405060708090012 /* FirebaseMessaging */; };
 		DD0102030405060708090002 /* TaskManagement/Features/Mcp/McpViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = DD0102030405060708090001 /* TaskManagement/Features/Mcp/McpViewModel.swift */; };
 		DD0102030405060708090004 /* TaskManagement/Features/Mcp/McpSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DD0102030405060708090003 /* TaskManagement/Features/Mcp/McpSettingsView.swift */; };
 		CA0102030405060708090002 /* TaskManagement/Features/Calendar/CalendarView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CA0102030405060708090001 /* TaskManagement/Features/Calendar/CalendarView.swift */; };
@@ -160,6 +162,8 @@
 			files = (
 				CC0102030405060708090013 /* GoogleSignIn in Frameworks */,
 				CC0102030405060708090014 /* GoogleSignInSwift in Frameworks */,
+				FB0102030405060708090013 /* FirebaseCore in Frameworks */,
+				FB0102030405060708090014 /* FirebaseMessaging in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -239,6 +243,8 @@
 			packageProductDependencies = (
 				CC0102030405060708090011 /* GoogleSignIn */,
 				CC0102030405060708090012 /* GoogleSignInSwift */,
+				FB0102030405060708090011 /* FirebaseCore */,
+				FB0102030405060708090012 /* FirebaseMessaging */,
 			);
 			productName = TaskManagement;
 			productReference = 8BEFD367C4AB92E0F59B0B1F /* TaskManagement.app */;
@@ -294,6 +300,7 @@
 			projectRoot = "";
 			packageReferences = (
 				CC0102030405060708090010 /* XCRemoteSwiftPackageReference "GoogleSignIn-iOS" */,
+				FB0102030405060708090010 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */,
 			);
 			targets = (
 				42AEFBAE01D2DFD981F7DA7D /* TaskManagement */,
@@ -617,6 +624,14 @@
 				minimumVersion = 7.1.0;
 			};
 		};
+		FB0102030405060708090010 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/firebase/firebase-ios-sdk.git";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 11.0.0;
+			};
+		};
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
@@ -629,6 +644,16 @@
 			isa = XCSwiftPackageProductDependency;
 			package = CC0102030405060708090010 /* XCRemoteSwiftPackageReference "GoogleSignIn-iOS" */;
 			productName = GoogleSignInSwift;
+		};
+		FB0102030405060708090011 /* FirebaseCore */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = FB0102030405060708090010 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
+			productName = FirebaseCore;
+		};
+		FB0102030405060708090012 /* FirebaseMessaging */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = FB0102030405060708090010 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
+			productName = FirebaseMessaging;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};

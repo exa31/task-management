@@ -4,21 +4,29 @@ import UIKit
 import AppKit
 #endif
 import UserNotifications
+import FirebaseCore
+import FirebaseMessaging
 
 @MainActor
-public final class PushNotificationManager: NSObject, UNUserNotificationCenterDelegate {
+public final class PushNotificationManager: NSObject, UNUserNotificationCenterDelegate, MessagingDelegate {
     public static let shared = PushNotificationManager()
 
-    private let tokenKey = "apns_device_token"
+    private let tokenKey = "fcm_device_token"
     public private(set) var deviceToken: String?
 
     private override init() {
         super.init()
-        self.deviceToken = UserDefaults.standard.string(forKey: tokenKey)
+        if let cached = UserDefaults.standard.string(forKey: tokenKey), cached.count > 80 {
+            self.deviceToken = cached
+        }
     }
 
-    /// Sets up notification center delegate, alarm categories, and requests push permissions.
+    /// Sets up notification center delegate, alarm categories, Firebase Messaging, and requests push permissions.
     public func configure() {
+        if FirebaseApp.app() == nil {
+            FirebaseApp.configure()
+        }
+        Messaging.messaging().delegate = self
         UNUserNotificationCenter.current().delegate = self
         setupNotificationCategories()
         requestAuthorizationAndRegister()
@@ -67,13 +75,33 @@ public final class PushNotificationManager: NSObject, UNUserNotificationCenterDe
         }
     }
 
-    /// Handles device token received from APNs.
+    /// Handles device token received from APNs, forwards to Firebase Messaging, and retrieves the FCM token.
     public func handleDeviceTokenData(_ deviceTokenData: Data) {
-        let token = deviceTokenData.map { String(format: "%02.2hhx", $0) }.joined()
+        Messaging.messaging().apnsToken = deviceTokenData
+        let apnsHex = deviceTokenData.map { String(format: "%02.2hhx", $0) }.joined()
+        AppLogger.info("APNs device token forwarded to Firebase Messaging", category: .push, metadata: ["apns_token": apnsHex])
+
+        Messaging.messaging().token { [weak self] fcmToken, error in
+            Task { @MainActor in
+                if let error = error {
+                    AppLogger.warn("Failed to retrieve FCM token from Firebase", category: .push, metadata: ["error": error.localizedDescription])
+                    return
+                }
+                if let token = fcmToken, !token.isEmpty {
+                    self?.handleFCMRegistrationToken(token)
+                }
+            }
+        }
+    }
+
+    /// Handles FCM registration token received from Firebase Messaging.
+    public func handleFCMRegistrationToken(_ token: String) {
+        guard !token.isEmpty else { return }
         self.deviceToken = token
         UserDefaults.standard.set(token, forKey: tokenKey)
 
-        AppLogger.info("APNs device token received", category: .push, metadata: ["token": token])
+        let preview = token.count > 15 ? String(token.prefix(15)) + "..." : token
+        AppLogger.info("FCM registration token received", category: .push, metadata: ["token_preview": preview])
 
         Task {
             await registerDeviceTokenWithBackend(token: token)
@@ -151,4 +179,15 @@ public final class PushNotificationManager: NSObject, UNUserNotificationCenterDe
 
         completionHandler()
     }
+
+    // MARK: - MessagingDelegate
+
+    /// Called by Firebase Messaging when a new FCM registration token is generated or refreshed.
+    public nonisolated func messaging(_ messaging: Messaging, didReceiveRegistrationToken fcmToken: String?) {
+        guard let token = fcmToken, !token.isEmpty else { return }
+        Task { @MainActor in
+            PushNotificationManager.shared.handleFCMRegistrationToken(token)
+        }
+    }
 }
+
