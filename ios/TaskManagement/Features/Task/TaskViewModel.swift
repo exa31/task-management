@@ -29,7 +29,9 @@ public final class TaskViewModel {
         isLoading = true
         errorMessage = nil
         do {
-            self.tasks = try await apiClient.getTasks()
+            let fetched = try await apiClient.getTasks()
+            var seen = Set<Int64>()
+            self.tasks = fetched.filter { seen.insert($0.id).inserted }
             AppLogger.info(
                 "Tasks loaded successfully", category: .task, metadata: ["count": tasks.count])
             SharedWidgetDataManager.shared.syncWithTaskList(self.tasks)

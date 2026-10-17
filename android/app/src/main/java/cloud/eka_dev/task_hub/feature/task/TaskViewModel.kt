@@ -40,7 +40,7 @@ class TaskViewModel(private val apiClient: ApiClient) : ViewModel() {
                 if (res.success && res.data != null) {
                     _uiState.value = _uiState.value.copy(
                         isLoading = false,
-                        tasks = res.data
+                        tasks = res.data.distinctBy { it.id }
                     )
                 } else {
                     _uiState.value = _uiState.value.copy(
