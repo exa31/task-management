@@ -79,12 +79,21 @@ fun TaskDetailBottomSheet(
                         }
                     }
 
-                    IconButton(onClick = { showEditDialog = true }) {
-                        Icon(
-                            imageVector = Icons.Default.Edit,
-                            contentDescription = "Edit Tugas",
-                            tint = BrandPrimary
-                        )
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        IconButton(onClick = { viewModel.toggleTaskFocus(currentTask) }) {
+                            Icon(
+                                imageVector = if (currentTask.isFocus) Icons.Default.Star else Icons.Default.StarBorder,
+                                contentDescription = "Fokus",
+                                tint = if (currentTask.isFocus) Color(0xFFF59E0B) else MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                        IconButton(onClick = { showEditDialog = true }) {
+                            Icon(
+                                imageVector = Icons.Default.Edit,
+                                contentDescription = "Edit Tugas",
+                                tint = BrandPrimary
+                            )
+                        }
                     }
                 }
 
@@ -149,7 +158,7 @@ fun TaskDetailBottomSheet(
 
             // Tab Content
             if (selectedTab == 0) {
-                DetailTabContent(task = currentTask, viewModel = viewModel)
+                DetailTabContent(task = currentTask, viewModel = viewModel, onTaskDeleted = onDismiss)
             } else {
                 ActivityLogsTabContent(
                     task = currentTask,
@@ -188,7 +197,14 @@ fun TaskDetailBottomSheet(
 }
 
 @Composable
-private fun DetailTabContent(task: Task, viewModel: TaskViewModel) {
+private fun DetailTabContent(
+    task: Task,
+    viewModel: TaskViewModel,
+    onTaskDeleted: () -> Unit
+) {
+    var newSubtaskText by remember { mutableStateOf("") }
+    var showDeleteDialog by remember { mutableStateOf(false) }
+
     Column(
         modifier = Modifier
             .fillMaxWidth()
@@ -275,6 +291,45 @@ private fun DetailTabContent(task: Task, viewModel: TaskViewModel) {
             )
         }
 
+        // Add Subtask Form
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clip(RoundedCornerShape(10.dp))
+                .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.35f))
+                .padding(6.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            OutlinedTextField(
+                value = newSubtaskText,
+                onValueChange = { newSubtaskText = it },
+                placeholder = { Text("Tambah checklist subtask...", fontSize = 12.sp) },
+                modifier = Modifier.weight(1f),
+                singleLine = true,
+                colors = OutlinedTextFieldDefaults.colors(
+                    unfocusedContainerColor = MaterialTheme.colorScheme.surface,
+                    focusedContainerColor = MaterialTheme.colorScheme.surface
+                ),
+                shape = RoundedCornerShape(8.dp)
+            )
+            Spacer(modifier = Modifier.width(6.dp))
+            IconButton(
+                onClick = {
+                    if (newSubtaskText.isNotBlank()) {
+                        viewModel.createSubtask(task.id, newSubtaskText.trim())
+                        newSubtaskText = ""
+                    }
+                },
+                enabled = newSubtaskText.isNotBlank()
+            ) {
+                Icon(
+                    Icons.Default.AddCircle,
+                    contentDescription = "Tambah Subtask",
+                    tint = if (newSubtaskText.isNotBlank()) BrandPrimary else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f)
+                )
+            }
+        }
+
         // Subtask Checklist Items
         if (task.subtasks.isNotEmpty()) {
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -285,7 +340,7 @@ private fun DetailTabContent(task: Task, viewModel: TaskViewModel) {
                             .clip(RoundedCornerShape(10.dp))
                             .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f))
                             .padding(10.dp),
-                        verticalAlignment = Alignment.Top
+                        verticalAlignment = Alignment.CenterVertically
                     ) {
                         Checkbox(
                             checked = subtask.isCompleted,
@@ -320,6 +375,17 @@ private fun DetailTabContent(task: Task, viewModel: TaskViewModel) {
                                 )
                             }
                         }
+                        IconButton(
+                            onClick = { viewModel.deleteSubtask(task.id, subtask.id) },
+                            modifier = Modifier.size(24.dp)
+                        ) {
+                            Icon(
+                                Icons.Default.DeleteOutline,
+                                contentDescription = "Hapus Subtask",
+                                tint = MaterialTheme.colorScheme.error.copy(alpha = 0.7f),
+                                modifier = Modifier.size(16.dp)
+                            )
+                        }
                     }
                 }
             }
@@ -330,6 +396,47 @@ private fun DetailTabContent(task: Task, viewModel: TaskViewModel) {
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
         }
+
+        Spacer(modifier = Modifier.height(8.dp))
+
+        // Delete Task Button
+        OutlinedButton(
+            onClick = { showDeleteDialog = true },
+            modifier = Modifier.fillMaxWidth(),
+            shape = RoundedCornerShape(12.dp),
+            colors = ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.error),
+            border = BorderStroke(1.dp, MaterialTheme.colorScheme.error.copy(alpha = 0.5f))
+        ) {
+            Icon(Icons.Default.Delete, contentDescription = null, modifier = Modifier.size(16.dp))
+            Spacer(modifier = Modifier.width(6.dp))
+            Text("Hapus Tugas Ini", fontWeight = FontWeight.SemiBold)
+        }
+    }
+
+    if (showDeleteDialog) {
+        AlertDialog(
+            onDismissRequest = { showDeleteDialog = false },
+            title = { Text("Hapus Tugas?", fontWeight = FontWeight.Bold) },
+            text = { Text("Apakah Anda yakin ingin menghapus tugas '${task.title}'? Tindakan ini tidak dapat dibatalkan.") },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        viewModel.deleteTask(task.id) {
+                            showDeleteDialog = false
+                            onTaskDeleted()
+                        }
+                    },
+                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error)
+                ) {
+                    Text("Hapus", color = Color.White)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showDeleteDialog = false }) {
+                    Text("Batal")
+                }
+            }
+        )
     }
 }
 
@@ -517,7 +624,7 @@ fun EditTaskDialog(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.spacedBy(6.dp)
                 ) {
-                    listOf("todo" to "To Do", "in_progress" to "In Progress", "done" to "Done").forEach { (st, label) ->
+                    listOf("todo" to "To Do", "in_progress" to "In Progress", "review" to "Review", "done" to "Done").forEach { (st, label) ->
                         FilterChip(
                             selected = status == st,
                             onClick = { status = st },

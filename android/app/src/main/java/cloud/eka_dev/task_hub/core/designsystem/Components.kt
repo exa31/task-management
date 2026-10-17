@@ -159,6 +159,7 @@ fun TaskItemCard(
     task: Task,
     onTaskClick: () -> Unit,
     onStatusToggle: () -> Unit,
+    onFocusToggle: () -> Unit = {},
     onStatusChange: (String) -> Unit = {},
     modifier: Modifier = Modifier
 ) {
@@ -285,9 +286,26 @@ fun TaskItemCard(
                     }
                 }
 
-                Spacer(modifier = Modifier.width(8.dp))
+                Spacer(modifier = Modifier.width(6.dp))
 
-                PriorityBadge(priority = task.priority)
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(4.dp)
+                ) {
+                    IconButton(
+                        onClick = onFocusToggle,
+                        modifier = Modifier.size(24.dp)
+                    ) {
+                        Icon(
+                            imageVector = if (task.isFocus) Icons.Default.Star else Icons.Default.StarBorder,
+                            contentDescription = "Toggle Fokus",
+                            tint = if (task.isFocus) Color(0xFFF59E0B) else MaterialTheme.colorScheme.outlineVariant,
+                            modifier = Modifier.size(18.dp)
+                        )
+                    }
+
+                    PriorityBadge(priority = task.priority)
+                }
             }
 
             // Progress Bar (if subtasks exist)
@@ -634,6 +652,128 @@ fun TaskListSkeleton(count: Int = 6) {
     ) {
         repeat(count) {
             TaskItemSkeleton()
+        }
+    }
+}
+
+@Composable
+fun TaskFocusHorizonBanner(
+    focusTasks: List<Task>,
+    onTaskClick: (Task) -> Unit,
+    onFocusToggle: (Task) -> Unit,
+    modifier: Modifier = Modifier
+) {
+    if (focusTasks.isEmpty()) return
+
+    Card(
+        modifier = modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(16.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = Color(0xFFFFFBEB)
+        ),
+        border = BorderStroke(1.dp, Color(0xFFFDE68A))
+    ) {
+        Column(modifier = Modifier.padding(14.dp)) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(6.dp)
+                ) {
+                    Icon(
+                        Icons.Default.Star,
+                        contentDescription = null,
+                        tint = Color(0xFFF59E0B),
+                        modifier = Modifier.size(16.dp)
+                    )
+                    Text(
+                        "FOKUS HARI INI",
+                        fontSize = 11.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = Color(0xFFB45309),
+                        letterSpacing = 0.5.sp
+                    )
+                }
+                Surface(
+                    shape = CircleShape,
+                    color = Color(0xFFF59E0B).copy(alpha = 0.15f)
+                ) {
+                    Text(
+                        "${focusTasks.size} Tugas",
+                        fontSize = 11.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = Color(0xFFB45309),
+                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp)
+                    )
+                }
+            }
+
+            Spacer(modifier = Modifier.height(10.dp))
+
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .horizontalScroll(rememberScrollState()),
+                horizontalArrangement = Arrangement.spacedBy(10.dp)
+            ) {
+                focusTasks.forEach { task ->
+                    Surface(
+                        modifier = Modifier
+                            .width(220.dp)
+                            .clip(RoundedCornerShape(12.dp))
+                            .clickable { onTaskClick(task) },
+                        color = MaterialTheme.colorScheme.surface,
+                        shape = RoundedCornerShape(12.dp),
+                        border = BorderStroke(1.dp, Color(0xFFFDE68A)),
+                        shadowElevation = 1.dp
+                    ) {
+                        Column(modifier = Modifier.padding(10.dp)) {
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.Top
+                            ) {
+                                Text(
+                                    text = task.title,
+                                    fontSize = 13.sp,
+                                    fontWeight = FontWeight.SemiBold,
+                                    maxLines = 1,
+                                    modifier = Modifier.weight(1f)
+                                )
+                                IconButton(
+                                    onClick = { onFocusToggle(task) },
+                                    modifier = Modifier.size(20.dp)
+                                ) {
+                                    Icon(
+                                        Icons.Default.Star,
+                                        contentDescription = "Hapus Fokus",
+                                        tint = Color(0xFFF59E0B),
+                                        modifier = Modifier.size(14.dp)
+                                    )
+                                }
+                            }
+
+                            Spacer(modifier = Modifier.height(4.dp))
+
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                if (!task.projectName.isNullOrEmpty()) {
+                                    ProjectPill(name = task.projectName, colorHex = task.projectColor)
+                                } else {
+                                    Spacer(modifier = Modifier.width(1.dp))
+                                }
+                                PriorityBadge(priority = task.priority)
+                            }
+                        }
+                    }
+                }
+            }
         }
     }
 }

@@ -246,6 +246,128 @@ data class RegisterDeviceTokenRequest(
 )
 
 @Serializable
+data class UpdateProjectRequest(
+    val name: String? = null,
+    val color: String? = null,
+    val description: String? = null
+)
+
+@Serializable
+data class UpdateProfileRequest(
+    val name: String? = null,
+    val timezone: String? = null,
+    @SerialName("due_date_warning_threshold") val dueDateWarningThreshold: Int? = null,
+    @SerialName("email_notifications_enabled") val emailNotificationsEnabled: Boolean? = null
+)
+
+@Serializable
+data class DeleteAccountRequest(
+    val confirmation: String = "DELETE"
+)
+
+@Serializable
+data class BindOAuthRequest(
+    val provider: String,
+    @SerialName("id_token") val idToken: String
+)
+
+@Serializable
+data class UnbindOAuthRequest(
+    val provider: String
+)
+
+@Serializable
+data class McpToken(
+    val id: Long,
+    @SerialName("user_id") val userId: String = "",
+    val name: String,
+    val token: String? = null,
+    @SerialName("created_at") val createdAt: String = "",
+    @SerialName("expires_at") val expiresAt: String? = null,
+    @SerialName("last_used_at") val lastUsedAt: String? = null
+)
+
+@Serializable
+data class GenerateMcpTokenRequest(
+    val name: String
+)
+
+@Serializable
+data class GenerateMcpTokenResponse(
+    val token: String,
+    @SerialName("token_record") val mcpToken: McpToken? = null
+)
+
+// GraphQL Data Models for Calendar
+@Serializable
+data class GraphQLRequest(
+    val query: String,
+    val variables: Map<String, String>? = null
+)
+
+@Serializable
+data class GraphQLResponse<T>(
+    val data: T? = null,
+    val errors: List<GraphQLError>? = null
+)
+
+@Serializable
+data class GraphQLError(
+    val message: String
+)
+
+@Serializable
+data class CalendarGraphQLData(
+    val tasks: List<GraphQLTaskItem> = emptyList(),
+    val reminders: List<GraphQLReminderItem> = emptyList(),
+    val activities: List<GraphQLActivityItem> = emptyList()
+)
+
+@Serializable
+data class GraphQLTaskItem(
+    val id: Long,
+    val title: String,
+    val description: String? = null,
+    val status: String = "todo",
+    val priority: String = "medium",
+    @SerialName("due_date") val dueDate: String? = null,
+    @SerialName("is_focus") val isFocus: Boolean? = null,
+    val progress: Int? = null,
+    val tags: List<String>? = null,
+    val project: GraphQLProjectItem? = null
+)
+
+@Serializable
+data class GraphQLProjectItem(
+    val id: Long,
+    val name: String,
+    val color: String? = null
+)
+
+@Serializable
+data class GraphQLReminderItem(
+    val id: Long,
+    val title: String,
+    val description: String? = null,
+    @SerialName("remind_at") val remindAt: String,
+    val status: String = "pending",
+    @SerialName("task_id") val taskId: Long? = null,
+    @SerialName("task_title") val taskTitle: String? = null,
+    @SerialName("snooze_count") val snoozeCount: Int? = null,
+    @SerialName("created_at") val createdAt: String? = null
+)
+
+@Serializable
+data class GraphQLActivityItem(
+    val id: Long,
+    @SerialName("task_id") val taskId: Long? = null,
+    @SerialName("task_title") val taskTitle: String? = null,
+    @SerialName("activity_type") val activityType: String,
+    val description: String,
+    @SerialName("created_at") val createdAt: String
+)
+
+@Serializable
 data class BaseResponse<T>(
     val success: Boolean = true,
     val data: T? = null,

@@ -124,6 +124,22 @@ fun TaskListScreen(
                     leadingIcon = { Icon(Icons.Default.CheckCircle, contentDescription = null, modifier = Modifier.size(14.dp)) },
                     label = { Text("Selesai") }
                 )
+                FilterChip(
+                    selected = uiState.filterFocusOnly,
+                    onClick = { viewModel.toggleFocusFilter() },
+                    leadingIcon = {
+                        Icon(
+                            if (uiState.filterFocusOnly) Icons.Default.Star else Icons.Default.StarBorder,
+                            contentDescription = null,
+                            tint = if (uiState.filterFocusOnly) Color(0xFFF59E0B) else MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.size(14.dp)
+                        )
+                    },
+                    label = {
+                        val count = viewModel.focusTasks.size
+                        Text(if (count > 0) "Fokus ($count)" else "Fokus")
+                    }
+                )
             }
 
             Spacer(modifier = Modifier.height(14.dp))
@@ -167,6 +183,14 @@ fun TaskListScreen(
             } else {
                 val listState = rememberLazyListState()
 
+                val displayedTasks = remember(uiState.tasks, uiState.filterFocusOnly) {
+                    if (uiState.filterFocusOnly) {
+                        uiState.tasks.filter { it.isFocus }
+                    } else {
+                        uiState.tasks
+                    }
+                }
+
                 val shouldLoadMore = remember {
                     derivedStateOf {
                         val total = listState.layoutInfo.totalItemsCount
@@ -176,7 +200,7 @@ fun TaskListScreen(
                 }
 
                 LaunchedEffect(shouldLoadMore.value) {
-                    if (shouldLoadMore.value && uiState.hasMore && !uiState.isLoadingMore) {
+                    if (shouldLoadMore.value && uiState.hasMore && !uiState.isLoadingMore && !uiState.filterFocusOnly) {
                         viewModel.loadMoreTasks()
                     }
                 }
@@ -186,7 +210,21 @@ fun TaskListScreen(
                     verticalArrangement = Arrangement.spacedBy(10.dp),
                     modifier = Modifier.fillMaxSize()
                 ) {
-                    items(uiState.tasks, key = { it.id }) { task ->
+                    // Today's Focus Horizon Banner
+                    if (viewModel.focusTasks.isNotEmpty() && !uiState.filterFocusOnly) {
+                        item {
+                            TaskFocusHorizonBanner(
+                                focusTasks = viewModel.focusTasks,
+                                onTaskClick = { task ->
+                                    viewModel.selectTask(task)
+                                    onTaskClick(task.id)
+                                },
+                                onFocusToggle = { task -> viewModel.toggleTaskFocus(task) }
+                            )
+                        }
+                    }
+
+                    items(displayedTasks, key = { it.id }) { task ->
                         TaskItemCard(
                             task = task,
                             onTaskClick = {
@@ -194,11 +232,12 @@ fun TaskListScreen(
                                 onTaskClick(task.id)
                             },
                             onStatusToggle = { viewModel.toggleTaskStatus(task) },
+                            onFocusToggle = { viewModel.toggleTaskFocus(task) },
                             onStatusChange = { newStatus -> viewModel.updateTaskStatus(task, newStatus) }
                         )
                     }
 
-                    if (uiState.isLoadingMore) {
+                    if (uiState.isLoadingMore && !uiState.filterFocusOnly) {
                         item {
                             Box(
                                 modifier = Modifier
@@ -230,8 +269,8 @@ fun TaskListScreen(
     if (showCreateDialog) {
         CreateTaskDialog(
             onDismiss = { showCreateDialog = false },
-            onCreate = { title, desc, priority ->
-                viewModel.createTask(title, desc, priority)
+            onCreate = { title, desc, priority, isFocus ->
+                viewModel.createTask(title, desc, priority, isFocus)
                 showCreateDialog = false
             }
         )
@@ -241,11 +280,12 @@ fun TaskListScreen(
 @Composable
 fun CreateTaskDialog(
     onDismiss: () -> Unit,
-    onCreate: (String, String, String) -> Unit
+    onCreate: (String, String, String, Boolean) -> Unit
 ) {
     var title by remember { mutableStateOf("") }
     var description by remember { mutableStateOf("") }
     var priority by remember { mutableStateOf("medium") }
+    var isFocus by remember { mutableStateOf(false) }
 
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -277,13 +317,24 @@ fun CreateTaskDialog(
                         )
                     }
                 }
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Text("Fokus Hari Ini", fontSize = 13.sp)
+                    Switch(
+                        checked = isFocus,
+                        onCheckedChange = { isFocus = it }
+                    )
+                }
             }
         },
         confirmButton = {
             AppButton(
                 text = "Simpan",
                 enabled = title.isNotBlank(),
-                onClick = { onCreate(title, description, priority) }
+                onClick = { onCreate(title, description, priority, isFocus) }
             )
         },
         dismissButton = {

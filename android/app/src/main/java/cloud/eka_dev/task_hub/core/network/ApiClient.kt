@@ -23,6 +23,22 @@ interface ApiService {
     @GET("auth/profile")
     suspend fun getCurrentUser(): BaseResponse<User>
 
+    @PUT("auth/profile")
+    suspend fun updateProfile(@Body req: UpdateProfileRequest): BaseResponse<User>
+
+    @Multipart
+    @POST("auth/avatar")
+    suspend fun uploadAvatar(@Part avatar: MultipartBody.Part): BaseResponse<User>
+
+    @POST("auth/bind-oauth")
+    suspend fun bindOAuth(@Body req: BindOAuthRequest): BaseResponse<User>
+
+    @POST("auth/unbind-oauth")
+    suspend fun unbindOAuth(@Body req: UnbindOAuthRequest): BaseResponse<User>
+
+    @HTTP(method = "DELETE", path = "auth/account", hasBody = true)
+    suspend fun deleteAccount(@Body req: DeleteAccountRequest): BaseResponse<Unit>
+
     // Tasks
     @GET("tasks")
     suspend fun getTasks(
@@ -52,6 +68,9 @@ interface ApiService {
     @PUT("tasks/{id}")
     suspend fun updateTask(@Path("id") id: Long, @Body req: UpdateTaskRequest): BaseResponse<Task>
 
+    @POST("tasks/{id}/focus")
+    suspend fun toggleTaskFocus(@Path("id") id: Long): BaseResponse<Task>
+
     @DELETE("tasks/{id}")
     suspend fun deleteTask(@Path("id") id: Long): BaseResponse<Unit>
 
@@ -68,6 +87,12 @@ interface ApiService {
         @Body req: UpdateSubtaskRequest
     ): BaseResponse<Subtask>
 
+    @DELETE("tasks/{taskId}/subtasks/{subtaskId}")
+    suspend fun deleteSubtask(
+        @Path("taskId") taskId: Long,
+        @Path("subtaskId") subtaskId: Long
+    ): BaseResponse<Unit>
+
     @GET("tasks/{id}/activities")
     suspend fun getTaskActivities(@Path("id") taskId: Long): BaseResponse<List<TaskActivity>>
 
@@ -83,6 +108,9 @@ interface ApiService {
 
     @POST("projects")
     suspend fun createProject(@Body req: CreateProjectRequest): BaseResponse<Project>
+
+    @PUT("projects/{id}")
+    suspend fun updateProject(@Path("id") id: Long, @Body req: UpdateProjectRequest): BaseResponse<Project>
 
     @DELETE("projects/{id}")
     suspend fun deleteProject(@Path("id") id: Long): BaseResponse<Unit>
@@ -127,6 +155,20 @@ interface ApiService {
 
     @POST("reminders/{id}/dismiss")
     suspend fun dismissReminder(@Path("id") id: Long): BaseResponse<Reminder>
+
+    // MCP Tokens
+    @GET("tokens")
+    suspend fun getMcpTokens(): BaseResponse<List<McpToken>>
+
+    @POST("tokens")
+    suspend fun generateMcpToken(@Body req: GenerateMcpTokenRequest): BaseResponse<GenerateMcpTokenResponse>
+
+    @DELETE("tokens/{id}")
+    suspend fun deleteMcpToken(@Path("id") id: Long): BaseResponse<Unit>
+
+    // GraphQL for Calendar
+    @POST("graphql")
+    suspend fun executeGraphQL(@Body req: GraphQLRequest): GraphQLResponse<CalendarGraphQLData>
 }
 
 class AuthInterceptor(private val tokenManager: TokenManager) : Interceptor {
@@ -141,11 +183,78 @@ class AuthInterceptor(private val tokenManager: TokenManager) : Interceptor {
     }
 }
 
+class TokenAuthenticator(
+    private val tokenManager: TokenManager,
+    private val baseUrl: String,
+    private val json: Json
+) : Authenticator {
+    override fun authenticate(route: Route?, response: Response): Request? {
+        if (response.responseCount > 2) {
+            return null
+        }
+
+        val refreshToken = runBlocking { tokenManager.getRefreshToken() } ?: return null
+
+        val refreshClient = OkHttpClient.Builder()
+            .connectTimeout(15, TimeUnit.SECONDS)
+            .readTimeout(15, TimeUnit.SECONDS)
+            .build()
+
+        val requestBody = json.encodeToString(
+            RefreshTokenRequest.serializer(),
+            RefreshTokenRequest(refreshToken = refreshToken)
+        ).let { RequestBody.create("application/json".toMediaType(), it) }
+
+        val refreshRequest = Request.Builder()
+            .url("${baseUrl.trimEnd('/')}/auth/refresh")
+            .post(requestBody)
+            .build()
+
+        try {
+            val refreshResponse = refreshClient.newCall(refreshRequest).execute()
+            if (refreshResponse.isSuccessful) {
+                val bodyString = refreshResponse.body?.string() ?: return null
+                val baseRes = json.decodeFromString(
+                    BaseResponse.serializer(TokenPair.serializer()),
+                    bodyString
+                )
+                val newTokens = baseRes.data
+                if (newTokens != null) {
+                    runBlocking {
+                        tokenManager.saveTokens(newTokens.accessToken, newTokens.refreshToken)
+                    }
+                    return response.request.newBuilder()
+                        .header("Authorization", "Bearer ${newTokens.accessToken}")
+                        .build()
+                }
+            } else {
+                runBlocking {
+                    tokenManager.clearSession()
+                }
+            }
+        } catch (e: Exception) {
+            // Error during refresh
+        }
+        return null
+    }
+
+    private val Response.responseCount: Int
+        get() {
+            var result = 1
+            var prior = priorResponse
+            while (prior != null) {
+                result++
+                prior = prior.priorResponse
+            }
+            return result
+        }
+}
+
 class ApiClient(
     val tokenManager: TokenManager,
     baseUrl: String = BuildConfig.BASE_URL
 ) {
-    private val json = Json {
+    val json = Json {
         ignoreUnknownKeys = true
         coerceInputValues = true
         isLenient = true
@@ -153,6 +262,7 @@ class ApiClient(
 
     val okHttpClient: OkHttpClient = OkHttpClient.Builder()
         .addInterceptor(AuthInterceptor(tokenManager))
+        .authenticator(TokenAuthenticator(tokenManager, baseUrl, json))
         .addInterceptor(HttpLoggingInterceptor().apply {
             level = HttpLoggingInterceptor.Level.BODY
         })

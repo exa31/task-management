@@ -14,9 +14,14 @@ import androidx.navigation.compose.*
 import cloud.eka_dev.task_hub.core.designsystem.TaskManagementTheme
 import cloud.eka_dev.task_hub.feature.auth.AuthScreen
 import cloud.eka_dev.task_hub.feature.auth.AuthViewModel
+import cloud.eka_dev.task_hub.feature.calendar.CalendarScreen
+import cloud.eka_dev.task_hub.feature.calendar.CalendarViewModel
+import cloud.eka_dev.task_hub.feature.mcp.McpScreen
+import cloud.eka_dev.task_hub.feature.mcp.McpViewModel
 import cloud.eka_dev.task_hub.feature.note.NoteScreen
 import cloud.eka_dev.task_hub.feature.note.NoteViewModel
 import cloud.eka_dev.task_hub.feature.profile.ProfileScreen
+import cloud.eka_dev.task_hub.feature.profile.ProfileViewModel
 import cloud.eka_dev.task_hub.feature.project.ProjectScreen
 import cloud.eka_dev.task_hub.feature.project.ProjectViewModel
 import cloud.eka_dev.task_hub.feature.reminder.ReminderScreen
@@ -32,12 +37,14 @@ class MainActivity : ComponentActivity() {
         val authViewModel = AuthViewModel(app.apiClient, app.tokenManager)
         val taskViewModel = TaskViewModel(app.apiClient)
         val projectViewModel = ProjectViewModel(app.apiClient)
+        val calendarViewModel = CalendarViewModel(app.apiClient)
         val noteViewModel = NoteViewModel(app.apiClient)
         val reminderViewModel = ReminderViewModel(app.apiClient, app.sseClient)
+        val profileViewModel = ProfileViewModel(app.apiClient, app.tokenManager)
+        val mcpViewModel = McpViewModel(app.apiClient)
 
         setContent {
             TaskManagementTheme {
-                val navController = rememberNavController()
                 val tokenState by app.tokenManager.accessTokenFlow.collectAsState(initial = "loading")
 
                 if (tokenState == "loading") {
@@ -47,18 +54,22 @@ class MainActivity : ComponentActivity() {
                         viewModel = authViewModel,
                         onAuthSuccess = {
                             taskViewModel.loadTasks()
-                            projectViewModel.loadProjects()
+                            projectViewModel.loadData()
+                            calendarViewModel.loadMonthData(calendarViewModel.currentMonth.value)
                             noteViewModel.loadNotes()
                             reminderViewModel.loadReminders()
+                            profileViewModel.loadProfile()
                         }
                     )
                 } else {
                     MainNavigationScaffold(
                         taskViewModel = taskViewModel,
                         projectViewModel = projectViewModel,
+                        calendarViewModel = calendarViewModel,
                         noteViewModel = noteViewModel,
                         reminderViewModel = reminderViewModel,
-                        tokenManager = app.tokenManager,
+                        profileViewModel = profileViewModel,
+                        mcpViewModel = mcpViewModel,
                         onSignOut = { authViewModel.signOut() }
                     )
                 }
@@ -70,18 +81,22 @@ class MainActivity : ComponentActivity() {
 sealed class Screen(val route: String, val title: String) {
     object Tasks : Screen("tasks", "Tugas")
     object Projects : Screen("projects", "Proyek")
+    object Calendar : Screen("calendar", "Kalender")
     object Notes : Screen("notes", "Catatan")
     object Reminders : Screen("reminders", "Pengingat")
     object Profile : Screen("profile", "Profil")
+    object Mcp : Screen("mcp", "MCP Tokens")
 }
 
 @Composable
 fun MainNavigationScaffold(
     taskViewModel: TaskViewModel,
     projectViewModel: ProjectViewModel,
+    calendarViewModel: CalendarViewModel,
     noteViewModel: NoteViewModel,
     reminderViewModel: ReminderViewModel,
-    tokenManager: cloud.eka_dev.task_hub.core.datastore.TokenManager,
+    profileViewModel: ProfileViewModel,
+    mcpViewModel: McpViewModel,
     onSignOut: () -> Unit
 ) {
     val navController = rememberNavController()
@@ -90,67 +105,81 @@ fun MainNavigationScaffold(
 
     Scaffold(
         bottomBar = {
-            NavigationBar {
-                NavigationBarItem(
-                    selected = currentRoute == Screen.Tasks.route,
-                    onClick = {
-                        navController.navigate(Screen.Tasks.route) {
-                            popUpTo(navController.graph.findStartDestination().id) { saveState = true }
-                            launchSingleTop = true
-                            restoreState = true
-                        }
-                    },
-                    icon = { Icon(Icons.Default.Checklist, contentDescription = null) },
-                    label = { Text(Screen.Tasks.title) }
-                )
-                NavigationBarItem(
-                    selected = currentRoute == Screen.Projects.route,
-                    onClick = {
-                        navController.navigate(Screen.Projects.route) {
-                            popUpTo(navController.graph.findStartDestination().id) { saveState = true }
-                            launchSingleTop = true
-                            restoreState = true
-                        }
-                    },
-                    icon = { Icon(Icons.Default.Folder, contentDescription = null) },
-                    label = { Text(Screen.Projects.title) }
-                )
-                NavigationBarItem(
-                    selected = currentRoute == Screen.Notes.route,
-                    onClick = {
-                        navController.navigate(Screen.Notes.route) {
-                            popUpTo(navController.graph.findStartDestination().id) { saveState = true }
-                            launchSingleTop = true
-                            restoreState = true
-                        }
-                    },
-                    icon = { Icon(Icons.Default.EditNote, contentDescription = null) },
-                    label = { Text(Screen.Notes.title) }
-                )
-                NavigationBarItem(
-                    selected = currentRoute == Screen.Reminders.route,
-                    onClick = {
-                        navController.navigate(Screen.Reminders.route) {
-                            popUpTo(navController.graph.findStartDestination().id) { saveState = true }
-                            launchSingleTop = true
-                            restoreState = true
-                        }
-                    },
-                    icon = { Icon(Icons.Default.Notifications, contentDescription = null) },
-                    label = { Text(Screen.Reminders.title) }
-                )
-                NavigationBarItem(
-                    selected = currentRoute == Screen.Profile.route,
-                    onClick = {
-                        navController.navigate(Screen.Profile.route) {
-                            popUpTo(navController.graph.findStartDestination().id) { saveState = true }
-                            launchSingleTop = true
-                            restoreState = true
-                        }
-                    },
-                    icon = { Icon(Icons.Default.Person, contentDescription = null) },
-                    label = { Text(Screen.Profile.title) }
-                )
+            if (currentRoute != Screen.Mcp.route) {
+                NavigationBar {
+                    NavigationBarItem(
+                        selected = currentRoute == Screen.Tasks.route,
+                        onClick = {
+                            navController.navigate(Screen.Tasks.route) {
+                                popUpTo(navController.graph.findStartDestination().id) { saveState = true }
+                                launchSingleTop = true
+                                restoreState = true
+                            }
+                        },
+                        icon = { Icon(Icons.Default.Checklist, contentDescription = null) },
+                        label = { Text(Screen.Tasks.title) }
+                    )
+                    NavigationBarItem(
+                        selected = currentRoute == Screen.Projects.route,
+                        onClick = {
+                            navController.navigate(Screen.Projects.route) {
+                                popUpTo(navController.graph.findStartDestination().id) { saveState = true }
+                                launchSingleTop = true
+                                restoreState = true
+                            }
+                        },
+                        icon = { Icon(Icons.Default.Folder, contentDescription = null) },
+                        label = { Text(Screen.Projects.title) }
+                    )
+                    NavigationBarItem(
+                        selected = currentRoute == Screen.Calendar.route,
+                        onClick = {
+                            navController.navigate(Screen.Calendar.route) {
+                                popUpTo(navController.graph.findStartDestination().id) { saveState = true }
+                                launchSingleTop = true
+                                restoreState = true
+                            }
+                        },
+                        icon = { Icon(Icons.Default.CalendarMonth, contentDescription = null) },
+                        label = { Text(Screen.Calendar.title) }
+                    )
+                    NavigationBarItem(
+                        selected = currentRoute == Screen.Notes.route,
+                        onClick = {
+                            navController.navigate(Screen.Notes.route) {
+                                popUpTo(navController.graph.findStartDestination().id) { saveState = true }
+                                launchSingleTop = true
+                                restoreState = true
+                            }
+                        },
+                        icon = { Icon(Icons.Default.EditNote, contentDescription = null) },
+                        label = { Text(Screen.Notes.title) }
+                    )
+                    NavigationBarItem(
+                        selected = currentRoute == Screen.Reminders.route,
+                        onClick = {
+                            navController.navigate(Screen.Reminders.route) {
+                                popUpTo(navController.graph.findStartDestination().id) { saveState = true }
+                                launchSingleTop = true
+                                restoreState = true
+                            }
+                        },
+                        icon = { Icon(Icons.Default.Notifications, contentDescription = null) },
+                        label = { Text(Screen.Reminders.title) }
+                    )
+                    NavigationBarItem(
+                        selected = currentRoute == Screen.Profile.route,
+                        onClick = {
+                            navController.navigate(Screen.Profile.route) {
+                                popUpTo(navController.graph.findStartDestination().id) { saveState = true }
+                                launchSingleTop = true
+                                restoreState = true
+                            }
+                        },
+                        icon = { Icon(Icons.Default.Person, contentDescription = null) },
+                        label = { Text(Screen.Profile.title) }
+                    )
+                }
             }
         }
     ) { padding ->
@@ -168,6 +197,9 @@ fun MainNavigationScaffold(
             composable(Screen.Projects.route) {
                 ProjectScreen(viewModel = projectViewModel)
             }
+            composable(Screen.Calendar.route) {
+                CalendarScreen(viewModel = calendarViewModel)
+            }
             composable(Screen.Notes.route) {
                 NoteScreen(viewModel = noteViewModel)
             }
@@ -175,7 +207,17 @@ fun MainNavigationScaffold(
                 ReminderScreen(viewModel = reminderViewModel)
             }
             composable(Screen.Profile.route) {
-                ProfileScreen(tokenManager = tokenManager, onSignOut = onSignOut)
+                ProfileScreen(
+                    viewModel = profileViewModel,
+                    onNavigateToMcp = { navController.navigate(Screen.Mcp.route) },
+                    onSignOut = onSignOut
+                )
+            }
+            composable(Screen.Mcp.route) {
+                McpScreen(
+                    viewModel = mcpViewModel,
+                    onBack = { navController.popBackStack() }
+                )
             }
         }
     }
