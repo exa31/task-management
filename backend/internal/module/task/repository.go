@@ -293,26 +293,21 @@ func (r *repository) FindAll(ctx context.Context, userID string, filter TaskFilt
 		argIdx++
 	}
 
-	if filter.Cursor != nil && *filter.Cursor > 0 {
-		query += fmt.Sprintf(" AND t.id < $%d", argIdx)
-		args = append(args, *filter.Cursor)
-		argIdx++
+	offset := filter.Offset
+	if offset == 0 && filter.Cursor != nil && *filter.Cursor > 0 {
+		offset = int(*filter.Cursor)
 	}
 
-	if filter.Paginate == "cursor" || filter.Cursor != nil {
-		query += " ORDER BY t.id DESC"
-	} else {
-		query += " ORDER BY (CASE WHEN t.is_focus AND t.status != 'done' THEN 1 ELSE 0 END) DESC, CASE t.status WHEN 'in_progress' THEN 1 WHEN 'todo' THEN 2 WHEN 'review' THEN 3 WHEN 'backlog' THEN 4 ELSE 5 END, CASE t.priority WHEN 'urgent' THEN 1 WHEN 'high' THEN 2 WHEN 'medium' THEN 3 ELSE 4 END, t.updated_at DESC, t.id DESC"
-	}
+	query += " ORDER BY (CASE WHEN t.status = 'done' THEN 1 ELSE 0 END) ASC, (CASE WHEN t.is_focus AND t.status != 'done' THEN 1 ELSE 0 END) DESC, CASE t.status WHEN 'in_progress' THEN 1 WHEN 'todo' THEN 2 WHEN 'review' THEN 3 WHEN 'backlog' THEN 4 ELSE 5 END, CASE t.priority WHEN 'urgent' THEN 1 WHEN 'high' THEN 2 WHEN 'medium' THEN 3 ELSE 4 END, t.updated_at DESC, t.id DESC"
 
 	if filter.Limit > 0 {
 		query += fmt.Sprintf(" LIMIT $%d", argIdx)
 		args = append(args, filter.Limit)
 		argIdx++
 	}
-	if filter.Offset > 0 && filter.Cursor == nil {
+	if offset > 0 {
 		query += fmt.Sprintf(" OFFSET $%d", argIdx)
-		args = append(args, filter.Offset)
+		args = append(args, offset)
 	}
 
 	var entities []taskEntity

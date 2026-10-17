@@ -77,6 +77,12 @@ func (h *Handler) List(c *fiber.Ctx) error {
 		filter.Limit = pageSize + 1
 	}
 
+	currentOffset := filter.Offset
+	if filter.Cursor != nil && *filter.Cursor > 0 {
+		currentOffset = int(*filter.Cursor)
+		filter.Offset = currentOffset
+	}
+
 	results, err := h.service.FindAll(c.UserContext(), userID, filter)
 	if err != nil {
 		return err
@@ -88,8 +94,8 @@ func (h *Handler) List(c *fiber.Ctx) error {
 		if len(results) > pageSize {
 			hasMore = true
 			results = results[:pageSize]
-			lastID := results[len(results)-1].ID
-			nextCursor = &lastID
+			nextOffset := int64(currentOffset + pageSize)
+			nextCursor = &nextOffset
 		}
 		cursorResp := TaskCursorResponse{
 			Items:      results,

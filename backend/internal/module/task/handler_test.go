@@ -427,6 +427,58 @@ func TestTaskAPI_List_WithProjectFilter(t *testing.T) {
 	}
 }
 
+func TestTaskAPI_List_CursorPagination(t *testing.T) {
+	const testUser = "user-task-cursor"
+	var capturedFilter TaskFilter
+
+	repo := &mockRepository{
+		findAllFunc: func(ctx context.Context, userID string, filter TaskFilter) ([]TaskResponse, error) {
+			capturedFilter = filter
+			// Generate 16 items to simulate having more than limit 15
+			items := make([]TaskResponse, 16)
+			for i := 0; i < 16; i++ {
+				items[i] = TaskResponse{
+					ID:     int64(i + 1),
+					UserID: userID,
+					Title:  fmt.Sprintf("Task %d", i+1),
+				}
+			}
+			return items, nil
+		},
+	}
+
+	app := setupTaskTestApp(repo, testUser)
+
+	// Page 1
+	resp := doJSONTaskRequest(t, app, http.MethodGet, "/api/v1/tasks?paginate=cursor&limit=15", nil)
+	if resp.StatusCode != http.StatusOK {
+		t.Fatalf("expected status 200 OK, got %d", resp.StatusCode)
+	}
+
+	res := parseJSONTaskResponse(t, resp)
+	data := res["data"].(map[string]interface{})
+	items := data["items"].([]interface{})
+	if len(items) != 15 {
+		t.Errorf("expected 15 items on page 1, got %d", len(items))
+	}
+	if data["has_more"] != true {
+		t.Errorf("expected has_more to be true, got %v", data["has_more"])
+	}
+	nextCursor, ok := data["next_cursor"].(float64)
+	if !ok || int64(nextCursor) != 15 {
+		t.Errorf("expected next_cursor to be 15, got %v", data["next_cursor"])
+	}
+
+	// Page 2 request with cursor=15
+	resp2 := doJSONTaskRequest(t, app, http.MethodGet, "/api/v1/tasks?paginate=cursor&limit=15&cursor=15", nil)
+	if resp2.StatusCode != http.StatusOK {
+		t.Fatalf("expected status 200 OK on page 2, got %d", resp2.StatusCode)
+	}
+	if capturedFilter.Offset != 15 {
+		t.Errorf("expected captured filter offset 15, got %d", capturedFilter.Offset)
+	}
+}
+
 func TestTaskHandler_Activities(t *testing.T) {
 	testUser := "user-uuid-123"
 	taskID := int64(10)
