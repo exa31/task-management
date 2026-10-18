@@ -29,3 +29,13 @@ SSE_URL=https://be-task-hub.eka-dev.cloud/api/v1/realtime/sse/events
 ## Google Sign-In (Credential Manager)
 ## -------------------------------------------------------------------------
 GOOGLE_WEB_CLIENT_ID=897905079551-86q6g4ov6b966r2t7sbmqsmks5bea682.apps.googleusercontent.com
+
+## -------------------------------------------------------------------------
+## Release Keystore & App Signing
+## -------------------------------------------------------------------------
+## Jika menggunakan keystore kustom di lokal:
+# KEYSTORE_FILE=../taskhub-release.jks
+# KEYSTORE_PASSWORD=TaskHubSecureRelease2026!
+# KEY_ALIAS=taskhub
+# KEY_PASSWORD=TaskHubSecureRelease2026!
+

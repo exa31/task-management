@@ -272,3 +272,37 @@ Selamat datang di rilis perdana Task Hub untuk Android!
 - [ ] **Privacy Policy URL** aktif dan dapat diakses publik (`https://be-task-hub.eka-dev.cloud/privacy`)
 - [ ] **Data Safety Form** telah diisi sesuai panduan Section 5
 - [ ] **Target SDK** memenuhi standar Google Play (Target SDK 35 untuk rilis 2026/2027)
+
+---
+
+## 11. Keystore & App Signing Fingerprints
+
+Kredensial rilis resmi Android untuk aplikasi **Task Hub**:
+
+| Field | Nilai | Catatan |
+|---|---|---|
+| **Keystore File** | `android/taskhub-release.jks` | Diabaikan oleh Git (`*.jks` di `.gitignore`) |
+| **Key Alias** | `taskhub` | Alias sertifikat rilis |
+| **Keystore Password** | `TaskHubSecureRelease2026!` | Password keystore & key |
+| **Key Algorithm** | `RSA 2048-bit` | Standar resmi Google Play |
+| **Validity** | `10.000 hari` (berlaku s/d tahun 2054) | |
+
+### Certificate Fingerprints:
+- **SHA-1**:
+  ```text
+  FF:A2:7E:5F:F6:06:64:31:74:9C:3C:38:64:09:6F:38:6D:1F:72:78
+  ```
+- **SHA-256**:
+  ```text
+  F0:0F:7E:9F:EE:88:C4:BA:49:E8:80:B8:0D:D0:7D:4C:A6:36:03:6E:14:30:67:F8:67:90:FC:41:5C:0F:4C:7B
+  ```
+
+*(Gunakan SHA-1 ini saat mendaftarkan Android Client ID di Google Cloud Console untuk Google Sign-In).*
+
+### Konfigurasi GitHub Actions Secrets:
+Untuk workflow CI/CD `.github/workflows/deploy-android.yml`:
+1. **`ANDROID_KEYSTORE_BASE64`**: Isi dengan konten string base64 dari `android/taskhub-release.jks.base64`
+2. **`ANDROID_KEYSTORE_PASSWORD`**: `TaskHubSecureRelease2026!`
+3. **`ANDROID_KEY_ALIAS`**: `taskhub`
+4. **`ANDROID_KEY_PASSWORD`**: `TaskHubSecureRelease2026!`
+

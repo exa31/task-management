@@ -75,6 +75,24 @@ android {
         buildConfigField("String", "GOOGLE_WEB_CLIENT_ID", "\"$defaultGoogleClientId\"")
     }
 
+    signingConfigs {
+        create("release") {
+            val keystorePath = getEnv(
+                "KEYSTORE_FILE",
+                "ANDROID_KEYSTORE_FILE",
+                "ANDROID_KEYSTORE_PATH",
+                defaultVal = rootProject.file("taskhub-release.jks").absolutePath
+            )
+            val keystoreFile = file(keystorePath)
+            if (keystoreFile.exists()) {
+                storeFile = keystoreFile
+                storePassword = getEnv("KEYSTORE_PASSWORD", "ANDROID_KEYSTORE_PASSWORD", defaultVal = "TaskHubSecureRelease2026!")
+                keyAlias = getEnv("KEY_ALIAS", "ANDROID_KEY_ALIAS", defaultVal = "taskhub")
+                keyPassword = getEnv("KEY_PASSWORD", "ANDROID_KEY_PASSWORD", defaultVal = "TaskHubSecureRelease2026!")
+            }
+        }
+    }
+
     buildTypes {
         debug {
             val debugBaseUrl = getEnv("DEV_BASE_URL", "API_BASE_URL", "BASE_URL", defaultVal = "https://be-task-hub.eka-dev.cloud/api/v1/")
@@ -88,6 +106,11 @@ android {
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
             )
+            val releaseSigning = signingConfigs.getByName("release")
+            if (releaseSigning.storeFile?.exists() == true) {
+                signingConfig = releaseSigning
+            }
+
             val prodBaseUrl = getEnv("PROD_BASE_URL", "API_BASE_URL", "BASE_URL", defaultVal = "https://be-task-hub.eka-dev.cloud/api/v1/")
             val prodSseUrl = getEnv("PROD_SSE_URL", "SSE_URL", defaultVal = "${prodBaseUrl.trimEnd('/')}/realtime/sse/events")
             val prodGoogleClientId = getEnv("PROD_GOOGLE_CLIENT_ID", "GOOGLE_CLIENT_ID", "GOOGLE_WEB_CLIENT_ID", defaultVal = "897905079551-86q6g4ov6b966r2t7sbmqsmks5bea682.apps.googleusercontent.com")
