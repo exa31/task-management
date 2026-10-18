@@ -1,0 +1,31 @@
+## =========================================================================
+## Android Local Environment Configuration Example
+## =========================================================================
+## Salin file ini menjadi 'local.properties' untuk konfigurasi lokal mesin Anda.
+## File 'local.properties' otomatis diabaikan oleh git (.gitignore).
+##
+## Prioritas Pembacaan Konfigurasi:
+## 1. System Environment Variables (CI/CD GitHub Actions)
+## 2. File root monorepo '.env' (di-generate otomatis oleh ENV_FILE secret di CI/CD)
+## 3. File 'local.properties' ini (di laptop pengembang lokal)
+## 4. Fallback nilai default (Production Cloud)
+## =========================================================================
+
+## Lokasi Android SDK di komputer lokal (Android Studio biasanya mengisi ini otomatis)
+# sdk.dir=/Users/username/Library/Android/sdk
+
+## -------------------------------------------------------------------------
+## Backend API & Real-time Event Stream (SSE)
+## -------------------------------------------------------------------------
+## Cloud Production:
+API_BASE_URL=https://be-task-hub.eka-dev.cloud/api/v1/
+SSE_URL=https://be-task-hub.eka-dev.cloud/api/v1/realtime/sse/events
+
+## Local Emulator Testing (10.0.2.2 adalah IP alias localhost host mesin di Android Emulator):
+# DEV_BASE_URL=http://10.0.2.2:3000/api/v1/
+# DEV_SSE_URL=http://10.0.2.2:3000/api/v1/realtime/sse/events
+
+## -------------------------------------------------------------------------
+## Google Sign-In (Credential Manager)
+## -------------------------------------------------------------------------
+GOOGLE_WEB_CLIENT_ID=897905079551-86q6g4ov6b966r2t7sbmqsmks5bea682.apps.googleusercontent.com
