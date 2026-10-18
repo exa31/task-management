@@ -23,6 +23,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import cloud.eka_dev.task_hub.BuildConfig
 import cloud.eka_dev.task_hub.R
 import cloud.eka_dev.task_hub.core.designsystem.*
 
@@ -129,7 +130,7 @@ fun AuthScreen(
             AppButton(
                 text = stringResource(R.string.sign_in_google),
                 onClick = {
-                    viewModel.signInWithGoogle(context, "YOUR_GOOGLE_WEB_CLIENT_ID.apps.googleusercontent.com")
+                    viewModel.signInWithGoogle(context, BuildConfig.GOOGLE_WEB_CLIENT_ID)
                 },
                 isLoading = state is AuthState.Loading,
                 modifier = Modifier.fillMaxWidth()

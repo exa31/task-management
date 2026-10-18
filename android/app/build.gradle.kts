@@ -26,7 +26,7 @@ android {
         // Backend Cloud Environment
         buildConfigField("String", "BASE_URL", "\"https://be-task-hub.eka-dev.cloud/api/v1/\"")
         buildConfigField("String", "SSE_URL", "\"https://be-task-hub.eka-dev.cloud/api/v1/realtime/sse/events\"")
-        buildConfigField("String", "GOOGLE_WEB_CLIENT_ID", "\"YOUR_DEV_GOOGLE_CLIENT_ID.apps.googleusercontent.com\"")
+        buildConfigField("String", "GOOGLE_WEB_CLIENT_ID", "\"897905079551-86q6g4ov6b966r2t7sbmqsmks5bea682.apps.googleusercontent.com\"")
     }
 
     buildTypes {
@@ -42,7 +42,7 @@ android {
             )
             buildConfigField("String", "BASE_URL", "\"https://be-task-hub.eka-dev.cloud/api/v1/\"")
             buildConfigField("String", "SSE_URL", "\"https://be-task-hub.eka-dev.cloud/api/v1/realtime/sse/events\"")
-            buildConfigField("String", "GOOGLE_WEB_CLIENT_ID", "\"YOUR_PROD_GOOGLE_CLIENT_ID.apps.googleusercontent.com\"")
+            buildConfigField("String", "GOOGLE_WEB_CLIENT_ID", "\"897905079551-86q6g4ov6b966r2t7sbmqsmks5bea682.apps.googleusercontent.com\"")
         }
     }
 }
