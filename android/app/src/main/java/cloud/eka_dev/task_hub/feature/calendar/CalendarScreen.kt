@@ -98,7 +98,7 @@ class CalendarViewModel(private val apiClient: ApiClient) : ViewModel() {
 
             val query = """
                 query GetCalendarData(${'$'}from: String, ${'$'}to: String) {
-                  tasks {
+                  tasks(from: ${'$'}from, to: ${'$'}to) {
                     id
                     title
                     description
@@ -125,7 +125,7 @@ class CalendarViewModel(private val apiClient: ApiClient) : ViewModel() {
                     snooze_count
                     created_at
                   }
-                  activities(from: ${'$'}from, to: ${'$'}to, limit: 100) {
+                  activities(from: ${'$'}from, to: ${'$'}to) {
                     id
                     task_id
                     task_title
@@ -185,6 +185,17 @@ class CalendarViewModel(private val apiClient: ApiClient) : ViewModel() {
     }
 }
 
+private fun toLocalDateString(isoStr: String): String {
+    return try {
+        java.time.Instant.parse(isoStr)
+            .atZone(java.time.ZoneId.systemDefault())
+            .toLocalDate()
+            .toString()
+    } catch (e: Exception) {
+        isoStr.take(10)
+    }
+}
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CalendarScreen(
@@ -202,24 +213,24 @@ fun CalendarScreen(
 
     // Filter items for selected date
     val dayTasks = remember(calendarData.tasks, selectedDateStr) {
-        calendarData.tasks.filter { it.dueDate?.take(10) == selectedDateStr }
+        calendarData.tasks.filter { it.dueDate?.let { d -> toLocalDateString(d) } == selectedDateStr }
     }
     val dayReminders = remember(calendarData.reminders, selectedDateStr) {
-        calendarData.reminders.filter { it.remindAt.take(10) == selectedDateStr }
+        calendarData.reminders.filter { toLocalDateString(it.remindAt) == selectedDateStr }
     }
     val dayActivities = remember(calendarData.activities, selectedDateStr) {
-        calendarData.activities.filter { it.createdAt.take(10) == selectedDateStr }
+        calendarData.activities.filter { toLocalDateString(it.createdAt) == selectedDateStr }
     }
 
     // Dates with items in current month
     val taskDates = remember(calendarData.tasks) {
-        calendarData.tasks.mapNotNull { it.dueDate?.take(10) }.toSet()
+        calendarData.tasks.mapNotNull { it.dueDate?.let { d -> toLocalDateString(d) } }.toSet()
     }
     val reminderDates = remember(calendarData.reminders) {
-        calendarData.reminders.map { it.remindAt.take(10) }.toSet()
+        calendarData.reminders.map { toLocalDateString(it.remindAt) }.toSet()
     }
     val activityDates = remember(calendarData.activities) {
-        calendarData.activities.map { it.createdAt.take(10) }.toSet()
+        calendarData.activities.map { toLocalDateString(it.createdAt) }.toSet()
     }
 
     Scaffold(

@@ -83,7 +83,6 @@ public struct GraphQLDateCountItem: Codable, Sendable {
 public struct CalendarGraphQLData: Codable, Sendable {
     public let tasks: [GraphQLTaskItem]
     public let reminders: [GraphQLReminderItem]
-    public let activityCounts: [GraphQLDateCountItem]?
     public let activities: [GraphQLActivityItem]?
 }
 
@@ -114,7 +113,6 @@ public final class CalendarViewModel {
     public var reminders: [GraphQLReminderItem] = []
     public var activities: [GraphQLActivityItem] = []
     public var isLoading: Bool = false
-    public var isActivitiesLoading: Bool = false
     public var errorMessage: String? = nil
 
     // Pre-indexed structures for O(1) grid rendering and zero-lag lookups
@@ -131,6 +129,14 @@ public final class CalendarViewModel {
     private static let dayFormatter: DateFormatter = {
         let fmt = DateFormatter()
         fmt.dateFormat = "yyyy-MM-dd"
+        fmt.timeZone = DateTimeHelper.userTimeZone
+        fmt.locale = Locale(identifier: "en_US_POSIX")
+        return fmt
+    }()
+
+    private static let monthTitleFormatter: DateFormatter = {
+        let fmt = DateFormatter()
+        fmt.dateFormat = "LLLL yyyy"
         return fmt
     }()
 
@@ -146,12 +152,8 @@ public final class CalendarViewModel {
         }
     }
 
-    private func dateString(from date: Date) -> String {
-        let fmt = DateFormatter()
-        fmt.dateFormat = "yyyy-MM-dd"
-        fmt.timeZone = DateTimeHelper.userTimeZone
-        fmt.locale = Locale(identifier: "en_US_POSIX")
-        return fmt.string(from: date)
+    public func dateString(from date: Date) -> String {
+        Self.dayFormatter.string(from: date)
     }
 
     public var selectedDateString: String {
@@ -170,22 +172,32 @@ public final class CalendarViewModel {
         activitiesByDate[selectedDateString] ?? []
     }
 
+    public func hasTasks(on dateKey: String) -> Bool {
+        taskDates.contains(dateKey)
+    }
+
+    public func hasReminders(on dateKey: String) -> Bool {
+        reminderDates.contains(dateKey)
+    }
+
+    public func hasActivities(on dateKey: String) -> Bool {
+        activityDates.contains(dateKey)
+    }
+
     public func hasTasks(on date: Date) -> Bool {
-        taskDates.contains(dateString(from: date))
+        hasTasks(on: dateString(from: date))
     }
 
     public func hasReminders(on date: Date) -> Bool {
-        reminderDates.contains(dateString(from: date))
+        hasReminders(on: dateString(from: date))
     }
 
     public func hasActivities(on date: Date) -> Bool {
-        activityDates.contains(dateString(from: date))
+        hasActivities(on: dateString(from: date))
     }
 
     public var monthTitle: String {
-        let fmt = DateFormatter()
-        fmt.dateFormat = "LLLL yyyy"
-        return fmt.string(from: selectedDate).capitalized
+        Self.monthTitleFormatter.string(from: selectedDate).capitalized
     }
 
     public var weekdaySymbols: [String] {
@@ -238,7 +250,6 @@ public final class CalendarViewModel {
     }
 
     private var loadDataTask: Task<Void, Never>?
-    private var loadActivitiesTask: Task<Void, Never>?
 
     @MainActor
     public func onDateChanged(to newDate: Date) {
@@ -252,50 +263,6 @@ public final class CalendarViewModel {
                 guard !Task.isCancelled else { return }
                 await loadData()
             }
-        } else {
-            // Lazy load work log on date selection without re-fetching entire calendar
-            loadActivitiesTask?.cancel()
-            loadActivitiesTask = Task {
-                await loadActivitiesForSelectedDate()
-            }
-        }
-    }
-
-    @MainActor
-    public func loadActivitiesForSelectedDate() async {
-        let target = selectedDateString
-        if activitiesByDate[target] != nil {
-            return
-        }
-
-        isActivitiesLoading = true
-        let query = """
-            query GetActivitiesForDate($date: String) {
-              activities(date: $date, limit: 100) {
-                id
-                task_id
-                task_title
-                activity_type
-                description
-                created_at
-              }
-            }
-            """
-        do {
-            struct ActivitiesResult: Codable {
-                let activities: [GraphQLActivityItem]
-            }
-            let res: ActivitiesResult = try await apiClient.graphql(
-                query: query,
-                variables: ["date": target]
-            )
-            guard !Task.isCancelled else { return }
-            self.activitiesByDate[target] = res.activities
-        } catch {
-            AppLogger.error("Failed to load activities for date: \(target)", error: error, category: .network)
-        }
-        if !Task.isCancelled {
-            self.isActivitiesLoading = false
         }
     }
 
@@ -318,8 +285,8 @@ public final class CalendarViewModel {
         let toStr = CalendarViewModel.fallbackIsoFormatter.string(from: endBound)
 
         let query = """
-            query GetCalendarData($from: String, $to: String, $tz: String) {
-              tasks {
+            query GetCalendarData($from: String, $to: String) {
+              tasks(from: $from, to: $to) {
                 id
                 title
                 description
@@ -346,9 +313,13 @@ public final class CalendarViewModel {
                 snooze_count
                 created_at
               }
-              activityCounts(from: $from, to: $to, timezone: $tz) {
-                date
-                count
+              activities(from: $from, to: $to) {
+                id
+                task_id
+                task_title
+                activity_type
+                description
+                created_at
               }
             }
             """
@@ -356,7 +327,6 @@ public final class CalendarViewModel {
         let variables: [String: Any] = [
             "from": fromStr,
             "to": toStr,
-            "tz": DateTimeHelper.userTimeZone.identifier,
         ]
 
         do {
@@ -390,21 +360,26 @@ public final class CalendarViewModel {
             self.reminderDates = rDates
             self.remindersByDate = rMap
 
-            // 3. Activity dates from lightweight aggregated count
-            if let counts = data.activityCounts {
-                self.activityDates = Set(counts.filter { $0.count > 0 }.map { $0.date })
+            // 3. Pre-index activities (Work Log)
+            let acts = data.activities ?? []
+            var aDates = Set<String>()
+            var aMap: [String: [GraphQLActivityItem]] = [:]
+            for act in acts {
+                let key = DateTimeHelper.toLocalDateKey(act.createdAt)
+                aDates.insert(key)
+                aMap[key, default: []].append(act)
             }
+            self.activities = acts
+            self.activityDates = aDates
+            self.activitiesByDate = aMap
 
             AppLogger.info(
                 "Calendar GraphQL data loaded", category: .network,
                 metadata: [
                     "tasks": data.tasks.count,
                     "reminders": data.reminders.count,
-                    "activityDateCounts": data.activityCounts?.count ?? 0,
+                    "activities": acts.count,
                 ])
-
-            // 4. Lazy load activities for selected date
-            await loadActivitiesForSelectedDate()
         } catch {
             guard !Task.isCancelled else { return }
             AppLogger.error(
@@ -441,6 +416,7 @@ public final class CalendarViewModel {
 // MARK: - Calendar View
 public struct CalendarView: View {
     @State private var viewModel = CalendarViewModel()
+    @State private var activitiesDisplayLimit: Int = 20
 
     public init() {}
 
@@ -483,6 +459,9 @@ public struct CalendarView: View {
             }
             .refreshable {
                 await viewModel.loadData()
+            }
+            .onChange(of: viewModel.selectedDate) { _, _ in
+                activitiesDisplayLimit = 20
             }
         }
     }
@@ -631,9 +610,10 @@ public struct CalendarView: View {
         let isCurrentMonth = viewModel.isSameMonth(date, viewModel.selectedDate)
         let dayNum = Calendar.current.component(.day, from: date)
 
-        let hasTasks = viewModel.hasTasks(on: date)
-        let hasReminders = viewModel.hasReminders(on: date)
-        let hasActivities = viewModel.hasActivities(on: date)
+        let dateKey = viewModel.dateString(from: date)
+        let hasTasks = viewModel.hasTasks(on: dateKey)
+        let hasReminders = viewModel.hasReminders(on: dateKey)
+        let hasActivities = viewModel.hasActivities(on: dateKey)
 
         return Button {
             withAnimation(.spring(response: 0.25, dampingFraction: 0.7)) {
@@ -922,33 +902,20 @@ public struct CalendarView: View {
                 Text(L10n.Calendar.workLog)
                     .font(.caption.weight(.bold))
                     .foregroundStyle(Color.secondary)
-                if viewModel.isActivitiesLoading && viewModel.activitiesForSelectedDate.isEmpty {
-                    ProgressView()
-                        .scaleEffect(0.6)
-                        .frame(width: 14, height: 14)
-                } else {
-                    Text("(\(viewModel.activitiesForSelectedDate.count))")
-                        .font(.caption2.monospaced())
-                        .foregroundStyle(Color.secondary)
-                }
+                Text("(\(viewModel.activitiesForSelectedDate.count))")
+                    .font(.caption2.monospaced())
+                    .foregroundStyle(Color.secondary)
             }
 
-            if viewModel.isActivitiesLoading && viewModel.activitiesForSelectedDate.isEmpty {
-                HStack {
-                    Spacer()
-                    ProgressView()
-                        .tint(Color.green)
-                        .padding(.vertical, 16)
-                    Spacer()
-                }
-            } else if viewModel.activitiesForSelectedDate.isEmpty {
+            if viewModel.activitiesForSelectedDate.isEmpty {
                 Text(L10n.Calendar.noActivities)
                     .font(.caption)
                     .foregroundStyle(Color.secondary.opacity(0.7))
                     .padding(.leading, 8)
             } else {
+                let displayed = Array(viewModel.activitiesForSelectedDate.prefix(activitiesDisplayLimit))
                 LazyVStack(spacing: 10) {
-                    ForEach(viewModel.activitiesForSelectedDate) { act in
+                    ForEach(displayed) { act in
                         HStack(alignment: .top, spacing: 10) {
                             Circle()
                                 .fill(Color.green)
@@ -982,6 +949,27 @@ public struct CalendarView: View {
                             RoundedRectangle(cornerRadius: 10)
                                 .stroke(Color(uiColor: .separator).opacity(0.4), lineWidth: 1)
                         )
+                    }
+
+                    if viewModel.activitiesForSelectedDate.count > activitiesDisplayLimit {
+                        Button {
+                            withAnimation(.easeInOut(duration: 0.2)) {
+                                activitiesDisplayLimit += 20
+                            }
+                        } label: {
+                            HStack(spacing: 4) {
+                                Text("Tampilkan lebih banyak (\(viewModel.activitiesForSelectedDate.count - activitiesDisplayLimit) lainnya)")
+                                    .font(.caption.weight(.semibold))
+                                Image(systemName: "chevron.down")
+                                    .font(.caption2)
+                            }
+                            .foregroundStyle(AppColors.primary)
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 8)
+                            .background(AppColors.primary.opacity(0.08))
+                            .clipShape(RoundedRectangle(cornerRadius: 8))
+                        }
+                        .padding(.top, 4)
                     }
                 }
             }

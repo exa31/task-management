@@ -52,7 +52,7 @@ export interface CalendarGraphQLResponse {
 
 export const CALENDAR_DATA_QUERY = `
   query GetCalendarData($from: String, $to: String) {
-    tasks {
+    tasks(from: $from, to: $to) {
       id
       title
       description
@@ -79,11 +79,7 @@ export const CALENDAR_DATA_QUERY = `
       snooze_count
       created_at
     }
-    activityCounts(from: $from, to: $to) {
-      date
-      count
-    }
-    activities(from: $from, to: $to, limit: 100) {
+    activities(from: $from, to: $to) {
       id
       task_id
       task_title

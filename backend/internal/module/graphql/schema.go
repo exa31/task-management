@@ -250,6 +250,8 @@ func BuildSchema(cfg SchemaConfig) (graphql.Schema, error) {
 				Args: graphql.FieldConfigArgument{
 					"projectId": &graphql.ArgumentConfig{Type: graphql.Int},
 					"status":    &graphql.ArgumentConfig{Type: graphql.String},
+					"from":      &graphql.ArgumentConfig{Type: graphql.String},
+					"to":        &graphql.ArgumentConfig{Type: graphql.String},
 				},
 				Resolve: func(p graphql.ResolveParams) (interface{}, error) {
 					userID, ok := p.Context.Value("user_id").(string)
@@ -263,6 +265,16 @@ func BuildSchema(cfg SchemaConfig) (graphql.Schema, error) {
 					if pID, ok := p.Args["projectId"].(int); ok {
 						val := int64(pID)
 						filter.ProjectID = &val
+					}
+					if fStr, ok := p.Args["from"].(string); ok && fStr != "" {
+						if t, err := time.Parse(time.RFC3339, fStr); err == nil {
+							filter.From = &t
+						}
+					}
+					if tStr, ok := p.Args["to"].(string); ok && tStr != "" {
+						if t, err := time.Parse(time.RFC3339, tStr); err == nil {
+							filter.To = &t
+						}
 					}
 					return cfg.TaskRepo.FindAll(context.Background(), userID, filter)
 				},
@@ -328,11 +340,11 @@ func BuildSchema(cfg SchemaConfig) (graphql.Schema, error) {
 							toTime = &endOfDay
 						}
 					}
-					limit := 100
+					var limitArgs []int
 					if l, ok := p.Args["limit"].(int); ok && l > 0 {
-						limit = l
+						limitArgs = append(limitArgs, l)
 					}
-					return cfg.TaskRepo.FindActivitiesByUser(context.Background(), userID, fromTime, toTime, limit)
+					return cfg.TaskRepo.FindActivitiesByUser(context.Background(), userID, fromTime, toTime, limitArgs...)
 				},
 			},
 			"activityCounts": &graphql.Field{

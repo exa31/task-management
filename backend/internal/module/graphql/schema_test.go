@@ -81,7 +81,7 @@ func TestBuildSchema_CalendarQuery(t *testing.T) {
 
 	query := `
 		query GetCalendarData($from: String, $to: String) {
-			tasks {
+			tasks(from: $from, to: $to) {
 				id
 				title
 				status

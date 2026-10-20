@@ -139,8 +139,10 @@ type TaskFilter struct {
 	ProjectID *int64 `json:"project_id" query:"project_id"`
 	Limit     int    `json:"limit" query:"limit" validate:"omitempty,min=1,max=100"`
 	Offset    int    `json:"offset" query:"offset" validate:"omitempty,min=0"`
-	Cursor    *int64 `json:"cursor" query:"cursor"`
-	Paginate  string `json:"paginate" query:"paginate"`
+	Cursor    *int64     `json:"cursor" query:"cursor"`
+	Paginate  string     `json:"paginate" query:"paginate"`
+	From      *time.Time `json:"from" query:"from"`
+	To        *time.Time `json:"to" query:"to"`
 }
 
 // TaskCursorResponse represents a paginated task list response using cursor.

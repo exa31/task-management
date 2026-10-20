@@ -294,6 +294,18 @@ func (r *repository) FindAll(ctx context.Context, userID string, filter TaskFilt
 		argIdx++
 	}
 
+	if filter.From != nil {
+		query += fmt.Sprintf(" AND t.due_date >= $%d", argIdx)
+		args = append(args, *filter.From)
+		argIdx++
+	}
+
+	if filter.To != nil {
+		query += fmt.Sprintf(" AND t.due_date <= $%d", argIdx)
+		args = append(args, *filter.To)
+		argIdx++
+	}
+
 	offset := filter.Offset
 	if offset == 0 && filter.Cursor != nil && *filter.Cursor > 0 {
 		offset = int(*filter.Cursor)
@@ -866,13 +878,11 @@ func (r *repository) FindActivitiesByUser(ctx context.Context, userID string, fr
 		argIdx++
 	}
 
-	maxLimit := 100
+	query += " ORDER BY ta.created_at DESC, ta.id DESC"
 	if len(limit) > 0 && limit[0] > 0 {
-		maxLimit = limit[0]
+		query += fmt.Sprintf(" LIMIT $%d", argIdx)
+		args = append(args, limit[0])
 	}
-
-	query += fmt.Sprintf(" ORDER BY ta.created_at DESC, ta.id DESC LIMIT $%d", argIdx)
-	args = append(args, maxLimit)
 
 	type activityWithTitleEntity struct {
 		ID           int64     `db:"id"`
