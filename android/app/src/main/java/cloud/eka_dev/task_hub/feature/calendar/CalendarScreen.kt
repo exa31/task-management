@@ -185,15 +185,40 @@ class CalendarViewModel(private val apiClient: ApiClient) : ViewModel() {
     }
 }
 
-private fun toLocalDateString(isoStr: String): String {
+private val localTimeFormatter = DateTimeFormatter.ofPattern("HH:mm")
+private val localDateTimeFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm")
+
+private fun parseToZonedDateTime(isoStr: String): java.time.ZonedDateTime? {
+    val trimmed = isoStr.trim()
     return try {
-        java.time.Instant.parse(isoStr)
-            .atZone(java.time.ZoneId.systemDefault())
-            .toLocalDate()
-            .toString()
+        java.time.OffsetDateTime.parse(trimmed).atZoneSameInstant(java.time.ZoneId.systemDefault())
     } catch (e: Exception) {
-        isoStr.take(10)
+        try {
+            java.time.Instant.parse(trimmed).atZone(java.time.ZoneId.systemDefault())
+        } catch (e2: Exception) {
+            try {
+                java.time.LocalDateTime.parse(trimmed)
+                    .atZone(java.time.ZoneOffset.UTC)
+                    .withZoneSameInstant(java.time.ZoneId.systemDefault())
+            } catch (e3: Exception) {
+                null
+            }
+        }
     }
+}
+
+private fun toLocalDateString(isoStr: String): String {
+    return parseToZonedDateTime(isoStr)?.toLocalDate()?.toString() ?: isoStr.take(10)
+}
+
+private fun formatLocalTime(isoStr: String): String {
+    return parseToZonedDateTime(isoStr)?.format(localTimeFormatter)
+        ?: if (isoStr.length >= 16 && isoStr.contains("T")) isoStr.substringAfter("T").take(5) else isoStr
+}
+
+private fun formatLocalDateTime(isoStr: String): String {
+    return parseToZonedDateTime(isoStr)?.format(localDateTimeFormatter)
+        ?: isoStr.take(16).replace("T", " ")
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -516,7 +541,7 @@ fun CalendarScreen(
                                     Spacer(modifier = Modifier.width(10.dp))
                                     Column(modifier = Modifier.weight(1f)) {
                                         Text(r.title, fontWeight = FontWeight.SemiBold, fontSize = 13.sp)
-                                        Text(stringResource(R.string.reminder_schedule_prefix, r.remindAt.take(16).replace("T", " ")), fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                        Text(stringResource(R.string.reminder_schedule_prefix, formatLocalDateTime(r.remindAt)), fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                                     }
                                     Surface(
                                         shape = CircleShape,
@@ -553,8 +578,11 @@ fun CalendarScreen(
                                     Icon(Icons.Default.History, contentDescription = null, tint = Color(0xFF10B981), modifier = Modifier.size(16.dp))
                                     Spacer(modifier = Modifier.width(10.dp))
                                     Column(modifier = Modifier.weight(1f)) {
+                                        if (!a.taskTitle.isNullOrEmpty()) {
+                                            Text(a.taskTitle, fontWeight = FontWeight.SemiBold, fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurface)
+                                        }
                                         Text(a.description, fontSize = 12.sp)
-                                        Text(a.createdAt.take(16).replace("T", " "), fontSize = 10.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                        Text(formatLocalDateTime(a.createdAt), fontSize = 10.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                                     }
                                 }
                             }

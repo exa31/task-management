@@ -930,11 +930,9 @@ public struct CalendarView: View {
                                             .foregroundStyle(Color.primary)
                                     }
                                     Spacer()
-                                    if act.createdAt.count >= 16 {
-                                        Text(String(act.createdAt.dropFirst(11).prefix(5)))
-                                            .font(.caption2.monospaced())
-                                            .foregroundStyle(Color.secondary)
-                                    }
+                                    Text(DateTimeHelper.formatTime(act.createdAt))
+                                        .font(.caption2.monospaced())
+                                        .foregroundStyle(Color.secondary)
                                 }
 
                                 Text(act.description)
