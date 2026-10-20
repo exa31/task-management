@@ -38,10 +38,16 @@ export interface GraphQLActivity {
   created_at: string
 }
 
+export interface DateCount {
+  date: string
+  count: number
+}
+
 export interface CalendarGraphQLResponse {
   tasks: GraphQLTask[]
   reminders: GraphQLReminder[]
-  activities: GraphQLActivity[]
+  activityCounts?: DateCount[]
+  activities?: GraphQLActivity[]
 }
 
 export const CALENDAR_DATA_QUERY = `
@@ -73,7 +79,11 @@ export const CALENDAR_DATA_QUERY = `
       snooze_count
       created_at
     }
-    activities(from: $from, to: $to) {
+    activityCounts(from: $from, to: $to) {
+      date
+      count
+    }
+    activities(from: $from, to: $to, limit: 100) {
       id
       task_id
       task_title

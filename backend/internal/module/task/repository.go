@@ -30,7 +30,8 @@ type Repository interface {
 
 	CreateActivity(ctx context.Context, taskID int64, userID string, activityType string, description string, changes []byte) (*TaskActivityResponse, error)
 	FindActivitiesByTaskID(ctx context.Context, userID string, taskID int64) ([]TaskActivityResponse, error)
-	FindActivitiesByUser(ctx context.Context, userID string, from, to *time.Time) ([]TaskActivityResponse, error)
+	FindActivitiesByUser(ctx context.Context, userID string, from, to *time.Time, limit ...int) ([]TaskActivityResponse, error)
+	FindActivityCountsByUser(ctx context.Context, userID string, from, to *time.Time, tz string) ([]ActivityDateCount, error)
 
 	FindByIDSystem(ctx context.Context, id int64) (*TaskResponse, string, string, int, bool, error)
 	MarkDueWarningSent(ctx context.Context, id int64) error
@@ -844,7 +845,7 @@ func (r *repository) FindActivitiesByTaskID(ctx context.Context, userID string, 
 	return res, nil
 }
 
-func (r *repository) FindActivitiesByUser(ctx context.Context, userID string, from, to *time.Time) ([]TaskActivityResponse, error) {
+func (r *repository) FindActivitiesByUser(ctx context.Context, userID string, from, to *time.Time, limit ...int) ([]TaskActivityResponse, error) {
 	query := `
 		SELECT ta.id, ta.task_id, COALESCE(t.title, '') AS task_title, ta.user_id, ta.activity_type, ta.description, ta.changes, ta.created_at
 		FROM task_activities ta
@@ -865,7 +866,13 @@ func (r *repository) FindActivitiesByUser(ctx context.Context, userID string, fr
 		argIdx++
 	}
 
-	query += " ORDER BY ta.created_at DESC, ta.id DESC"
+	maxLimit := 100
+	if len(limit) > 0 && limit[0] > 0 {
+		maxLimit = limit[0]
+	}
+
+	query += fmt.Sprintf(" ORDER BY ta.created_at DESC, ta.id DESC LIMIT $%d", argIdx)
+	args = append(args, maxLimit)
 
 	type activityWithTitleEntity struct {
 		ID           int64     `db:"id"`
@@ -902,6 +909,60 @@ func (r *repository) FindActivitiesByUser(ctx context.Context, userID string, fr
 		}
 	}
 	return res, nil
+}
+
+func (r *repository) FindActivityCountsByUser(ctx context.Context, userID string, from, to *time.Time, tz string) ([]ActivityDateCount, error) {
+	if tz == "" {
+		tz = "Asia/Jakarta"
+	}
+	query := `
+		SELECT TO_CHAR(ta.created_at AT TIME ZONE $2, 'YYYY-MM-DD') AS date, COUNT(*)::int AS count
+		FROM task_activities ta
+		WHERE ta.user_id = $1
+	`
+	args := []interface{}{userID, tz}
+	argIdx := 3
+
+	if from != nil {
+		query += fmt.Sprintf(" AND ta.created_at >= $%d", argIdx)
+		args = append(args, *from)
+		argIdx++
+	}
+	if to != nil {
+		query += fmt.Sprintf(" AND ta.created_at <= $%d", argIdx)
+		args = append(args, *to)
+		argIdx++
+	}
+
+	query += " GROUP BY date ORDER BY date ASC"
+
+	var rows []ActivityDateCount
+	err := r.exec(ctx).SelectContext(ctx, &rows, query, args...)
+	if err != nil {
+		fallbackQuery := `
+			SELECT TO_CHAR(ta.created_at, 'YYYY-MM-DD') AS date, COUNT(*)::int AS count
+			FROM task_activities ta
+			WHERE ta.user_id = $1
+		`
+		argsFb := []interface{}{userID}
+		argIdxFb := 2
+		if from != nil {
+			fallbackQuery += fmt.Sprintf(" AND ta.created_at >= $%d", argIdxFb)
+			argsFb = append(argsFb, *from)
+			argIdxFb++
+		}
+		if to != nil {
+			fallbackQuery += fmt.Sprintf(" AND ta.created_at <= $%d", argIdxFb)
+			argsFb = append(argsFb, *to)
+			argIdxFb++
+		}
+		fallbackQuery += " GROUP BY date ORDER BY date ASC"
+		errFb := r.exec(ctx).SelectContext(ctx, &rows, fallbackQuery, argsFb...)
+		if errFb != nil {
+			return nil, fmt.Errorf("failed to count user activities: %w", errFb)
+		}
+	}
+	return rows, nil
 }
 
 func (r *repository) GetWorkspaceStats(ctx context.Context, userID string) (*WorkspaceStatsResponse, error) {

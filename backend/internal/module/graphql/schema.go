@@ -202,6 +202,15 @@ func BuildSchema(cfg SchemaConfig) (graphql.Schema, error) {
 		},
 	})
 
+	// 8. Date Count Type
+	dateCountType := graphql.NewObject(graphql.ObjectConfig{
+		Name: "DateCount",
+		Fields: graphql.Fields{
+			"date":  &graphql.Field{Type: graphql.String},
+			"count": &graphql.Field{Type: graphql.Int},
+		},
+	})
+
 	// Root Query
 	rootQuery := graphql.NewObject(graphql.ObjectConfig{
 		Name: "Query",
@@ -288,6 +297,8 @@ func BuildSchema(cfg SchemaConfig) (graphql.Schema, error) {
 					"taskId": &graphql.ArgumentConfig{Type: graphql.Int},
 					"from":   &graphql.ArgumentConfig{Type: graphql.String},
 					"to":     &graphql.ArgumentConfig{Type: graphql.String},
+					"date":   &graphql.ArgumentConfig{Type: graphql.String},
+					"limit":  &graphql.ArgumentConfig{Type: graphql.Int},
 				},
 				Resolve: func(p graphql.ResolveParams) (interface{}, error) {
 					userID, ok := p.Context.Value("user_id").(string)
@@ -308,7 +319,50 @@ func BuildSchema(cfg SchemaConfig) (graphql.Schema, error) {
 							toTime = &t
 						}
 					}
-					return cfg.TaskRepo.FindActivitiesByUser(context.Background(), userID, fromTime, toTime)
+					if dateStr, ok := p.Args["date"].(string); ok && dateStr != "" {
+						if dt, err := time.Parse("2006-01-02", dateStr); err == nil {
+							loc := time.FixedZone("WIB", 7*3600)
+							startOfDay := time.Date(dt.Year(), dt.Month(), dt.Day(), 0, 0, 0, 0, loc).UTC()
+							endOfDay := time.Date(dt.Year(), dt.Month(), dt.Day(), 23, 59, 59, 999999999, loc).UTC()
+							fromTime = &startOfDay
+							toTime = &endOfDay
+						}
+					}
+					limit := 100
+					if l, ok := p.Args["limit"].(int); ok && l > 0 {
+						limit = l
+					}
+					return cfg.TaskRepo.FindActivitiesByUser(context.Background(), userID, fromTime, toTime, limit)
+				},
+			},
+			"activityCounts": &graphql.Field{
+				Type: graphql.NewList(dateCountType),
+				Args: graphql.FieldConfigArgument{
+					"from":     &graphql.ArgumentConfig{Type: graphql.String},
+					"to":       &graphql.ArgumentConfig{Type: graphql.String},
+					"timezone": &graphql.ArgumentConfig{Type: graphql.String},
+				},
+				Resolve: func(p graphql.ResolveParams) (interface{}, error) {
+					userID, ok := p.Context.Value("user_id").(string)
+					if !ok || userID == "" {
+						return []interface{}{}, nil
+					}
+					var fromTime, toTime *time.Time
+					if fStr, ok := p.Args["from"].(string); ok && fStr != "" {
+						if t, err := time.Parse(time.RFC3339, fStr); err == nil {
+							fromTime = &t
+						}
+					}
+					if tStr, ok := p.Args["to"].(string); ok && tStr != "" {
+						if t, err := time.Parse(time.RFC3339, tStr); err == nil {
+							toTime = &t
+						}
+					}
+					tz := "Asia/Jakarta"
+					if tStr, ok := p.Args["timezone"].(string); ok && tStr != "" {
+						tz = tStr
+					}
+					return cfg.TaskRepo.FindActivityCountsByUser(context.Background(), userID, fromTime, toTime, tz)
 				},
 			},
 			"notes": &graphql.Field{

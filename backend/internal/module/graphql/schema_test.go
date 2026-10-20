@@ -41,9 +41,15 @@ func (d *dummyTaskRepo) FindAll(ctx context.Context, userID string, filter taskm
 	}, nil
 }
 
-func (d *dummyTaskRepo) FindActivitiesByUser(ctx context.Context, userID string, from, to *time.Time) ([]taskmodule.TaskActivityResponse, error) {
+func (d *dummyTaskRepo) FindActivitiesByUser(ctx context.Context, userID string, from, to *time.Time, limit ...int) ([]taskmodule.TaskActivityResponse, error) {
 	return []taskmodule.TaskActivityResponse{
 		{ID: 201, TaskID: 101, TaskTitle: "Test Task 1", UserID: userID, ActivityType: "progress", Description: "Finished 50%"},
+	}, nil
+}
+
+func (d *dummyTaskRepo) FindActivityCountsByUser(ctx context.Context, userID string, from, to *time.Time, tz string) ([]taskmodule.ActivityDateCount, error) {
+	return []taskmodule.ActivityDateCount{
+		{Date: "2026-10-14", Count: 1},
 	}, nil
 }
 

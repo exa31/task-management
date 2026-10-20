@@ -219,6 +219,12 @@ type TaskActivityResponse struct {
 	CreatedAt    time.Time       `json:"created_at" db:"created_at"`
 }
 
+// ActivityDateCount represents an aggregate count of activities for a single day.
+type ActivityDateCount struct {
+	Date  string `json:"date" db:"date"`
+	Count int    `json:"count" db:"count"`
+}
+
 // CreateTaskActivityRequest payload for posting a manual activity note / progress comment.
 type CreateTaskActivityRequest struct {
 	ActivityType string `json:"activity_type" validate:"omitempty,max=50"`

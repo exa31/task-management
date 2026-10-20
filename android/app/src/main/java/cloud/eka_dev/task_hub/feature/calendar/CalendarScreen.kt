@@ -125,7 +125,7 @@ class CalendarViewModel(private val apiClient: ApiClient) : ViewModel() {
                     snooze_count
                     created_at
                   }
-                  activities(from: ${'$'}from, to: ${'$'}to) {
+                  activities(from: ${'$'}from, to: ${'$'}to, limit: 100) {
                     id
                     task_id
                     task_title

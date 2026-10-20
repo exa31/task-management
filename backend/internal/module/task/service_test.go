@@ -193,11 +193,15 @@ func (m *mockRepository) FindActivitiesByTaskID(ctx context.Context, userID stri
 	return []TaskActivityResponse{}, nil
 }
 
-func (m *mockRepository) FindActivitiesByUser(ctx context.Context, userID string, from, to *time.Time) ([]TaskActivityResponse, error) {
+func (m *mockRepository) FindActivitiesByUser(ctx context.Context, userID string, from, to *time.Time, limit ...int) ([]TaskActivityResponse, error) {
 	if m.findActivitiesByUserFunc != nil {
 		return m.findActivitiesByUserFunc(ctx, userID, from, to)
 	}
 	return []TaskActivityResponse{}, nil
+}
+
+func (m *mockRepository) FindActivityCountsByUser(ctx context.Context, userID string, from, to *time.Time, tz string) ([]ActivityDateCount, error) {
+	return []ActivityDateCount{}, nil
 }
 
 func TestTaskService_Create(t *testing.T) {
