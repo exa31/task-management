@@ -145,8 +145,8 @@ public final class CalendarViewModel {
     public var tasksForSelectedDate: [GraphQLTaskItem] {
         let target = selectedDateString
         return tasks.filter { task in
-            guard let due = task.dueDate, due.count >= 10 else { return false }
-            return String(due.prefix(10)) == target
+            guard let due = task.dueDate else { return false }
+            return DateTimeHelper.toLocalDateKey(due) == target
         }
     }
 
@@ -160,16 +160,15 @@ public final class CalendarViewModel {
     public var activitiesForSelectedDate: [GraphQLActivityItem] {
         let target = selectedDateString
         return activities.filter { act in
-            guard act.createdAt.count >= 10 else { return false }
-            return String(act.createdAt.prefix(10)) == target
+            return DateTimeHelper.toLocalDateKey(act.createdAt) == target
         }
     }
 
     public func hasTasks(on date: Date) -> Bool {
         let key = dateString(from: date)
         return tasks.contains { task in
-            guard let due = task.dueDate, due.count >= 10 else { return false }
-            return String(due.prefix(10)) == key
+            guard let due = task.dueDate else { return false }
+            return DateTimeHelper.toLocalDateKey(due) == key
         }
     }
 
@@ -183,8 +182,7 @@ public final class CalendarViewModel {
     public func hasActivities(on date: Date) -> Bool {
         let key = dateString(from: date)
         return activities.contains { act in
-            guard act.createdAt.count >= 10 else { return false }
-            return String(act.createdAt.prefix(10)) == key
+            return DateTimeHelper.toLocalDateKey(act.createdAt) == key
         }
     }
 
@@ -247,15 +245,16 @@ public final class CalendarViewModel {
 
     @MainActor
     public func onDateChanged(to newDate: Date) {
+        let monthChanged = !isSameMonth(selectedDate, newDate)
         selectedDate = newDate
 
-        // Cancel previous in-flight task to avoid over-calling and race conditions
-        loadDataTask?.cancel()
-        loadDataTask = Task {
-            // 250ms debounce for rapid date clicking
-            try? await Task.sleep(nanoseconds: 250_000_000)
-            guard !Task.isCancelled else { return }
-            await loadData()
+        if monthChanged || (tasks.isEmpty && reminders.isEmpty && activities.isEmpty) {
+            loadDataTask?.cancel()
+            loadDataTask = Task {
+                try? await Task.sleep(nanoseconds: 250_000_000)
+                guard !Task.isCancelled else { return }
+                await loadData()
+            }
         }
     }
 
@@ -265,12 +264,17 @@ public final class CalendarViewModel {
         isLoading = true
         errorMessage = nil
 
-        let cal = Calendar.current
-        let startOfMonth = cal.date(byAdding: .day, value: -14, to: selectedDate) ?? selectedDate
-        let endOfMonth = cal.date(byAdding: .day, value: 35, to: selectedDate) ?? selectedDate
+        var cal = Calendar.current
+        cal.timeZone = DateTimeHelper.userTimeZone
+        let monthInterval = cal.dateInterval(of: .month, for: selectedDate)
+        let monthStart = monthInterval?.start ?? selectedDate
+        let monthEnd = monthInterval?.end ?? selectedDate
 
-        let fromStr = CalendarViewModel.fallbackIsoFormatter.string(from: startOfMonth)
-        let toStr = CalendarViewModel.fallbackIsoFormatter.string(from: endOfMonth)
+        let startBound = cal.date(byAdding: .day, value: -14, to: monthStart) ?? monthStart
+        let endBound = cal.date(byAdding: .day, value: 14, to: monthEnd) ?? monthEnd
+
+        let fromStr = CalendarViewModel.fallbackIsoFormatter.string(from: startBound)
+        let toStr = CalendarViewModel.fallbackIsoFormatter.string(from: endBound)
 
         let query = """
             query GetCalendarData($from: String, $to: String) {

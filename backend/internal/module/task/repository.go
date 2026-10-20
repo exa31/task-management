@@ -848,7 +848,7 @@ func (r *repository) FindActivitiesByUser(ctx context.Context, userID string, fr
 	query := `
 		SELECT ta.id, ta.task_id, COALESCE(t.title, '') AS task_title, ta.user_id, ta.activity_type, ta.description, ta.changes, ta.created_at
 		FROM task_activities ta
-		INNER JOIN tasks t ON t.id = ta.task_id
+		LEFT JOIN tasks t ON t.id = ta.task_id
 		WHERE ta.user_id = $1
 	`
 	args := []interface{}{userID}
@@ -865,7 +865,7 @@ func (r *repository) FindActivitiesByUser(ctx context.Context, userID string, fr
 		argIdx++
 	}
 
-	query += " ORDER BY ta.created_at DESC, ta.id DESC LIMIT 150"
+	query += " ORDER BY ta.created_at DESC, ta.id DESC"
 
 	type activityWithTitleEntity struct {
 		ID           int64     `db:"id"`

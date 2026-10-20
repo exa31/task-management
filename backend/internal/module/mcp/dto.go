@@ -57,3 +57,16 @@ type MCPToolResult struct {
 	Content []MCPToolContent `json:"content"`
 	IsError bool             `json:"isError,omitempty"`
 }
+
+// HubSummaryResponse defines the standard modular summary contract for Eka-Hub.
+type HubSummaryResponse struct {
+	AppID           string                 `json:"app_id"`
+	AppName         string                 `json:"app_name"`
+	ConnectedUID    string                 `json:"connected_uid"`
+	ConnectedEmail  string                 `json:"connected_email"`
+	HighlightMetric string                 `json:"highlight_metric"`
+	HighlightLabel  string                 `json:"highlight_label"`
+	AIContextData   map[string]interface{} `json:"ai_context_data"`
+	DeepLink        string                 `json:"deep_link"`
+}
+

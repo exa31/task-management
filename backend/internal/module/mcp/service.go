@@ -26,6 +26,7 @@ type Service interface {
 	HandleJSONRPC(ctx context.Context, userID string, req JSONRPCRequest) JSONRPCResponse
 	SetReminderService(reminderService reminder.Service)
 	SetProjectService(projectService project.Service)
+	GetHubSummary(ctx context.Context, userID string) (*HubSummaryResponse, error)
 }
 
 type service struct {
@@ -1011,3 +1012,54 @@ func parseInt(v interface{}, defaultVal int) int {
 	}
 	return defaultVal
 }
+
+func (s *service) GetHubSummary(ctx context.Context, userID string) (*HubSummaryResponse, error) {
+	stats, err := s.taskService.GetWorkspaceStats(ctx, userID)
+	if err != nil {
+		stats = &task.WorkspaceStatsResponse{}
+	}
+
+	highPriorityTask := ""
+	tasks, err := s.taskService.FindAll(ctx, userID, task.TaskFilter{Limit: 10})
+	if err == nil {
+		for _, t := range tasks {
+			if t.Priority == "urgent" || t.Priority == "high" {
+				highPriorityTask = t.Title
+				break
+			}
+		}
+		if highPriorityTask == "" && len(tasks) > 0 {
+			highPriorityTask = tasks[0].Title
+		}
+	}
+
+	pendingCount := stats.TasksInProgress + stats.TasksTodo
+	if pendingCount == 0 && stats.TasksTotal > 0 {
+		pendingCount = stats.TasksTotal
+	}
+
+	metric := fmt.Sprintf("%d Tugas Aktif", pendingCount)
+	label := "Tugas Menunggu Penyelesaian"
+
+	aiData := map[string]interface{}{
+		"pending_count":      pendingCount,
+		"tasks_in_progress":  stats.TasksInProgress,
+		"tasks_todo":         stats.TasksTodo,
+		"tasks_total":        stats.TasksTotal,
+		"total_projects":     stats.TotalProjects,
+		"pending_reminders":  stats.PendingReminders,
+		"high_priority_task": highPriorityTask,
+	}
+
+	return &HubSummaryResponse{
+		AppID:           "taskmanagement",
+		AppName:         "Task Management",
+		ConnectedUID:    userID,
+		ConnectedEmail:  "user@taskhub.app",
+		HighlightMetric: metric,
+		HighlightLabel:  label,
+		AIContextData:   aiData,
+		DeepLink:        fmt.Sprintf("taskhub://tasks?filter=today&expected_uid=%s", userID),
+	}, nil
+}
+

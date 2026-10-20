@@ -247,7 +247,7 @@ func BuildSchema(cfg SchemaConfig) (graphql.Schema, error) {
 					if !ok || userID == "" {
 						return []interface{}{}, nil
 					}
-					filter := task.TaskFilter{Limit: 150}
+					filter := task.TaskFilter{}
 					if status, ok := p.Args["status"].(string); ok {
 						filter.Status = status
 					}
@@ -271,7 +271,7 @@ func BuildSchema(cfg SchemaConfig) (graphql.Schema, error) {
 					if !ok || userID == "" {
 						return []interface{}{}, nil
 					}
-					filter := reminder.ReminderFilter{Limit: 150}
+					filter := reminder.ReminderFilter{}
 					if status, ok := p.Args["status"].(string); ok && status != "" {
 						filter.Status = status
 					}

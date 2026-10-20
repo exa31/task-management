@@ -138,3 +138,44 @@ func (h *Handler) Discovery(c *fiber.Ctx) error {
 		"description": "Connect AI tools (Antigravity, Cursor, Claude) to read/manage notes and tasks.",
 	})
 }
+
+// GetHubSummary returns the standardized summary response for Eka-Hub integration.
+func (h *Handler) GetHubSummary(c *fiber.Ctx) error {
+	var userID string
+
+	authHeader := c.Get("Authorization")
+	parts := strings.Split(authHeader, " ")
+	if len(parts) == 2 && parts[0] == "Bearer" {
+		tokenStr := parts[1]
+		if strings.HasPrefix(tokenStr, "mcp_pat_") {
+			if resolvedID, err := h.service.ValidateToken(c.UserContext(), tokenStr); err == nil && resolvedID != "" {
+				userID = resolvedID
+			}
+		}
+	}
+
+	if userID == "" {
+		if jwtUserID, err := authMiddleware.GetUserID(c); err == nil && jwtUserID != "" {
+			userID = jwtUserID
+		}
+	}
+
+	if userID == "" && c.Get("X-Hub-User-UID") != "" {
+		userID = c.Get("X-Hub-User-UID")
+	}
+
+	if userID == "" {
+		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
+			"code":    401,
+			"message": "Authentication required. Provide a valid Bearer token or X-Hub-User-UID",
+		})
+	}
+
+	summary, err := h.service.GetHubSummary(c.UserContext(), userID)
+	if err != nil {
+		return response.ErrorResponse(c, fiber.StatusInternalServerError, err.Error(), "INTERNAL_SERVER_ERROR")
+	}
+
+	return response.SuccessResponse(c, summary, "Hub summary retrieved successfully")
+}
+

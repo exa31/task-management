@@ -93,8 +93,8 @@ class CalendarViewModel(private val apiClient: ApiClient) : ViewModel() {
     fun loadMonthData(month: YearMonth) {
         viewModelScope.launch {
             _isLoading.value = true
-            val fromStr = month.atDay(1).atStartOfDay().format(DateTimeFormatter.ISO_LOCAL_DATE_TIME) + "Z"
-            val toStr = month.atEndOfMonth().atTime(23, 59, 59).format(DateTimeFormatter.ISO_LOCAL_DATE_TIME) + "Z"
+            val fromStr = month.atDay(1).minusDays(14).atStartOfDay().format(DateTimeFormatter.ISO_LOCAL_DATE_TIME) + "Z"
+            val toStr = month.atEndOfMonth().plusDays(14).atTime(23, 59, 59).format(DateTimeFormatter.ISO_LOCAL_DATE_TIME) + "Z"
 
             val query = """
                 query GetCalendarData(${'$'}from: String, ${'$'}to: String) {

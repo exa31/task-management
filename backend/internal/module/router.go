@@ -210,6 +210,9 @@ func (r *Router) registerNotesAndTasks(api fiber.Router) {
 	mcpGroup.Get("/", mcpHandler.Discovery)
 	mcpGroup.Post("/", authMiddleware.OptionalAuthMiddleware(r.JWTService), mcpHandler.HandleMCP)
 
+	// Hub modular life aggregator summary contract
+	api.Get("/hub/summary", authMiddleware.OptionalAuthMiddleware(r.JWTService), mcpHandler.GetHubSummary)
+
 	// GraphQL route (Playground on GET in browser, JSON execution on POST)
 	userRepo := usermodule.NewUserRepository(db)
 	reminderRepo := r.ReminderRepo
