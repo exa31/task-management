@@ -56,13 +56,13 @@ export const GlobalTooltip: React.FC = () => {
         let pos = (target.getAttribute('data-pr-position') || 'top') as TooltipPosition
 
         // Auto flip if near viewport edges
-        if (pos === 'top' && rect.top < 40) {
+        if (pos === 'top' && rect.top < 60) {
           pos = 'bottom'
-        } else if (pos === 'bottom' && rect.bottom > window.innerHeight - 40) {
+        } else if (pos === 'bottom' && rect.bottom > window.innerHeight - 60) {
           pos = 'top'
-        } else if (pos === 'left' && rect.left < 80) {
+        } else if (pos === 'left' && rect.left < 200) {
           pos = 'right'
-        } else if (pos === 'right' && rect.right > window.innerWidth - 80) {
+        } else if (pos === 'right' && rect.right > window.innerWidth - 200) {
           pos = 'left'
         }
 
@@ -155,30 +155,90 @@ export const GlobalTooltip: React.FC = () => {
   useLayoutEffect(() => {
     if (!data || !tooltipRef.current) return
 
-    const { position, targetCenterX } = data
+    const { position, targetCenterX, rect } = data
     const tooltipRect = tooltipRef.current.getBoundingClientRect()
     const tooltipWidth = tooltipRect.width
+    const tooltipHeight = tooltipRect.height
     const halfWidth = tooltipWidth / 2
+
+    let nextPos = position
+    let nextX = coords.x
+    let nextY = coords.y
+    let shift = 0
 
     if (position === 'top' || position === 'bottom') {
       const minX = 12 + halfWidth
       const maxX = window.innerWidth - 12 - halfWidth
 
       let finalX = targetCenterX
-      if (finalX < minX) {
+      if (minX > maxX) {
+        finalX = window.innerWidth / 2
+      } else if (finalX < minX) {
         finalX = minX
       } else if (finalX > maxX) {
         finalX = maxX
       }
 
       // Calculate shift for arrow so it stays centered on target
-      let shift = targetCenterX - finalX
+      shift = targetCenterX - finalX
       const maxShift = Math.max(0, halfWidth - 10)
       shift = Math.max(-maxShift, Math.min(maxShift, shift))
 
-      setCoords((prev) => (prev.x === finalX ? prev : { ...prev, x: finalX }))
-      setArrowShift(shift)
+      nextX = finalX
+
+      // Check vertical overflow & flip if needed
+      if (position === 'top' && rect.top - tooltipHeight - 6 < 8) {
+        if (rect.bottom + tooltipHeight + 6 <= window.innerHeight - 8) {
+          nextPos = 'bottom'
+          nextY = rect.bottom + 6
+        }
+      } else if (position === 'bottom' && rect.bottom + tooltipHeight + 6 > window.innerHeight - 8) {
+        if (rect.top - tooltipHeight - 6 >= 8) {
+          nextPos = 'top'
+          nextY = rect.top - 6
+        }
+      }
+    } else if (position === 'left' || position === 'right') {
+      let finalY = rect.top + rect.height / 2
+      const minY = 8 + tooltipHeight / 2
+      const maxY = window.innerHeight - 8 - tooltipHeight / 2
+      if (minY <= maxY) {
+        finalY = Math.max(minY, Math.min(maxY, finalY))
+      }
+      nextY = finalY
+
+      if (position === 'left') {
+        let finalX = rect.left - 6
+        if (finalX - tooltipWidth < 12) {
+          if (rect.right + 6 + tooltipWidth <= window.innerWidth - 12) {
+            nextPos = 'right'
+            nextX = rect.right + 6
+          } else {
+            nextX = Math.max(12 + tooltipWidth, finalX)
+          }
+        } else {
+          nextX = finalX
+        }
+      } else {
+        let finalX = rect.right + 6
+        if (finalX + tooltipWidth > window.innerWidth - 12) {
+          if (rect.left - 6 - tooltipWidth >= 12) {
+            nextPos = 'left'
+            nextX = rect.left - 6
+          } else {
+            nextX = Math.min(window.innerWidth - 12 - tooltipWidth, finalX)
+          }
+        } else {
+          nextX = finalX
+        }
+      }
     }
+
+    if (nextPos !== actualPos) {
+      setActualPos(nextPos)
+    }
+    setCoords((prev) => (prev.x === nextX && prev.y === nextY ? prev : { x: nextX, y: nextY }))
+    setArrowShift(shift)
   }, [data])
 
   if (!data || typeof document === 'undefined') return null

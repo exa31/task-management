@@ -487,7 +487,12 @@ export const CalendarPage: React.FC = () => {
                           <div
                             key={`task-${taskItem.id}`}
                             className="px-1.5 py-0.5 rounded text-[10px] font-medium bg-blue-50 dark:bg-blue-950/50 text-blue-700 dark:text-blue-300 border border-blue-200/60 dark:border-blue-800/60 truncate flex items-center gap-1"
-                            title={t('calendar.taskTitlePrefix', { title: taskItem.title })}
+                            title={t('calendar.taskTitlePrefix', {
+                              title:
+                                taskItem.title.length > 120
+                                  ? `${taskItem.title.slice(0, 117)}…`
+                                  : taskItem.title
+                            })}
                           >
                             <span className="w-1.5 h-1.5 rounded-full bg-blue-500 shrink-0" />
                             <span className="truncate">{taskItem.title}</span>
@@ -498,25 +503,37 @@ export const CalendarPage: React.FC = () => {
                           <div
                             key={`rem-${r.id}`}
                             className="px-1.5 py-0.5 rounded text-[10px] font-medium bg-amber-50 dark:bg-amber-950/50 text-amber-700 dark:text-amber-300 border border-amber-200/60 dark:border-amber-800/60 truncate flex items-center gap-1"
-                            title={t('calendar.reminderTitlePrefix', { title: r.title })}
+                            title={t('calendar.reminderTitlePrefix', {
+                              title: r.title.length > 120 ? `${r.title.slice(0, 117)}…` : r.title
+                            })}
                           >
                             <span className="w-1.5 h-1.5 rounded-full bg-amber-500 shrink-0" />
                             <span className="truncate">{r.title}</span>
                           </div>
                         ))}
 
-                        {visibleActivities.slice(0, 1).map((a) => (
-                          <div
-                            key={`act-${a.id}`}
-                            className="px-1.5 py-0.5 rounded text-[10px] font-medium bg-emerald-50 dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-300 border border-emerald-200/60 dark:border-emerald-800/60 truncate flex items-center gap-1"
-                            title={t('calendar.activityTitlePrefix', {
-                              description: a.description
-                            })}
-                          >
-                            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0" />
-                            <span className="truncate">{a.task_title || a.description}</span>
-                          </div>
-                        ))}
+                        {visibleActivities.slice(0, 1).map((a) => {
+                          const descPreview =
+                            a.description && a.description.length > 150
+                              ? `${a.description.slice(0, 147)}…`
+                              : a.description
+                          const titleText = a.task_title
+                            ? `${a.task_title}: ${descPreview}`
+                            : t('calendar.activityTitlePrefix', {
+                                description: descPreview
+                              })
+
+                          return (
+                            <div
+                              key={`act-${a.id}`}
+                              className="px-1.5 py-0.5 rounded text-[10px] font-medium bg-emerald-50 dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-300 border border-emerald-200/60 dark:border-emerald-800/60 truncate flex items-center gap-1"
+                              title={titleText}
+                            >
+                              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0" />
+                              <span className="truncate">{a.task_title || a.description}</span>
+                            </div>
+                          )
+                        })}
 
                         {/* More Items Indicator */}
                         {visibleTasks.length + visibleReminders.length + visibleActivities.length >
