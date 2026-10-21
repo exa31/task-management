@@ -311,7 +311,7 @@ func (s *AsynqScheduler) ScheduleTaskRecurrence(ctx context.Context, taskID int6
 	prefix := fmt.Sprintf("task_recurrence:%d", taskID)
 	s.deleteTasksByPrefix(prefix)
 
-	taskIDStr := fmt.Sprintf("task_recurrence:%d:%d", taskID, processAt.Unix())
+	taskIDStr := fmt.Sprintf("task_recurrence:%d", taskID)
 	task := asynq.NewTask(
 		s.taskType,
 		payload,
@@ -322,7 +322,7 @@ func (s *AsynqScheduler) ScheduleTaskRecurrence(ctx context.Context, taskID int6
 
 	info, err := s.client.EnqueueContext(ctx, task, asynq.ProcessAt(processAt), asynq.Queue(s.queue))
 	if err != nil && errors.Is(err, asynq.ErrTaskIDConflict) {
-		fallbackID := fmt.Sprintf("task_recurrence:%d:%d_%d", taskID, processAt.Unix(), time.Now().UnixNano())
+		fallbackID := fmt.Sprintf("task_recurrence:%d_%d", taskID, time.Now().UnixNano())
 		fallbackTask := asynq.NewTask(
 			s.taskType,
 			payload,
