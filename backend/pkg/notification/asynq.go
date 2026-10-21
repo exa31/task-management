@@ -121,14 +121,13 @@ func (s *AsynqScheduler) ScheduleReminder(ctx context.Context, reminderID int64,
 	taskID := fmt.Sprintf("reminder:%d", reminderID)
 
 	// Clean up existing task if re-scheduling/snoozing
-	_ = s.inspector.DeleteTask(s.queue, taskID)
+	s.deleteTasksByPrefix(taskID)
 
 	task := asynq.NewTask(
 		s.taskType,
 		payload,
 		asynq.TaskID(taskID),
 		asynq.MaxRetry(3),
-		asynq.Retention(24*time.Hour),
 	)
 
 	info, err := s.client.EnqueueContext(ctx, task, asynq.ProcessAt(remindAt), asynq.Queue(s.queue))
@@ -139,7 +138,6 @@ func (s *AsynqScheduler) ScheduleReminder(ctx context.Context, reminderID int64,
 			payload,
 			asynq.TaskID(fallbackID),
 			asynq.MaxRetry(3),
-			asynq.Retention(24*time.Hour),
 		)
 		info, err = s.client.EnqueueContext(ctx, fallbackTask, asynq.ProcessAt(remindAt), asynq.Queue(s.queue))
 	}
@@ -198,6 +196,24 @@ func (s *AsynqScheduler) deleteTasksByPrefix(prefix string) {
 			}
 		}
 	}
+
+	// Clean completed tasks matching prefix
+	if completed, err := s.inspector.ListCompletedTasks(s.queue); err == nil {
+		for _, t := range completed {
+			if t.ID == prefix || strings.HasPrefix(t.ID, prefix+":") || strings.HasPrefix(t.ID, prefix+"_") {
+				_ = s.inspector.DeleteTask(s.queue, t.ID)
+			}
+		}
+	}
+
+	// Clean archived tasks matching prefix
+	if archived, err := s.inspector.ListArchivedTasks(s.queue); err == nil {
+		for _, t := range archived {
+			if t.ID == prefix || strings.HasPrefix(t.ID, prefix+":") || strings.HasPrefix(t.ID, prefix+"_") {
+				_ = s.inspector.DeleteTask(s.queue, t.ID)
+			}
+		}
+	}
 }
 
 func (s *AsynqScheduler) CancelReminder(ctx context.Context, reminderID int64) error {
@@ -239,7 +255,6 @@ func (s *AsynqScheduler) ScheduleTaskDueAlert(ctx context.Context, taskID int64,
 		payload,
 		asynq.TaskID(taskIDStr),
 		asynq.MaxRetry(3),
-		asynq.Retention(24*time.Hour),
 	)
 
 	info, err := s.client.EnqueueContext(ctx, task, asynq.ProcessAt(remindAt), asynq.Queue(s.queue))
@@ -250,7 +265,6 @@ func (s *AsynqScheduler) ScheduleTaskDueAlert(ctx context.Context, taskID int64,
 			payload,
 			asynq.TaskID(fallbackID),
 			asynq.MaxRetry(3),
-			asynq.Retention(24*time.Hour),
 		)
 		info, err = s.client.EnqueueContext(ctx, fallbackTask, asynq.ProcessAt(remindAt), asynq.Queue(s.queue))
 	}
@@ -317,20 +331,39 @@ func (s *AsynqScheduler) ScheduleTaskRecurrence(ctx context.Context, taskID int6
 		payload,
 		asynq.TaskID(taskIDStr),
 		asynq.MaxRetry(3),
-		asynq.Retention(24*time.Hour),
 	)
 
 	info, err := s.client.EnqueueContext(ctx, task, asynq.ProcessAt(processAt), asynq.Queue(s.queue))
 	if err != nil && errors.Is(err, asynq.ErrTaskIDConflict) {
-		fallbackID := fmt.Sprintf("task_recurrence:%d_%d", taskID, time.Now().UnixNano())
-		fallbackTask := asynq.NewTask(
-			s.taskType,
-			payload,
-			asynq.TaskID(fallbackID),
-			asynq.MaxRetry(3),
-			asynq.Retention(24*time.Hour),
-		)
-		info, err = s.client.EnqueueContext(ctx, fallbackTask, asynq.ProcessAt(processAt), asynq.Queue(s.queue))
+		// When the task is currently active in the worker executing this recurrence trigger,
+		// Asynq returns ErrTaskIDConflict. We schedule an asynchronous re-enqueue after
+		// the worker finishes the active execution, keeping the exact clean taskIDStr without timestamp suffixes.
+		go func() {
+			time.Sleep(1 * time.Second)
+			s.deleteTasksByPrefix(taskIDStr)
+			cleanTask := asynq.NewTask(
+				s.taskType,
+				payload,
+				asynq.TaskID(taskIDStr),
+				asynq.MaxRetry(3),
+			)
+			if _, retryErr := s.client.Enqueue(cleanTask, asynq.ProcessAt(processAt), asynq.Queue(s.queue)); retryErr != nil {
+				if s.logger != nil {
+					s.logger.Warn("failed to re-enqueue recurrence task with clean ID",
+						slog.Int64("task_id", taskID),
+						slog.String("asynq_id", taskIDStr),
+						slog.String("error", retryErr.Error()),
+					)
+				}
+			} else if s.logger != nil {
+				s.logger.Info("recurrence successfully rescheduled with clean ID",
+					slog.Int64("task_id", taskID),
+					slog.String("asynq_id", taskIDStr),
+					slog.Time("process_at", processAt),
+				)
+			}
+		}()
+		return nil
 	}
 
 	if err != nil {
