@@ -32,6 +32,7 @@ public final class SharedWidgetDataManager: @unchecked Sendable {
     private let excludedTaskIdsKey = "task_hub_widget_excluded_task_ids"
     private let lastSyncKey = "task_hub_widget_last_sync"
     private let authTokenKey = "task_hub_shared_auth_token"
+    private let refreshTokenKey = "task_hub_shared_refresh_token"
 
     private let defaults: UserDefaults
     private let lock = NSLock()
@@ -54,6 +55,38 @@ public final class SharedWidgetDataManager: @unchecked Sendable {
         lock.lock()
         defer { lock.unlock() }
         defaults.removeObject(forKey: authTokenKey)
+    }
+
+    public func saveRefreshToken(_ token: String) {
+        lock.lock()
+        defer { lock.unlock() }
+        defaults.set(token, forKey: refreshTokenKey)
+    }
+
+    public func getRefreshToken() -> String? {
+        lock.lock()
+        defer { lock.unlock() }
+        return defaults.string(forKey: refreshTokenKey)
+    }
+
+    public func clearRefreshToken() {
+        lock.lock()
+        defer { lock.unlock() }
+        defaults.removeObject(forKey: refreshTokenKey)
+    }
+
+    public func saveTokens(accessToken: String, refreshToken: String) {
+        lock.lock()
+        defer { lock.unlock() }
+        defaults.set(accessToken, forKey: authTokenKey)
+        defaults.set(refreshToken, forKey: refreshTokenKey)
+    }
+
+    public func clearAllTokens() {
+        lock.lock()
+        defer { lock.unlock() }
+        defaults.removeObject(forKey: authTokenKey)
+        defaults.removeObject(forKey: refreshTokenKey)
     }
 
     public struct PendingStatusUpdate: Codable, Sendable {

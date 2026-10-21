@@ -40,6 +40,25 @@ public actor APIClient {
         self.encoder = JSONEncoder()
     }
 
+    /// Retrieves a valid access token. If missing and a refresh token is present, performs pre-flight refresh.
+    private func getValidAccessToken() async -> String? {
+        if let token = keychain.get(key: "access_token") ?? SharedWidgetDataManager.shared.getAuthToken() {
+            return token
+        }
+
+        // Pre-flight check: If access token is missing, attempt refresh if refresh token exists
+        let hasRefreshToken = (keychain.get(key: "refresh_token") ?? SharedWidgetDataManager.shared.getRefreshToken()) != nil
+        if hasRefreshToken {
+            AppLogger.info("Access token missing; initiating pre-flight token refresh...", category: .auth)
+            let refreshed = await refreshToken()
+            if refreshed {
+                return keychain.get(key: "access_token") ?? SharedWidgetDataManager.shared.getAuthToken()
+            }
+        }
+
+        return nil
+    }
+
     public func request<T: Codable>(
         endpoint: String,
         method: String = "GET",
@@ -63,7 +82,13 @@ public actor APIClient {
             }
         }
 
-        if let token = keychain.get(key: "access_token") ?? SharedWidgetDataManager.shared.getAuthToken() {
+        // Request Interceptor: Attach Bearer token for protected endpoints
+        let isAuthRoute = endpoint.hasPrefix("auth/")
+        if !isAuthRoute {
+            guard let token = await getValidAccessToken() else {
+                AppLogger.warn("Unauthorized: No valid session or refresh token available for '\(endpoint)'", category: .auth)
+                throw APIError.unauthorized
+            }
             req.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
         }
 
@@ -97,18 +122,17 @@ public actor APIClient {
             duration: duration
         )
 
-        // Auto Refresh Token on 401
-        if httpResponse.statusCode == 401 {
+        // Response Interceptor: Auto Refresh Token on 401
+        if httpResponse.statusCode == 401 && !isAuthRoute {
             if retryOn401 {
-                AppLogger.warn("401 Unauthorized encountered. Attempting token refresh...", category: .auth)
+                AppLogger.warn("401 Unauthorized encountered on '\(endpoint)'. Attempting token refresh...", category: .auth)
                 let refreshed = await refreshToken()
                 if refreshed {
-                    AppLogger.success("Token refreshed successfully. Retrying request...", category: .auth)
-                    return try await request(endpoint: endpoint, method: method, body: body, retryOn401: false)
+                    AppLogger.success("Token refreshed successfully. Retrying request to '\(endpoint)'...", category: .auth)
+                    return try await request(endpoint: endpoint, method: method, body: body, retryOn401: false, customHeaders: customHeaders)
                 }
             }
 
-            await handleSessionExpired()
             throw APIError.unauthorized
         }
 
@@ -143,22 +167,23 @@ public actor APIClient {
     }
 
     private func handleSessionExpired() async {
-        AppLogger.warn("Token refresh failed. Clearing credentials and broadcasting session expiration", category: .auth)
+        AppLogger.warn("Token permanently rejected. Clearing credentials and broadcasting session expiration", category: .auth)
         keychain.clearAll()
-        SharedWidgetDataManager.shared.clearAuthToken()
+        SharedWidgetDataManager.shared.clearAllTokens()
         await MainActor.run {
             NotificationCenter.default.post(name: .sessionExpired, object: nil)
         }
     }
 
-    private func refreshToken() async -> Bool {
+    public func refreshToken() async -> Bool {
         if let currentTask = refreshTask {
             return await currentTask.value
         }
 
         let task = Task<Bool, Never> { [keychain, baseURL, session, encoder, decoder] in
-            guard let refreshToken = keychain.get(key: "refresh_token"),
-                  let url = URL(string: "\(baseURL)/auth/refresh") else {
+            let refreshToken = keychain.get(key: "refresh_token") ?? SharedWidgetDataManager.shared.getRefreshToken()
+            guard let refreshToken, let url = URL(string: "\(baseURL)/auth/refresh") else {
+                AppLogger.warn("Cannot refresh token: no refresh token available in Keychain or SharedWidgetDataManager", category: .auth)
                 return false
             }
 
@@ -170,25 +195,40 @@ public actor APIClient {
             NetworkLogger.logRequest(req)
             let startTime = CFAbsoluteTimeGetCurrent()
 
-            guard let (data, response) = try? await session.data(for: req),
-                  let httpRes = response as? HTTPURLResponse else {
-                NetworkLogger.logError(url: url.absoluteString, method: "POST", error: APIError.serverError("Token refresh network failed"))
+            let data: Data
+            let response: URLResponse
+            do {
+                (data, response) = try await session.data(for: req)
+            } catch {
+                NetworkLogger.logError(url: url.absoluteString, method: "POST", error: error)
+                AppLogger.warn("Token refresh network request failed (transient error): \(error.localizedDescription)", category: .auth)
+                return false
+            }
+
+            guard let httpRes = response as? HTTPURLResponse else {
                 return false
             }
 
             let duration = CFAbsoluteTimeGetCurrent() - startTime
             NetworkLogger.logResponse(url: url.absoluteString, method: "POST", statusCode: httpRes.statusCode, data: data, duration: duration)
 
-            guard httpRes.statusCode == 200,
-                  let envelope = try? decoder.decode(BaseResponse<TokenPair>.self, from: data),
-                  let tokens = envelope.data else {
-                return false
+            if httpRes.statusCode == 200,
+               let envelope = try? decoder.decode(BaseResponse<TokenPair>.self, from: data),
+               let tokens = envelope.data {
+                keychain.save(key: "access_token", value: tokens.accessToken)
+                keychain.save(key: "refresh_token", value: tokens.refreshToken)
+                SharedWidgetDataManager.shared.saveTokens(accessToken: tokens.accessToken, refreshToken: tokens.refreshToken)
+                AppLogger.success("Token refreshed successfully; synchronized to Keychain and SharedWidgetDataManager", category: .auth)
+                return true
             }
 
-            keychain.save(key: "access_token", value: tokens.accessToken)
-            keychain.save(key: "refresh_token", value: tokens.refreshToken)
-            SharedWidgetDataManager.shared.saveAuthToken(tokens.accessToken)
-            return true
+            // Permanent invalidation: server explicitly rejected refresh token
+            if [400, 401, 403].contains(httpRes.statusCode) {
+                AppLogger.error("Server rejected refresh token with status \(httpRes.statusCode). Session expired.", category: .auth)
+                await self.handleSessionExpired()
+            }
+
+            return false
         }
 
         refreshTask = task
@@ -205,7 +245,7 @@ public actor APIClient {
         if let tokens = res.tokens {
             keychain.save(key: "access_token", value: tokens.accessToken)
             keychain.save(key: "refresh_token", value: tokens.refreshToken)
-            SharedWidgetDataManager.shared.saveAuthToken(tokens.accessToken)
+            SharedWidgetDataManager.shared.saveTokens(accessToken: tokens.accessToken, refreshToken: tokens.refreshToken)
         }
         keychain.save(key: "user_name", value: res.user.name)
         keychain.save(key: "user_email", value: res.user.email)
@@ -499,9 +539,11 @@ public actor APIClient {
         req.httpMethod = "POST"
         req.setValue("application/json", forHTTPHeaderField: "Content-Type")
 
-        if let token = keychain.get(key: "access_token") ?? SharedWidgetDataManager.shared.getAuthToken() {
-            req.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+        guard let token = await getValidAccessToken() else {
+            AppLogger.warn("Unauthorized: No valid session or refresh token available for GraphQL", category: .auth)
+            throw APIError.unauthorized
         }
+        req.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
 
         var payload: [String: Any] = ["query": query]
         if let variables = variables {
@@ -540,7 +582,6 @@ public actor APIClient {
                     return try await graphql(query: query, variables: variables, retryOn401: false)
                 }
             }
-            await handleSessionExpired()
             throw APIError.unauthorized
         }
 

@@ -33,16 +33,32 @@ public final class AuthViewModel {
     }
 
     public func checkSession() {
-        if let token = keychain.get(key: "access_token") {
+        if let token = keychain.get(key: "access_token") ?? SharedWidgetDataManager.shared.getAuthToken() {
             isAuthenticated = true
             SharedWidgetDataManager.shared.saveAuthToken(token)
-            AppLogger.info("Active session token found in Keychain", category: .auth)
+            AppLogger.info("Active session token found", category: .auth)
             Task {
                 await PushNotificationManager.shared.registerDeviceTokenWithBackend()
             }
+        } else if (keychain.get(key: "refresh_token") ?? SharedWidgetDataManager.shared.getRefreshToken()) != nil {
+            // Refresh token exists: keep user authenticated and validate/refresh in background
+            isAuthenticated = true
+            AppLogger.info("Refresh token found, validating session in background...", category: .auth)
+            Task {
+                let refreshed = await apiClient.refreshToken()
+                if !refreshed {
+                    let hasAccess = (keychain.get(key: "access_token") ?? SharedWidgetDataManager.shared.getAuthToken()) != nil
+                    let hasRefresh = (keychain.get(key: "refresh_token") ?? SharedWidgetDataManager.shared.getRefreshToken()) != nil
+                    if !hasAccess && !hasRefresh {
+                        self.isAuthenticated = false
+                    }
+                } else {
+                    await PushNotificationManager.shared.registerDeviceTokenWithBackend()
+                }
+            }
         } else {
             isAuthenticated = false
-            SharedWidgetDataManager.shared.clearAuthToken()
+            SharedWidgetDataManager.shared.clearAllTokens()
         }
     }
 
@@ -176,7 +192,7 @@ public final class AuthViewModel {
     public func signOut(withMessage message: String? = nil) {
         GIDSignIn.sharedInstance.signOut()
         keychain.clearAll()
-        SharedWidgetDataManager.shared.clearAuthToken()
+        SharedWidgetDataManager.shared.clearAllTokens()
         isAuthenticated = false
         if let message {
             errorMessage = message

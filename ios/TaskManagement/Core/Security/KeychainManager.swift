@@ -20,6 +20,7 @@ public final class KeychainManager {
 
         var newQuery = query
         newQuery[kSecValueData as String] = data
+        newQuery[kSecAttrAccessible as String] = kSecAttrAccessibleAfterFirstUnlockThisDeviceOnly
         SecItemAdd(newQuery as CFDictionary, nil)
     }
 

@@ -15,7 +15,7 @@ public final class SSEClient: Sendable {
     public func events() -> AsyncStream<RealtimeEvent> {
         AsyncStream { continuation in
             let task = Task {
-                guard let token = KeychainManager.shared.get(key: "access_token"),
+                guard let token = KeychainManager.shared.get(key: "access_token") ?? SharedWidgetDataManager.shared.getAuthToken(),
                       let url = URL(string: "\(baseURL)?token=\(token)") else {
                     continuation.finish()
                     return

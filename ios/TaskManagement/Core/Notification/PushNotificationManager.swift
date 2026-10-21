@@ -116,7 +116,12 @@ public final class PushNotificationManager: NSObject, UNUserNotificationCenterDe
             return
         }
 
-        guard KeychainManager.shared.get(key: "access_token") != nil else {
+        let hasToken = KeychainManager.shared.get(key: "access_token") != nil ||
+                       SharedWidgetDataManager.shared.getAuthToken() != nil ||
+                       KeychainManager.shared.get(key: "refresh_token") != nil ||
+                       SharedWidgetDataManager.shared.getRefreshToken() != nil
+
+        guard hasToken else {
             AppLogger.info("Device token cached locally; awaiting user authentication", category: .push)
             return
         }
