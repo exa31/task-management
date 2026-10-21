@@ -12,17 +12,32 @@ import (
 	usermodule "golang/internal/module/user"
 
 	"github.com/graphql-go/graphql"
+	"github.com/jmoiron/sqlx"
 )
 
 type dummyUserRepo struct{ usermodule.UserRepository }
 type dummyProjectRepo struct{ projectmodule.Repository }
 type dummyNoteRepo struct{ notemodule.Repository }
 
+type mockTransactor struct{}
+
+func (m *mockTransactor) WithTransaction(fn func(tx *sqlx.Tx) error) error {
+	return fn(nil)
+}
+
+func (m *mockTransactor) WithTransactionCtx(ctx context.Context, fn func(tx *sqlx.Tx) error) error {
+	return fn(nil)
+}
+
+func (m *mockTransactor) WithReadOnlyTransactionCtx(ctx context.Context, fn func(tx *sqlx.Tx) error) error {
+	return fn(nil)
+}
+
 type dummyTaskRepo struct {
 	taskmodule.Repository
 }
 
-func (d *dummyTaskRepo) FindAll(ctx context.Context, userID string, filter taskmodule.TaskFilter) ([]taskmodule.TaskResponse, error) {
+func (d *dummyTaskRepo) FindAll(ctx context.Context, tx *sqlx.Tx, userID string, filter taskmodule.TaskFilter) ([]taskmodule.TaskResponse, error) {
 	pID := int64(10)
 	pName := "Project Alpha"
 	pColor := "#3B82F6"
@@ -41,13 +56,13 @@ func (d *dummyTaskRepo) FindAll(ctx context.Context, userID string, filter taskm
 	}, nil
 }
 
-func (d *dummyTaskRepo) FindActivitiesByUser(ctx context.Context, userID string, from, to *time.Time, limit ...int) ([]taskmodule.TaskActivityResponse, error) {
+func (d *dummyTaskRepo) FindActivitiesByUser(ctx context.Context, tx *sqlx.Tx, userID string, from, to *time.Time, limit ...int) ([]taskmodule.TaskActivityResponse, error) {
 	return []taskmodule.TaskActivityResponse{
 		{ID: 201, TaskID: 101, TaskTitle: "Test Task 1", UserID: userID, ActivityType: "progress", Description: "Finished 50%"},
 	}, nil
 }
 
-func (d *dummyTaskRepo) FindActivityCountsByUser(ctx context.Context, userID string, from, to *time.Time, tz string) ([]taskmodule.ActivityDateCount, error) {
+func (d *dummyTaskRepo) FindActivityCountsByUser(ctx context.Context, tx *sqlx.Tx, userID string, from, to *time.Time, tz string) ([]taskmodule.ActivityDateCount, error) {
 	return []taskmodule.ActivityDateCount{
 		{Date: "2026-10-14", Count: 1},
 	}, nil
@@ -72,6 +87,7 @@ func TestBuildSchema_CalendarQuery(t *testing.T) {
 		TaskRepo:     &dummyTaskRepo{},
 		NoteRepo:     &dummyNoteRepo{},
 		ReminderRepo: &dummyReminderRepo{},
+		DB:           &mockTransactor{},
 	}
 
 	schema, err := BuildSchema(cfg)

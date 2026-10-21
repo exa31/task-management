@@ -235,6 +235,7 @@ func (r *Router) registerNotesAndTasks(api fiber.Router) {
 		TaskRepo:     taskRepo,
 		NoteRepo:     noteRepo,
 		ReminderRepo: reminderRepo,
+		DB:           r.DB,
 	})
 	if err == nil {
 		gqlHandler := graphqlmodule.NewHandler(gqlSchema, r.JWTService)

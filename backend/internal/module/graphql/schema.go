@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"time"
 
+	"golang/database"
 	"golang/internal/module/note"
 	"golang/internal/module/project"
 	"golang/internal/module/reminder"
@@ -12,6 +13,7 @@ import (
 	usermodule "golang/internal/module/user"
 
 	"github.com/graphql-go/graphql"
+	"github.com/jmoiron/sqlx"
 )
 
 type SchemaConfig struct {
@@ -20,6 +22,7 @@ type SchemaConfig struct {
 	TaskRepo     task.Repository
 	NoteRepo     note.Repository
 	ReminderRepo reminder.Repository
+	DB           database.Transactor
 }
 
 func BuildSchema(cfg SchemaConfig) (graphql.Schema, error) {
@@ -276,7 +279,15 @@ func BuildSchema(cfg SchemaConfig) (graphql.Schema, error) {
 							filter.To = &t
 						}
 					}
-					return cfg.TaskRepo.FindAll(context.Background(), userID, filter)
+					var items []task.TaskResponse
+					if cfg.DB != nil {
+						_ = cfg.DB.WithReadOnlyTransactionCtx(p.Context, func(tx *sqlx.Tx) error {
+							var err error
+							items, err = cfg.TaskRepo.FindAll(p.Context, tx, userID, filter)
+							return err
+						})
+					}
+					return items, nil
 				},
 			},
 			"reminders": &graphql.Field{
@@ -318,7 +329,15 @@ func BuildSchema(cfg SchemaConfig) (graphql.Schema, error) {
 						return []interface{}{}, nil
 					}
 					if tID, ok := p.Args["taskId"].(int); ok && tID > 0 {
-						return cfg.TaskRepo.FindActivitiesByTaskID(context.Background(), userID, int64(tID))
+						var acts []task.TaskActivityResponse
+						if cfg.DB != nil {
+							_ = cfg.DB.WithReadOnlyTransactionCtx(p.Context, func(tx *sqlx.Tx) error {
+								var err error
+								acts, err = cfg.TaskRepo.FindActivitiesByTaskID(p.Context, tx, userID, int64(tID))
+								return err
+							})
+						}
+						return acts, nil
 					}
 					var fromTime, toTime *time.Time
 					if fStr, ok := p.Args["from"].(string); ok && fStr != "" {
@@ -344,7 +363,15 @@ func BuildSchema(cfg SchemaConfig) (graphql.Schema, error) {
 					if l, ok := p.Args["limit"].(int); ok && l > 0 {
 						limitArgs = append(limitArgs, l)
 					}
-					return cfg.TaskRepo.FindActivitiesByUser(context.Background(), userID, fromTime, toTime, limitArgs...)
+					var acts []task.TaskActivityResponse
+					if cfg.DB != nil {
+						_ = cfg.DB.WithReadOnlyTransactionCtx(p.Context, func(tx *sqlx.Tx) error {
+							var err error
+							acts, err = cfg.TaskRepo.FindActivitiesByUser(p.Context, tx, userID, fromTime, toTime, limitArgs...)
+							return err
+						})
+					}
+					return acts, nil
 				},
 			},
 			"activityCounts": &graphql.Field{
@@ -374,7 +401,15 @@ func BuildSchema(cfg SchemaConfig) (graphql.Schema, error) {
 					if tStr, ok := p.Args["timezone"].(string); ok && tStr != "" {
 						tz = tStr
 					}
-					return cfg.TaskRepo.FindActivityCountsByUser(context.Background(), userID, fromTime, toTime, tz)
+					var counts []task.ActivityDateCount
+					if cfg.DB != nil {
+						_ = cfg.DB.WithReadOnlyTransactionCtx(p.Context, func(tx *sqlx.Tx) error {
+							var err error
+							counts, err = cfg.TaskRepo.FindActivityCountsByUser(p.Context, tx, userID, fromTime, toTime, tz)
+							return err
+						})
+					}
+					return counts, nil
 				},
 			},
 			"notes": &graphql.Field{
@@ -444,12 +479,23 @@ func BuildSchema(cfg SchemaConfig) (graphql.Schema, error) {
 						val := int64(v)
 						pID = &val
 					}
-					return cfg.TaskRepo.Create(context.Background(), userID, task.CreateTaskRequest{
-						Title:       title,
-						Description: desc,
-						Priority:    priority,
-						ProjectID:   pID,
-					})
+					var created *task.TaskResponse
+					if cfg.DB != nil {
+						err := cfg.DB.WithTransactionCtx(p.Context, func(tx *sqlx.Tx) error {
+							var err error
+							created, err = cfg.TaskRepo.Create(p.Context, tx, userID, task.CreateTaskRequest{
+								Title:       title,
+								Description: desc,
+								Priority:    priority,
+								ProjectID:   pID,
+							})
+							return err
+						})
+						if err != nil {
+							return nil, err
+						}
+					}
+					return created, nil
 				},
 			},
 			"createNote": &graphql.Field{

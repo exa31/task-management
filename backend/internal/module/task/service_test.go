@@ -64,126 +64,126 @@ type mockRepository struct {
 	updateRecurringLastGeneratedFunc func(ctx context.Context, id int64, t time.Time) error
 }
 
-func (m *mockRepository) Create(ctx context.Context, userID string, req CreateTaskRequest) (*TaskResponse, error) {
+func (m *mockRepository) Create(ctx context.Context, tx *sqlx.Tx, userID string, req CreateTaskRequest) (*TaskResponse, error) {
 	if m.createFunc != nil {
 		return m.createFunc(ctx, userID, req)
 	}
 	return nil, nil
 }
 
-func (m *mockRepository) FindByID(ctx context.Context, userID string, id int64) (*TaskResponse, error) {
+func (m *mockRepository) FindByID(ctx context.Context, tx *sqlx.Tx, userID string, id int64) (*TaskResponse, error) {
 	if m.findByIDFunc != nil {
 		return m.findByIDFunc(ctx, userID, id)
 	}
 	return nil, nil
 }
 
-func (m *mockRepository) FindAll(ctx context.Context, userID string, filter TaskFilter) ([]TaskResponse, error) {
+func (m *mockRepository) FindAll(ctx context.Context, tx *sqlx.Tx, userID string, filter TaskFilter) ([]TaskResponse, error) {
 	if m.findAllFunc != nil {
 		return m.findAllFunc(ctx, userID, filter)
 	}
 	return []TaskResponse{}, nil
 }
 
-func (m *mockRepository) Update(ctx context.Context, userID string, id int64, req UpdateTaskRequest) (*TaskResponse, error) {
+func (m *mockRepository) Update(ctx context.Context, tx *sqlx.Tx, userID string, id int64, req UpdateTaskRequest) (*TaskResponse, error) {
 	if m.updateFunc != nil {
 		return m.updateFunc(ctx, userID, id, req)
 	}
 	return nil, nil
 }
 
-func (m *mockRepository) Delete(ctx context.Context, userID string, id int64) error {
+func (m *mockRepository) Delete(ctx context.Context, tx *sqlx.Tx, userID string, id int64) error {
 	if m.deleteFunc != nil {
 		return m.deleteFunc(ctx, userID, id)
 	}
 	return nil
 }
 
-func (m *mockRepository) LogProgress(ctx context.Context, userID string, id int64, req LogProgressRequest) (*TaskResponse, error) {
+func (m *mockRepository) LogProgress(ctx context.Context, tx *sqlx.Tx, userID string, id int64, req LogProgressRequest) (*TaskResponse, error) {
 	if m.logProgressFunc != nil {
 		return m.logProgressFunc(ctx, userID, id, req)
 	}
 	return nil, nil
 }
 
-func (m *mockRepository) ToggleFocus(ctx context.Context, userID string, id int64) (*TaskResponse, error) {
+func (m *mockRepository) ToggleFocus(ctx context.Context, tx *sqlx.Tx, userID string, id int64) (*TaskResponse, error) {
 	if m.toggleFocusFunc != nil {
 		return m.toggleFocusFunc(ctx, userID, id)
 	}
 	return nil, nil
 }
 
-func (m *mockRepository) CreateSubtask(ctx context.Context, userID string, taskID int64, req CreateSubtaskRequest) (*SubtaskResponse, error) {
+func (m *mockRepository) CreateSubtask(ctx context.Context, tx *sqlx.Tx, userID string, taskID int64, req CreateSubtaskRequest) (*SubtaskResponse, error) {
 	if m.createSubtaskFunc != nil {
 		return m.createSubtaskFunc(ctx, userID, taskID, req)
 	}
 	return nil, nil
 }
 
-func (m *mockRepository) GetWidgetBundle(ctx context.Context, userID string) (*WidgetBundleResponse, error) {
+func (m *mockRepository) GetWidgetBundle(ctx context.Context, tx *sqlx.Tx, userID string) (*WidgetBundleResponse, error) {
 	if m.getWidgetBundleFunc != nil {
 		return m.getWidgetBundleFunc(ctx, userID)
 	}
 	return &WidgetBundleResponse{}, nil
 }
 
-func (m *mockRepository) GetWorkspaceStats(ctx context.Context, userID string) (*WorkspaceStatsResponse, error) {
+func (m *mockRepository) GetWorkspaceStats(ctx context.Context, tx *sqlx.Tx, userID string) (*WorkspaceStatsResponse, error) {
 	if m.getWorkspaceStatsFunc != nil {
 		return m.getWorkspaceStatsFunc(ctx, userID)
 	}
 	return &WorkspaceStatsResponse{}, nil
 }
 
-func (m *mockRepository) UpdateRecurrenceGeneratedAt(ctx context.Context, id int64, t time.Time) error {
+func (m *mockRepository) UpdateRecurrenceGeneratedAt(ctx context.Context, tx *sqlx.Tx, id int64, t time.Time) error {
 	if m.updateRecurrenceGeneratedAtFunc != nil {
 		return m.updateRecurrenceGeneratedAtFunc(ctx, id, t)
 	}
 	return nil
 }
 
-func (m *mockRepository) UpdateSubtask(ctx context.Context, userID string, taskID int64, subtaskID int64, req UpdateSubtaskRequest) (*SubtaskResponse, error) {
+func (m *mockRepository) UpdateSubtask(ctx context.Context, tx *sqlx.Tx, userID string, taskID int64, subtaskID int64, req UpdateSubtaskRequest) (*SubtaskResponse, error) {
 	if m.updateSubtaskFunc != nil {
 		return m.updateSubtaskFunc(ctx, userID, taskID, subtaskID, req)
 	}
 	return nil, nil
 }
 
-func (m *mockRepository) DeleteSubtask(ctx context.Context, userID string, taskID int64, subtaskID int64) error {
+func (m *mockRepository) DeleteSubtask(ctx context.Context, tx *sqlx.Tx, userID string, taskID int64, subtaskID int64) error {
 	if m.deleteSubtaskFunc != nil {
 		return m.deleteSubtaskFunc(ctx, userID, taskID, subtaskID)
 	}
 	return nil
 }
 
-func (m *mockRepository) CountSubtasks(ctx context.Context, taskID int64) (int, int, error) {
+func (m *mockRepository) CountSubtasks(ctx context.Context, tx *sqlx.Tx, taskID int64) (int, int, error) {
 	if m.countSubtasksFunc != nil {
 		return m.countSubtasksFunc(ctx, taskID)
 	}
 	return 0, 0, nil
 }
 
-func (m *mockRepository) FindByIDSystem(ctx context.Context, id int64) (*TaskResponse, string, string, int, bool, error) {
+func (m *mockRepository) FindByIDSystem(ctx context.Context, tx *sqlx.Tx, id int64) (*TaskResponse, string, string, int, bool, error) {
 	if m.findByIDSystemFunc != nil {
 		return m.findByIDSystemFunc(ctx, id)
 	}
 	return nil, "", "", 0, false, nil
 }
 
-func (m *mockRepository) MarkDueWarningSent(ctx context.Context, id int64) error {
+func (m *mockRepository) MarkDueWarningSent(ctx context.Context, tx *sqlx.Tx, id int64) error {
 	if m.markDueWarningSentFunc != nil {
 		return m.markDueWarningSentFunc(ctx, id)
 	}
 	return nil
 }
 
-func (m *mockRepository) GetUserThresholdAndTimezone(ctx context.Context, userID string) (int, string, error) {
+func (m *mockRepository) GetUserThresholdAndTimezone(ctx context.Context, tx *sqlx.Tx, userID string) (int, string, error) {
 	if m.getUserThresholdFunc != nil {
 		return m.getUserThresholdFunc(ctx, userID)
 	}
 	return 1440, "Asia/Jakarta", nil
 }
 
-func (m *mockRepository) CreateActivity(ctx context.Context, taskID int64, userID string, activityType string, description string, changes []byte) (*TaskActivityResponse, error) {
+func (m *mockRepository) CreateActivity(ctx context.Context, tx *sqlx.Tx, taskID int64, userID string, activityType string, description string, changes []byte) (*TaskActivityResponse, error) {
 	if m.createActivityFunc != nil {
 		return m.createActivityFunc(ctx, taskID, userID, activityType, description, changes)
 	}
@@ -197,88 +197,88 @@ func (m *mockRepository) CreateActivity(ctx context.Context, taskID int64, userI
 	}, nil
 }
 
-func (m *mockRepository) FindActivitiesByTaskID(ctx context.Context, userID string, taskID int64) ([]TaskActivityResponse, error) {
+func (m *mockRepository) FindActivitiesByTaskID(ctx context.Context, tx *sqlx.Tx, userID string, taskID int64) ([]TaskActivityResponse, error) {
 	if m.findActivitiesFunc != nil {
 		return m.findActivitiesFunc(ctx, userID, taskID)
 	}
 	return []TaskActivityResponse{}, nil
 }
 
-func (m *mockRepository) FindActivitiesByUser(ctx context.Context, userID string, from, to *time.Time, limit ...int) ([]TaskActivityResponse, error) {
+func (m *mockRepository) FindActivitiesByUser(ctx context.Context, tx *sqlx.Tx, userID string, from, to *time.Time, limit ...int) ([]TaskActivityResponse, error) {
 	if m.findActivitiesByUserFunc != nil {
 		return m.findActivitiesByUserFunc(ctx, userID, from, to)
 	}
 	return []TaskActivityResponse{}, nil
 }
 
-func (m *mockRepository) FindActivityCountsByUser(ctx context.Context, userID string, from, to *time.Time, tz string) ([]ActivityDateCount, error) {
+func (m *mockRepository) FindActivityCountsByUser(ctx context.Context, tx *sqlx.Tx, userID string, from, to *time.Time, tz string) ([]ActivityDateCount, error) {
 	return []ActivityDateCount{}, nil
 }
 
-func (m *mockRepository) FindRecurringByID(ctx context.Context, userID string, id int64) (*RecurringTaskResponse, error) {
+func (m *mockRepository) FindRecurringByID(ctx context.Context, tx *sqlx.Tx, userID string, id int64) (*RecurringTaskResponse, error) {
 	if m.findRecurringByIDFunc != nil {
 		return m.findRecurringByIDFunc(ctx, userID, id)
 	}
 	return nil, nil
 }
 
-func (m *mockRepository) FindRecurringByIDSystem(ctx context.Context, id int64) (*RecurringTaskResponse, string, error) {
+func (m *mockRepository) FindRecurringByIDSystem(ctx context.Context, tx *sqlx.Tx, id int64) (*RecurringTaskResponse, string, error) {
 	if m.findRecurringByIDSystemFunc != nil {
 		return m.findRecurringByIDSystemFunc(ctx, id)
 	}
 	return nil, "Asia/Jakarta", nil
 }
 
-func (m *mockRepository) FindAllRecurring(ctx context.Context, userID string) ([]RecurringTaskResponse, error) {
+func (m *mockRepository) FindAllRecurring(ctx context.Context, tx *sqlx.Tx, userID string) ([]RecurringTaskResponse, error) {
 	if m.findAllRecurringFunc != nil {
 		return m.findAllRecurringFunc(ctx, userID)
 	}
 	return []RecurringTaskResponse{}, nil
 }
 
-func (m *mockRepository) CreateRecurring(ctx context.Context, userID string, req CreateRecurringTaskRequest) (*RecurringTaskResponse, error) {
+func (m *mockRepository) CreateRecurring(ctx context.Context, tx *sqlx.Tx, userID string, req CreateRecurringTaskRequest) (*RecurringTaskResponse, error) {
 	if m.createRecurringFunc != nil {
 		return m.createRecurringFunc(ctx, userID, req)
 	}
 	return nil, nil
 }
 
-func (m *mockRepository) UpdateRecurring(ctx context.Context, userID string, id int64, req UpdateRecurringTaskRequest) (*RecurringTaskResponse, error) {
+func (m *mockRepository) UpdateRecurring(ctx context.Context, tx *sqlx.Tx, userID string, id int64, req UpdateRecurringTaskRequest) (*RecurringTaskResponse, error) {
 	if m.updateRecurringFunc != nil {
 		return m.updateRecurringFunc(ctx, userID, id, req)
 	}
 	return nil, nil
 }
 
-func (m *mockRepository) DeleteRecurring(ctx context.Context, userID string, id int64) error {
+func (m *mockRepository) DeleteRecurring(ctx context.Context, tx *sqlx.Tx, userID string, id int64) error {
 	if m.deleteRecurringFunc != nil {
 		return m.deleteRecurringFunc(ctx, userID, id)
 	}
 	return nil
 }
 
-func (m *mockRepository) ToggleActiveRecurring(ctx context.Context, userID string, id int64) (*RecurringTaskResponse, error) {
+func (m *mockRepository) ToggleActiveRecurring(ctx context.Context, tx *sqlx.Tx, userID string, id int64) (*RecurringTaskResponse, error) {
 	if m.toggleActiveRecurringFunc != nil {
 		return m.toggleActiveRecurringFunc(ctx, userID, id)
 	}
 	return nil, nil
 }
 
-func (m *mockRepository) FindTodayInstance(ctx context.Context, recurringTaskID int64, todayDate time.Time) (*TaskResponse, error) {
+func (m *mockRepository) FindTodayInstance(ctx context.Context, tx *sqlx.Tx, recurringTaskID int64, todayDate time.Time) (*TaskResponse, error) {
 	if m.findTodayInstanceFunc != nil {
 		return m.findTodayInstanceFunc(ctx, recurringTaskID, todayDate)
 	}
 	return nil, nil
 }
 
-func (m *mockRepository) CreateInstanceFromRecurring(ctx context.Context, master *RecurringTaskResponse, dueDate time.Time) (*TaskResponse, error) {
+func (m *mockRepository) CreateInstanceFromRecurring(ctx context.Context, tx *sqlx.Tx, master *RecurringTaskResponse, dueDate time.Time) (*TaskResponse, error) {
 	if m.createInstanceFromRecurringFunc != nil {
 		return m.createInstanceFromRecurringFunc(ctx, master, dueDate)
 	}
 	return nil, nil
 }
 
-func (m *mockRepository) UpdateRecurringLastGenerated(ctx context.Context, id int64, t time.Time) error {
+func (m *mockRepository) UpdateRecurringLastGenerated(ctx context.Context, tx *sqlx.Tx, id int64, t time.Time) error {
 	if m.updateRecurringLastGeneratedFunc != nil {
 		return m.updateRecurringLastGeneratedFunc(ctx, id, t)
 	}

@@ -106,11 +106,10 @@ func (s *service) SetNotificationDependencies(
 func (s *service) Create(ctx context.Context, userID string, req CreateTaskRequest) (*TaskResponse, error) {
 	var res *TaskResponse
 	err := s.db.WithTransactionCtx(ctx, func(tx *sqlx.Tx) error {
-		txCtx := database.ContextWithTx(ctx, tx)
 
-		thresholdMinutes, userTimezone, tzErr := s.repo.GetUserThresholdAndTimezone(txCtx, userID)
+		thresholdMinutes, userTimezone, tzErr := s.repo.GetUserThresholdAndTimezone(ctx, tx, userID)
 		if tzErr != nil && s.logger != nil {
-			s.logger.WarnContext(txCtx, "failed to get user threshold and timezone", "error", tzErr, "user_id", userID)
+			s.logger.WarnContext(ctx, "failed to get user threshold and timezone", "error", tzErr, "user_id", userID)
 		}
 
 		if req.IsRecurring && req.RecurringTaskID == nil {
@@ -131,7 +130,7 @@ func (s *service) Create(ctx context.Context, userID string, req CreateTaskReque
 				RecurrenceEndDate:  req.RecurrenceEndDate,
 				Subtasks:           subItems,
 			}
-			recMaster, recErr := s.repo.CreateRecurring(txCtx, userID, recReq)
+			recMaster, recErr := s.repo.CreateRecurring(ctx, tx, userID, recReq)
 			if recErr != nil {
 				return recErr
 			}
@@ -139,14 +138,14 @@ func (s *service) Create(ctx context.Context, userID string, req CreateTaskReque
 
 			if s.recurrenceScheduler != nil {
 				nextMidnight := getNextMidnightInUserTimezone(userTimezone)
-				if err := s.recurrenceScheduler.ScheduleTaskRecurrence(txCtx, recMaster.ID, nextMidnight); err != nil && s.logger != nil {
-					s.logger.WarnContext(txCtx, "failed to schedule task recurrence for master", "error", err, "recurring_id", recMaster.ID)
+				if err := s.recurrenceScheduler.ScheduleTaskRecurrence(ctx, recMaster.ID, nextMidnight); err != nil && s.logger != nil {
+					s.logger.WarnContext(ctx, "failed to schedule task recurrence for master", "error", err, "recurring_id", recMaster.ID)
 				}
 			}
 		}
 
 		var err error
-		res, err = s.repo.Create(txCtx, userID, req)
+		res, err = s.repo.Create(ctx, tx, userID, req)
 		if err != nil {
 			return err
 		}
@@ -156,19 +155,19 @@ func (s *service) Create(ctx context.Context, userID string, req CreateTaskReque
 				"status":   res.Status,
 				"priority": res.Priority,
 			})
-			_, _ = s.repo.CreateActivity(txCtx, res.ID, userID, "task_created", "Task created", changes)
+			_, _ = s.repo.CreateActivity(ctx, tx, res.ID, userID, "task_created", "Task created", changes)
 
 			// Schedule Task Due Alert if due date is provided
 			if res.DueDate != nil && s.scheduler != nil && res.Status != "done" {
 				warningTime := res.DueDate.Add(-time.Duration(thresholdMinutes) * time.Minute)
 				now := time.Now()
 				if warningTime.After(now) {
-					if err := s.scheduler.ScheduleTaskDueAlert(txCtx, res.ID, warningTime); err != nil && s.logger != nil {
-						s.logger.WarnContext(txCtx, "failed to schedule task due alert", "error", err, "task_id", res.ID)
+					if err := s.scheduler.ScheduleTaskDueAlert(ctx, res.ID, warningTime); err != nil && s.logger != nil {
+						s.logger.WarnContext(ctx, "failed to schedule task due alert", "error", err, "task_id", res.ID)
 					}
 				} else if res.DueDate.After(now) {
-					if err := s.scheduler.ScheduleTaskDueAlert(txCtx, res.ID, now.Add(5*time.Second)); err != nil && s.logger != nil {
-						s.logger.WarnContext(txCtx, "failed to schedule task due alert", "error", err, "task_id", res.ID)
+					if err := s.scheduler.ScheduleTaskDueAlert(ctx, res.ID, now.Add(5*time.Second)); err != nil && s.logger != nil {
+						s.logger.WarnContext(ctx, "failed to schedule task due alert", "error", err, "task_id", res.ID)
 					}
 				}
 			}
@@ -176,8 +175,8 @@ func (s *service) Create(ctx context.Context, userID string, req CreateTaskReque
 			// Fallback scheduling if recurring without master
 			if res.IsRecurring && res.RecurringTaskID == nil && s.recurrenceScheduler != nil {
 				nextMidnight := getNextMidnightInUserTimezone(userTimezone)
-				if err := s.recurrenceScheduler.ScheduleTaskRecurrence(txCtx, res.ID, nextMidnight); err != nil && s.logger != nil {
-					s.logger.WarnContext(txCtx, "failed to schedule task recurrence", "error", err, "task_id", res.ID)
+				if err := s.recurrenceScheduler.ScheduleTaskRecurrence(ctx, res.ID, nextMidnight); err != nil && s.logger != nil {
+					s.logger.WarnContext(ctx, "failed to schedule task recurrence", "error", err, "task_id", res.ID)
 				}
 			}
 		}
@@ -193,9 +192,8 @@ func (s *service) Create(ctx context.Context, userID string, req CreateTaskReque
 func (s *service) GetByID(ctx context.Context, userID string, id int64) (*TaskResponse, error) {
 	var entity *TaskResponse
 	err := s.db.WithReadOnlyTransactionCtx(ctx, func(tx *sqlx.Tx) error {
-		txCtx := database.ContextWithTx(ctx, tx)
 		var err error
-		entity, err = s.repo.FindByID(txCtx, userID, id)
+		entity, err = s.repo.FindByID(ctx, tx, userID, id)
 		if err != nil {
 			return err
 		}
@@ -213,9 +211,8 @@ func (s *service) GetByID(ctx context.Context, userID string, id int64) (*TaskRe
 func (s *service) FindAll(ctx context.Context, userID string, filter TaskFilter) ([]TaskResponse, error) {
 	var res []TaskResponse
 	err := s.db.WithReadOnlyTransactionCtx(ctx, func(tx *sqlx.Tx) error {
-		txCtx := database.ContextWithTx(ctx, tx)
 		var err error
-		res, err = s.repo.FindAll(txCtx, userID, filter)
+		res, err = s.repo.FindAll(ctx, tx, userID, filter)
 		return err
 	})
 	return res, err
@@ -228,8 +225,7 @@ func (s *service) Update(ctx context.Context, userID string, id int64, req Updat
 	var dueRemoved bool
 	var urgentChanged bool
 	err := s.db.WithTransactionCtx(ctx, func(tx *sqlx.Tx) error {
-		txCtx := database.ContextWithTx(ctx, tx)
-		entity, err := s.repo.FindByID(txCtx, userID, id)
+		entity, err := s.repo.FindByID(ctx, tx, userID, id)
 		if err != nil {
 			return err
 		}
@@ -245,7 +241,7 @@ func (s *service) Update(ctx context.Context, userID string, id int64, req Updat
 			}
 		}
 
-		res, err = s.repo.Update(txCtx, userID, id, req)
+		res, err = s.repo.Update(ctx, tx, userID, id, req)
 		if err != nil {
 			return err
 		}
@@ -292,41 +288,41 @@ func (s *service) Update(ctx context.Context, userID string, id int64, req Updat
 			if len(changeDescs) > 0 {
 				changesJSON, _ := json.Marshal(diffs)
 				desc := strings.Join(changeDescs, ", ")
-				if _, err := s.repo.CreateActivity(txCtx, res.ID, userID, "task_updated", desc, changesJSON); err != nil {
+				if _, err := s.repo.CreateActivity(ctx, tx, res.ID, userID, "task_updated", desc, changesJSON); err != nil {
 					return err
 				}
 			}
 
-			thresholdMinutes, tz, tzErr := s.repo.GetUserThresholdAndTimezone(txCtx, userID)
+			thresholdMinutes, tz, tzErr := s.repo.GetUserThresholdAndTimezone(ctx, tx, userID)
 			if tzErr != nil && s.logger != nil {
-				s.logger.WarnContext(txCtx, "failed to get user threshold and timezone", "error", tzErr, "user_id", userID)
+				s.logger.WarnContext(ctx, "failed to get user threshold and timezone", "error", tzErr, "user_id", userID)
 			}
 			userTimezone = tz
 
 			if s.scheduler != nil {
 				if res.Status == "done" {
-					if err := s.scheduler.CancelTaskDueAlert(txCtx, res.ID); err != nil && s.logger != nil {
-						s.logger.WarnContext(txCtx, "failed to cancel task due alert", "error", err, "task_id", res.ID)
+					if err := s.scheduler.CancelTaskDueAlert(ctx, res.ID); err != nil && s.logger != nil {
+						s.logger.WarnContext(ctx, "failed to cancel task due alert", "error", err, "task_id", res.ID)
 					}
 				} else if req.DueDate != nil {
 					if res.DueDate == nil {
-						if err := s.scheduler.CancelTaskDueAlert(txCtx, res.ID); err != nil && s.logger != nil {
-							s.logger.WarnContext(txCtx, "failed to cancel task due alert", "error", err, "task_id", res.ID)
+						if err := s.scheduler.CancelTaskDueAlert(ctx, res.ID); err != nil && s.logger != nil {
+							s.logger.WarnContext(ctx, "failed to cancel task due alert", "error", err, "task_id", res.ID)
 						}
 					} else {
 						warningTime := res.DueDate.Add(-time.Duration(thresholdMinutes) * time.Minute)
 						now := time.Now()
 						if warningTime.After(now) {
-							if err := s.scheduler.ScheduleTaskDueAlert(txCtx, res.ID, warningTime); err != nil && s.logger != nil {
-								s.logger.WarnContext(txCtx, "failed to schedule task due alert", "error", err, "task_id", res.ID)
+							if err := s.scheduler.ScheduleTaskDueAlert(ctx, res.ID, warningTime); err != nil && s.logger != nil {
+								s.logger.WarnContext(ctx, "failed to schedule task due alert", "error", err, "task_id", res.ID)
 							}
 						} else if res.DueDate.After(now) {
-							if err := s.scheduler.ScheduleTaskDueAlert(txCtx, res.ID, now.Add(5*time.Second)); err != nil && s.logger != nil {
-								s.logger.WarnContext(txCtx, "failed to schedule task due alert", "error", err, "task_id", res.ID)
+							if err := s.scheduler.ScheduleTaskDueAlert(ctx, res.ID, now.Add(5*time.Second)); err != nil && s.logger != nil {
+								s.logger.WarnContext(ctx, "failed to schedule task due alert", "error", err, "task_id", res.ID)
 							}
 						} else {
-							if err := s.scheduler.CancelTaskDueAlert(txCtx, res.ID); err != nil && s.logger != nil {
-								s.logger.WarnContext(txCtx, "failed to cancel task due alert", "error", err, "task_id", res.ID)
+							if err := s.scheduler.CancelTaskDueAlert(ctx, res.ID); err != nil && s.logger != nil {
+								s.logger.WarnContext(ctx, "failed to cancel task due alert", "error", err, "task_id", res.ID)
 							}
 						}
 					}
@@ -336,13 +332,13 @@ func (s *service) Update(ctx context.Context, userID string, id int64, req Updat
 			if s.recurrenceScheduler != nil {
 				if req.IsRecurring != nil {
 					if !*req.IsRecurring {
-						if err := s.recurrenceScheduler.CancelTaskRecurrence(txCtx, res.ID); err != nil && s.logger != nil {
-							s.logger.WarnContext(txCtx, "failed to cancel task recurrence", "error", err, "task_id", res.ID)
+						if err := s.recurrenceScheduler.CancelTaskRecurrence(ctx, res.ID); err != nil && s.logger != nil {
+							s.logger.WarnContext(ctx, "failed to cancel task recurrence", "error", err, "task_id", res.ID)
 						}
 					} else {
 						nextMidnight := getNextMidnightInUserTimezone(userTimezone)
-						if err := s.recurrenceScheduler.ScheduleTaskRecurrence(txCtx, res.ID, nextMidnight); err != nil && s.logger != nil {
-							s.logger.WarnContext(txCtx, "failed to schedule task recurrence", "error", err, "task_id", res.ID)
+						if err := s.recurrenceScheduler.ScheduleTaskRecurrence(ctx, res.ID, nextMidnight); err != nil && s.logger != nil {
+							s.logger.WarnContext(ctx, "failed to schedule task recurrence", "error", err, "task_id", res.ID)
 						}
 					}
 				}
@@ -366,8 +362,7 @@ func (s *service) Update(ctx context.Context, userID string, id int64, req Updat
 func (s *service) Delete(ctx context.Context, userID string, id int64) error {
 	var deletedEntity *TaskResponse
 	err := s.db.WithTransactionCtx(ctx, func(tx *sqlx.Tx) error {
-		txCtx := database.ContextWithTx(ctx, tx)
-		entity, err := s.repo.FindByID(txCtx, userID, id)
+		entity, err := s.repo.FindByID(ctx, tx, userID, id)
 		if err != nil {
 			return err
 		}
@@ -378,36 +373,36 @@ func (s *service) Delete(ctx context.Context, userID string, id int64) error {
 
 		// 1. Cancel Asynq jobs for any reminders associated with this task before cascading delete
 		if s.reminderRepo != nil && s.reminderScheduler != nil {
-			rems, _, remErr := s.reminderRepo.FindAll(txCtx, userID, reminder.ReminderFilter{
+			rems, _, remErr := s.reminderRepo.FindAll(ctx, userID, reminder.ReminderFilter{
 				TaskID: &id,
 				Status: "all",
 				Limit:  100,
 			})
 			if remErr == nil {
 				for _, rem := range rems {
-					if cErr := s.reminderScheduler.CancelReminder(txCtx, rem.ID); cErr != nil && s.logger != nil {
-						s.logger.WarnContext(txCtx, "failed to cancel reminder asynq job on task delete", "error", cErr, "reminder_id", rem.ID)
+					if cErr := s.reminderScheduler.CancelReminder(ctx, rem.ID); cErr != nil && s.logger != nil {
+						s.logger.WarnContext(ctx, "failed to cancel reminder asynq job on task delete", "error", cErr, "reminder_id", rem.ID)
 					}
 				}
 			} else if s.logger != nil {
-				s.logger.WarnContext(txCtx, "failed to query reminders for task on delete", "error", remErr, "task_id", id)
+				s.logger.WarnContext(ctx, "failed to query reminders for task on delete", "error", remErr, "task_id", id)
 			}
 		}
 
-		if err := s.repo.Delete(txCtx, userID, id); err != nil {
+		if err := s.repo.Delete(ctx, tx, userID, id); err != nil {
 			return err
 		}
 
 		// 2. Cancel Task Due Alert in Asynq
 		if s.scheduler != nil {
-			if err := s.scheduler.CancelTaskDueAlert(txCtx, id); err != nil && s.logger != nil {
-				s.logger.WarnContext(txCtx, "failed to cancel task due alert on delete", "error", err, "task_id", id)
+			if err := s.scheduler.CancelTaskDueAlert(ctx, id); err != nil && s.logger != nil {
+				s.logger.WarnContext(ctx, "failed to cancel task due alert on delete", "error", err, "task_id", id)
 			}
 		}
 		// 3. Cancel Task Recurrence in Asynq
 		if s.recurrenceScheduler != nil {
-			if err := s.recurrenceScheduler.CancelTaskRecurrence(txCtx, id); err != nil && s.logger != nil {
-				s.logger.WarnContext(txCtx, "failed to cancel task recurrence on delete", "error", err, "task_id", id)
+			if err := s.recurrenceScheduler.CancelTaskRecurrence(ctx, id); err != nil && s.logger != nil {
+				s.logger.WarnContext(ctx, "failed to cancel task recurrence on delete", "error", err, "task_id", id)
 			}
 		}
 		return nil
@@ -426,22 +421,21 @@ func (s *service) Delete(ctx context.Context, userID string, id int64) error {
 func (s *service) LogProgress(ctx context.Context, userID string, id int64, req LogProgressRequest) (*TaskResponse, error) {
 	var res *TaskResponse
 	err := s.db.WithTransactionCtx(ctx, func(tx *sqlx.Tx) error {
-		txCtx := database.ContextWithTx(ctx, tx)
-		entity, err := s.repo.FindByID(txCtx, userID, id)
+		entity, err := s.repo.FindByID(ctx, tx, userID, id)
 		if err != nil {
 			return err
 		}
 		if entity == nil {
 			return errors.TaskNotFound()
 		}
-		res, err = s.repo.LogProgress(txCtx, userID, id, req)
+		res, err = s.repo.LogProgress(ctx, tx, userID, id, req)
 		if err != nil {
 			return err
 		}
 		if res != nil {
 			if req.Status != nil && *req.Status == "done" && s.scheduler != nil {
-				if err := s.scheduler.CancelTaskDueAlert(txCtx, id); err != nil && s.logger != nil {
-					s.logger.WarnContext(txCtx, "failed to cancel task due alert on progress done", "error", err, "task_id", id)
+				if err := s.scheduler.CancelTaskDueAlert(ctx, id); err != nil && s.logger != nil {
+					s.logger.WarnContext(ctx, "failed to cancel task due alert on progress done", "error", err, "task_id", id)
 				}
 			}
 
@@ -455,7 +449,7 @@ func (s *service) LogProgress(ctx context.Context, userID string, id int64, req 
 				changesMap["completed_subtask_ids"] = req.CompletedSubtaskIDs
 			}
 			changesJSON, _ := json.Marshal(changesMap)
-			if _, err := s.repo.CreateActivity(txCtx, res.ID, userID, "progress_logged", req.ProgressNote, changesJSON); err != nil {
+			if _, err := s.repo.CreateActivity(ctx, tx, res.ID, userID, "progress_logged", req.ProgressNote, changesJSON); err != nil {
 				return err
 			}
 		}
@@ -479,15 +473,14 @@ func (s *service) LogProgress(ctx context.Context, userID string, id int64, req 
 func (s *service) ToggleFocus(ctx context.Context, userID string, id int64) (*TaskResponse, error) {
 	var res *TaskResponse
 	err := s.db.WithTransactionCtx(ctx, func(tx *sqlx.Tx) error {
-		txCtx := database.ContextWithTx(ctx, tx)
-		entity, err := s.repo.FindByID(txCtx, userID, id)
+		entity, err := s.repo.FindByID(ctx, tx, userID, id)
 		if err != nil {
 			return err
 		}
 		if entity == nil {
 			return errors.TaskNotFound()
 		}
-		res, err = s.repo.ToggleFocus(txCtx, userID, id)
+		res, err = s.repo.ToggleFocus(ctx, tx, userID, id)
 		if err != nil {
 			return err
 		}
@@ -497,7 +490,7 @@ func (s *service) ToggleFocus(ctx context.Context, userID string, id int64) (*Ta
 				desc = "Added to focus horizon"
 			}
 			changesJSON, _ := json.Marshal(map[string]any{"is_focus": res.IsFocus})
-			if _, err := s.repo.CreateActivity(txCtx, res.ID, userID, "focus_toggled", desc, changesJSON); err != nil {
+			if _, err := s.repo.CreateActivity(ctx, tx, res.ID, userID, "focus_toggled", desc, changesJSON); err != nil {
 				return err
 			}
 		}
@@ -509,8 +502,7 @@ func (s *service) ToggleFocus(ctx context.Context, userID string, id int64) (*Ta
 func (s *service) CreateSubtask(ctx context.Context, userID string, taskID int64, req CreateSubtaskRequest) (*SubtaskResponse, error) {
 	var res *SubtaskResponse
 	err := s.db.WithTransactionCtx(ctx, func(tx *sqlx.Tx) error {
-		txCtx := database.ContextWithTx(ctx, tx)
-		entity, err := s.repo.FindByID(txCtx, userID, taskID)
+		entity, err := s.repo.FindByID(ctx, tx, userID, taskID)
 		if err != nil {
 			return err
 		}
@@ -521,19 +513,19 @@ func (s *service) CreateSubtask(ctx context.Context, userID string, taskID int64
 			return errors.BadRequest("Subtask due date cannot exceed task due date")
 		}
 		var err2 error
-		res, err2 = s.repo.CreateSubtask(txCtx, userID, taskID, req)
+		res, err2 = s.repo.CreateSubtask(ctx, tx, userID, taskID, req)
 		if err2 != nil {
 			return err2
 		}
 		if res != nil {
 			desc := fmt.Sprintf("Added subtask: %s", req.Title)
 			changesJSON, _ := json.Marshal(map[string]any{"subtask_id": res.ID, "title": req.Title})
-			if _, err := s.repo.CreateActivity(txCtx, taskID, userID, "subtask_created", desc, changesJSON); err != nil {
+			if _, err := s.repo.CreateActivity(ctx, tx, taskID, userID, "subtask_created", desc, changesJSON); err != nil {
 				return err
 			}
 			if entity.Status == "done" {
 				progressStatus := "in_progress"
-				if _, err := s.Update(txCtx, userID, taskID, UpdateTaskRequest{
+				if _, err := s.Update(ctx, userID, taskID, UpdateTaskRequest{
 					Status: &progressStatus,
 				}); err != nil {
 					return err
@@ -557,8 +549,7 @@ func (s *service) CreateSubtask(ctx context.Context, userID string, taskID int64
 func (s *service) UpdateSubtask(ctx context.Context, userID string, taskID int64, subtaskID int64, req UpdateSubtaskRequest) (*SubtaskResponse, error) {
 	var res *SubtaskResponse
 	err := s.db.WithTransactionCtx(ctx, func(tx *sqlx.Tx) error {
-		txCtx := database.ContextWithTx(ctx, tx)
-		entity, err := s.repo.FindByID(txCtx, userID, taskID)
+		entity, err := s.repo.FindByID(ctx, tx, userID, taskID)
 		if err != nil {
 			return err
 		}
@@ -569,7 +560,7 @@ func (s *service) UpdateSubtask(ctx context.Context, userID string, taskID int64
 			return errors.BadRequest("Subtask due date cannot exceed task due date")
 		}
 		var err2 error
-		res, err2 = s.repo.UpdateSubtask(txCtx, userID, taskID, subtaskID, req)
+		res, err2 = s.repo.UpdateSubtask(ctx, tx, userID, taskID, subtaskID, req)
 		if err2 != nil {
 			return err2
 		}
@@ -589,17 +580,17 @@ func (s *service) UpdateSubtask(ctx context.Context, userID string, taskID int64
 				"title":        res.Title,
 				"is_completed": res.IsCompleted,
 			})
-			if _, err := s.repo.CreateActivity(txCtx, taskID, userID, "subtask_toggled", desc, changesJSON); err != nil {
+			if _, err := s.repo.CreateActivity(ctx, tx, taskID, userID, "subtask_toggled", desc, changesJSON); err != nil {
 				return err
 			}
 
 			if req.IsCompleted != nil {
-				total, completed, countErr := s.repo.CountSubtasks(txCtx, taskID)
+				total, completed, countErr := s.repo.CountSubtasks(ctx, tx, taskID)
 				if countErr == nil && total > 0 {
 					if completed == total && entity.Status != "done" {
 						doneStatus := "done"
 						noFocus := false
-						if _, err := s.Update(txCtx, userID, taskID, UpdateTaskRequest{
+						if _, err := s.Update(ctx, userID, taskID, UpdateTaskRequest{
 							Status:  &doneStatus,
 							IsFocus: &noFocus,
 						}); err != nil {
@@ -607,7 +598,7 @@ func (s *service) UpdateSubtask(ctx context.Context, userID string, taskID int64
 						}
 					} else if completed < total && entity.Status == "done" {
 						progressStatus := "in_progress"
-						if _, err := s.Update(txCtx, userID, taskID, UpdateTaskRequest{
+						if _, err := s.Update(ctx, userID, taskID, UpdateTaskRequest{
 							Status: &progressStatus,
 						}); err != nil {
 							return err
@@ -632,8 +623,7 @@ func (s *service) UpdateSubtask(ctx context.Context, userID string, taskID int64
 
 func (s *service) DeleteSubtask(ctx context.Context, userID string, taskID int64, subtaskID int64) error {
 	err := s.db.WithTransactionCtx(ctx, func(tx *sqlx.Tx) error {
-		txCtx := database.ContextWithTx(ctx, tx)
-		entity, err := s.repo.FindByID(txCtx, userID, taskID)
+		entity, err := s.repo.FindByID(ctx, tx, userID, taskID)
 		if err != nil {
 			return err
 		}
@@ -647,20 +637,20 @@ func (s *service) DeleteSubtask(ctx context.Context, userID string, taskID int64
 				break
 			}
 		}
-		if err := s.repo.DeleteSubtask(txCtx, userID, taskID, subtaskID); err != nil {
+		if err := s.repo.DeleteSubtask(ctx, tx, userID, taskID, subtaskID); err != nil {
 			return err
 		}
 		desc := fmt.Sprintf("Deleted subtask: %s", subtaskTitle)
 		changesJSON, _ := json.Marshal(map[string]any{"subtask_id": subtaskID, "title": subtaskTitle})
-		if _, err := s.repo.CreateActivity(txCtx, taskID, userID, "subtask_deleted", desc, changesJSON); err != nil {
+		if _, err := s.repo.CreateActivity(ctx, tx, taskID, userID, "subtask_deleted", desc, changesJSON); err != nil {
 			return err
 		}
 
-		total, completed, countErr := s.repo.CountSubtasks(txCtx, taskID)
+		total, completed, countErr := s.repo.CountSubtasks(ctx, tx, taskID)
 		if countErr == nil && total > 0 && completed == total && entity.Status != "done" {
 			doneStatus := "done"
 			noFocus := false
-			if _, err := s.Update(txCtx, userID, taskID, UpdateTaskRequest{
+			if _, err := s.Update(ctx, userID, taskID, UpdateTaskRequest{
 				Status:  &doneStatus,
 				IsFocus: &noFocus,
 			}); err != nil {
@@ -684,15 +674,14 @@ func (s *service) DeleteSubtask(ctx context.Context, userID string, taskID int64
 func (s *service) GetActivities(ctx context.Context, userID string, taskID int64) ([]TaskActivityResponse, error) {
 	var res []TaskActivityResponse
 	err := s.db.WithReadOnlyTransactionCtx(ctx, func(tx *sqlx.Tx) error {
-		txCtx := database.ContextWithTx(ctx, tx)
-		entity, err := s.repo.FindByID(txCtx, userID, taskID)
+		entity, err := s.repo.FindByID(ctx, tx, userID, taskID)
 		if err != nil {
 			return err
 		}
 		if entity == nil {
 			return errors.TaskNotFound()
 		}
-		res, err = s.repo.FindActivitiesByTaskID(txCtx, userID, taskID)
+		res, err = s.repo.FindActivitiesByTaskID(ctx, tx, userID, taskID)
 		return err
 	})
 	return res, err
@@ -701,8 +690,7 @@ func (s *service) GetActivities(ctx context.Context, userID string, taskID int64
 func (s *service) CreateActivity(ctx context.Context, userID string, taskID int64, req CreateTaskActivityRequest) (*TaskActivityResponse, error) {
 	var res *TaskActivityResponse
 	err := s.db.WithTransactionCtx(ctx, func(tx *sqlx.Tx) error {
-		txCtx := database.ContextWithTx(ctx, tx)
-		entity, err := s.repo.FindByID(txCtx, userID, taskID)
+		entity, err := s.repo.FindByID(ctx, tx, userID, taskID)
 		if err != nil {
 			return err
 		}
@@ -714,11 +702,11 @@ func (s *service) CreateActivity(ctx context.Context, userID string, taskID int6
 			actType = "progress_note"
 		}
 		changesJSON, _ := json.Marshal(map[string]any{"progress_note": req.Description})
-		res, err = s.repo.CreateActivity(txCtx, taskID, userID, actType, req.Description, changesJSON)
+		res, err = s.repo.CreateActivity(ctx, tx, taskID, userID, actType, req.Description, changesJSON)
 		if err != nil {
 			return err
 		}
-		_, err = s.repo.LogProgress(txCtx, userID, taskID, LogProgressRequest{
+		_, err = s.repo.LogProgress(ctx, tx, userID, taskID, LogProgressRequest{
 			ProgressNote: req.Description,
 		})
 		return err
@@ -760,7 +748,17 @@ func (s *service) CreateFromNote(ctx context.Context, userID string, noteID int6
 }
 
 func (s *service) ProcessDueWarning(ctx context.Context, taskID int64) error {
-	task, userEmail, userTimezone, _, emailEnabled, err := s.repo.FindByIDSystem(ctx, taskID)
+	var (
+		task         *TaskResponse
+		userEmail    string
+		userTimezone string
+		emailEnabled bool
+	)
+	err := s.db.WithReadOnlyTransactionCtx(ctx, func(tx *sqlx.Tx) error {
+		var err error
+		task, userEmail, userTimezone, _, emailEnabled, err = s.repo.FindByIDSystem(ctx, tx, taskID)
+		return err
+	})
 	if err != nil {
 		if s.logger != nil {
 			s.logger.Error("failed to find task system for due warning", "task_id", taskID, "error", err)
@@ -845,10 +843,9 @@ func (s *service) ProcessDueWarning(ctx context.Context, taskID int64) error {
 		}
 	}
 
-	// 4. Mark status as warning sent in transaction
+		// 4. Mark status as warning sent in transaction
 	err = s.db.WithTransactionCtx(ctx, func(tx *sqlx.Tx) error {
-		txCtx := database.ContextWithTx(ctx, tx)
-		return s.repo.MarkDueWarningSent(txCtx, taskID)
+		return s.repo.MarkDueWarningSent(ctx, tx, taskID)
 	})
 	if err != nil {
 		if s.logger != nil {
@@ -866,9 +863,8 @@ func (s *service) ProcessDueWarning(ctx context.Context, taskID int64) error {
 func (s *service) GetWidgetBundle(ctx context.Context, userID string) (*WidgetBundleResponse, error) {
 	var bundle *WidgetBundleResponse
 	err := s.db.WithReadOnlyTransactionCtx(ctx, func(tx *sqlx.Tx) error {
-		txCtx := database.ContextWithTx(ctx, tx)
 		var err error
-		bundle, err = s.repo.GetWidgetBundle(txCtx, userID)
+		bundle, err = s.repo.GetWidgetBundle(ctx, tx, userID)
 		return err
 	})
 	return bundle, err
@@ -877,16 +873,34 @@ func (s *service) GetWidgetBundle(ctx context.Context, userID string) (*WidgetBu
 func (s *service) GetWorkspaceStats(ctx context.Context, userID string) (*WorkspaceStatsResponse, error) {
 	var stats *WorkspaceStatsResponse
 	err := s.db.WithReadOnlyTransactionCtx(ctx, func(tx *sqlx.Tx) error {
-		txCtx := database.ContextWithTx(ctx, tx)
 		var err error
-		stats, err = s.repo.GetWorkspaceStats(txCtx, userID)
+		stats, err = s.repo.GetWorkspaceStats(ctx, tx, userID)
 		return err
 	})
 	return stats, err
 }
 
 func (s *service) ProcessTaskRecurrence(ctx context.Context, targetID int64) error {
-	master, userTimezone, err := s.repo.FindRecurringByIDSystem(ctx, targetID)
+	var (
+		master       *RecurringTaskResponse
+		userTimezone string
+	)
+	err := s.db.WithReadOnlyTransactionCtx(ctx, func(tx *sqlx.Tx) error {
+		var err error
+		master, userTimezone, err = s.repo.FindRecurringByIDSystem(ctx, tx, targetID)
+		if err != nil {
+			return err
+		}
+		// Fallback check: could targetID be a legacy tasks.id?
+		if master == nil {
+			legacyTask, _, _, _, _, legacyErr := s.repo.FindByIDSystem(ctx, tx, targetID)
+			if legacyErr == nil && legacyTask != nil && legacyTask.RecurringTaskID != nil {
+				master, userTimezone, err = s.repo.FindRecurringByIDSystem(ctx, tx, *legacyTask.RecurringTaskID)
+				return err
+			}
+		}
+		return nil
+	})
 	if err != nil {
 		if s.logger != nil {
 			s.logger.Error("failed to find recurring task for recurrence", "recurring_id", targetID, "error", err)
@@ -894,12 +908,7 @@ func (s *service) ProcessTaskRecurrence(ctx context.Context, targetID int64) err
 		return err
 	}
 
-	// Fallback check: could targetID be a legacy tasks.id?
 	if master == nil {
-		legacyTask, _, _, _, _, legacyErr := s.repo.FindByIDSystem(ctx, targetID)
-		if legacyErr == nil && legacyTask != nil && legacyTask.RecurringTaskID != nil {
-			return s.ProcessTaskRecurrence(ctx, *legacyTask.RecurringTaskID)
-		}
 		if s.logger != nil {
 			s.logger.Info("recurring task not found or retired, skipping", "id", targetID)
 		}
@@ -917,7 +926,10 @@ func (s *service) ProcessTaskRecurrence(ctx context.Context, targetID int64) err
 		if s.logger != nil {
 			s.logger.Info("recurring task has reached end date, deactivating", "recurring_id", targetID)
 		}
-		_, _ = s.repo.ToggleActiveRecurring(ctx, master.UserID, master.ID)
+		_ = s.db.WithTransactionCtx(ctx, func(tx *sqlx.Tx) error {
+			_, err := s.repo.ToggleActiveRecurring(ctx, tx, master.UserID, master.ID)
+			return err
+		})
 		if s.recurrenceScheduler != nil {
 			_ = s.recurrenceScheduler.CancelTaskRecurrence(ctx, master.ID)
 		}
@@ -939,7 +951,12 @@ func (s *service) ProcessTaskRecurrence(ctx context.Context, targetID int64) err
 	}
 
 	// 1. Idempotency Check: if today's instance already exists, skip creation
-	existing, _ := s.repo.FindTodayInstance(ctx, master.ID, todayDueDate)
+	var existing *TaskResponse
+	_ = s.db.WithReadOnlyTransactionCtx(ctx, func(tx *sqlx.Tx) error {
+		var err error
+		existing, err = s.repo.FindTodayInstance(ctx, tx, master.ID, todayDueDate)
+		return err
+	})
 	if existing != nil {
 		if s.logger != nil {
 			s.logger.Info("recurring task instance already exists today, ensuring next midnight schedule is set", "recurring_id", master.ID)
@@ -954,9 +971,8 @@ func (s *service) ProcessTaskRecurrence(ctx context.Context, targetID int64) err
 	// 2. Create today's instance in transaction
 	var created *TaskResponse
 	err = s.db.WithTransactionCtx(ctx, func(tx *sqlx.Tx) error {
-		txCtx := database.ContextWithTx(ctx, tx)
 		var createErr error
-		created, createErr = s.repo.CreateInstanceFromRecurring(txCtx, master, todayDueDate)
+		created, createErr = s.repo.CreateInstanceFromRecurring(ctx, tx, master, todayDueDate)
 		if createErr != nil {
 			return createErr
 		}
@@ -968,16 +984,16 @@ func (s *service) ProcessTaskRecurrence(ctx context.Context, targetID int64) err
 				"priority":          created.Priority,
 				"recurring_task_id": master.ID,
 			})
-			_, _ = s.repo.CreateActivity(txCtx, created.ID, master.UserID, "task_created", "Recurring task generated", changes)
+			_, _ = s.repo.CreateActivity(ctx, tx, created.ID, master.UserID, "task_created", "Recurring task generated", changes)
 		}
 
-		if err := s.repo.UpdateRecurringLastGenerated(txCtx, master.ID, time.Now()); err != nil {
+		if err := s.repo.UpdateRecurringLastGenerated(ctx, tx, master.ID, time.Now()); err != nil {
 			return err
 		}
 
 		if s.recurrenceScheduler != nil {
 			nextMidnight := getNextMidnightInUserTimezone(userTimezone)
-			if err := s.recurrenceScheduler.ScheduleTaskRecurrence(txCtx, master.ID, nextMidnight); err != nil {
+			if err := s.recurrenceScheduler.ScheduleTaskRecurrence(ctx, master.ID, nextMidnight); err != nil {
 				return fmt.Errorf("failed to schedule next recurrence: %w", err)
 			}
 		}
@@ -1011,16 +1027,15 @@ func (s *service) ProcessTaskRecurrence(ctx context.Context, targetID int64) err
 func (s *service) CreateRecurringTask(ctx context.Context, userID string, req CreateRecurringTaskRequest) (*RecurringTaskResponse, error) {
 	var res *RecurringTaskResponse
 	err := s.db.WithTransactionCtx(ctx, func(tx *sqlx.Tx) error {
-		txCtx := database.ContextWithTx(ctx, tx)
 		var err error
-		res, err = s.repo.CreateRecurring(txCtx, userID, req)
+		res, err = s.repo.CreateRecurring(ctx, tx, userID, req)
 		if err != nil {
 			return err
 		}
 
-		_, userTimezone, tzErr := s.repo.GetUserThresholdAndTimezone(txCtx, userID)
+		_, userTimezone, tzErr := s.repo.GetUserThresholdAndTimezone(ctx, tx, userID)
 		if tzErr != nil && s.logger != nil {
-			s.logger.WarnContext(txCtx, "failed to get user timezone", "error", tzErr, "user_id", userID)
+			s.logger.WarnContext(ctx, "failed to get user timezone", "error", tzErr, "user_id", userID)
 		}
 
 		// Generate today's initial instance if not existing
@@ -1038,23 +1053,23 @@ func (s *service) CreateRecurringTask(ctx context.Context, userID string, req Cr
 			}
 		}
 
-		createdInstance, err := s.repo.CreateInstanceFromRecurring(txCtx, res, todayDueDate)
+		createdInstance, err := s.repo.CreateInstanceFromRecurring(ctx, tx, res, todayDueDate)
 		if err == nil && createdInstance != nil {
-			_ = s.repo.UpdateRecurringLastGenerated(txCtx, res.ID, time.Now())
+			_ = s.repo.UpdateRecurringLastGenerated(ctx, tx, res.ID, time.Now())
 			changes, _ := json.Marshal(map[string]any{
 				"title":             createdInstance.Title,
 				"status":            createdInstance.Status,
 				"priority":          createdInstance.Priority,
 				"recurring_task_id": res.ID,
 			})
-			_, _ = s.repo.CreateActivity(txCtx, createdInstance.ID, userID, "task_created", "Initial recurring task instance generated", changes)
+			_, _ = s.repo.CreateActivity(ctx, tx, createdInstance.ID, userID, "task_created", "Initial recurring task instance generated", changes)
 		}
 
 		// Schedule next rollover at midnight
 		if s.recurrenceScheduler != nil {
 			nextMidnight := getNextMidnightInUserTimezone(userTimezone)
-			if err := s.recurrenceScheduler.ScheduleTaskRecurrence(txCtx, res.ID, nextMidnight); err != nil && s.logger != nil {
-				s.logger.WarnContext(txCtx, "failed to schedule recurring task recurrence in asynq", "error", err, "recurring_id", res.ID)
+			if err := s.recurrenceScheduler.ScheduleTaskRecurrence(ctx, res.ID, nextMidnight); err != nil && s.logger != nil {
+				s.logger.WarnContext(ctx, "failed to schedule recurring task recurrence in asynq", "error", err, "recurring_id", res.ID)
 			}
 		}
 		return nil
@@ -1068,9 +1083,8 @@ func (s *service) CreateRecurringTask(ctx context.Context, userID string, req Cr
 func (s *service) FindAllRecurringTasks(ctx context.Context, userID string) ([]RecurringTaskResponse, error) {
 	var list []RecurringTaskResponse
 	err := s.db.WithReadOnlyTransactionCtx(ctx, func(tx *sqlx.Tx) error {
-		txCtx := database.ContextWithTx(ctx, tx)
 		var err error
-		list, err = s.repo.FindAllRecurring(txCtx, userID)
+		list, err = s.repo.FindAllRecurring(ctx, tx, userID)
 		return err
 	})
 	return list, err
@@ -1079,9 +1093,8 @@ func (s *service) FindAllRecurringTasks(ctx context.Context, userID string) ([]R
 func (s *service) GetRecurringTaskByID(ctx context.Context, userID string, id int64) (*RecurringTaskResponse, error) {
 	var res *RecurringTaskResponse
 	err := s.db.WithReadOnlyTransactionCtx(ctx, func(tx *sqlx.Tx) error {
-		txCtx := database.ContextWithTx(ctx, tx)
 		var err error
-		res, err = s.repo.FindRecurringByID(txCtx, userID, id)
+		res, err = s.repo.FindRecurringByID(ctx, tx, userID, id)
 		if err != nil {
 			return err
 		}
@@ -1096,19 +1109,18 @@ func (s *service) GetRecurringTaskByID(ctx context.Context, userID string, id in
 func (s *service) UpdateRecurringTask(ctx context.Context, userID string, id int64, req UpdateRecurringTaskRequest) (*RecurringTaskResponse, error) {
 	var res *RecurringTaskResponse
 	err := s.db.WithTransactionCtx(ctx, func(tx *sqlx.Tx) error {
-		txCtx := database.ContextWithTx(ctx, tx)
 		var err error
-		res, err = s.repo.UpdateRecurring(txCtx, userID, id, req)
+		res, err = s.repo.UpdateRecurring(ctx, tx, userID, id, req)
 		if err != nil {
 			return err
 		}
 		if res != nil && s.recurrenceScheduler != nil {
 			if !res.IsActive {
-				_ = s.recurrenceScheduler.CancelTaskRecurrence(txCtx, res.ID)
+				_ = s.recurrenceScheduler.CancelTaskRecurrence(ctx, res.ID)
 			} else {
-				_, tz, _ := s.repo.GetUserThresholdAndTimezone(txCtx, userID)
+				_, tz, _ := s.repo.GetUserThresholdAndTimezone(ctx, tx, userID)
 				nextMidnight := getNextMidnightInUserTimezone(tz)
-				_ = s.recurrenceScheduler.ScheduleTaskRecurrence(txCtx, res.ID, nextMidnight)
+				_ = s.recurrenceScheduler.ScheduleTaskRecurrence(ctx, res.ID, nextMidnight)
 			}
 		}
 		return nil
@@ -1118,12 +1130,11 @@ func (s *service) UpdateRecurringTask(ctx context.Context, userID string, id int
 
 func (s *service) DeleteRecurringTask(ctx context.Context, userID string, id int64) error {
 	return s.db.WithTransactionCtx(ctx, func(tx *sqlx.Tx) error {
-		txCtx := database.ContextWithTx(ctx, tx)
-		if err := s.repo.DeleteRecurring(txCtx, userID, id); err != nil {
+		if err := s.repo.DeleteRecurring(ctx, tx, userID, id); err != nil {
 			return err
 		}
 		if s.recurrenceScheduler != nil {
-			_ = s.recurrenceScheduler.CancelTaskRecurrence(txCtx, id)
+			_ = s.recurrenceScheduler.CancelTaskRecurrence(ctx, id)
 		}
 		return nil
 	})
@@ -1132,19 +1143,18 @@ func (s *service) DeleteRecurringTask(ctx context.Context, userID string, id int
 func (s *service) ToggleActiveRecurringTask(ctx context.Context, userID string, id int64) (*RecurringTaskResponse, error) {
 	var res *RecurringTaskResponse
 	err := s.db.WithTransactionCtx(ctx, func(tx *sqlx.Tx) error {
-		txCtx := database.ContextWithTx(ctx, tx)
 		var err error
-		res, err = s.repo.ToggleActiveRecurring(txCtx, userID, id)
+		res, err = s.repo.ToggleActiveRecurring(ctx, tx, userID, id)
 		if err != nil {
 			return err
 		}
 		if res != nil && s.recurrenceScheduler != nil {
 			if !res.IsActive {
-				_ = s.recurrenceScheduler.CancelTaskRecurrence(txCtx, res.ID)
+				_ = s.recurrenceScheduler.CancelTaskRecurrence(ctx, res.ID)
 			} else {
-				_, tz, _ := s.repo.GetUserThresholdAndTimezone(txCtx, userID)
+				_, tz, _ := s.repo.GetUserThresholdAndTimezone(ctx, tx, userID)
 				nextMidnight := getNextMidnightInUserTimezone(tz)
-				_ = s.recurrenceScheduler.ScheduleTaskRecurrence(txCtx, res.ID, nextMidnight)
+				_ = s.recurrenceScheduler.ScheduleTaskRecurrence(ctx, res.ID, nextMidnight)
 			}
 		}
 		return nil

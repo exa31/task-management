@@ -8,50 +8,49 @@ import (
 	"fmt"
 	"time"
 
-	"golang/database"
 
 	"github.com/jmoiron/sqlx"
 	"github.com/lib/pq"
 )
 
 type Repository interface {
-	Create(ctx context.Context, userID string, req CreateTaskRequest) (*TaskResponse, error)
-	FindByID(ctx context.Context, userID string, id int64) (*TaskResponse, error)
-	FindAll(ctx context.Context, userID string, filter TaskFilter) ([]TaskResponse, error)
-	Update(ctx context.Context, userID string, id int64, req UpdateTaskRequest) (*TaskResponse, error)
-	Delete(ctx context.Context, userID string, id int64) error
-	LogProgress(ctx context.Context, userID string, id int64, req LogProgressRequest) (*TaskResponse, error)
-	ToggleFocus(ctx context.Context, userID string, id int64) (*TaskResponse, error)
+	Create(ctx context.Context, tx *sqlx.Tx, userID string, req CreateTaskRequest) (*TaskResponse, error)
+	FindByID(ctx context.Context, tx *sqlx.Tx, userID string, id int64) (*TaskResponse, error)
+	FindAll(ctx context.Context, tx *sqlx.Tx, userID string, filter TaskFilter) ([]TaskResponse, error)
+	Update(ctx context.Context, tx *sqlx.Tx, userID string, id int64, req UpdateTaskRequest) (*TaskResponse, error)
+	Delete(ctx context.Context, tx *sqlx.Tx, userID string, id int64) error
+	LogProgress(ctx context.Context, tx *sqlx.Tx, userID string, id int64, req LogProgressRequest) (*TaskResponse, error)
+	ToggleFocus(ctx context.Context, tx *sqlx.Tx, userID string, id int64) (*TaskResponse, error)
 
-	CreateSubtask(ctx context.Context, userID string, taskID int64, req CreateSubtaskRequest) (*SubtaskResponse, error)
-	UpdateSubtask(ctx context.Context, userID string, taskID int64, subtaskID int64, req UpdateSubtaskRequest) (*SubtaskResponse, error)
-	DeleteSubtask(ctx context.Context, userID string, taskID int64, subtaskID int64) error
-	CountSubtasks(ctx context.Context, taskID int64) (int, int, error)
+	CreateSubtask(ctx context.Context, tx *sqlx.Tx, userID string, taskID int64, req CreateSubtaskRequest) (*SubtaskResponse, error)
+	UpdateSubtask(ctx context.Context, tx *sqlx.Tx, userID string, taskID int64, subtaskID int64, req UpdateSubtaskRequest) (*SubtaskResponse, error)
+	DeleteSubtask(ctx context.Context, tx *sqlx.Tx, userID string, taskID int64, subtaskID int64) error
+	CountSubtasks(ctx context.Context, tx *sqlx.Tx, taskID int64) (int, int, error)
 
-	CreateActivity(ctx context.Context, taskID int64, userID string, activityType string, description string, changes []byte) (*TaskActivityResponse, error)
-	FindActivitiesByTaskID(ctx context.Context, userID string, taskID int64) ([]TaskActivityResponse, error)
-	FindActivitiesByUser(ctx context.Context, userID string, from, to *time.Time, limit ...int) ([]TaskActivityResponse, error)
-	FindActivityCountsByUser(ctx context.Context, userID string, from, to *time.Time, tz string) ([]ActivityDateCount, error)
+	CreateActivity(ctx context.Context, tx *sqlx.Tx, taskID int64, userID string, activityType string, description string, changes []byte) (*TaskActivityResponse, error)
+	FindActivitiesByTaskID(ctx context.Context, tx *sqlx.Tx, userID string, taskID int64) ([]TaskActivityResponse, error)
+	FindActivitiesByUser(ctx context.Context, tx *sqlx.Tx, userID string, from, to *time.Time, limit ...int) ([]TaskActivityResponse, error)
+	FindActivityCountsByUser(ctx context.Context, tx *sqlx.Tx, userID string, from, to *time.Time, tz string) ([]ActivityDateCount, error)
 
-	FindByIDSystem(ctx context.Context, id int64) (*TaskResponse, string, string, int, bool, error)
-	MarkDueWarningSent(ctx context.Context, id int64) error
-	GetUserThresholdAndTimezone(ctx context.Context, userID string) (int, string, error)
+	FindByIDSystem(ctx context.Context, tx *sqlx.Tx, id int64) (*TaskResponse, string, string, int, bool, error)
+	MarkDueWarningSent(ctx context.Context, tx *sqlx.Tx, id int64) error
+	GetUserThresholdAndTimezone(ctx context.Context, tx *sqlx.Tx, userID string) (int, string, error)
 
-	GetWidgetBundle(ctx context.Context, userID string) (*WidgetBundleResponse, error)
-	GetWorkspaceStats(ctx context.Context, userID string) (*WorkspaceStatsResponse, error)
-	UpdateRecurrenceGeneratedAt(ctx context.Context, id int64, t time.Time) error
+	GetWidgetBundle(ctx context.Context, tx *sqlx.Tx, userID string) (*WidgetBundleResponse, error)
+	GetWorkspaceStats(ctx context.Context, tx *sqlx.Tx, userID string) (*WorkspaceStatsResponse, error)
+	UpdateRecurrenceGeneratedAt(ctx context.Context, tx *sqlx.Tx, id int64, t time.Time) error
 
 	// Recurring Tasks repository methods
-	FindRecurringByID(ctx context.Context, userID string, id int64) (*RecurringTaskResponse, error)
-	FindRecurringByIDSystem(ctx context.Context, id int64) (*RecurringTaskResponse, string, error)
-	FindAllRecurring(ctx context.Context, userID string) ([]RecurringTaskResponse, error)
-	CreateRecurring(ctx context.Context, userID string, req CreateRecurringTaskRequest) (*RecurringTaskResponse, error)
-	UpdateRecurring(ctx context.Context, userID string, id int64, req UpdateRecurringTaskRequest) (*RecurringTaskResponse, error)
-	DeleteRecurring(ctx context.Context, userID string, id int64) error
-	ToggleActiveRecurring(ctx context.Context, userID string, id int64) (*RecurringTaskResponse, error)
-	FindTodayInstance(ctx context.Context, recurringTaskID int64, todayDate time.Time) (*TaskResponse, error)
-	CreateInstanceFromRecurring(ctx context.Context, master *RecurringTaskResponse, dueDate time.Time) (*TaskResponse, error)
-	UpdateRecurringLastGenerated(ctx context.Context, id int64, t time.Time) error
+	FindRecurringByID(ctx context.Context, tx *sqlx.Tx, userID string, id int64) (*RecurringTaskResponse, error)
+	FindRecurringByIDSystem(ctx context.Context, tx *sqlx.Tx, id int64) (*RecurringTaskResponse, string, error)
+	FindAllRecurring(ctx context.Context, tx *sqlx.Tx, userID string) ([]RecurringTaskResponse, error)
+	CreateRecurring(ctx context.Context, tx *sqlx.Tx, userID string, req CreateRecurringTaskRequest) (*RecurringTaskResponse, error)
+	UpdateRecurring(ctx context.Context, tx *sqlx.Tx, userID string, id int64, req UpdateRecurringTaskRequest) (*RecurringTaskResponse, error)
+	DeleteRecurring(ctx context.Context, tx *sqlx.Tx, userID string, id int64) error
+	ToggleActiveRecurring(ctx context.Context, tx *sqlx.Tx, userID string, id int64) (*RecurringTaskResponse, error)
+	FindTodayInstance(ctx context.Context, tx *sqlx.Tx, recurringTaskID int64, todayDate time.Time) (*TaskResponse, error)
+	CreateInstanceFromRecurring(ctx context.Context, tx *sqlx.Tx, master *RecurringTaskResponse, dueDate time.Time) (*TaskResponse, error)
+	UpdateRecurringLastGenerated(ctx context.Context, tx *sqlx.Tx, id int64, t time.Time) error
 }
 
 type repository struct {
@@ -62,9 +61,6 @@ func NewRepository(db *sqlx.DB) Repository {
 	return &repository{db: db}
 }
 
-func (r *repository) exec(ctx context.Context) database.QueryExecutor {
-	return database.GetExecutor(ctx, r.db)
-}
 
 type taskEntity struct {
 	ID                        int64          `db:"id"`
@@ -190,7 +186,10 @@ func (e *recurringTaskEntity) toResponse(subtasks []RecurringSubtaskResponse) Re
 	}
 }
 
-func (r *repository) fetchSubtasks(ctx context.Context, taskID int64) ([]SubtaskResponse, error) {
+func (r *repository) fetchSubtasks(ctx context.Context, tx *sqlx.Tx, taskID int64) ([]SubtaskResponse, error) {
+	if tx == nil {
+		return nil, errors.New("transaction is required")
+	}
 	query := `
 		SELECT id, task_id, title, COALESCE(description, '') AS description, is_completed, order_index, due_date, created_at, updated_at
 		FROM subtasks
@@ -198,7 +197,7 @@ func (r *repository) fetchSubtasks(ctx context.Context, taskID int64) ([]Subtask
 		ORDER BY order_index ASC, id ASC
 	`
 	var items []SubtaskResponse
-	err := r.exec(ctx).SelectContext(ctx, &items, query, taskID)
+	err := tx.SelectContext(ctx, &items, query, taskID)
 	if err != nil {
 		return nil, fmt.Errorf("failed to fetch subtasks: %w", err)
 	}
@@ -209,7 +208,10 @@ func (r *repository) fetchSubtasks(ctx context.Context, taskID int64) ([]Subtask
 	return items, nil
 }
 
-func (r *repository) Create(ctx context.Context, userID string, req CreateTaskRequest) (*TaskResponse, error) {
+func (r *repository) Create(ctx context.Context, tx *sqlx.Tx, userID string, req CreateTaskRequest) (*TaskResponse, error) {
+	if tx == nil {
+		return nil, errors.New("transaction is required")
+	}
 	status := req.Status
 	if status == "" {
 		status = "todo"
@@ -241,7 +243,7 @@ func (r *repository) Create(ctx context.Context, userID string, req CreateTaskRe
 			is_recurring, recurrence_pattern, recurrence_interval, recurrence_end_date, recurrence_last_generated_at,
 			recurring_task_id, created_at, updated_at
 	`
-	err := r.exec(ctx).QueryRowxContext(ctx, query, userID, req.Title, req.Description, status, priority, req.DueDate, req.IsFocus, pq.Array(tags), req.ProjectID, req.SourceNoteID, req.IsRecurring, req.RecurrencePattern, interval, req.RecurrenceEndDate, req.RecurringTaskID).StructScan(&entity)
+	err := tx.QueryRowxContext(ctx, query, userID, req.Title, req.Description, status, priority, req.DueDate, req.IsFocus, pq.Array(tags), req.ProjectID, req.SourceNoteID, req.IsRecurring, req.RecurrencePattern, interval, req.RecurrenceEndDate, req.RecurringTaskID).StructScan(&entity)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create task: %w", err)
 	}
@@ -256,7 +258,7 @@ func (r *repository) Create(ctx context.Context, userID string, req CreateTaskRe
 			RETURNING id, task_id, title, COALESCE(description, '') AS description, is_completed, order_index, due_date, created_at, updated_at
 		`
 		var st SubtaskResponse
-		if err := r.exec(ctx).QueryRowxContext(ctx, subQuery, entity.ID, stTitle, i).StructScan(&st); err != nil {
+		if err := tx.QueryRowxContext(ctx, subQuery, entity.ID, stTitle, i).StructScan(&st); err != nil {
 			return nil, fmt.Errorf("failed to create subtask: %w", err)
 		}
 		subtasks = append(subtasks, st)
@@ -264,14 +266,17 @@ func (r *repository) Create(ctx context.Context, userID string, req CreateTaskRe
 
 	// Fetch with project name & color if project_id is present
 	if entity.ProjectID != nil {
-		_ = r.exec(ctx).QueryRowxContext(ctx, "SELECT name, color FROM projects WHERE id = $1", *entity.ProjectID).Scan(&entity.ProjectName, &entity.ProjectColor)
+		_ = tx.QueryRowxContext(ctx, "SELECT name, color FROM projects WHERE id = $1", *entity.ProjectID).Scan(&entity.ProjectName, &entity.ProjectColor)
 	}
 
 	res := entity.toResponse(subtasks)
 	return &res, nil
 }
 
-func (r *repository) FindByID(ctx context.Context, userID string, id int64) (*TaskResponse, error) {
+func (r *repository) FindByID(ctx context.Context, tx *sqlx.Tx, userID string, id int64) (*TaskResponse, error) {
+	if tx == nil {
+		return nil, errors.New("transaction is required")
+	}
 	query := `
 		SELECT 
 			t.id, t.user_id, t.title, t.description, t.status, t.priority, t.due_date, t.due_date_warning_sent_at, t.is_focus, t.tags,
@@ -284,7 +289,7 @@ func (r *repository) FindByID(ctx context.Context, userID string, id int64) (*Ta
 		WHERE t.id = $1 AND t.user_id = $2
 	`
 	var entity taskEntity
-	err := r.exec(ctx).GetContext(ctx, &entity, query, id, userID)
+	err := tx.GetContext(ctx, &entity, query, id, userID)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return nil, nil
@@ -292,7 +297,7 @@ func (r *repository) FindByID(ctx context.Context, userID string, id int64) (*Ta
 		return nil, fmt.Errorf("failed to find task: %w", err)
 	}
 
-	subtasks, err := r.fetchSubtasks(ctx, entity.ID)
+	subtasks, err := r.fetchSubtasks(ctx, tx, entity.ID)
 	if err != nil {
 		return nil, err
 	}
@@ -301,7 +306,10 @@ func (r *repository) FindByID(ctx context.Context, userID string, id int64) (*Ta
 	return &res, nil
 }
 
-func (r *repository) FindAll(ctx context.Context, userID string, filter TaskFilter) ([]TaskResponse, error) {
+func (r *repository) FindAll(ctx context.Context, tx *sqlx.Tx, userID string, filter TaskFilter) ([]TaskResponse, error) {
+	if tx == nil {
+		return nil, errors.New("transaction is required")
+	}
 	query := `
 		SELECT 
 			t.id, t.user_id, t.title, t.description, t.status, t.priority, t.due_date, t.due_date_warning_sent_at, t.is_focus, t.tags,
@@ -382,21 +390,24 @@ func (r *repository) FindAll(ctx context.Context, userID string, filter TaskFilt
 	}
 
 	var entities []taskEntity
-	err := r.exec(ctx).SelectContext(ctx, &entities, query, args...)
+	err := tx.SelectContext(ctx, &entities, query, args...)
 	if err != nil {
 		return nil, fmt.Errorf("failed to list tasks: %w", err)
 	}
 
 	responses := make([]TaskResponse, 0, len(entities))
 	for i := range entities {
-		subtasks, _ := r.fetchSubtasks(ctx, entities[i].ID)
+		subtasks, _ := r.fetchSubtasks(ctx, tx, entities[i].ID)
 		responses = append(responses, entities[i].toResponse(subtasks))
 	}
 	return responses, nil
 }
 
-func (r *repository) Update(ctx context.Context, userID string, id int64, req UpdateTaskRequest) (*TaskResponse, error) {
-	existing, err := r.FindByID(ctx, userID, id)
+func (r *repository) Update(ctx context.Context, tx *sqlx.Tx, userID string, id int64, req UpdateTaskRequest) (*TaskResponse, error) {
+	if tx == nil {
+		return nil, errors.New("transaction is required")
+	}
+	existing, err := r.FindByID(ctx, tx, userID, id)
 	if err != nil {
 		return nil, err
 	}
@@ -516,35 +527,41 @@ func (r *repository) Update(ctx context.Context, userID string, id int64, req Up
 			recurring_task_id, created_at, updated_at
 	`
 	var entity taskEntity
-	err = r.exec(ctx).QueryRowxContext(ctx, query, title, desc, status, priority, dueDate, dueDateWarningSentAt, isFocus, pq.Array(tags), projectID, lastProgressNote, lastProgressAt, isRecurring, recurrencePattern, recurrenceInterval, recurrenceEndDate, recurringTaskID, id, userID).StructScan(&entity)
+	err = tx.QueryRowxContext(ctx, query, title, desc, status, priority, dueDate, dueDateWarningSentAt, isFocus, pq.Array(tags), projectID, lastProgressNote, lastProgressAt, isRecurring, recurrencePattern, recurrenceInterval, recurrenceEndDate, recurringTaskID, id, userID).StructScan(&entity)
 	if err != nil {
 		return nil, fmt.Errorf("failed to update task: %w", err)
 	}
 
 	if entity.ProjectID != nil {
-		_ = r.exec(ctx).QueryRowxContext(ctx, "SELECT name, color FROM projects WHERE id = $1", *entity.ProjectID).Scan(&entity.ProjectName, &entity.ProjectColor)
+		_ = tx.QueryRowxContext(ctx, "SELECT name, color FROM projects WHERE id = $1", *entity.ProjectID).Scan(&entity.ProjectName, &entity.ProjectColor)
 	}
 
 	if entity.Status == "done" {
 		// Automatically mark all subtasks of completed task as completed
-		_, _ = r.exec(ctx).ExecContext(ctx, `UPDATE subtasks SET is_completed = true, updated_at = NOW() WHERE task_id = $1`, entity.ID)
+		_, _ = tx.ExecContext(ctx, `UPDATE subtasks SET is_completed = true, updated_at = NOW() WHERE task_id = $1`, entity.ID)
 	}
 
-	subtasks, _ := r.fetchSubtasks(ctx, entity.ID)
+	subtasks, _ := r.fetchSubtasks(ctx, tx, entity.ID)
 	res := entity.toResponse(subtasks)
 	return &res, nil
 }
 
-func (r *repository) Delete(ctx context.Context, userID string, id int64) error {
+func (r *repository) Delete(ctx context.Context, tx *sqlx.Tx, userID string, id int64) error {
+	if tx == nil {
+		return errors.New("transaction is required")
+	}
 	query := `DELETE FROM tasks WHERE id = $1 AND user_id = $2`
-	_, err := r.exec(ctx).ExecContext(ctx, query, id, userID)
+	_, err := tx.ExecContext(ctx, query, id, userID)
 	if err != nil {
 		return fmt.Errorf("failed to delete task: %w", err)
 	}
 	return nil
 }
 
-func (r *repository) LogProgress(ctx context.Context, userID string, id int64, req LogProgressRequest) (*TaskResponse, error) {
+func (r *repository) LogProgress(ctx context.Context, tx *sqlx.Tx, userID string, id int64, req LogProgressRequest) (*TaskResponse, error) {
+	if tx == nil {
+		return nil, errors.New("transaction is required")
+	}
 	statusUpdate := ""
 	args := []interface{}{req.ProgressNote, id, userID}
 	if req.Status != nil && *req.Status != "" {
@@ -568,13 +585,13 @@ func (r *repository) LogProgress(ctx context.Context, userID string, id int64, r
 
 	var entity taskEntity
 
-	err := r.exec(ctx).QueryRowxContext(ctx, query, args...).StructScan(&entity)
+	err := tx.QueryRowxContext(ctx, query, args...).StructScan(&entity)
 	if err != nil {
 		return nil, fmt.Errorf("failed to log progress: %w", err)
 	}
 
 	if len(req.CompletedSubtaskIDs) > 0 {
-		_, err := r.exec(ctx).ExecContext(ctx, `
+		_, err := tx.ExecContext(ctx, `
 			UPDATE subtasks SET is_completed = TRUE, updated_at = NOW()
 			WHERE task_id = $1 AND id = ANY($2)
 		`, id, pq.Array(req.CompletedSubtaskIDs))
@@ -584,19 +601,22 @@ func (r *repository) LogProgress(ctx context.Context, userID string, id int64, r
 	}
 
 	if entity.ProjectID != nil {
-		_ = r.exec(ctx).QueryRowxContext(ctx, "SELECT name, color FROM projects WHERE id = $1", *entity.ProjectID).Scan(&entity.ProjectName, &entity.ProjectColor)
+		_ = tx.QueryRowxContext(ctx, "SELECT name, color FROM projects WHERE id = $1", *entity.ProjectID).Scan(&entity.ProjectName, &entity.ProjectColor)
 	}
 
 	if entity.Status == "done" {
-		_, _ = r.exec(ctx).ExecContext(ctx, `UPDATE subtasks SET is_completed = true, updated_at = NOW() WHERE task_id = $1`, entity.ID)
+		_, _ = tx.ExecContext(ctx, `UPDATE subtasks SET is_completed = true, updated_at = NOW() WHERE task_id = $1`, entity.ID)
 	}
 
-	subtasks, _ := r.fetchSubtasks(ctx, entity.ID)
+	subtasks, _ := r.fetchSubtasks(ctx, tx, entity.ID)
 	res := entity.toResponse(subtasks)
 	return &res, nil
 }
 
-func (r *repository) ToggleFocus(ctx context.Context, userID string, id int64) (*TaskResponse, error) {
+func (r *repository) ToggleFocus(ctx context.Context, tx *sqlx.Tx, userID string, id int64) (*TaskResponse, error) {
+	if tx == nil {
+		return nil, errors.New("transaction is required")
+	}
 	query := `
 		UPDATE tasks
 		SET is_focus = NOT is_focus, updated_at = NOW()
@@ -607,23 +627,26 @@ func (r *repository) ToggleFocus(ctx context.Context, userID string, id int64) (
 			recurring_task_id, created_at, updated_at
 	`
 	var entity taskEntity
-	err := r.exec(ctx).QueryRowxContext(ctx, query, id, userID).StructScan(&entity)
+	err := tx.QueryRowxContext(ctx, query, id, userID).StructScan(&entity)
 	if err != nil {
 		return nil, fmt.Errorf("failed to toggle task focus: %w", err)
 	}
 
 	if entity.ProjectID != nil {
-		_ = r.exec(ctx).QueryRowxContext(ctx, "SELECT name, color FROM projects WHERE id = $1", *entity.ProjectID).Scan(&entity.ProjectName, &entity.ProjectColor)
+		_ = tx.QueryRowxContext(ctx, "SELECT name, color FROM projects WHERE id = $1", *entity.ProjectID).Scan(&entity.ProjectName, &entity.ProjectColor)
 	}
 
-	subtasks, _ := r.fetchSubtasks(ctx, entity.ID)
+	subtasks, _ := r.fetchSubtasks(ctx, tx, entity.ID)
 	res := entity.toResponse(subtasks)
 	return &res, nil
 }
 
-func (r *repository) CreateSubtask(ctx context.Context, userID string, taskID int64, req CreateSubtaskRequest) (*SubtaskResponse, error) {
+func (r *repository) CreateSubtask(ctx context.Context, tx *sqlx.Tx, userID string, taskID int64, req CreateSubtaskRequest) (*SubtaskResponse, error) {
+	if tx == nil {
+		return nil, errors.New("transaction is required")
+	}
 	// Verify task ownership
-	task, err := r.FindByID(ctx, userID, taskID)
+	task, err := r.FindByID(ctx, tx, userID, taskID)
 	if err != nil || task == nil {
 		return nil, errors.New("task not found or unauthorized")
 	}
@@ -634,22 +657,25 @@ func (r *repository) CreateSubtask(ctx context.Context, userID string, taskID in
 		RETURNING id, task_id, title, COALESCE(description, '') AS description, is_completed, order_index, due_date, created_at, updated_at
 	`
 	var st SubtaskResponse
-	err = r.exec(ctx).QueryRowxContext(ctx, query, taskID, req.Title, req.Description, req.DueDate).StructScan(&st)
+	err = tx.QueryRowxContext(ctx, query, taskID, req.Title, req.Description, req.DueDate).StructScan(&st)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create subtask: %w", err)
 	}
 	return &st, nil
 }
 
-func (r *repository) UpdateSubtask(ctx context.Context, userID string, taskID int64, subtaskID int64, req UpdateSubtaskRequest) (*SubtaskResponse, error) {
+func (r *repository) UpdateSubtask(ctx context.Context, tx *sqlx.Tx, userID string, taskID int64, subtaskID int64, req UpdateSubtaskRequest) (*SubtaskResponse, error) {
+	if tx == nil {
+		return nil, errors.New("transaction is required")
+	}
 	// Verify task ownership
-	task, err := r.FindByID(ctx, userID, taskID)
+	task, err := r.FindByID(ctx, tx, userID, taskID)
 	if err != nil || task == nil {
 		return nil, errors.New("task not found or unauthorized")
 	}
 
 	var existing SubtaskResponse
-	err = r.exec(ctx).GetContext(ctx, &existing, `SELECT id, task_id, title, COALESCE(description, '') AS description, is_completed, order_index, due_date, created_at, updated_at FROM subtasks WHERE id = $1 AND task_id = $2`, subtaskID, taskID)
+	err = tx.GetContext(ctx, &existing, `SELECT id, task_id, title, COALESCE(description, '') AS description, is_completed, order_index, due_date, created_at, updated_at FROM subtasks WHERE id = $1 AND task_id = $2`, subtaskID, taskID)
 	if err != nil {
 		return nil, fmt.Errorf("subtask not found: %w", err)
 	}
@@ -686,7 +712,7 @@ func (r *repository) UpdateSubtask(ctx context.Context, userID string, taskID in
 		RETURNING id, task_id, title, COALESCE(description, '') AS description, is_completed, order_index, due_date, created_at, updated_at
 	`
 	var updated SubtaskResponse
-	err = r.exec(ctx).QueryRowxContext(ctx, query, title, description, isCompleted, dueDate, subtaskID, taskID).StructScan(&updated)
+	err = tx.QueryRowxContext(ctx, query, title, description, isCompleted, dueDate, subtaskID, taskID).StructScan(&updated)
 	if err != nil {
 		return nil, fmt.Errorf("failed to update subtask: %w", err)
 	}
@@ -694,33 +720,42 @@ func (r *repository) UpdateSubtask(ctx context.Context, userID string, taskID in
 	return &updated, nil
 }
 
-func (r *repository) DeleteSubtask(ctx context.Context, userID string, taskID int64, subtaskID int64) error {
-	task, err := r.FindByID(ctx, userID, taskID)
+func (r *repository) DeleteSubtask(ctx context.Context, tx *sqlx.Tx, userID string, taskID int64, subtaskID int64) error {
+	if tx == nil {
+		return errors.New("transaction is required")
+	}
+	task, err := r.FindByID(ctx, tx, userID, taskID)
 	if err != nil || task == nil {
 		return errors.New("task not found or unauthorized")
 	}
 
-	_, err = r.exec(ctx).ExecContext(ctx, `DELETE FROM subtasks WHERE id = $1 AND task_id = $2`, subtaskID, taskID)
+	_, err = tx.ExecContext(ctx, `DELETE FROM subtasks WHERE id = $1 AND task_id = $2`, subtaskID, taskID)
 	if err != nil {
 		return fmt.Errorf("failed to delete subtask: %w", err)
 	}
 	return nil
 }
 
-func (r *repository) CountSubtasks(ctx context.Context, taskID int64) (int, int, error) {
+func (r *repository) CountSubtasks(ctx context.Context, tx *sqlx.Tx, taskID int64) (int, int, error) {
+	if tx == nil {
+		return 0, 0, errors.New("transaction is required")
+	}
 	type sc struct {
 		Total     int `db:"total"`
 		Completed int `db:"completed"`
 	}
 	var res sc
-	err := r.exec(ctx).GetContext(ctx, &res, `
+	err := tx.GetContext(ctx, &res, `
 		SELECT COUNT(*) as total, COALESCE(COUNT(*) FILTER (WHERE is_completed = true), 0) as completed
 		FROM subtasks WHERE task_id = $1
 	`, taskID)
 	return res.Total, res.Completed, err
 }
 
-func (r *repository) FindByIDSystem(ctx context.Context, id int64) (*TaskResponse, string, string, int, bool, error) {
+func (r *repository) FindByIDSystem(ctx context.Context, tx *sqlx.Tx, id int64) (*TaskResponse, string, string, int, bool, error) {
+	if tx == nil {
+		return nil, "", "", 0, false, errors.New("transaction is required")
+	}
 	query := `
 		SELECT 
 			t.id, t.user_id, t.title, t.description, t.status, t.priority, t.due_date, t.due_date_warning_sent_at, t.is_focus, t.tags,
@@ -742,7 +777,7 @@ func (r *repository) FindByIDSystem(ctx context.Context, id int64) (*TaskRespons
 		EmailNotificationsEnabled bool   `db:"email_notifications_enabled"`
 	}
 	var se systemEntity
-	err := r.exec(ctx).GetContext(ctx, &se, query, id)
+	err := tx.GetContext(ctx, &se, query, id)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return nil, "", "", 0, false, nil
@@ -750,7 +785,7 @@ func (r *repository) FindByIDSystem(ctx context.Context, id int64) (*TaskRespons
 		return nil, "", "", 0, false, fmt.Errorf("failed to find task system: %w", err)
 	}
 
-	subtasks, _ := r.fetchSubtasks(ctx, se.ID)
+	subtasks, _ := r.fetchSubtasks(ctx, tx, se.ID)
 	res := se.taskEntity.toResponse(subtasks)
 	tz := se.Timezone
 	if tz == "" {
@@ -763,8 +798,11 @@ func (r *repository) FindByIDSystem(ctx context.Context, id int64) (*TaskRespons
 	return &res, se.Email, tz, threshold, se.EmailNotificationsEnabled, nil
 }
 
-func (r *repository) GetWidgetBundle(ctx context.Context, userID string) (*WidgetBundleResponse, error) {
-	allTasks, err := r.FindAll(ctx, userID, TaskFilter{
+func (r *repository) GetWidgetBundle(ctx context.Context, tx *sqlx.Tx, userID string) (*WidgetBundleResponse, error) {
+	if tx == nil {
+		return nil, errors.New("transaction is required")
+	}
+	allTasks, err := r.FindAll(ctx, tx, userID, TaskFilter{
 		Limit: 20,
 	})
 	if err != nil {
@@ -801,16 +839,16 @@ func (r *repository) GetWidgetBundle(ctx context.Context, userID string) (*Widge
 		LIMIT 10
 	`
 	var deadlineEntities []taskEntity
-	_ = r.exec(ctx).SelectContext(ctx, &deadlineEntities, upcomingQuery, userID)
+	_ = tx.SelectContext(ctx, &deadlineEntities, upcomingQuery, userID)
 	upcoming := make([]TaskResponse, len(deadlineEntities))
 	for i, de := range deadlineEntities {
-		st, _ := r.fetchSubtasks(ctx, de.ID)
+		st, _ := r.fetchSubtasks(ctx, tx, de.ID)
 		upcoming[i] = de.toResponse(st)
 	}
 
 	var completedToday, totalToday int
-	_ = r.exec(ctx).GetContext(ctx, &completedToday, `SELECT COUNT(*) FROM tasks WHERE user_id = $1 AND status = 'done' AND updated_at >= CURRENT_DATE`, userID)
-	_ = r.exec(ctx).GetContext(ctx, &totalToday, `SELECT COUNT(*) FROM tasks WHERE user_id = $1 AND (created_at >= CURRENT_DATE OR (due_date IS NOT NULL AND due_date::date = CURRENT_DATE))`, userID)
+	_ = tx.GetContext(ctx, &completedToday, `SELECT COUNT(*) FROM tasks WHERE user_id = $1 AND status = 'done' AND updated_at >= CURRENT_DATE`, userID)
+	_ = tx.GetContext(ctx, &totalToday, `SELECT COUNT(*) FROM tasks WHERE user_id = $1 AND (created_at >= CURRENT_DATE OR (due_date IS NOT NULL AND due_date::date = CURRENT_DATE))`, userID)
 
 	return &WidgetBundleResponse{
 		FocusTasks:        activeFocus,
@@ -820,9 +858,12 @@ func (r *repository) GetWidgetBundle(ctx context.Context, userID string) (*Widge
 	}, nil
 }
 
-func (r *repository) UpdateRecurrenceGeneratedAt(ctx context.Context, id int64, t time.Time) error {
+func (r *repository) UpdateRecurrenceGeneratedAt(ctx context.Context, tx *sqlx.Tx, id int64, t time.Time) error {
+	if tx == nil {
+		return errors.New("transaction is required")
+	}
 	query := `UPDATE tasks SET recurrence_last_generated_at = $1 WHERE id = $2`
-	_, err := r.exec(ctx).ExecContext(ctx, query, t, id)
+	_, err := tx.ExecContext(ctx, query, t, id)
 	return err
 }
 
@@ -830,19 +871,25 @@ func boolPtr(b bool) *bool {
 	return &b
 }
 
-func (r *repository) MarkDueWarningSent(ctx context.Context, id int64) error {
+func (r *repository) MarkDueWarningSent(ctx context.Context, tx *sqlx.Tx, id int64) error {
+	if tx == nil {
+		return errors.New("transaction is required")
+	}
 	query := `UPDATE tasks SET due_date_warning_sent_at = NOW() WHERE id = $1`
-	_, err := r.exec(ctx).ExecContext(ctx, query, id)
+	_, err := tx.ExecContext(ctx, query, id)
 	return err
 }
 
-func (r *repository) GetUserThresholdAndTimezone(ctx context.Context, userID string) (int, string, error) {
+func (r *repository) GetUserThresholdAndTimezone(ctx context.Context, tx *sqlx.Tx, userID string) (int, string, error) {
+	if tx == nil {
+		return 0, "", errors.New("transaction is required")
+	}
 	query := `SELECT due_date_warning_threshold, timezone FROM users WHERE id = $1`
 	var row struct {
 		Threshold int    `db:"due_date_warning_threshold"`
 		Timezone  string `db:"timezone"`
 	}
-	err := r.exec(ctx).GetContext(ctx, &row, query, userID)
+	err := tx.GetContext(ctx, &row, query, userID)
 	if err != nil {
 		return 1440, "Asia/Jakarta", nil
 	}
@@ -881,7 +928,10 @@ func (e *taskActivityEntity) toResponse() TaskActivityResponse {
 	}
 }
 
-func (r *repository) CreateActivity(ctx context.Context, taskID int64, userID string, activityType string, description string, changes []byte) (*TaskActivityResponse, error) {
+func (r *repository) CreateActivity(ctx context.Context, tx *sqlx.Tx, taskID int64, userID string, activityType string, description string, changes []byte) (*TaskActivityResponse, error) {
+	if tx == nil {
+		return nil, errors.New("transaction is required")
+	}
 	if len(changes) == 0 {
 		changes = []byte("{}")
 	}
@@ -891,7 +941,7 @@ func (r *repository) CreateActivity(ctx context.Context, taskID int64, userID st
 		RETURNING id, task_id, user_id, activity_type, description, changes, created_at
 	`
 	var entity taskActivityEntity
-	err := r.exec(ctx).QueryRowxContext(ctx, query, taskID, userID, activityType, description, changes).StructScan(&entity)
+	err := tx.QueryRowxContext(ctx, query, taskID, userID, activityType, description, changes).StructScan(&entity)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create task activity: %w", err)
 	}
@@ -899,7 +949,10 @@ func (r *repository) CreateActivity(ctx context.Context, taskID int64, userID st
 	return &res, nil
 }
 
-func (r *repository) FindActivitiesByTaskID(ctx context.Context, userID string, taskID int64) ([]TaskActivityResponse, error) {
+func (r *repository) FindActivitiesByTaskID(ctx context.Context, tx *sqlx.Tx, userID string, taskID int64) ([]TaskActivityResponse, error) {
+	if tx == nil {
+		return nil, errors.New("transaction is required")
+	}
 	query := `
 		SELECT ta.id, ta.task_id, ta.user_id, ta.activity_type, ta.description, ta.changes, ta.created_at
 		FROM task_activities ta
@@ -908,7 +961,7 @@ func (r *repository) FindActivitiesByTaskID(ctx context.Context, userID string, 
 		ORDER BY ta.created_at DESC, ta.id DESC
 	`
 	var rows []taskActivityEntity
-	err := r.exec(ctx).SelectContext(ctx, &rows, query, taskID, userID)
+	err := tx.SelectContext(ctx, &rows, query, taskID, userID)
 	if err != nil {
 		return nil, fmt.Errorf("failed to list task activities: %w", err)
 	}
@@ -919,7 +972,10 @@ func (r *repository) FindActivitiesByTaskID(ctx context.Context, userID string, 
 	return res, nil
 }
 
-func (r *repository) FindActivitiesByUser(ctx context.Context, userID string, from, to *time.Time, limit ...int) ([]TaskActivityResponse, error) {
+func (r *repository) FindActivitiesByUser(ctx context.Context, tx *sqlx.Tx, userID string, from, to *time.Time, limit ...int) ([]TaskActivityResponse, error) {
+	if tx == nil {
+		return nil, errors.New("transaction is required")
+	}
 	query := `
 		SELECT ta.id, ta.task_id, COALESCE(t.title, '') AS task_title, ta.user_id, ta.activity_type, ta.description, ta.changes, ta.created_at
 		FROM task_activities ta
@@ -958,7 +1014,7 @@ func (r *repository) FindActivitiesByUser(ctx context.Context, userID string, fr
 	}
 
 	var rows []activityWithTitleEntity
-	err := r.exec(ctx).SelectContext(ctx, &rows, query, args...)
+	err := tx.SelectContext(ctx, &rows, query, args...)
 	if err != nil {
 		return nil, fmt.Errorf("failed to list user activities: %w", err)
 	}
@@ -983,7 +1039,10 @@ func (r *repository) FindActivitiesByUser(ctx context.Context, userID string, fr
 	return res, nil
 }
 
-func (r *repository) FindActivityCountsByUser(ctx context.Context, userID string, from, to *time.Time, tz string) ([]ActivityDateCount, error) {
+func (r *repository) FindActivityCountsByUser(ctx context.Context, tx *sqlx.Tx, userID string, from, to *time.Time, tz string) ([]ActivityDateCount, error) {
+	if tx == nil {
+		return nil, errors.New("transaction is required")
+	}
 	if tz == "" {
 		tz = "Asia/Jakarta"
 	}
@@ -1009,7 +1068,7 @@ func (r *repository) FindActivityCountsByUser(ctx context.Context, userID string
 	query += " GROUP BY date ORDER BY date ASC"
 
 	var rows []ActivityDateCount
-	err := r.exec(ctx).SelectContext(ctx, &rows, query, args...)
+	err := tx.SelectContext(ctx, &rows, query, args...)
 	if err != nil {
 		fallbackQuery := `
 			SELECT TO_CHAR(ta.created_at, 'YYYY-MM-DD') AS date, COUNT(*)::int AS count
@@ -1029,7 +1088,7 @@ func (r *repository) FindActivityCountsByUser(ctx context.Context, userID string
 			argIdxFb++
 		}
 		fallbackQuery += " GROUP BY date ORDER BY date ASC"
-		errFb := r.exec(ctx).SelectContext(ctx, &rows, fallbackQuery, argsFb...)
+		errFb := tx.SelectContext(ctx, &rows, fallbackQuery, argsFb...)
 		if errFb != nil {
 			return nil, fmt.Errorf("failed to count user activities: %w", errFb)
 		}
@@ -1037,7 +1096,10 @@ func (r *repository) FindActivityCountsByUser(ctx context.Context, userID string
 	return rows, nil
 }
 
-func (r *repository) GetWorkspaceStats(ctx context.Context, userID string) (*WorkspaceStatsResponse, error) {
+func (r *repository) GetWorkspaceStats(ctx context.Context, tx *sqlx.Tx, userID string) (*WorkspaceStatsResponse, error) {
+	if tx == nil {
+		return nil, errors.New("transaction is required")
+	}
 	query := `
 		SELECT
 			COALESCE((SELECT COUNT(*) FROM tasks WHERE user_id = $1 AND status = 'in_progress'), 0) AS tasks_in_progress,
@@ -1048,7 +1110,7 @@ func (r *repository) GetWorkspaceStats(ctx context.Context, userID string) (*Wor
 			COALESCE((SELECT COUNT(*) FROM notes WHERE user_id = $1), 0) AS total_notes
 	`
 	var stats WorkspaceStatsResponse
-	err := r.exec(ctx).GetContext(ctx, &stats, query, userID)
+	err := tx.GetContext(ctx, &stats, query, userID)
 	if err != nil {
 		return nil, fmt.Errorf("failed to fetch workspace stats: %w", err)
 	}
@@ -1057,7 +1119,10 @@ func (r *repository) GetWorkspaceStats(ctx context.Context, userID string) (*Wor
 
 // --- Recurring Tasks Repository Implementation ---
 
-func (r *repository) fetchRecurringSubtasks(ctx context.Context, recurringTaskID int64) ([]RecurringSubtaskResponse, error) {
+func (r *repository) fetchRecurringSubtasks(ctx context.Context, tx *sqlx.Tx, recurringTaskID int64) ([]RecurringSubtaskResponse, error) {
+	if tx == nil {
+		return nil, errors.New("transaction is required")
+	}
 	query := `
 		SELECT id, recurring_task_id, title, COALESCE(description, '') AS description, order_index, created_at
 		FROM recurring_subtasks
@@ -1065,7 +1130,7 @@ func (r *repository) fetchRecurringSubtasks(ctx context.Context, recurringTaskID
 		ORDER BY order_index ASC, id ASC
 	`
 	var items []RecurringSubtaskResponse
-	err := r.exec(ctx).SelectContext(ctx, &items, query, recurringTaskID)
+	err := tx.SelectContext(ctx, &items, query, recurringTaskID)
 	if err != nil {
 		return nil, err
 	}
@@ -1075,7 +1140,10 @@ func (r *repository) fetchRecurringSubtasks(ctx context.Context, recurringTaskID
 	return items, nil
 }
 
-func (r *repository) FindRecurringByID(ctx context.Context, userID string, id int64) (*RecurringTaskResponse, error) {
+func (r *repository) FindRecurringByID(ctx context.Context, tx *sqlx.Tx, userID string, id int64) (*RecurringTaskResponse, error) {
+	if tx == nil {
+		return nil, errors.New("transaction is required")
+	}
 	query := `
 		SELECT 
 			rt.id, rt.user_id, rt.project_id, p.name as project_name, p.color as project_color,
@@ -1087,19 +1155,22 @@ func (r *repository) FindRecurringByID(ctx context.Context, userID string, id in
 		WHERE rt.id = $1 AND rt.user_id = $2
 	`
 	var entity recurringTaskEntity
-	err := r.exec(ctx).GetContext(ctx, &entity, query, id, userID)
+	err := tx.GetContext(ctx, &entity, query, id, userID)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return nil, nil
 		}
 		return nil, fmt.Errorf("failed to find recurring task: %w", err)
 	}
-	subtasks, _ := r.fetchRecurringSubtasks(ctx, entity.ID)
+	subtasks, _ := r.fetchRecurringSubtasks(ctx, tx, entity.ID)
 	res := entity.toResponse(subtasks)
 	return &res, nil
 }
 
-func (r *repository) FindRecurringByIDSystem(ctx context.Context, id int64) (*RecurringTaskResponse, string, error) {
+func (r *repository) FindRecurringByIDSystem(ctx context.Context, tx *sqlx.Tx, id int64) (*RecurringTaskResponse, string, error) {
+	if tx == nil {
+		return nil, "", errors.New("transaction is required")
+	}
 	query := `
 		SELECT 
 			rt.id, rt.user_id, rt.project_id, p.name as project_name, p.color as project_color,
@@ -1117,7 +1188,7 @@ func (r *repository) FindRecurringByIDSystem(ctx context.Context, id int64) (*Re
 		Timezone string `db:"timezone"`
 	}
 	var se sysRecEntity
-	err := r.exec(ctx).GetContext(ctx, &se, query, id)
+	err := tx.GetContext(ctx, &se, query, id)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return nil, "", nil
@@ -1125,7 +1196,7 @@ func (r *repository) FindRecurringByIDSystem(ctx context.Context, id int64) (*Re
 		return nil, "", fmt.Errorf("failed to find recurring task system: %w", err)
 	}
 
-	subtasks, _ := r.fetchRecurringSubtasks(ctx, se.ID)
+	subtasks, _ := r.fetchRecurringSubtasks(ctx, tx, se.ID)
 	res := se.recurringTaskEntity.toResponse(subtasks)
 	tz := se.Timezone
 	if tz == "" {
@@ -1134,7 +1205,10 @@ func (r *repository) FindRecurringByIDSystem(ctx context.Context, id int64) (*Re
 	return &res, tz, nil
 }
 
-func (r *repository) FindAllRecurring(ctx context.Context, userID string) ([]RecurringTaskResponse, error) {
+func (r *repository) FindAllRecurring(ctx context.Context, tx *sqlx.Tx, userID string) ([]RecurringTaskResponse, error) {
+	if tx == nil {
+		return nil, errors.New("transaction is required")
+	}
 	query := `
 		SELECT 
 			rt.id, rt.user_id, rt.project_id, p.name as project_name, p.color as project_color,
@@ -1147,19 +1221,22 @@ func (r *repository) FindAllRecurring(ctx context.Context, userID string) ([]Rec
 		ORDER BY rt.id ASC
 	`
 	var entities []recurringTaskEntity
-	err := r.exec(ctx).SelectContext(ctx, &entities, query, userID)
+	err := tx.SelectContext(ctx, &entities, query, userID)
 	if err != nil {
 		return nil, fmt.Errorf("failed to find all recurring tasks: %w", err)
 	}
 	res := make([]RecurringTaskResponse, len(entities))
 	for i, e := range entities {
-		subtasks, _ := r.fetchRecurringSubtasks(ctx, e.ID)
+		subtasks, _ := r.fetchRecurringSubtasks(ctx, tx, e.ID)
 		res[i] = e.toResponse(subtasks)
 	}
 	return res, nil
 }
 
-func (r *repository) CreateRecurring(ctx context.Context, userID string, req CreateRecurringTaskRequest) (*RecurringTaskResponse, error) {
+func (r *repository) CreateRecurring(ctx context.Context, tx *sqlx.Tx, userID string, req CreateRecurringTaskRequest) (*RecurringTaskResponse, error) {
+	if tx == nil {
+		return nil, errors.New("transaction is required")
+	}
 	interval := req.RecurrenceInterval
 	if interval <= 0 {
 		interval = 1
@@ -1185,7 +1262,7 @@ func (r *repository) CreateRecurring(ctx context.Context, userID string, req Cre
 			is_active, last_generated_at, created_at, updated_at
 	`
 	var entity recurringTaskEntity
-	err := r.exec(ctx).QueryRowxContext(ctx, query, userID, req.ProjectID, req.Title, req.Description, priority, pattern, interval, req.DueTime, req.RecurrenceEndDate).StructScan(&entity)
+	err := tx.QueryRowxContext(ctx, query, userID, req.ProjectID, req.Title, req.Description, priority, pattern, interval, req.DueTime, req.RecurrenceEndDate).StructScan(&entity)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create recurring task: %w", err)
 	}
@@ -1202,22 +1279,25 @@ func (r *repository) CreateRecurring(ctx context.Context, userID string, req Cre
 			INSERT INTO recurring_subtasks (recurring_task_id, title, description, order_index, created_at, updated_at)
 			VALUES ($1, $2, $3, $4, NOW(), NOW())
 		`
-		_, err = r.exec(ctx).ExecContext(ctx, subQuery, entity.ID, st.Title, st.Description, orderIdx)
+		_, err = tx.ExecContext(ctx, subQuery, entity.ID, st.Title, st.Description, orderIdx)
 		if err != nil {
 			return nil, fmt.Errorf("failed to insert recurring subtask: %w", err)
 		}
 	}
 
-	subtasks, _ := r.fetchRecurringSubtasks(ctx, entity.ID)
+	subtasks, _ := r.fetchRecurringSubtasks(ctx, tx, entity.ID)
 	res := entity.toResponse(subtasks)
 	if entity.ProjectID != nil {
-		_ = r.exec(ctx).QueryRowxContext(ctx, "SELECT name, color FROM projects WHERE id = $1", *entity.ProjectID).Scan(&res.ProjectName, &res.ProjectColor)
+		_ = tx.QueryRowxContext(ctx, "SELECT name, color FROM projects WHERE id = $1", *entity.ProjectID).Scan(&res.ProjectName, &res.ProjectColor)
 	}
 	return &res, nil
 }
 
-func (r *repository) UpdateRecurring(ctx context.Context, userID string, id int64, req UpdateRecurringTaskRequest) (*RecurringTaskResponse, error) {
-	existing, err := r.FindRecurringByID(ctx, userID, id)
+func (r *repository) UpdateRecurring(ctx context.Context, tx *sqlx.Tx, userID string, id int64, req UpdateRecurringTaskRequest) (*RecurringTaskResponse, error) {
+	if tx == nil {
+		return nil, errors.New("transaction is required")
+	}
+	existing, err := r.FindRecurringByID(ctx, tx, userID, id)
 	if err != nil {
 		return nil, err
 	}
@@ -1280,13 +1360,13 @@ func (r *repository) UpdateRecurring(ctx context.Context, userID string, id int6
 			is_active, last_generated_at, created_at, updated_at
 	`
 	var entity recurringTaskEntity
-	err = r.exec(ctx).QueryRowxContext(ctx, query, title, desc, priority, projectID, pattern, interval, dueTime, endDate, isActive, id, userID).StructScan(&entity)
+	err = tx.QueryRowxContext(ctx, query, title, desc, priority, projectID, pattern, interval, dueTime, endDate, isActive, id, userID).StructScan(&entity)
 	if err != nil {
 		return nil, fmt.Errorf("failed to update recurring task: %w", err)
 	}
 
 	if req.Subtasks != nil {
-		_, _ = r.exec(ctx).ExecContext(ctx, "DELETE FROM recurring_subtasks WHERE recurring_task_id = $1", id)
+		_, _ = tx.ExecContext(ctx, "DELETE FROM recurring_subtasks WHERE recurring_task_id = $1", id)
 		for i, st := range *req.Subtasks {
 			if st.Title == "" {
 				continue
@@ -1295,31 +1375,37 @@ func (r *repository) UpdateRecurring(ctx context.Context, userID string, id int6
 			if orderIdx <= 0 {
 				orderIdx = i
 			}
-			_, _ = r.exec(ctx).ExecContext(ctx, `
+			_, _ = tx.ExecContext(ctx, `
 				INSERT INTO recurring_subtasks (recurring_task_id, title, description, order_index, created_at, updated_at)
 				VALUES ($1, $2, $3, $4, NOW(), NOW())
 			`, id, st.Title, st.Description, orderIdx)
 		}
 	}
 
-	subtasks, _ := r.fetchRecurringSubtasks(ctx, entity.ID)
+	subtasks, _ := r.fetchRecurringSubtasks(ctx, tx, entity.ID)
 	res := entity.toResponse(subtasks)
 	if entity.ProjectID != nil {
-		_ = r.exec(ctx).QueryRowxContext(ctx, "SELECT name, color FROM projects WHERE id = $1", *entity.ProjectID).Scan(&res.ProjectName, &res.ProjectColor)
+		_ = tx.QueryRowxContext(ctx, "SELECT name, color FROM projects WHERE id = $1", *entity.ProjectID).Scan(&res.ProjectName, &res.ProjectColor)
 	}
 	return &res, nil
 }
 
-func (r *repository) DeleteRecurring(ctx context.Context, userID string, id int64) error {
+func (r *repository) DeleteRecurring(ctx context.Context, tx *sqlx.Tx, userID string, id int64) error {
+	if tx == nil {
+		return errors.New("transaction is required")
+	}
 	query := `DELETE FROM recurring_tasks WHERE id = $1 AND user_id = $2`
-	_, err := r.exec(ctx).ExecContext(ctx, query, id, userID)
+	_, err := tx.ExecContext(ctx, query, id, userID)
 	if err != nil {
 		return fmt.Errorf("failed to delete recurring task: %w", err)
 	}
 	return nil
 }
 
-func (r *repository) ToggleActiveRecurring(ctx context.Context, userID string, id int64) (*RecurringTaskResponse, error) {
+func (r *repository) ToggleActiveRecurring(ctx context.Context, tx *sqlx.Tx, userID string, id int64) (*RecurringTaskResponse, error) {
+	if tx == nil {
+		return nil, errors.New("transaction is required")
+	}
 	query := `
 		UPDATE recurring_tasks
 		SET is_active = NOT is_active, updated_at = NOW()
@@ -1329,19 +1415,22 @@ func (r *repository) ToggleActiveRecurring(ctx context.Context, userID string, i
 			is_active, last_generated_at, created_at, updated_at
 	`
 	var entity recurringTaskEntity
-	err := r.exec(ctx).QueryRowxContext(ctx, query, id, userID).StructScan(&entity)
+	err := tx.QueryRowxContext(ctx, query, id, userID).StructScan(&entity)
 	if err != nil {
 		return nil, fmt.Errorf("failed to toggle recurring task active: %w", err)
 	}
-	subtasks, _ := r.fetchRecurringSubtasks(ctx, entity.ID)
+	subtasks, _ := r.fetchRecurringSubtasks(ctx, tx, entity.ID)
 	res := entity.toResponse(subtasks)
 	if entity.ProjectID != nil {
-		_ = r.exec(ctx).QueryRowxContext(ctx, "SELECT name, color FROM projects WHERE id = $1", *entity.ProjectID).Scan(&res.ProjectName, &res.ProjectColor)
+		_ = tx.QueryRowxContext(ctx, "SELECT name, color FROM projects WHERE id = $1", *entity.ProjectID).Scan(&res.ProjectName, &res.ProjectColor)
 	}
 	return &res, nil
 }
 
-func (r *repository) FindTodayInstance(ctx context.Context, recurringTaskID int64, todayDate time.Time) (*TaskResponse, error) {
+func (r *repository) FindTodayInstance(ctx context.Context, tx *sqlx.Tx, recurringTaskID int64, todayDate time.Time) (*TaskResponse, error) {
+	if tx == nil {
+		return nil, errors.New("transaction is required")
+	}
 	query := `
 		SELECT 
 			t.id, t.user_id, t.title, t.description, t.status, t.priority, t.due_date, t.due_date_warning_sent_at, t.is_focus, t.tags,
@@ -1355,19 +1444,22 @@ func (r *repository) FindTodayInstance(ctx context.Context, recurringTaskID int6
 		LIMIT 1
 	`
 	var entity taskEntity
-	err := r.exec(ctx).GetContext(ctx, &entity, query, recurringTaskID, todayDate)
+	err := tx.GetContext(ctx, &entity, query, recurringTaskID, todayDate)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return nil, nil
 		}
 		return nil, fmt.Errorf("failed to find today's instance: %w", err)
 	}
-	subtasks, _ := r.fetchSubtasks(ctx, entity.ID)
+	subtasks, _ := r.fetchSubtasks(ctx, tx, entity.ID)
 	res := entity.toResponse(subtasks)
 	return &res, nil
 }
 
-func (r *repository) CreateInstanceFromRecurring(ctx context.Context, master *RecurringTaskResponse, dueDate time.Time) (*TaskResponse, error) {
+func (r *repository) CreateInstanceFromRecurring(ctx context.Context, tx *sqlx.Tx, master *RecurringTaskResponse, dueDate time.Time) (*TaskResponse, error) {
+	if tx == nil {
+		return nil, errors.New("transaction is required")
+	}
 	query := `
 		INSERT INTO tasks (
 			user_id, title, description, status, priority, due_date, is_focus, tags, project_id,
@@ -1382,14 +1474,14 @@ func (r *repository) CreateInstanceFromRecurring(ctx context.Context, master *Re
 			recurring_task_id, created_at, updated_at
 	`
 	var entity taskEntity
-	err := r.exec(ctx).QueryRowxContext(ctx, query,
+	err := tx.QueryRowxContext(ctx, query,
 		master.UserID, master.Title, master.Description, master.Priority, dueDate, master.ProjectID,
 		master.RecurrencePattern, master.RecurrenceInterval, master.RecurrenceEndDate, master.ID,
 	).StructScan(&entity)
 
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
-			return r.FindTodayInstance(ctx, master.ID, dueDate)
+			return r.FindTodayInstance(ctx, tx, master.ID, dueDate)
 		}
 		return nil, fmt.Errorf("failed to create instance from recurring task: %w", err)
 	}
@@ -1399,21 +1491,24 @@ func (r *repository) CreateInstanceFromRecurring(ctx context.Context, master *Re
 			INSERT INTO subtasks (task_id, title, description, is_completed, order_index, created_at, updated_at)
 			VALUES ($1, $2, $3, FALSE, $4, NOW(), NOW())
 		`
-		_, _ = r.exec(ctx).ExecContext(ctx, subQuery, entity.ID, st.Title, st.Description, st.OrderIndex)
+		_, _ = tx.ExecContext(ctx, subQuery, entity.ID, st.Title, st.Description, st.OrderIndex)
 	}
 
 	if entity.ProjectID != nil {
-		_ = r.exec(ctx).QueryRowxContext(ctx, "SELECT name, color FROM projects WHERE id = $1", *entity.ProjectID).Scan(&entity.ProjectName, &entity.ProjectColor)
+		_ = tx.QueryRowxContext(ctx, "SELECT name, color FROM projects WHERE id = $1", *entity.ProjectID).Scan(&entity.ProjectName, &entity.ProjectColor)
 	}
 
-	subtasks, _ := r.fetchSubtasks(ctx, entity.ID)
+	subtasks, _ := r.fetchSubtasks(ctx, tx, entity.ID)
 	res := entity.toResponse(subtasks)
 	return &res, nil
 }
 
-func (r *repository) UpdateRecurringLastGenerated(ctx context.Context, id int64, t time.Time) error {
+func (r *repository) UpdateRecurringLastGenerated(ctx context.Context, tx *sqlx.Tx, id int64, t time.Time) error {
+	if tx == nil {
+		return errors.New("transaction is required")
+	}
 	query := `UPDATE recurring_tasks SET last_generated_at = $1, updated_at = NOW() WHERE id = $2`
-	_, err := r.exec(ctx).ExecContext(ctx, query, t, id)
+	_, err := tx.ExecContext(ctx, query, t, id)
 	return err
 }
 
