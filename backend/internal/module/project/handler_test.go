@@ -2,6 +2,7 @@ package project
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -13,11 +14,26 @@ import (
 	"golang/pkg/middleware"
 
 	"github.com/gofiber/fiber/v2"
+	"github.com/jmoiron/sqlx"
 )
+
+type handlerMockTransactor struct{}
+
+func (m *handlerMockTransactor) WithTransaction(fn func(tx *sqlx.Tx) error) error {
+	return fn(nil)
+}
+
+func (m *handlerMockTransactor) WithTransactionCtx(ctx context.Context, fn func(tx *sqlx.Tx) error) error {
+	return fn(nil)
+}
+
+func (m *handlerMockTransactor) WithReadOnlyTransactionCtx(ctx context.Context, fn func(tx *sqlx.Tx) error) error {
+	return fn(nil)
+}
 
 // setupProjectTestApp constructs an in-memory Fiber app with the project routes and mock authentication.
 func setupProjectTestApp(repo Repository, userID string) *fiber.App {
-	svc := NewService(repo)
+	svc := NewService(repo, &handlerMockTransactor{})
 	handler := NewHandler(svc)
 
 	app := fiber.New(fiber.Config{

@@ -86,9 +86,23 @@ func (m *mockRepository) Delete(ctx context.Context, tx *sqlx.Tx, userID string,
 	return nil
 }
 
+type mockTransactor struct{}
+
+func (m *mockTransactor) WithTransaction(fn func(tx *sqlx.Tx) error) error {
+	return fn(nil)
+}
+
+func (m *mockTransactor) WithTransactionCtx(ctx context.Context, fn func(tx *sqlx.Tx) error) error {
+	return fn(nil)
+}
+
+func (m *mockTransactor) WithReadOnlyTransactionCtx(ctx context.Context, fn func(tx *sqlx.Tx) error) error {
+	return fn(nil)
+}
+
 func TestProjectService(t *testing.T) {
 	repo := newMockRepository()
-	svc := NewService(repo)
+	svc := NewService(repo, &mockTransactor{})
 	ctx := context.Background()
 	userID := "user-123"
 
