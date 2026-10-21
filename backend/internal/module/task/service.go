@@ -564,9 +564,7 @@ func (s *service) CreateSubtask(ctx context.Context, userID string, taskID int64
 			}
 			if entity.Status == "done" {
 				progressStatus := "in_progress"
-				if _, err := s.Update(ctx, userID, taskID, UpdateTaskRequest{
-					Status: &progressStatus,
-				}); err != nil {
+				if err := s.updateTaskStatusTx(ctx, tx, userID, taskID, progressStatus, nil); err != nil {
 					return err
 				}
 			}
@@ -583,6 +581,26 @@ func (s *service) CreateSubtask(ctx context.Context, userID string, taskID int64
 		})
 	}
 	return res, err
+}
+
+func (s *service) updateTaskStatusTx(ctx context.Context, tx *sqlx.Tx, userID string, taskID int64, newStatus string, isFocus *bool) error {
+	req := UpdateTaskRequest{
+		Status:  &newStatus,
+		IsFocus: isFocus,
+	}
+	res, err := s.repo.Update(ctx, tx, userID, taskID, req)
+	if err != nil {
+		return err
+	}
+	if res != nil {
+		desc := fmt.Sprintf("Status changed to '%s' (auto-updated by subtasks)", newStatus)
+		changesJSON, _ := json.Marshal(map[string]any{"status": newStatus})
+		_, _ = s.repo.CreateActivity(ctx, tx, taskID, userID, "task_updated", desc, changesJSON)
+		if s.scheduler != nil && newStatus == "done" {
+			_ = s.scheduler.CancelTaskDueAlert(ctx, taskID)
+		}
+	}
+	return nil
 }
 
 func (s *service) UpdateSubtask(ctx context.Context, userID string, taskID int64, subtaskID int64, req UpdateSubtaskRequest) (*SubtaskResponse, error) {
@@ -642,17 +660,12 @@ func (s *service) UpdateSubtask(ctx context.Context, userID string, taskID int64
 					if completed == total && entity.Status != "done" {
 						doneStatus := "done"
 						noFocus := false
-						if _, err := s.Update(ctx, userID, taskID, UpdateTaskRequest{
-							Status:  &doneStatus,
-							IsFocus: &noFocus,
-						}); err != nil {
+						if err := s.updateTaskStatusTx(ctx, tx, userID, taskID, doneStatus, &noFocus); err != nil {
 							return err
 						}
 					} else if completed < total && entity.Status == "done" {
 						progressStatus := "in_progress"
-						if _, err := s.Update(ctx, userID, taskID, UpdateTaskRequest{
-							Status: &progressStatus,
-						}); err != nil {
+						if err := s.updateTaskStatusTx(ctx, tx, userID, taskID, progressStatus, nil); err != nil {
 							return err
 						}
 					}
@@ -708,10 +721,7 @@ func (s *service) DeleteSubtask(ctx context.Context, userID string, taskID int64
 		if countErr == nil && total > 0 && completed == total && entity.Status != "done" {
 			doneStatus := "done"
 			noFocus := false
-			if _, err := s.Update(ctx, userID, taskID, UpdateTaskRequest{
-				Status:  &doneStatus,
-				IsFocus: &noFocus,
-			}); err != nil {
+			if err := s.updateTaskStatusTx(ctx, tx, userID, taskID, doneStatus, &noFocus); err != nil {
 				return err
 			}
 		}

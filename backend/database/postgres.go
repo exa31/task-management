@@ -72,10 +72,28 @@ func NewPostgresDB(cfg *config.DatabaseConfig) (*PostgresDB, error) {
 		return nil, fmt.Errorf("failed to connect to database: %w", err)
 	}
 
-	// Set connection pool settings
-	db.SetMaxIdleConns(10)
-	db.SetMaxOpenConns(100)
-	db.SetConnMaxLifetime(time.Hour)
+	// Set connection pool settings with safe limits preventing connection exhaustion
+	maxOpen := cfg.MaxOpenConns
+	if maxOpen <= 0 {
+		maxOpen = 25
+	}
+	maxIdle := cfg.MaxIdleConns
+	if maxIdle <= 0 {
+		maxIdle = 10
+	}
+	connMaxLifetime := cfg.ConnMaxLifetime
+	if connMaxLifetime <= 0 {
+		connMaxLifetime = 15 * time.Minute
+	}
+	connMaxIdleTime := cfg.ConnMaxIdleTime
+	if connMaxIdleTime <= 0 {
+		connMaxIdleTime = 5 * time.Minute
+	}
+
+	db.SetMaxIdleConns(maxIdle)
+	db.SetMaxOpenConns(maxOpen)
+	db.SetConnMaxLifetime(connMaxLifetime)
+	db.SetConnMaxIdleTime(connMaxIdleTime)
 
 	// Test connection
 	if err := db.Ping(); err != nil {
