@@ -105,8 +105,11 @@ public final class SharedWidgetDataManager: @unchecked Sendable {
             var cus = Set(defaults.array(forKey: selectedCustomTaskIdsKey) as? [Int64] ?? [])
             for t in sanitizedFocus + sanitizedDeadlines {
                 if !excluded.contains(t.id) {
-                    if t.isRecurring == true {
+                    if t.isRecurring == true || t.recurringTaskId != nil {
                         rec.insert(t.id)
+                        if let rid = t.recurringTaskId {
+                            rec.insert(rid)
+                        }
                     } else {
                         cus.insert(t.id)
                     }
@@ -541,8 +544,11 @@ public final class SharedWidgetDataManager: @unchecked Sendable {
         if isAutoSelect {
             // Dynamic Matching: Automatically select all active tasks that are not excluded
             for task in tasks where task.status != "done" && !excluded.contains(task.id) {
-                if task.isRecurring == true {
+                if task.isRecurring == true || task.recurringTaskId != nil {
                     selectedRec.insert(task.id)
+                    if let rid = task.recurringTaskId {
+                        selectedRec.insert(rid)
+                    }
                 } else {
                     selectedCus.insert(task.id)
                 }
@@ -557,7 +563,9 @@ public final class SharedWidgetDataManager: @unchecked Sendable {
                 isAutoSelect ? !excluded.contains($0.id) : (
                     $0.isFocus == true || 
                     $0.isRecurring == true || 
+                    $0.recurringTaskId != nil ||
                     selectedRec.contains($0.id) || 
+                    ($0.recurringTaskId != nil && selectedRec.contains($0.recurringTaskId!)) ||
                     selectedCus.contains($0.id)
                 )
             ) 

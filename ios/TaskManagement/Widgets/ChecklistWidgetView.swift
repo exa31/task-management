@@ -127,8 +127,9 @@ public struct RecurringTaskWidgetView: View {
         let selectedIds = SharedWidgetDataManager.shared.getSelectedRecurringTaskIds()
         let excluded = SharedWidgetDataManager.shared.getExcludedTaskIds()
         for t in combined {
-            if t.isRecurring == true && t.status != "done" && !seen.contains(t.id) {
-                let isSelected = isAuto ? !excluded.contains(t.id) : selectedIds.contains(t.id)
+            if (t.isRecurring == true || t.recurringTaskId != nil) && t.status != "done" && !seen.contains(t.id) {
+                let matchId = t.recurringTaskId ?? t.id
+                let isSelected = isAuto ? (!excluded.contains(t.id) && !excluded.contains(matchId)) : (selectedIds.contains(t.id) || selectedIds.contains(matchId))
                 if isSelected {
                     seen.insert(t.id)
                     result.append(t)

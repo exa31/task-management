@@ -34,6 +34,7 @@ type CreateTaskRequest struct {
 	RecurrencePattern  string     `json:"recurrence_pattern" validate:"omitempty,oneof=daily weekdays weekly monthly"`
 	RecurrenceInterval int        `json:"recurrence_interval" validate:"omitempty,min=1,max=365"`
 	RecurrenceEndDate  *time.Time `json:"recurrence_end_date"`
+	RecurringTaskID    *int64     `json:"recurring_task_id"`
 }
 
 // UpdateTaskRequest payload for updating an existing task.
@@ -54,6 +55,7 @@ type UpdateTaskRequest struct {
 	RecurrenceInterval   *int       `json:"recurrence_interval" validate:"omitempty,min=1,max=365"`
 	RecurrenceEndDate    *time.Time `json:"recurrence_end_date"`
 	HasRecurrenceEndDate bool       `json:"-"`
+	RecurringTaskID      *int64     `json:"recurring_task_id"`
 }
 
 // UnmarshalJSON detects if project_id, due_date, or recurrence_end_date was explicitly provided in JSON (including null).
@@ -179,17 +181,22 @@ type TaskResponse struct {
 	RecurrenceInterval        int               `json:"recurrence_interval" db:"recurrence_interval"`
 	RecurrenceEndDate         *time.Time        `json:"recurrence_end_date" db:"recurrence_end_date"`
 	RecurrenceLastGeneratedAt *time.Time        `json:"recurrence_last_generated_at" db:"recurrence_last_generated_at"`
+	RecurringTaskID           *int64            `json:"recurring_task_id" db:"recurring_task_id"`
 	CreatedAt                 time.Time         `json:"created_at" db:"created_at"`
 	UpdatedAt                 time.Time         `json:"updated_at" db:"updated_at"`
 }
 
 // TriggerRecurrenceRequest payload for Asynq worker rollover trigger.
 type TriggerRecurrenceRequest struct {
-	TaskID int64 `json:"task_id" query:"task_id"`
-	ID     int64 `json:"id" query:"id"`
+	RecurringTaskID int64 `json:"recurring_task_id" query:"recurring_task_id"`
+	TaskID          int64 `json:"task_id" query:"task_id"`
+	ID              int64 `json:"id" query:"id"`
 }
 
 func (r *TriggerRecurrenceRequest) TargetID() int64 {
+	if r.RecurringTaskID != 0 {
+		return r.RecurringTaskID
+	}
 	if r.TaskID != 0 {
 		return r.TaskID
 	}
@@ -250,3 +257,71 @@ type WorkspaceStatsResponse struct {
 	PendingReminders int `json:"pending_reminders" db:"pending_reminders"`
 	TotalNotes       int `json:"total_notes" db:"total_notes"`
 }
+
+// RecurringTaskResponse represents a master recurring rule template.
+type RecurringTaskResponse struct {
+	ID                 int64                      `json:"id" db:"id"`
+	UserID             string                     `json:"user_id" db:"user_id"`
+	ProjectID          *int64                     `json:"project_id" db:"project_id"`
+	ProjectName        *string                    `json:"project_name" db:"project_name"`
+	ProjectColor       *string                    `json:"project_color" db:"project_color"`
+	Title              string                     `json:"title" db:"title"`
+	Description        string                     `json:"description" db:"description"`
+	Priority           string                     `json:"priority" db:"priority"`
+	RecurrencePattern  string                     `json:"recurrence_pattern" db:"recurrence_pattern"`
+	RecurrenceInterval int                        `json:"recurrence_interval" db:"recurrence_interval"`
+	DueTime            *string                    `json:"due_time" db:"due_time"`
+	RecurrenceEndDate  *time.Time                 `json:"recurrence_end_date" db:"recurrence_end_date"`
+	IsActive           bool                       `json:"is_active" db:"is_active"`
+	LastGeneratedAt    *time.Time                 `json:"last_generated_at" db:"last_generated_at"`
+	Subtasks           []RecurringSubtaskResponse `json:"subtasks"`
+	CreatedAt          time.Time                  `json:"created_at" db:"created_at"`
+	UpdatedAt          time.Time                  `json:"updated_at" db:"updated_at"`
+}
+
+// RecurringSubtaskResponse represents a template subtask within a recurring task.
+type RecurringSubtaskResponse struct {
+	ID              int64     `json:"id" db:"id"`
+	RecurringTaskID int64     `json:"recurring_task_id" db:"recurring_task_id"`
+	Title           string    `json:"title" db:"title"`
+	Description     string    `json:"description" db:"description"`
+	OrderIndex      int       `json:"order_index" db:"order_index"`
+	CreatedAt       time.Time `json:"created_at" db:"created_at"`
+}
+
+// CreateRecurringTaskRequest payload for creating a new master recurring task.
+type CreateRecurringTaskRequest struct {
+	Title              string                       `json:"title" validate:"required,min=1,max=255"`
+	Description        string                       `json:"description"`
+	Priority           string                       `json:"priority" validate:"omitempty,oneof=low medium high urgent"`
+	ProjectID          *int64                       `json:"project_id"`
+	RecurrencePattern  string                       `json:"recurrence_pattern" validate:"required,oneof=daily weekdays weekly monthly"`
+	RecurrenceInterval int                          `json:"recurrence_interval" validate:"omitempty,min=1,max=365"`
+	DueTime            *string                      `json:"due_time"`
+	RecurrenceEndDate  *time.Time                   `json:"recurrence_end_date"`
+	Subtasks           []CreateRecurringSubtaskItem `json:"subtasks"`
+}
+
+// CreateRecurringSubtaskItem describes a subtask in a recurring task creation request.
+type CreateRecurringSubtaskItem struct {
+	Title       string `json:"title" validate:"required,min=1,max=255"`
+	Description string `json:"description"`
+	OrderIndex  int    `json:"order_index"`
+}
+
+// UpdateRecurringTaskRequest payload for updating a master recurring task.
+type UpdateRecurringTaskRequest struct {
+	Title                *string                       `json:"title" validate:"omitempty,min=1,max=255"`
+	Description          *string                       `json:"description"`
+	Priority             *string                       `json:"priority" validate:"omitempty,oneof=low medium high urgent"`
+	ProjectID            *int64                        `json:"project_id"`
+	HasProjectID         bool                          `json:"-"`
+	RecurrencePattern    *string                       `json:"recurrence_pattern" validate:"omitempty,oneof=daily weekdays weekly monthly"`
+	RecurrenceInterval   *int                          `json:"recurrence_interval" validate:"omitempty,min=1,max=365"`
+	DueTime              *string                       `json:"due_time"`
+	RecurrenceEndDate    *time.Time                    `json:"recurrence_end_date"`
+	HasRecurrenceEndDate bool                          `json:"-"`
+	IsActive             *bool                         `json:"is_active"`
+	Subtasks             *[]CreateRecurringSubtaskItem `json:"subtasks"`
+}
+

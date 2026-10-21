@@ -180,6 +180,16 @@ func (r *Router) registerNotesAndTasks(api fiber.Router) {
 	tasks.Get("/:id/activities", taskHandler.GetActivities)
 	tasks.Post("/:id/activities", taskHandler.CreateActivity)
 
+	// Recurring Tasks routes (Per-user isolated master templates)
+	recurringTasks := api.Group("/recurring-tasks")
+	recurringTasks.Use(authMiddleware.AuthMiddleware(r.JWTService))
+	recurringTasks.Get("/", taskHandler.ListRecurringTasks)
+	recurringTasks.Post("/", taskHandler.CreateRecurringTask)
+	recurringTasks.Get("/:id", taskHandler.GetRecurringTask)
+	recurringTasks.Put("/:id", taskHandler.UpdateRecurringTask)
+	recurringTasks.Delete("/:id", taskHandler.DeleteRecurringTask)
+	recurringTasks.Post("/:id/toggle-active", taskHandler.ToggleActiveRecurringTask)
+
 	// Workspace routes (Per-user isolated)
 	workspace := api.Group("/workspace")
 	workspace.Use(authMiddleware.AuthMiddleware(r.JWTService))

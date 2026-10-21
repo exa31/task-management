@@ -26,7 +26,7 @@ public struct WidgetSettingsView: View {
     }
 
     private var filteredRecurringTasks: [TaskItem] {
-        let list = activeTasks.filter { $0.isRecurring == true }
+        let list = activeTasks.filter { $0.isRecurring == true || $0.recurringTaskId != nil }
         guard !searchQuery.trimmingCharacters(in: .whitespaces).isEmpty else { return list }
         return list.filter {
             $0.title.localizedCaseInsensitiveContains(searchQuery) ||
@@ -35,7 +35,7 @@ public struct WidgetSettingsView: View {
     }
 
     private var filteredCustomTasks: [TaskItem] {
-        let list = activeTasks.filter { $0.isRecurring != true }
+        let list = activeTasks.filter { $0.isRecurring != true && $0.recurringTaskId == nil }
         guard !searchQuery.trimmingCharacters(in: .whitespaces).isEmpty else { return list }
         return list.filter {
             $0.title.localizedCaseInsensitiveContains(searchQuery) ||
@@ -531,8 +531,8 @@ public struct WidgetSettingsView: View {
 
             if isAutoSelectAll {
                 // Auto-select * : select all active tasks not explicitly excluded
-                let recActive = Set(self.tasks.filter { $0.isRecurring == true && !excludedTaskIds.contains($0.id) }.map { $0.id })
-                let cusActive = Set(self.tasks.filter { $0.isRecurring != true && !excludedTaskIds.contains($0.id) }.map { $0.id })
+                let recActive = Set(self.tasks.filter { ($0.isRecurring == true || $0.recurringTaskId != nil) && !excludedTaskIds.contains($0.id) }.map { $0.id })
+                let cusActive = Set(self.tasks.filter { ($0.isRecurring != true && $0.recurringTaskId == nil) && !excludedTaskIds.contains($0.id) }.map { $0.id })
                 selectedRecurringIds = recActive
                 selectedCustomIds = cusActive
             } else {
@@ -558,8 +558,8 @@ public struct WidgetSettingsView: View {
         if enabled {
             excludedTaskIds.removeAll()
             widgetManager.setExcludedTaskIds([])
-            let recActive = Set(tasks.filter { $0.isRecurring == true && $0.status != "done" }.map { $0.id })
-            let cusActive = Set(tasks.filter { $0.isRecurring != true && $0.status != "done" }.map { $0.id })
+            let recActive = Set(tasks.filter { ($0.isRecurring == true || $0.recurringTaskId != nil) && $0.status != "done" }.map { $0.id })
+            let cusActive = Set(tasks.filter { ($0.isRecurring != true && $0.recurringTaskId == nil) && $0.status != "done" }.map { $0.id })
             selectedRecurringIds = recActive
             selectedCustomIds = cusActive
             widgetManager.setSelectedRecurringTaskIds(recActive)

@@ -40,6 +40,18 @@ type Repository interface {
 	GetWidgetBundle(ctx context.Context, userID string) (*WidgetBundleResponse, error)
 	GetWorkspaceStats(ctx context.Context, userID string) (*WorkspaceStatsResponse, error)
 	UpdateRecurrenceGeneratedAt(ctx context.Context, id int64, t time.Time) error
+
+	// Recurring Tasks repository methods
+	FindRecurringByID(ctx context.Context, userID string, id int64) (*RecurringTaskResponse, error)
+	FindRecurringByIDSystem(ctx context.Context, id int64) (*RecurringTaskResponse, string, error)
+	FindAllRecurring(ctx context.Context, userID string) ([]RecurringTaskResponse, error)
+	CreateRecurring(ctx context.Context, userID string, req CreateRecurringTaskRequest) (*RecurringTaskResponse, error)
+	UpdateRecurring(ctx context.Context, userID string, id int64, req UpdateRecurringTaskRequest) (*RecurringTaskResponse, error)
+	DeleteRecurring(ctx context.Context, userID string, id int64) error
+	ToggleActiveRecurring(ctx context.Context, userID string, id int64) (*RecurringTaskResponse, error)
+	FindTodayInstance(ctx context.Context, recurringTaskID int64, todayDate time.Time) (*TaskResponse, error)
+	CreateInstanceFromRecurring(ctx context.Context, master *RecurringTaskResponse, dueDate time.Time) (*TaskResponse, error)
+	UpdateRecurringLastGenerated(ctx context.Context, id int64, t time.Time) error
 }
 
 type repository struct {
@@ -76,6 +88,7 @@ type taskEntity struct {
 	RecurrenceInterval        int            `db:"recurrence_interval"`
 	RecurrenceEndDate         *time.Time     `db:"recurrence_end_date"`
 	RecurrenceLastGeneratedAt *time.Time     `db:"recurrence_last_generated_at"`
+	RecurringTaskID           *int64         `db:"recurring_task_id"`
 	CreatedAt                 time.Time      `db:"created_at"`
 	UpdatedAt                 time.Time      `db:"updated_at"`
 }
@@ -122,13 +135,58 @@ func (e *taskEntity) toResponse(subtasks []SubtaskResponse) TaskResponse {
 		SubtasksCount:             totalCount,
 		SubtasksCompleted:         completedCount,
 		ProgressPercent:           percent,
-		IsRecurring:               e.IsRecurring,
+		IsRecurring:               e.IsRecurring || e.RecurringTaskID != nil,
 		RecurrencePattern:         e.RecurrencePattern,
 		RecurrenceInterval:        e.RecurrenceInterval,
 		RecurrenceEndDate:         e.RecurrenceEndDate,
 		RecurrenceLastGeneratedAt: e.RecurrenceLastGeneratedAt,
+		RecurringTaskID:           e.RecurringTaskID,
 		CreatedAt:                 e.CreatedAt,
 		UpdatedAt:                 e.UpdatedAt,
+	}
+}
+
+type recurringTaskEntity struct {
+	ID                 int64      `db:"id"`
+	UserID             string     `db:"user_id"`
+	ProjectID          *int64     `db:"project_id"`
+	ProjectName        *string    `db:"project_name"`
+	ProjectColor       *string    `db:"project_color"`
+	Title              string     `db:"title"`
+	Description        string     `db:"description"`
+	Priority           string     `db:"priority"`
+	RecurrencePattern  string     `db:"recurrence_pattern"`
+	RecurrenceInterval int        `db:"recurrence_interval"`
+	DueTime            *string    `db:"due_time"`
+	RecurrenceEndDate  *time.Time `db:"recurrence_end_date"`
+	IsActive           bool       `db:"is_active"`
+	LastGeneratedAt    *time.Time `db:"last_generated_at"`
+	CreatedAt          time.Time  `db:"created_at"`
+	UpdatedAt          time.Time  `db:"updated_at"`
+}
+
+func (e *recurringTaskEntity) toResponse(subtasks []RecurringSubtaskResponse) RecurringTaskResponse {
+	if subtasks == nil {
+		subtasks = []RecurringSubtaskResponse{}
+	}
+	return RecurringTaskResponse{
+		ID:                 e.ID,
+		UserID:             e.UserID,
+		ProjectID:          e.ProjectID,
+		ProjectName:        e.ProjectName,
+		ProjectColor:       e.ProjectColor,
+		Title:              e.Title,
+		Description:        e.Description,
+		Priority:           e.Priority,
+		RecurrencePattern:  e.RecurrencePattern,
+		RecurrenceInterval: e.RecurrenceInterval,
+		DueTime:            e.DueTime,
+		RecurrenceEndDate:  e.RecurrenceEndDate,
+		IsActive:           e.IsActive,
+		LastGeneratedAt:    e.LastGeneratedAt,
+		Subtasks:           subtasks,
+		CreatedAt:          e.CreatedAt,
+		UpdatedAt:          e.UpdatedAt,
 	}
 }
 
@@ -175,15 +233,15 @@ func (r *repository) Create(ctx context.Context, userID string, req CreateTaskRe
 	query := `
 		INSERT INTO tasks (
 			user_id, title, description, status, priority, due_date, is_focus, tags, project_id, source_note_id,
-			is_recurring, recurrence_pattern, recurrence_interval, recurrence_end_date, created_at, updated_at
+			is_recurring, recurrence_pattern, recurrence_interval, recurrence_end_date, recurring_task_id, created_at, updated_at
 		)
-		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, NOW(), NOW())
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, NOW(), NOW())
 		RETURNING id, user_id, title, description, status, priority, due_date, due_date_warning_sent_at, is_focus, tags,
 			project_id, last_progress_note, last_progress_at, source_note_id,
 			is_recurring, recurrence_pattern, recurrence_interval, recurrence_end_date, recurrence_last_generated_at,
-			created_at, updated_at
+			recurring_task_id, created_at, updated_at
 	`
-	err := r.exec(ctx).QueryRowxContext(ctx, query, userID, req.Title, req.Description, status, priority, req.DueDate, req.IsFocus, pq.Array(tags), req.ProjectID, req.SourceNoteID, req.IsRecurring, req.RecurrencePattern, interval, req.RecurrenceEndDate).StructScan(&entity)
+	err := r.exec(ctx).QueryRowxContext(ctx, query, userID, req.Title, req.Description, status, priority, req.DueDate, req.IsFocus, pq.Array(tags), req.ProjectID, req.SourceNoteID, req.IsRecurring, req.RecurrencePattern, interval, req.RecurrenceEndDate, req.RecurringTaskID).StructScan(&entity)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create task: %w", err)
 	}
@@ -220,7 +278,7 @@ func (r *repository) FindByID(ctx context.Context, userID string, id int64) (*Ta
 			t.project_id, p.name as project_name, p.color as project_color,
 			t.last_progress_note, t.last_progress_at, t.source_note_id,
 			t.is_recurring, t.recurrence_pattern, t.recurrence_interval, t.recurrence_end_date, t.recurrence_last_generated_at,
-			t.created_at, t.updated_at
+			t.recurring_task_id, t.created_at, t.updated_at
 		FROM tasks t
 		LEFT JOIN projects p ON p.id = t.project_id
 		WHERE t.id = $1 AND t.user_id = $2
@@ -250,7 +308,7 @@ func (r *repository) FindAll(ctx context.Context, userID string, filter TaskFilt
 			t.project_id, p.name as project_name, p.color as project_color,
 			t.last_progress_note, t.last_progress_at, t.source_note_id,
 			t.is_recurring, t.recurrence_pattern, t.recurrence_interval, t.recurrence_end_date, t.recurrence_last_generated_at,
-			t.created_at, t.updated_at
+			t.recurring_task_id, t.created_at, t.updated_at
 		FROM tasks t
 		LEFT JOIN projects p ON p.id = t.project_id
 		WHERE t.user_id = $1
@@ -440,21 +498,25 @@ func (r *repository) Update(ctx context.Context, userID string, id int64, req Up
 	} else if req.RecurrenceEndDate != nil {
 		recurrenceEndDate = req.RecurrenceEndDate
 	}
+	recurringTaskID := existing.RecurringTaskID
+	if req.RecurringTaskID != nil {
+		recurringTaskID = req.RecurringTaskID
+	}
 
 	query := `
 		UPDATE tasks
 		SET title = $1, description = $2, status = $3, priority = $4, due_date = $5, due_date_warning_sent_at = $6,
 			is_focus = $7, tags = $8, project_id = $9, last_progress_note = $10, last_progress_at = $11,
 			is_recurring = $12, recurrence_pattern = $13, recurrence_interval = $14, recurrence_end_date = $15,
-			updated_at = NOW()
-		WHERE id = $16 AND user_id = $17
+			recurring_task_id = $16, updated_at = NOW()
+		WHERE id = $17 AND user_id = $18
 		RETURNING id, user_id, title, description, status, priority, due_date, due_date_warning_sent_at, is_focus, tags,
 			project_id, last_progress_note, last_progress_at, source_note_id,
 			is_recurring, recurrence_pattern, recurrence_interval, recurrence_end_date, recurrence_last_generated_at,
-			created_at, updated_at
+			recurring_task_id, created_at, updated_at
 	`
 	var entity taskEntity
-	err = r.exec(ctx).QueryRowxContext(ctx, query, title, desc, status, priority, dueDate, dueDateWarningSentAt, isFocus, pq.Array(tags), projectID, lastProgressNote, lastProgressAt, isRecurring, recurrencePattern, recurrenceInterval, recurrenceEndDate, id, userID).StructScan(&entity)
+	err = r.exec(ctx).QueryRowxContext(ctx, query, title, desc, status, priority, dueDate, dueDateWarningSentAt, isFocus, pq.Array(tags), projectID, lastProgressNote, lastProgressAt, isRecurring, recurrencePattern, recurrenceInterval, recurrenceEndDate, recurringTaskID, id, userID).StructScan(&entity)
 	if err != nil {
 		return nil, fmt.Errorf("failed to update task: %w", err)
 	}
@@ -501,7 +563,7 @@ func (r *repository) LogProgress(ctx context.Context, userID string, id int64, r
 		RETURNING id, user_id, title, description, status, priority, due_date, due_date_warning_sent_at, is_focus, tags,
 			project_id, last_progress_note, last_progress_at, source_note_id,
 			is_recurring, recurrence_pattern, recurrence_interval, recurrence_end_date, recurrence_last_generated_at,
-			created_at, updated_at
+			recurring_task_id, created_at, updated_at
 	`, statusUpdate)
 
 	var entity taskEntity
@@ -542,7 +604,7 @@ func (r *repository) ToggleFocus(ctx context.Context, userID string, id int64) (
 		RETURNING id, user_id, title, description, status, priority, due_date, due_date_warning_sent_at, is_focus, tags,
 			project_id, last_progress_note, last_progress_at, source_note_id,
 			is_recurring, recurrence_pattern, recurrence_interval, recurrence_end_date, recurrence_last_generated_at,
-			created_at, updated_at
+			recurring_task_id, created_at, updated_at
 	`
 	var entity taskEntity
 	err := r.exec(ctx).QueryRowxContext(ctx, query, id, userID).StructScan(&entity)
@@ -665,7 +727,7 @@ func (r *repository) FindByIDSystem(ctx context.Context, id int64) (*TaskRespons
 			t.project_id, p.name as project_name, p.color as project_color,
 			t.last_progress_note, t.last_progress_at, t.source_note_id,
 			t.is_recurring, t.recurrence_pattern, t.recurrence_interval, t.recurrence_end_date, t.recurrence_last_generated_at,
-			t.created_at, t.updated_at,
+			t.recurring_task_id, t.created_at, t.updated_at,
 			u.email, u.timezone, u.due_date_warning_threshold, u.email_notifications_enabled
 		FROM tasks t
 		JOIN users u ON u.id = t.user_id
@@ -712,7 +774,7 @@ func (r *repository) GetWidgetBundle(ctx context.Context, userID string) (*Widge
 	seen := make(map[int64]bool)
 	// 1. Prioritize Focus & Recurring tasks first
 	for _, t := range allTasks {
-		if t.Status != "done" && (t.IsFocus || t.IsRecurring) {
+		if t.Status != "done" && (t.IsFocus || t.IsRecurring || t.RecurringTaskID != nil) {
 			activeFocus = append(activeFocus, t)
 			seen[t.ID] = true
 		}
@@ -731,7 +793,7 @@ func (r *repository) GetWidgetBundle(ctx context.Context, userID string) (*Widge
 			t.project_id, p.name as project_name, p.color as project_color,
 			t.last_progress_note, t.last_progress_at, t.source_note_id,
 			t.is_recurring, t.recurrence_pattern, t.recurrence_interval, t.recurrence_end_date, t.recurrence_last_generated_at,
-			t.created_at, t.updated_at
+			t.recurring_task_id, t.created_at, t.updated_at
 		FROM tasks t
 		LEFT JOIN projects p ON p.id = t.project_id
 		WHERE t.user_id = $1 AND t.status != 'done' AND t.due_date IS NOT NULL
@@ -992,3 +1054,366 @@ func (r *repository) GetWorkspaceStats(ctx context.Context, userID string) (*Wor
 	}
 	return &stats, nil
 }
+
+// --- Recurring Tasks Repository Implementation ---
+
+func (r *repository) fetchRecurringSubtasks(ctx context.Context, recurringTaskID int64) ([]RecurringSubtaskResponse, error) {
+	query := `
+		SELECT id, recurring_task_id, title, COALESCE(description, '') AS description, order_index, created_at
+		FROM recurring_subtasks
+		WHERE recurring_task_id = $1
+		ORDER BY order_index ASC, id ASC
+	`
+	var items []RecurringSubtaskResponse
+	err := r.exec(ctx).SelectContext(ctx, &items, query, recurringTaskID)
+	if err != nil {
+		return nil, err
+	}
+	if items == nil {
+		items = []RecurringSubtaskResponse{}
+	}
+	return items, nil
+}
+
+func (r *repository) FindRecurringByID(ctx context.Context, userID string, id int64) (*RecurringTaskResponse, error) {
+	query := `
+		SELECT 
+			rt.id, rt.user_id, rt.project_id, p.name as project_name, p.color as project_color,
+			rt.title, rt.description, rt.priority, rt.recurrence_pattern, rt.recurrence_interval,
+			rt.due_time, rt.recurrence_end_date, rt.is_active, rt.last_generated_at,
+			rt.created_at, rt.updated_at
+		FROM recurring_tasks rt
+		LEFT JOIN projects p ON p.id = rt.project_id
+		WHERE rt.id = $1 AND rt.user_id = $2
+	`
+	var entity recurringTaskEntity
+	err := r.exec(ctx).GetContext(ctx, &entity, query, id, userID)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, nil
+		}
+		return nil, fmt.Errorf("failed to find recurring task: %w", err)
+	}
+	subtasks, _ := r.fetchRecurringSubtasks(ctx, entity.ID)
+	res := entity.toResponse(subtasks)
+	return &res, nil
+}
+
+func (r *repository) FindRecurringByIDSystem(ctx context.Context, id int64) (*RecurringTaskResponse, string, error) {
+	query := `
+		SELECT 
+			rt.id, rt.user_id, rt.project_id, p.name as project_name, p.color as project_color,
+			rt.title, rt.description, rt.priority, rt.recurrence_pattern, rt.recurrence_interval,
+			rt.due_time, rt.recurrence_end_date, rt.is_active, rt.last_generated_at,
+			rt.created_at, rt.updated_at,
+			u.timezone
+		FROM recurring_tasks rt
+		JOIN users u ON u.id = rt.user_id
+		LEFT JOIN projects p ON p.id = rt.project_id
+		WHERE rt.id = $1
+	`
+	type sysRecEntity struct {
+		recurringTaskEntity
+		Timezone string `db:"timezone"`
+	}
+	var se sysRecEntity
+	err := r.exec(ctx).GetContext(ctx, &se, query, id)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, "", nil
+		}
+		return nil, "", fmt.Errorf("failed to find recurring task system: %w", err)
+	}
+
+	subtasks, _ := r.fetchRecurringSubtasks(ctx, se.ID)
+	res := se.recurringTaskEntity.toResponse(subtasks)
+	tz := se.Timezone
+	if tz == "" {
+		tz = "Asia/Jakarta"
+	}
+	return &res, tz, nil
+}
+
+func (r *repository) FindAllRecurring(ctx context.Context, userID string) ([]RecurringTaskResponse, error) {
+	query := `
+		SELECT 
+			rt.id, rt.user_id, rt.project_id, p.name as project_name, p.color as project_color,
+			rt.title, rt.description, rt.priority, rt.recurrence_pattern, rt.recurrence_interval,
+			rt.due_time, rt.recurrence_end_date, rt.is_active, rt.last_generated_at,
+			rt.created_at, rt.updated_at
+		FROM recurring_tasks rt
+		LEFT JOIN projects p ON p.id = rt.project_id
+		WHERE rt.user_id = $1
+		ORDER BY rt.id ASC
+	`
+	var entities []recurringTaskEntity
+	err := r.exec(ctx).SelectContext(ctx, &entities, query, userID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to find all recurring tasks: %w", err)
+	}
+	res := make([]RecurringTaskResponse, len(entities))
+	for i, e := range entities {
+		subtasks, _ := r.fetchRecurringSubtasks(ctx, e.ID)
+		res[i] = e.toResponse(subtasks)
+	}
+	return res, nil
+}
+
+func (r *repository) CreateRecurring(ctx context.Context, userID string, req CreateRecurringTaskRequest) (*RecurringTaskResponse, error) {
+	interval := req.RecurrenceInterval
+	if interval <= 0 {
+		interval = 1
+	}
+	pattern := req.RecurrencePattern
+	if pattern == "" {
+		pattern = "daily"
+	}
+	priority := req.Priority
+	if priority == "" {
+		priority = "medium"
+	}
+
+	query := `
+		INSERT INTO recurring_tasks (
+			user_id, project_id, title, description, priority,
+			recurrence_pattern, recurrence_interval, due_time, recurrence_end_date,
+			is_active, last_generated_at, created_at, updated_at
+		)
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, TRUE, NULL, NOW(), NOW())
+		RETURNING id, user_id, project_id, title, description, priority,
+			recurrence_pattern, recurrence_interval, due_time, recurrence_end_date,
+			is_active, last_generated_at, created_at, updated_at
+	`
+	var entity recurringTaskEntity
+	err := r.exec(ctx).QueryRowxContext(ctx, query, userID, req.ProjectID, req.Title, req.Description, priority, pattern, interval, req.DueTime, req.RecurrenceEndDate).StructScan(&entity)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create recurring task: %w", err)
+	}
+
+	for i, st := range req.Subtasks {
+		if st.Title == "" {
+			continue
+		}
+		orderIdx := st.OrderIndex
+		if orderIdx <= 0 {
+			orderIdx = i
+		}
+		subQuery := `
+			INSERT INTO recurring_subtasks (recurring_task_id, title, description, order_index, created_at, updated_at)
+			VALUES ($1, $2, $3, $4, NOW(), NOW())
+		`
+		_, err = r.exec(ctx).ExecContext(ctx, subQuery, entity.ID, st.Title, st.Description, orderIdx)
+		if err != nil {
+			return nil, fmt.Errorf("failed to insert recurring subtask: %w", err)
+		}
+	}
+
+	subtasks, _ := r.fetchRecurringSubtasks(ctx, entity.ID)
+	res := entity.toResponse(subtasks)
+	if entity.ProjectID != nil {
+		_ = r.exec(ctx).QueryRowxContext(ctx, "SELECT name, color FROM projects WHERE id = $1", *entity.ProjectID).Scan(&res.ProjectName, &res.ProjectColor)
+	}
+	return &res, nil
+}
+
+func (r *repository) UpdateRecurring(ctx context.Context, userID string, id int64, req UpdateRecurringTaskRequest) (*RecurringTaskResponse, error) {
+	existing, err := r.FindRecurringByID(ctx, userID, id)
+	if err != nil {
+		return nil, err
+	}
+	if existing == nil {
+		return nil, errors.New("recurring task not found")
+	}
+
+	title := existing.Title
+	if req.Title != nil {
+		title = *req.Title
+	}
+	desc := existing.Description
+	if req.Description != nil {
+		desc = *req.Description
+	}
+	priority := existing.Priority
+	if req.Priority != nil {
+		priority = *req.Priority
+	}
+	pattern := existing.RecurrencePattern
+	if req.RecurrencePattern != nil {
+		pattern = *req.RecurrencePattern
+	}
+	interval := existing.RecurrenceInterval
+	if req.RecurrenceInterval != nil {
+		interval = *req.RecurrenceInterval
+	}
+	if interval <= 0 {
+		interval = 1
+	}
+	dueTime := existing.DueTime
+	if req.DueTime != nil {
+		dueTime = req.DueTime
+	}
+	endDate := existing.RecurrenceEndDate
+	if req.HasRecurrenceEndDate {
+		endDate = req.RecurrenceEndDate
+	} else if req.RecurrenceEndDate != nil {
+		endDate = req.RecurrenceEndDate
+	}
+	isActive := existing.IsActive
+	if req.IsActive != nil {
+		isActive = *req.IsActive
+	}
+	projectID := existing.ProjectID
+	if req.HasProjectID {
+		projectID = req.ProjectID
+	} else if req.ProjectID != nil {
+		projectID = req.ProjectID
+	}
+
+	query := `
+		UPDATE recurring_tasks
+		SET title = $1, description = $2, priority = $3, project_id = $4,
+			recurrence_pattern = $5, recurrence_interval = $6, due_time = $7,
+			recurrence_end_date = $8, is_active = $9, updated_at = NOW()
+		WHERE id = $10 AND user_id = $11
+		RETURNING id, user_id, project_id, title, description, priority,
+			recurrence_pattern, recurrence_interval, due_time, recurrence_end_date,
+			is_active, last_generated_at, created_at, updated_at
+	`
+	var entity recurringTaskEntity
+	err = r.exec(ctx).QueryRowxContext(ctx, query, title, desc, priority, projectID, pattern, interval, dueTime, endDate, isActive, id, userID).StructScan(&entity)
+	if err != nil {
+		return nil, fmt.Errorf("failed to update recurring task: %w", err)
+	}
+
+	if req.Subtasks != nil {
+		_, _ = r.exec(ctx).ExecContext(ctx, "DELETE FROM recurring_subtasks WHERE recurring_task_id = $1", id)
+		for i, st := range *req.Subtasks {
+			if st.Title == "" {
+				continue
+			}
+			orderIdx := st.OrderIndex
+			if orderIdx <= 0 {
+				orderIdx = i
+			}
+			_, _ = r.exec(ctx).ExecContext(ctx, `
+				INSERT INTO recurring_subtasks (recurring_task_id, title, description, order_index, created_at, updated_at)
+				VALUES ($1, $2, $3, $4, NOW(), NOW())
+			`, id, st.Title, st.Description, orderIdx)
+		}
+	}
+
+	subtasks, _ := r.fetchRecurringSubtasks(ctx, entity.ID)
+	res := entity.toResponse(subtasks)
+	if entity.ProjectID != nil {
+		_ = r.exec(ctx).QueryRowxContext(ctx, "SELECT name, color FROM projects WHERE id = $1", *entity.ProjectID).Scan(&res.ProjectName, &res.ProjectColor)
+	}
+	return &res, nil
+}
+
+func (r *repository) DeleteRecurring(ctx context.Context, userID string, id int64) error {
+	query := `DELETE FROM recurring_tasks WHERE id = $1 AND user_id = $2`
+	_, err := r.exec(ctx).ExecContext(ctx, query, id, userID)
+	if err != nil {
+		return fmt.Errorf("failed to delete recurring task: %w", err)
+	}
+	return nil
+}
+
+func (r *repository) ToggleActiveRecurring(ctx context.Context, userID string, id int64) (*RecurringTaskResponse, error) {
+	query := `
+		UPDATE recurring_tasks
+		SET is_active = NOT is_active, updated_at = NOW()
+		WHERE id = $1 AND user_id = $2
+		RETURNING id, user_id, project_id, title, description, priority,
+			recurrence_pattern, recurrence_interval, due_time, recurrence_end_date,
+			is_active, last_generated_at, created_at, updated_at
+	`
+	var entity recurringTaskEntity
+	err := r.exec(ctx).QueryRowxContext(ctx, query, id, userID).StructScan(&entity)
+	if err != nil {
+		return nil, fmt.Errorf("failed to toggle recurring task active: %w", err)
+	}
+	subtasks, _ := r.fetchRecurringSubtasks(ctx, entity.ID)
+	res := entity.toResponse(subtasks)
+	if entity.ProjectID != nil {
+		_ = r.exec(ctx).QueryRowxContext(ctx, "SELECT name, color FROM projects WHERE id = $1", *entity.ProjectID).Scan(&res.ProjectName, &res.ProjectColor)
+	}
+	return &res, nil
+}
+
+func (r *repository) FindTodayInstance(ctx context.Context, recurringTaskID int64, todayDate time.Time) (*TaskResponse, error) {
+	query := `
+		SELECT 
+			t.id, t.user_id, t.title, t.description, t.status, t.priority, t.due_date, t.due_date_warning_sent_at, t.is_focus, t.tags,
+			t.project_id, p.name as project_name, p.color as project_color,
+			t.last_progress_note, t.last_progress_at, t.source_note_id,
+			t.is_recurring, t.recurrence_pattern, t.recurrence_interval, t.recurrence_end_date, t.recurrence_last_generated_at,
+			t.recurring_task_id, t.created_at, t.updated_at
+		FROM tasks t
+		LEFT JOIN projects p ON p.id = t.project_id
+		WHERE t.recurring_task_id = $1 AND ((t.due_date AT TIME ZONE 'UTC')::date) = (($2::timestamptz AT TIME ZONE 'UTC')::date)
+		LIMIT 1
+	`
+	var entity taskEntity
+	err := r.exec(ctx).GetContext(ctx, &entity, query, recurringTaskID, todayDate)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, nil
+		}
+		return nil, fmt.Errorf("failed to find today's instance: %w", err)
+	}
+	subtasks, _ := r.fetchSubtasks(ctx, entity.ID)
+	res := entity.toResponse(subtasks)
+	return &res, nil
+}
+
+func (r *repository) CreateInstanceFromRecurring(ctx context.Context, master *RecurringTaskResponse, dueDate time.Time) (*TaskResponse, error) {
+	query := `
+		INSERT INTO tasks (
+			user_id, title, description, status, priority, due_date, is_focus, tags, project_id,
+			is_recurring, recurrence_pattern, recurrence_interval, recurrence_end_date, recurring_task_id, created_at, updated_at
+		)
+		VALUES ($1, $2, $3, 'todo', $4, $5, FALSE, '{}', $6, TRUE, $7, $8, $9, $10, NOW(), NOW())
+		ON CONFLICT (recurring_task_id, ((due_date AT TIME ZONE 'UTC')::date)) WHERE recurring_task_id IS NOT NULL AND due_date IS NOT NULL
+		DO NOTHING
+		RETURNING id, user_id, title, description, status, priority, due_date, due_date_warning_sent_at, is_focus, tags,
+			project_id, last_progress_note, last_progress_at, source_note_id,
+			is_recurring, recurrence_pattern, recurrence_interval, recurrence_end_date, recurrence_last_generated_at,
+			recurring_task_id, created_at, updated_at
+	`
+	var entity taskEntity
+	err := r.exec(ctx).QueryRowxContext(ctx, query,
+		master.UserID, master.Title, master.Description, master.Priority, dueDate, master.ProjectID,
+		master.RecurrencePattern, master.RecurrenceInterval, master.RecurrenceEndDate, master.ID,
+	).StructScan(&entity)
+
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return r.FindTodayInstance(ctx, master.ID, dueDate)
+		}
+		return nil, fmt.Errorf("failed to create instance from recurring task: %w", err)
+	}
+
+	for _, st := range master.Subtasks {
+		subQuery := `
+			INSERT INTO subtasks (task_id, title, description, is_completed, order_index, created_at, updated_at)
+			VALUES ($1, $2, $3, FALSE, $4, NOW(), NOW())
+		`
+		_, _ = r.exec(ctx).ExecContext(ctx, subQuery, entity.ID, st.Title, st.Description, st.OrderIndex)
+	}
+
+	if entity.ProjectID != nil {
+		_ = r.exec(ctx).QueryRowxContext(ctx, "SELECT name, color FROM projects WHERE id = $1", *entity.ProjectID).Scan(&entity.ProjectName, &entity.ProjectColor)
+	}
+
+	subtasks, _ := r.fetchSubtasks(ctx, entity.ID)
+	res := entity.toResponse(subtasks)
+	return &res, nil
+}
+
+func (r *repository) UpdateRecurringLastGenerated(ctx context.Context, id int64, t time.Time) error {
+	query := `UPDATE recurring_tasks SET last_generated_at = $1, updated_at = NOW() WHERE id = $2`
+	_, err := r.exec(ctx).ExecContext(ctx, query, t, id)
+	return err
+}
+

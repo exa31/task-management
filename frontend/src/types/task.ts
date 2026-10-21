@@ -104,6 +104,7 @@ export interface Task {
   recurrence_interval?: number | null
   recurrence_end_date?: string | null
   recurrence_last_generated_at?: string | null
+  recurring_task_id?: number | null
   created_at: string
   updated_at: string
 }
@@ -123,6 +124,7 @@ export interface CreateTaskPayload {
   recurrence_pattern?: RecurrencePattern
   recurrence_interval?: number
   recurrence_end_date?: string
+  recurring_task_id?: number | null
 }
 
 export interface UpdateTaskPayload {
@@ -139,6 +141,64 @@ export interface UpdateTaskPayload {
   recurrence_pattern?: RecurrencePattern | null
   recurrence_interval?: number | null
   recurrence_end_date?: string | null
+  recurring_task_id?: number | null
+}
+
+export interface RecurringSubtask {
+  id: number
+  recurring_task_id: number
+  title: string
+  order_index: number
+  created_at: string
+}
+
+export interface RecurringTask {
+  id: number
+  user_id: string
+  title: string
+  description?: string
+  priority: TaskPriority
+  project_id?: number | null
+  project_name?: string
+  project_color?: string
+  tags?: string[]
+  recurrence_pattern: RecurrencePattern
+  recurrence_interval: number
+  recurrence_end_date?: string | null
+  due_time?: string | null
+  is_active: boolean
+  last_generated_at?: string | null
+  subtasks?: RecurringSubtask[]
+  created_at: string
+  updated_at: string
+}
+
+export interface CreateRecurringTaskPayload {
+  title: string
+  description?: string
+  priority?: TaskPriority
+  project_id?: number | null
+  tags?: string[]
+  recurrence_pattern?: RecurrencePattern
+  recurrence_interval?: number
+  recurrence_end_date?: string
+  due_time?: string
+  is_active?: boolean
+  subtasks?: Array<{ title: string; order_index: number }>
+}
+
+export interface UpdateRecurringTaskPayload {
+  title?: string
+  description?: string
+  priority?: TaskPriority
+  project_id?: number | null
+  tags?: string[]
+  recurrence_pattern?: RecurrencePattern
+  recurrence_interval?: number
+  recurrence_end_date?: string | null
+  due_time?: string | null
+  is_active?: boolean
+  subtasks?: Array<{ title: string; order_index: number }>
 }
 
 export interface LogProgressPayload {

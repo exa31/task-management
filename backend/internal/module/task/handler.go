@@ -419,3 +419,101 @@ func (h *Handler) GetWorkspaceStats(c *fiber.Ctx) error {
 
 	return response.SuccessResponse(c, result, "Workspace stats retrieved successfully")
 }
+
+// --- Recurring Tasks HTTP Handlers ---
+
+func (h *Handler) ListRecurringTasks(c *fiber.Ctx) error {
+	userID, err := authMiddleware.GetUserID(c)
+	if err != nil {
+		return err
+	}
+	res, err := h.service.FindAllRecurringTasks(c.UserContext(), userID)
+	if err != nil {
+		return err
+	}
+	return response.SuccessResponse(c, res, "Recurring tasks retrieved successfully")
+}
+
+func (h *Handler) CreateRecurringTask(c *fiber.Ctx) error {
+	userID, err := authMiddleware.GetUserID(c)
+	if err != nil {
+		return err
+	}
+	var req CreateRecurringTaskRequest
+	if err := validation.Default.BindAndValidate(c, &req); err != nil {
+		return err
+	}
+	res, err := h.service.CreateRecurringTask(c.UserContext(), userID, req)
+	if err != nil {
+		return err
+	}
+	return response.CreatedResponse(c, res, "Recurring task created successfully")
+}
+
+func (h *Handler) GetRecurringTask(c *fiber.Ctx) error {
+	userID, err := authMiddleware.GetUserID(c)
+	if err != nil {
+		return err
+	}
+	id, err := strconv.ParseInt(c.Params("id"), 10, 64)
+	if err != nil {
+		return fiber.NewError(fiber.StatusBadRequest, "Invalid recurring task ID")
+	}
+	res, err := h.service.GetRecurringTaskByID(c.UserContext(), userID, id)
+	if err != nil {
+		return err
+	}
+	return response.SuccessResponse(c, res, "Recurring task retrieved successfully")
+}
+
+func (h *Handler) UpdateRecurringTask(c *fiber.Ctx) error {
+	userID, err := authMiddleware.GetUserID(c)
+	if err != nil {
+		return err
+	}
+	id, err := strconv.ParseInt(c.Params("id"), 10, 64)
+	if err != nil {
+		return fiber.NewError(fiber.StatusBadRequest, "Invalid recurring task ID")
+	}
+	var req UpdateRecurringTaskRequest
+	if err := validation.Default.BindAndValidate(c, &req); err != nil {
+		return err
+	}
+	res, err := h.service.UpdateRecurringTask(c.UserContext(), userID, id, req)
+	if err != nil {
+		return err
+	}
+	return response.SuccessResponse(c, res, "Recurring task updated successfully")
+}
+
+func (h *Handler) DeleteRecurringTask(c *fiber.Ctx) error {
+	userID, err := authMiddleware.GetUserID(c)
+	if err != nil {
+		return err
+	}
+	id, err := strconv.ParseInt(c.Params("id"), 10, 64)
+	if err != nil {
+		return fiber.NewError(fiber.StatusBadRequest, "Invalid recurring task ID")
+	}
+	if err := h.service.DeleteRecurringTask(c.UserContext(), userID, id); err != nil {
+		return err
+	}
+	return response.SuccessMessageResponse(c, "Recurring task deleted successfully")
+}
+
+func (h *Handler) ToggleActiveRecurringTask(c *fiber.Ctx) error {
+	userID, err := authMiddleware.GetUserID(c)
+	if err != nil {
+		return err
+	}
+	id, err := strconv.ParseInt(c.Params("id"), 10, 64)
+	if err != nil {
+		return fiber.NewError(fiber.StatusBadRequest, "Invalid recurring task ID")
+	}
+	res, err := h.service.ToggleActiveRecurringTask(c.UserContext(), userID, id)
+	if err != nil {
+		return err
+	}
+	return response.SuccessResponse(c, res, "Recurring task status toggled successfully")
+}
+

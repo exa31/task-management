@@ -290,6 +290,14 @@ public actor APIClient {
         return try await request(endpoint: endpoint)
     }
 
+    public func getRecurringTasks() async throws -> [RecurringTaskItem] {
+        return try await request(endpoint: "recurring-tasks")
+    }
+
+    public func toggleActiveRecurringTask(id: Int64) async throws -> RecurringTaskItem {
+        return try await request(endpoint: "recurring-tasks/\(id)/toggle-active", method: "POST")
+    }
+
     public func getTasksPaginated(
         status: String? = nil,
         search: String? = nil,

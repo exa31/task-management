@@ -168,7 +168,7 @@ export const TaskBoardView: React.FC = () => {
                           {task.project_name}
                         </span>
                       )}
-                      {task.is_recurring && (
+                      {(task.is_recurring || task.recurring_task_id) && (
                         <span
                           title={t('tasks.recurringTooltip', {
                             pattern: task.recurrence_pattern

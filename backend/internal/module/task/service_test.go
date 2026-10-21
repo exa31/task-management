@@ -51,6 +51,17 @@ type mockRepository struct {
 	createActivityFunc       func(ctx context.Context, taskID int64, userID string, activityType string, description string, changes []byte) (*TaskActivityResponse, error)
 	findActivitiesFunc       func(ctx context.Context, userID string, taskID int64) ([]TaskActivityResponse, error)
 	findActivitiesByUserFunc func(ctx context.Context, userID string, from, to *time.Time) ([]TaskActivityResponse, error)
+
+	findRecurringByIDFunc            func(ctx context.Context, userID string, id int64) (*RecurringTaskResponse, error)
+	findRecurringByIDSystemFunc      func(ctx context.Context, id int64) (*RecurringTaskResponse, string, error)
+	findAllRecurringFunc             func(ctx context.Context, userID string) ([]RecurringTaskResponse, error)
+	createRecurringFunc              func(ctx context.Context, userID string, req CreateRecurringTaskRequest) (*RecurringTaskResponse, error)
+	updateRecurringFunc              func(ctx context.Context, userID string, id int64, req UpdateRecurringTaskRequest) (*RecurringTaskResponse, error)
+	deleteRecurringFunc              func(ctx context.Context, userID string, id int64) error
+	toggleActiveRecurringFunc        func(ctx context.Context, userID string, id int64) (*RecurringTaskResponse, error)
+	findTodayInstanceFunc            func(ctx context.Context, recurringTaskID int64, todayDate time.Time) (*TaskResponse, error)
+	createInstanceFromRecurringFunc  func(ctx context.Context, master *RecurringTaskResponse, dueDate time.Time) (*TaskResponse, error)
+	updateRecurringLastGeneratedFunc func(ctx context.Context, id int64, t time.Time) error
 }
 
 func (m *mockRepository) Create(ctx context.Context, userID string, req CreateTaskRequest) (*TaskResponse, error) {
@@ -202,6 +213,76 @@ func (m *mockRepository) FindActivitiesByUser(ctx context.Context, userID string
 
 func (m *mockRepository) FindActivityCountsByUser(ctx context.Context, userID string, from, to *time.Time, tz string) ([]ActivityDateCount, error) {
 	return []ActivityDateCount{}, nil
+}
+
+func (m *mockRepository) FindRecurringByID(ctx context.Context, userID string, id int64) (*RecurringTaskResponse, error) {
+	if m.findRecurringByIDFunc != nil {
+		return m.findRecurringByIDFunc(ctx, userID, id)
+	}
+	return nil, nil
+}
+
+func (m *mockRepository) FindRecurringByIDSystem(ctx context.Context, id int64) (*RecurringTaskResponse, string, error) {
+	if m.findRecurringByIDSystemFunc != nil {
+		return m.findRecurringByIDSystemFunc(ctx, id)
+	}
+	return nil, "Asia/Jakarta", nil
+}
+
+func (m *mockRepository) FindAllRecurring(ctx context.Context, userID string) ([]RecurringTaskResponse, error) {
+	if m.findAllRecurringFunc != nil {
+		return m.findAllRecurringFunc(ctx, userID)
+	}
+	return []RecurringTaskResponse{}, nil
+}
+
+func (m *mockRepository) CreateRecurring(ctx context.Context, userID string, req CreateRecurringTaskRequest) (*RecurringTaskResponse, error) {
+	if m.createRecurringFunc != nil {
+		return m.createRecurringFunc(ctx, userID, req)
+	}
+	return nil, nil
+}
+
+func (m *mockRepository) UpdateRecurring(ctx context.Context, userID string, id int64, req UpdateRecurringTaskRequest) (*RecurringTaskResponse, error) {
+	if m.updateRecurringFunc != nil {
+		return m.updateRecurringFunc(ctx, userID, id, req)
+	}
+	return nil, nil
+}
+
+func (m *mockRepository) DeleteRecurring(ctx context.Context, userID string, id int64) error {
+	if m.deleteRecurringFunc != nil {
+		return m.deleteRecurringFunc(ctx, userID, id)
+	}
+	return nil
+}
+
+func (m *mockRepository) ToggleActiveRecurring(ctx context.Context, userID string, id int64) (*RecurringTaskResponse, error) {
+	if m.toggleActiveRecurringFunc != nil {
+		return m.toggleActiveRecurringFunc(ctx, userID, id)
+	}
+	return nil, nil
+}
+
+func (m *mockRepository) FindTodayInstance(ctx context.Context, recurringTaskID int64, todayDate time.Time) (*TaskResponse, error) {
+	if m.findTodayInstanceFunc != nil {
+		return m.findTodayInstanceFunc(ctx, recurringTaskID, todayDate)
+	}
+	return nil, nil
+}
+
+func (m *mockRepository) CreateInstanceFromRecurring(ctx context.Context, master *RecurringTaskResponse, dueDate time.Time) (*TaskResponse, error) {
+	if m.createInstanceFromRecurringFunc != nil {
+		return m.createInstanceFromRecurringFunc(ctx, master, dueDate)
+	}
+	return nil, nil
+}
+
+func (m *mockRepository) UpdateRecurringLastGenerated(ctx context.Context, id int64, t time.Time) error {
+	if m.updateRecurringLastGeneratedFunc != nil {
+		return m.updateRecurringLastGeneratedFunc(ctx, id, t)
+	}
+	return nil
 }
 
 func TestTaskService_Create(t *testing.T) {
@@ -655,6 +736,14 @@ func TestTaskService_Create_WithSchedulerInTransaction(t *testing.T) {
 				IsRecurring: req.IsRecurring,
 			}, nil
 		},
+		createRecurringFunc: func(ctx context.Context, userID string, req CreateRecurringTaskRequest) (*RecurringTaskResponse, error) {
+			return &RecurringTaskResponse{
+				ID:       100,
+				UserID:   userID,
+				Title:    req.Title,
+				IsActive: true,
+			}, nil
+		},
 		getUserThresholdFunc: func(ctx context.Context, userID string) (int, string, error) {
 			return 30, "Asia/Jakarta", nil
 		},
@@ -689,28 +778,32 @@ func TestTaskService_Create_WithSchedulerInTransaction(t *testing.T) {
 
 func TestTaskService_ProcessTaskRecurrence_AtomicScheduling(t *testing.T) {
 	ctx := context.Background()
-	taskID := int64(200)
+	masterID := int64(200)
 	var timestampUpdated bool
 
 	mockRepo := &mockRepository{
-		findByIDSystemFunc: func(ctx context.Context, id int64) (*TaskResponse, string, string, int, bool, error) {
-			return &TaskResponse{
-				ID:                 taskID,
+		findRecurringByIDSystemFunc: func(ctx context.Context, id int64) (*RecurringTaskResponse, string, error) {
+			return &RecurringTaskResponse{
+				ID:                 masterID,
 				UserID:             "user-1",
 				Title:              "Daily Recurring Standup",
-				IsRecurring:        true,
+				IsActive:           true,
 				RecurrencePattern:  "daily",
 				RecurrenceInterval: 1,
-			}, "test@example.com", "Asia/Jakarta", 15, true, nil
+			}, "Asia/Jakarta", nil
 		},
-		createFunc: func(ctx context.Context, userID string, req CreateTaskRequest) (*TaskResponse, error) {
+		findTodayInstanceFunc: func(ctx context.Context, recurringTaskID int64, todayDate time.Time) (*TaskResponse, error) {
+			return nil, nil // No task for today yet
+		},
+		createInstanceFromRecurringFunc: func(ctx context.Context, master *RecurringTaskResponse, dueDate time.Time) (*TaskResponse, error) {
 			return &TaskResponse{
-				ID:     201,
-				UserID: userID,
-				Title:  req.Title,
+				ID:              501,
+				UserID:          master.UserID,
+				Title:           master.Title,
+				RecurringTaskID: &master.ID,
 			}, nil
 		},
-		updateRecurrenceGeneratedAtFunc: func(ctx context.Context, id int64, tm time.Time) error {
+		updateRecurringLastGeneratedFunc: func(ctx context.Context, id int64, tm time.Time) error {
 			timestampUpdated = true
 			return nil
 		},
@@ -720,7 +813,7 @@ func TestTaskService_ProcessTaskRecurrence_AtomicScheduling(t *testing.T) {
 	svc := NewService(mockRepo, &mockTransactor{})
 	svc.SetNotificationDependencies(sched, nil, nil, nil, nil, nil)
 
-	err := svc.ProcessTaskRecurrence(ctx, taskID)
+	err := svc.ProcessTaskRecurrence(ctx, masterID)
 	if err != nil {
 		t.Fatalf("unexpected error in ProcessTaskRecurrence: %v", err)
 	}
@@ -728,8 +821,56 @@ func TestTaskService_ProcessTaskRecurrence_AtomicScheduling(t *testing.T) {
 	if !timestampUpdated {
 		t.Errorf("expected recurrence generated timestamp to be updated")
 	}
-	if _, ok := sched.recurrenceScheduled[taskID]; !ok {
-		t.Errorf("expected task %d to have its next recurrence scheduled", taskID)
+	if _, ok := sched.recurrenceScheduled[masterID]; !ok {
+		t.Errorf("expected master %d to have its next recurrence scheduled", masterID)
+	}
+}
+
+func TestTaskService_ProcessTaskRecurrence_Idempotency(t *testing.T) {
+	ctx := context.Background()
+	masterID := int64(300)
+	instanceCreated := false
+
+	mockRepo := &mockRepository{
+		findRecurringByIDSystemFunc: func(ctx context.Context, id int64) (*RecurringTaskResponse, string, error) {
+			return &RecurringTaskResponse{
+				ID:                 masterID,
+				UserID:             "user-1",
+				Title:              "Daily Sholat",
+				IsActive:           true,
+				RecurrencePattern:  "daily",
+				RecurrenceInterval: 1,
+			}, "Asia/Jakarta", nil
+		},
+		findTodayInstanceFunc: func(ctx context.Context, recurringTaskID int64, todayDate time.Time) (*TaskResponse, error) {
+			// Today's instance already exists
+			return &TaskResponse{
+				ID:              128,
+				UserID:          "user-1",
+				Title:           "Daily Sholat",
+				RecurringTaskID: &masterID,
+			}, nil
+		},
+		createInstanceFromRecurringFunc: func(ctx context.Context, master *RecurringTaskResponse, dueDate time.Time) (*TaskResponse, error) {
+			instanceCreated = true
+			return nil, nil
+		},
+	}
+
+	sched := newMockTaskScheduler()
+	svc := NewService(mockRepo, &mockTransactor{})
+	svc.SetNotificationDependencies(sched, nil, nil, nil, nil, nil)
+
+	err := svc.ProcessTaskRecurrence(ctx, masterID)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	if instanceCreated {
+		t.Errorf("expected no new instance to be created when today instance already exists")
+	}
+	if _, ok := sched.recurrenceScheduled[masterID]; !ok {
+		t.Errorf("expected master %d to still have its next recurrence scheduled", masterID)
 	}
 }
 

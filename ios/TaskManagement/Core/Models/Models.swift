@@ -185,6 +185,57 @@ public struct TaskItem: Codable, Identifiable, Sendable {
     public let recurrenceInterval: Int?
     public let recurrenceEndDate: String?
     public let recurrenceLastGeneratedAt: String?
+    public let recurringTaskId: Int64?
+
+    public init(
+        id: Int64,
+        userId: String,
+        title: String,
+        description: String,
+        status: String,
+        priority: String,
+        dueDate: String?,
+        isFocus: Bool,
+        tags: [String]?,
+        projectId: Int64?,
+        projectName: String?,
+        projectColor: String?,
+        lastProgressNote: String?,
+        subtasks: [Subtask]?,
+        subtasksCount: Int?,
+        subtasksCompleted: Int?,
+        progressPercent: Int?,
+        isRecurring: Bool?,
+        recurrencePattern: String?,
+        recurrenceInterval: Int?,
+        recurrenceEndDate: String?,
+        recurrenceLastGeneratedAt: String?,
+        recurringTaskId: Int64? = nil
+    ) {
+        self.id = id
+        self.userId = userId
+        self.title = title
+        self.description = description
+        self.status = status
+        self.priority = priority
+        self.dueDate = dueDate
+        self.isFocus = isFocus
+        self.tags = tags
+        self.projectId = projectId
+        self.projectName = projectName
+        self.projectColor = projectColor
+        self.lastProgressNote = lastProgressNote
+        self.subtasks = subtasks
+        self.subtasksCount = subtasksCount
+        self.subtasksCompleted = subtasksCompleted
+        self.progressPercent = progressPercent
+        self.isRecurring = isRecurring
+        self.recurrencePattern = recurrencePattern
+        self.recurrenceInterval = recurrenceInterval
+        self.recurrenceEndDate = recurrenceEndDate
+        self.recurrenceLastGeneratedAt = recurrenceLastGeneratedAt
+        self.recurringTaskId = recurringTaskId
+    }
 
     enum CodingKeys: String, CodingKey {
         case id, title, description, status, priority, tags
@@ -204,6 +255,54 @@ public struct TaskItem: Codable, Identifiable, Sendable {
         case recurrenceInterval = "recurrence_interval"
         case recurrenceEndDate = "recurrence_end_date"
         case recurrenceLastGeneratedAt = "recurrence_last_generated_at"
+        case recurringTaskId = "recurring_task_id"
+    }
+}
+
+public struct RecurringSubtaskItem: Codable, Identifiable, Sendable {
+    public let id: Int64
+    public let recurringTaskId: Int64
+    public var title: String
+    public var orderIndex: Int
+
+    enum CodingKeys: String, CodingKey {
+        case id, title
+        case recurringTaskId = "recurring_task_id"
+        case orderIndex = "order_index"
+    }
+}
+
+public struct RecurringTaskItem: Codable, Identifiable, Sendable {
+    public let id: Int64
+    public let userId: String
+    public var title: String
+    public var description: String
+    public var priority: String
+    public let projectId: Int64?
+    public let projectName: String?
+    public let projectColor: String?
+    public let tags: [String]?
+    public var recurrencePattern: String
+    public var recurrenceInterval: Int
+    public let recurrenceEndDate: String?
+    public let dueTime: String?
+    public var isActive: Bool
+    public let lastGeneratedAt: String?
+    public var subtasks: [RecurringSubtaskItem]?
+
+    enum CodingKeys: String, CodingKey {
+        case id, title, description, priority, tags
+        case userId = "user_id"
+        case projectId = "project_id"
+        case projectName = "project_name"
+        case projectColor = "project_color"
+        case recurrencePattern = "recurrence_pattern"
+        case recurrenceInterval = "recurrence_interval"
+        case recurrenceEndDate = "recurrence_end_date"
+        case dueTime = "due_time"
+        case isActive = "is_active"
+        case lastGeneratedAt = "last_generated_at"
+        case subtasks
     }
 }
 
