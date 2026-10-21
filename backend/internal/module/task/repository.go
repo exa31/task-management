@@ -51,6 +51,11 @@ type Repository interface {
 	FindTodayInstance(ctx context.Context, tx *sqlx.Tx, recurringTaskID int64, todayDate time.Time) (*TaskResponse, error)
 	CreateInstanceFromRecurring(ctx context.Context, tx *sqlx.Tx, master *RecurringTaskResponse, dueDate time.Time) (*TaskResponse, error)
 	UpdateRecurringLastGenerated(ctx context.Context, tx *sqlx.Tx, id int64, t time.Time) error
+	CreateRecurringSubtask(ctx context.Context, tx *sqlx.Tx, recurringTaskID int64, title, description string, orderIndex int) error
+	UpdateRecurringSubtaskByTitle(ctx context.Context, tx *sqlx.Tx, recurringTaskID int64, oldTitle, newTitle, description string) error
+	DeleteRecurringSubtaskByTitle(ctx context.Context, tx *sqlx.Tx, recurringTaskID int64, title string) error
+	SyncRecurringFromTask(ctx context.Context, tx *sqlx.Tx, userID string, task *TaskResponse) error
+	ConvertTaskToRecurring(ctx context.Context, tx *sqlx.Tx, userID string, taskID int64, pattern string, interval int, endDate *time.Time) (*RecurringTaskResponse, error)
 }
 
 type repository struct {
@@ -1511,4 +1516,159 @@ func (r *repository) UpdateRecurringLastGenerated(ctx context.Context, tx *sqlx.
 	_, err := tx.ExecContext(ctx, query, t, id)
 	return err
 }
+
+func (r *repository) CreateRecurringSubtask(ctx context.Context, tx *sqlx.Tx, recurringTaskID int64, title, description string, orderIndex int) error {
+	if tx == nil {
+		return errors.New("transaction is required")
+	}
+	if title == "" {
+		return nil
+	}
+	query := `
+		INSERT INTO recurring_subtasks (recurring_task_id, title, description, order_index, created_at, updated_at)
+		VALUES ($1, $2, $3, $4, NOW(), NOW())
+	`
+	_, err := tx.ExecContext(ctx, query, recurringTaskID, title, description, orderIndex)
+	return err
+}
+
+func (r *repository) UpdateRecurringSubtaskByTitle(ctx context.Context, tx *sqlx.Tx, recurringTaskID int64, oldTitle, newTitle, description string) error {
+	if tx == nil {
+		return errors.New("transaction is required")
+	}
+	if oldTitle == "" && newTitle == "" {
+		return nil
+	}
+	targetTitle := oldTitle
+	if targetTitle == "" {
+		targetTitle = newTitle
+	}
+	finalTitle := newTitle
+	if finalTitle == "" {
+		finalTitle = oldTitle
+	}
+	query := `
+		UPDATE recurring_subtasks
+		SET title = $1, description = $2, updated_at = NOW()
+		WHERE recurring_task_id = $3 AND title = $4
+	`
+	_, err := tx.ExecContext(ctx, query, finalTitle, description, recurringTaskID, targetTitle)
+	return err
+}
+
+func (r *repository) DeleteRecurringSubtaskByTitle(ctx context.Context, tx *sqlx.Tx, recurringTaskID int64, title string) error {
+	if tx == nil {
+		return errors.New("transaction is required")
+	}
+	if title == "" {
+		return nil
+	}
+	query := `
+		DELETE FROM recurring_subtasks
+		WHERE recurring_task_id = $1 AND title = $2
+	`
+	_, err := tx.ExecContext(ctx, query, recurringTaskID, title)
+	return err
+}
+
+func (r *repository) SyncRecurringFromTask(ctx context.Context, tx *sqlx.Tx, userID string, task *TaskResponse) error {
+	if tx == nil {
+		return errors.New("transaction is required")
+	}
+	if task == nil || task.RecurringTaskID == nil {
+		return nil
+	}
+	interval := task.RecurrenceInterval
+	if interval <= 0 {
+		interval = 1
+	}
+	pattern := task.RecurrencePattern
+	if pattern == "" {
+		pattern = "daily"
+	}
+	query := `
+		UPDATE recurring_tasks
+		SET title = $1, description = $2, priority = $3, project_id = $4,
+		    recurrence_pattern = $5, recurrence_interval = $6, recurrence_end_date = $7,
+		    updated_at = NOW()
+		WHERE id = $8 AND user_id = $9
+	`
+	_, err := tx.ExecContext(ctx, query,
+		task.Title, task.Description, task.Priority, task.ProjectID,
+		pattern, interval, task.RecurrenceEndDate,
+		*task.RecurringTaskID, userID,
+	)
+	return err
+}
+
+func (r *repository) ConvertTaskToRecurring(ctx context.Context, tx *sqlx.Tx, userID string, taskID int64, pattern string, interval int, endDate *time.Time) (*RecurringTaskResponse, error) {
+	if tx == nil {
+		return nil, errors.New("transaction is required")
+	}
+	task, err := r.FindByID(ctx, tx, userID, taskID)
+	if err != nil || task == nil {
+		return nil, errors.New("task not found")
+	}
+	if interval <= 0 {
+		interval = 1
+	}
+	if pattern == "" {
+		pattern = "daily"
+	}
+
+	// 1. Create recurring_tasks master
+	recQuery := `
+		INSERT INTO recurring_tasks (
+			user_id, project_id, title, description, priority,
+			recurrence_pattern, recurrence_interval, recurrence_end_date, is_active,
+			created_at, updated_at
+		)
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, TRUE, NOW(), NOW())
+		RETURNING id, user_id, project_id, title, description, priority,
+			recurrence_pattern, recurrence_interval, due_time, recurrence_end_date,
+			is_active, last_generated_at, created_at, updated_at
+	`
+	var entity recurringTaskEntity
+	err = tx.QueryRowxContext(ctx, recQuery,
+		userID, task.ProjectID, task.Title, task.Description, task.Priority,
+		pattern, interval, endDate,
+	).StructScan(&entity)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create recurring task: %w", err)
+	}
+
+	// 2. Copy existing subtasks from tasks -> recurring_subtasks
+	for i, st := range task.Subtasks {
+		if st.Title == "" {
+			continue
+		}
+		orderIdx := st.OrderIndex
+		if orderIdx <= 0 {
+			orderIdx = i
+		}
+		_, _ = tx.ExecContext(ctx, `
+			INSERT INTO recurring_subtasks (recurring_task_id, title, description, order_index, created_at, updated_at)
+			VALUES ($1, $2, $3, $4, NOW(), NOW())
+		`, entity.ID, st.Title, st.Description, orderIdx)
+	}
+
+	// 3. Link task instance to this new master
+	_, err = tx.ExecContext(ctx, `
+		UPDATE tasks
+		SET is_recurring = TRUE, recurrence_pattern = $1, recurrence_interval = $2,
+		    recurrence_end_date = $3, recurring_task_id = $4, updated_at = NOW()
+		WHERE id = $5 AND user_id = $6
+	`, pattern, interval, endDate, entity.ID, taskID, userID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to link task to recurring master: %w", err)
+	}
+
+	subtasks, _ := r.fetchRecurringSubtasks(ctx, tx, entity.ID)
+	res := entity.toResponse(subtasks)
+	if entity.ProjectID != nil {
+		_ = tx.QueryRowxContext(ctx, "SELECT name, color FROM projects WHERE id = $1", *entity.ProjectID).Scan(&res.ProjectName, &res.ProjectColor)
+	}
+	return &res, nil
+}
+
 

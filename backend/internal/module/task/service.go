@@ -329,19 +329,41 @@ func (s *service) Update(ctx context.Context, userID string, id int64, req Updat
 				}
 			}
 
-			if s.recurrenceScheduler != nil {
-				if req.IsRecurring != nil {
-					if !*req.IsRecurring {
-						if err := s.recurrenceScheduler.CancelTaskRecurrence(ctx, res.ID); err != nil && s.logger != nil {
-							s.logger.WarnContext(ctx, "failed to cancel task recurrence", "error", err, "task_id", res.ID)
+			// Recurrence handling on Update
+			if req.IsRecurring != nil {
+				if !*req.IsRecurring {
+					// User turned off recurrence
+					if entity.RecurringTaskID != nil {
+						_, _ = tx.ExecContext(ctx, "UPDATE recurring_tasks SET is_active = FALSE, updated_at = NOW() WHERE id = $1 AND user_id = $2", *entity.RecurringTaskID, userID)
+						if s.recurrenceScheduler != nil {
+							_ = s.recurrenceScheduler.CancelTaskRecurrence(ctx, *entity.RecurringTaskID)
 						}
-					} else {
-						nextMidnight := getNextMidnightInUserTimezone(userTimezone)
-						if err := s.recurrenceScheduler.ScheduleTaskRecurrence(ctx, res.ID, nextMidnight); err != nil && s.logger != nil {
-							s.logger.WarnContext(ctx, "failed to schedule task recurrence", "error", err, "task_id", res.ID)
+						_, _ = tx.ExecContext(ctx, "UPDATE tasks SET recurring_task_id = NULL WHERE id = $1 AND user_id = $2", res.ID, userID)
+						res.RecurringTaskID = nil
+					}
+				} else if entity.RecurringTaskID == nil {
+					// User turned on recurrence for previously non-recurring task
+					pattern := "daily"
+					if req.RecurrencePattern != nil && *req.RecurrencePattern != "" {
+						pattern = *req.RecurrencePattern
+					}
+					interval := 1
+					if req.RecurrenceInterval != nil && *req.RecurrenceInterval > 0 {
+						interval = *req.RecurrenceInterval
+					}
+					recMaster, convertErr := s.repo.ConvertTaskToRecurring(ctx, tx, userID, res.ID, pattern, interval, req.RecurrenceEndDate)
+					if convertErr == nil && recMaster != nil {
+						res.RecurringTaskID = &recMaster.ID
+						res.IsRecurring = true
+						if s.recurrenceScheduler != nil {
+							nextMidnight := getNextMidnightInUserTimezone(userTimezone)
+							_ = s.recurrenceScheduler.ScheduleTaskRecurrence(ctx, recMaster.ID, nextMidnight)
 						}
 					}
 				}
+			} else if res.RecurringTaskID != nil && res.IsRecurring {
+				// Existing recurring task updated: sync fields to recurring_tasks template
+				_ = s.repo.SyncRecurringFromTask(ctx, tx, userID, res)
 			}
 		}
 		return nil
@@ -518,6 +540,10 @@ func (s *service) CreateSubtask(ctx context.Context, userID string, taskID int64
 			return err2
 		}
 		if res != nil {
+			// Sync to recurring_subtasks template if this task belongs to a recurring series
+			if entity.RecurringTaskID != nil {
+				_ = s.repo.CreateRecurringSubtask(ctx, tx, *entity.RecurringTaskID, req.Title, req.Description, res.OrderIndex)
+			}
 			desc := fmt.Sprintf("Added subtask: %s", req.Title)
 			changesJSON, _ := json.Marshal(map[string]any{"subtask_id": res.ID, "title": req.Title})
 			if _, err := s.repo.CreateActivity(ctx, tx, taskID, userID, "subtask_created", desc, changesJSON); err != nil {
@@ -559,12 +585,23 @@ func (s *service) UpdateSubtask(ctx context.Context, userID string, taskID int64
 		if req.DueDate != nil && entity.DueDate != nil && req.DueDate.After(*entity.DueDate) {
 			return errors.BadRequest("Subtask due date cannot exceed task due date")
 		}
+		var oldTitle string
+		for _, st := range entity.Subtasks {
+			if st.ID == subtaskID {
+				oldTitle = st.Title
+				break
+			}
+		}
 		var err2 error
 		res, err2 = s.repo.UpdateSubtask(ctx, tx, userID, taskID, subtaskID, req)
 		if err2 != nil {
 			return err2
 		}
 		if res != nil {
+			// Sync to recurring_subtasks template if this task belongs to a recurring series
+			if entity.RecurringTaskID != nil && (req.Title != nil || req.Description != nil || req.HasDescription) {
+				_ = s.repo.UpdateRecurringSubtaskByTitle(ctx, tx, *entity.RecurringTaskID, oldTitle, res.Title, res.Description)
+			}
 			var desc string
 			if req.IsCompleted != nil {
 				if *req.IsCompleted {
@@ -639,6 +676,10 @@ func (s *service) DeleteSubtask(ctx context.Context, userID string, taskID int64
 		}
 		if err := s.repo.DeleteSubtask(ctx, tx, userID, taskID, subtaskID); err != nil {
 			return err
+		}
+		// Sync delete to recurring_subtasks template if this task belongs to a recurring series
+		if entity.RecurringTaskID != nil && subtaskTitle != "" {
+			_ = s.repo.DeleteRecurringSubtaskByTitle(ctx, tx, *entity.RecurringTaskID, subtaskTitle)
 		}
 		desc := fmt.Sprintf("Deleted subtask: %s", subtaskTitle)
 		changesJSON, _ := json.Marshal(map[string]any{"subtask_id": subtaskID, "title": subtaskTitle})

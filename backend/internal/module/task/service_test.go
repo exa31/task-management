@@ -60,8 +60,13 @@ type mockRepository struct {
 	deleteRecurringFunc              func(ctx context.Context, userID string, id int64) error
 	toggleActiveRecurringFunc        func(ctx context.Context, userID string, id int64) (*RecurringTaskResponse, error)
 	findTodayInstanceFunc            func(ctx context.Context, recurringTaskID int64, todayDate time.Time) (*TaskResponse, error)
-	createInstanceFromRecurringFunc  func(ctx context.Context, master *RecurringTaskResponse, dueDate time.Time) (*TaskResponse, error)
-	updateRecurringLastGeneratedFunc func(ctx context.Context, id int64, t time.Time) error
+	createInstanceFromRecurringFunc   func(ctx context.Context, master *RecurringTaskResponse, dueDate time.Time) (*TaskResponse, error)
+	updateRecurringLastGeneratedFunc  func(ctx context.Context, id int64, t time.Time) error
+	createRecurringSubtaskFunc        func(ctx context.Context, recurringTaskID int64, title, description string, orderIndex int) error
+	updateRecurringSubtaskByTitleFunc func(ctx context.Context, recurringTaskID int64, oldTitle, newTitle, description string) error
+	deleteRecurringSubtaskByTitleFunc func(ctx context.Context, recurringTaskID int64, title string) error
+	syncRecurringFromTaskFunc         func(ctx context.Context, userID string, task *TaskResponse) error
+	convertTaskToRecurringFunc        func(ctx context.Context, userID string, taskID int64, pattern string, interval int, endDate *time.Time) (*RecurringTaskResponse, error)
 }
 
 func (m *mockRepository) Create(ctx context.Context, tx *sqlx.Tx, userID string, req CreateTaskRequest) (*TaskResponse, error) {
@@ -283,6 +288,41 @@ func (m *mockRepository) UpdateRecurringLastGenerated(ctx context.Context, tx *s
 		return m.updateRecurringLastGeneratedFunc(ctx, id, t)
 	}
 	return nil
+}
+
+func (m *mockRepository) CreateRecurringSubtask(ctx context.Context, tx *sqlx.Tx, recurringTaskID int64, title, description string, orderIndex int) error {
+	if m.createRecurringSubtaskFunc != nil {
+		return m.createRecurringSubtaskFunc(ctx, recurringTaskID, title, description, orderIndex)
+	}
+	return nil
+}
+
+func (m *mockRepository) UpdateRecurringSubtaskByTitle(ctx context.Context, tx *sqlx.Tx, recurringTaskID int64, oldTitle, newTitle, description string) error {
+	if m.updateRecurringSubtaskByTitleFunc != nil {
+		return m.updateRecurringSubtaskByTitleFunc(ctx, recurringTaskID, oldTitle, newTitle, description)
+	}
+	return nil
+}
+
+func (m *mockRepository) DeleteRecurringSubtaskByTitle(ctx context.Context, tx *sqlx.Tx, recurringTaskID int64, title string) error {
+	if m.deleteRecurringSubtaskByTitleFunc != nil {
+		return m.deleteRecurringSubtaskByTitleFunc(ctx, recurringTaskID, title)
+	}
+	return nil
+}
+
+func (m *mockRepository) SyncRecurringFromTask(ctx context.Context, tx *sqlx.Tx, userID string, task *TaskResponse) error {
+	if m.syncRecurringFromTaskFunc != nil {
+		return m.syncRecurringFromTaskFunc(ctx, userID, task)
+	}
+	return nil
+}
+
+func (m *mockRepository) ConvertTaskToRecurring(ctx context.Context, tx *sqlx.Tx, userID string, taskID int64, pattern string, interval int, endDate *time.Time) (*RecurringTaskResponse, error) {
+	if m.convertTaskToRecurringFunc != nil {
+		return m.convertTaskToRecurringFunc(ctx, userID, taskID, pattern, interval, endDate)
+	}
+	return nil, nil
 }
 
 func TestTaskService_Create(t *testing.T) {
@@ -1233,5 +1273,125 @@ func TestTaskService_LogProgress_Done_CancelsDueAlert(t *testing.T) {
 
 	if !sched.dueCancelled[taskID] {
 		t.Errorf("expected task due alert to be cancelled when task is marked done")
+	}
+}
+
+func TestTaskService_RecurringSubtasksSync(t *testing.T) {
+	ctx := context.Background()
+	testUserID := "user-uuid-123"
+	masterID := int64(10)
+	taskID := int64(100)
+
+	var (
+		createdRecSubtaskTitle string
+		updatedRecSubtaskTitle string
+		deletedRecSubtaskTitle string
+		syncedTask             bool
+	)
+
+	mockRepo := &mockRepository{
+		findByIDFunc: func(ctx context.Context, userID string, id int64) (*TaskResponse, error) {
+			return &TaskResponse{
+				ID:              taskID,
+				UserID:          userID,
+				Title:           "Daily Task",
+				RecurringTaskID: &masterID,
+				IsRecurring:     true,
+				Subtasks: []SubtaskResponse{
+					{
+						ID:     1,
+						TaskID: taskID,
+						Title:  "Old Subtask",
+					},
+				},
+			}, nil
+		},
+		createSubtaskFunc: func(ctx context.Context, userID string, taskID int64, req CreateSubtaskRequest) (*SubtaskResponse, error) {
+			return &SubtaskResponse{
+				ID:         2,
+				TaskID:     taskID,
+				Title:      req.Title,
+				OrderIndex: 1,
+			}, nil
+		},
+		updateSubtaskFunc: func(ctx context.Context, userID string, taskID int64, subtaskID int64, req UpdateSubtaskRequest) (*SubtaskResponse, error) {
+			title := "Updated Subtask"
+			if req.Title != nil {
+				title = *req.Title
+			}
+			return &SubtaskResponse{
+				ID:     subtaskID,
+				TaskID: taskID,
+				Title:  title,
+			}, nil
+		},
+		deleteSubtaskFunc: func(ctx context.Context, userID string, taskID int64, subtaskID int64) error {
+			return nil
+		},
+		updateFunc: func(ctx context.Context, userID string, id int64, req UpdateTaskRequest) (*TaskResponse, error) {
+			return &TaskResponse{
+				ID:              id,
+				UserID:          userID,
+				Title:           "Updated Daily Task",
+				RecurringTaskID: &masterID,
+				IsRecurring:     true,
+			}, nil
+		},
+		createRecurringSubtaskFunc: func(ctx context.Context, recID int64, title, description string, orderIndex int) error {
+			createdRecSubtaskTitle = title
+			return nil
+		},
+		updateRecurringSubtaskByTitleFunc: func(ctx context.Context, recID int64, oldTitle, newTitle, description string) error {
+			updatedRecSubtaskTitle = newTitle
+			return nil
+		},
+		deleteRecurringSubtaskByTitleFunc: func(ctx context.Context, recID int64, title string) error {
+			deletedRecSubtaskTitle = title
+			return nil
+		},
+		syncRecurringFromTaskFunc: func(ctx context.Context, userID string, task *TaskResponse) error {
+			syncedTask = true
+			return nil
+		},
+	}
+
+	svc := NewService(mockRepo, &mockTransactor{})
+
+	// 1. CreateSubtask on recurring task instance
+	_, err := svc.CreateSubtask(ctx, testUserID, taskID, CreateSubtaskRequest{Title: "New Subtask"})
+	if err != nil {
+		t.Fatalf("CreateSubtask failed: %v", err)
+	}
+	if createdRecSubtaskTitle != "New Subtask" {
+		t.Errorf("expected recurring subtask 'New Subtask', got '%s'", createdRecSubtaskTitle)
+	}
+
+	// 2. UpdateSubtask on recurring task instance
+	newTitle := "Renamed Subtask"
+	_, err = svc.UpdateSubtask(ctx, testUserID, taskID, 1, UpdateSubtaskRequest{Title: &newTitle})
+	if err != nil {
+		t.Fatalf("UpdateSubtask failed: %v", err)
+	}
+	if updatedRecSubtaskTitle != "Renamed Subtask" {
+		t.Errorf("expected updated recurring subtask 'Renamed Subtask', got '%s'", updatedRecSubtaskTitle)
+	}
+
+	// 3. DeleteSubtask on recurring task instance
+	err = svc.DeleteSubtask(ctx, testUserID, taskID, 1)
+	if err != nil {
+		t.Fatalf("DeleteSubtask failed: %v", err)
+	}
+	if deletedRecSubtaskTitle != "Old Subtask" {
+		t.Errorf("expected deleted recurring subtask 'Old Subtask', got '%s'", deletedRecSubtaskTitle)
+	}
+
+	// 4. Update on recurring task instance
+	updatedTitle := "Updated Daily Task"
+	_, err = svc.Update(ctx, testUserID, taskID, UpdateTaskRequest{Title: &updatedTitle})
+	if err != nil {
+		t.Fatalf("Update task failed: %v", err)
+	}
+	if !syncedTask {
+		t.Errorf("expected recurring task master to be synced")
 	}
 }
