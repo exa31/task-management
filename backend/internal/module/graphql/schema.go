@@ -245,7 +245,7 @@ func BuildSchema(cfg SchemaConfig) (graphql.Schema, error) {
 					if !ok || userID == "" {
 						return []interface{}{}, nil
 					}
-					return cfg.ProjectRepo.FindAll(context.Background(), userID)
+					return cfg.ProjectRepo.FindAll(p.Context, nil, userID)
 				},
 			},
 			"tasks": &graphql.Field{
@@ -451,7 +451,23 @@ func BuildSchema(cfg SchemaConfig) (graphql.Schema, error) {
 					name := p.Args["name"].(string)
 					color, _ := p.Args["color"].(string)
 					desc, _ := p.Args["description"].(string)
-					return cfg.ProjectRepo.Create(context.Background(), userID, &project.CreateProjectRequest{
+					if cfg.DB != nil {
+						var created *project.ProjectResponse
+						err := cfg.DB.WithTransactionCtx(p.Context, func(tx *sqlx.Tx) error {
+							var err error
+							created, err = cfg.ProjectRepo.Create(p.Context, tx, userID, &project.CreateProjectRequest{
+								Name:        name,
+								Color:       color,
+								Description: desc,
+							})
+							return err
+						})
+						if err != nil {
+							return nil, err
+						}
+						return created, nil
+					}
+					return cfg.ProjectRepo.Create(p.Context, nil, userID, &project.CreateProjectRequest{
 						Name:        name,
 						Color:       color,
 						Description: desc,
@@ -482,8 +498,9 @@ func BuildSchema(cfg SchemaConfig) (graphql.Schema, error) {
 					var created *task.TaskResponse
 					if cfg.DB != nil {
 						err := cfg.DB.WithTransactionCtx(p.Context, func(tx *sqlx.Tx) error {
+							txCtx := database.ContextWithTx(p.Context, tx)
 							var err error
-							created, err = cfg.TaskRepo.Create(p.Context, tx, userID, task.CreateTaskRequest{
+							created, err = cfg.TaskRepo.Create(txCtx, tx, userID, task.CreateTaskRequest{
 								Title:       title,
 								Description: desc,
 								Priority:    priority,
@@ -516,7 +533,7 @@ func BuildSchema(cfg SchemaConfig) (graphql.Schema, error) {
 					if nType == "" {
 						nType = "actionable"
 					}
-					return cfg.NoteRepo.Create(context.Background(), userID, note.CreateNoteRequest{
+					return cfg.NoteRepo.Create(p.Context, userID, note.CreateNoteRequest{
 						Title:   title,
 						Content: content,
 						Type:    nType,

@@ -6,15 +6,17 @@ import (
 	"errors"
 	"fmt"
 
+	"golang/database"
+
 	"github.com/jmoiron/sqlx"
 )
 
 type Repository interface {
-	Create(ctx context.Context, userID string, req *CreateProjectRequest) (*ProjectResponse, error)
-	FindAll(ctx context.Context, userID string) ([]ProjectResponse, error)
-	FindByID(ctx context.Context, userID string, id int64) (*ProjectResponse, error)
-	Update(ctx context.Context, userID string, id int64, req *UpdateProjectRequest) (*ProjectResponse, error)
-	Delete(ctx context.Context, userID string, id int64) error
+	Create(ctx context.Context, tx *sqlx.Tx, userID string, req *CreateProjectRequest) (*ProjectResponse, error)
+	FindAll(ctx context.Context, tx *sqlx.Tx, userID string) ([]ProjectResponse, error)
+	FindByID(ctx context.Context, tx *sqlx.Tx, userID string, id int64) (*ProjectResponse, error)
+	Update(ctx context.Context, tx *sqlx.Tx, userID string, id int64, req *UpdateProjectRequest) (*ProjectResponse, error)
+	Delete(ctx context.Context, tx *sqlx.Tx, userID string, id int64) error
 }
 
 type repository struct {
@@ -25,7 +27,14 @@ func NewRepository(db *sqlx.DB) Repository {
 	return &repository{db: db}
 }
 
-func (r *repository) Create(ctx context.Context, userID string, req *CreateProjectRequest) (*ProjectResponse, error) {
+func (r *repository) exec(tx *sqlx.Tx) database.QueryExecutor {
+	if tx != nil {
+		return tx
+	}
+	return r.db
+}
+
+func (r *repository) Create(ctx context.Context, tx *sqlx.Tx, userID string, req *CreateProjectRequest) (*ProjectResponse, error) {
 	color := req.Color
 	if color == "" {
 		color = "indigo"
@@ -36,14 +45,14 @@ func (r *repository) Create(ctx context.Context, userID string, req *CreateProje
 		RETURNING id, user_id, name, color, description, 0 as task_count, created_at, updated_at
 	`
 	var res ProjectResponse
-	err := r.db.QueryRowxContext(ctx, query, userID, req.Name, color, req.Description).StructScan(&res)
+	err := r.exec(tx).QueryRowxContext(ctx, query, userID, req.Name, color, req.Description).StructScan(&res)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create project: %w", err)
 	}
 	return &res, nil
 }
 
-func (r *repository) FindAll(ctx context.Context, userID string) ([]ProjectResponse, error) {
+func (r *repository) FindAll(ctx context.Context, tx *sqlx.Tx, userID string) ([]ProjectResponse, error) {
 	query := `
 		SELECT 
 			p.id, p.user_id, p.name, p.color, p.description, p.created_at, p.updated_at,
@@ -55,7 +64,7 @@ func (r *repository) FindAll(ctx context.Context, userID string) ([]ProjectRespo
 		ORDER BY p.name ASC
 	`
 	var items []ProjectResponse
-	err := r.db.SelectContext(ctx, &items, query, userID)
+	err := r.exec(tx).SelectContext(ctx, &items, query, userID)
 	if err != nil {
 		return nil, fmt.Errorf("failed to list projects: %w", err)
 	}
@@ -65,7 +74,7 @@ func (r *repository) FindAll(ctx context.Context, userID string) ([]ProjectRespo
 	return items, nil
 }
 
-func (r *repository) FindByID(ctx context.Context, userID string, id int64) (*ProjectResponse, error) {
+func (r *repository) FindByID(ctx context.Context, tx *sqlx.Tx, userID string, id int64) (*ProjectResponse, error) {
 	query := `
 		SELECT 
 			p.id, p.user_id, p.name, p.color, p.description, p.created_at, p.updated_at,
@@ -76,7 +85,7 @@ func (r *repository) FindByID(ctx context.Context, userID string, id int64) (*Pr
 		GROUP BY p.id
 	`
 	var res ProjectResponse
-	err := r.db.GetContext(ctx, &res, query, id, userID)
+	err := r.exec(tx).GetContext(ctx, &res, query, id, userID)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return nil, nil
@@ -86,7 +95,7 @@ func (r *repository) FindByID(ctx context.Context, userID string, id int64) (*Pr
 	return &res, nil
 }
 
-func (r *repository) Update(ctx context.Context, userID string, id int64, req *UpdateProjectRequest) (*ProjectResponse, error) {
+func (r *repository) Update(ctx context.Context, tx *sqlx.Tx, userID string, id int64, req *UpdateProjectRequest) (*ProjectResponse, error) {
 	query := "UPDATE projects SET updated_at = NOW()"
 	args := []interface{}{id, userID}
 
@@ -106,19 +115,19 @@ func (r *repository) Update(ctx context.Context, userID string, id int64, req *U
 	query += " WHERE id = $1 AND user_id = $2 RETURNING id, user_id, name, color, description, 0 as task_count, created_at, updated_at"
 
 	var res ProjectResponse
-	err := r.db.QueryRowxContext(ctx, query, args...).StructScan(&res)
+	err := r.exec(tx).QueryRowxContext(ctx, query, args...).StructScan(&res)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return nil, nil
 		}
 		return nil, fmt.Errorf("failed to update project: %w", err)
 	}
-	return r.FindByID(ctx, userID, id)
+	return r.FindByID(ctx, tx, userID, id)
 }
 
-func (r *repository) Delete(ctx context.Context, userID string, id int64) error {
+func (r *repository) Delete(ctx context.Context, tx *sqlx.Tx, userID string, id int64) error {
 	query := `DELETE FROM projects WHERE id = $1 AND user_id = $2`
-	result, err := r.db.ExecContext(ctx, query, id, userID)
+	result, err := r.exec(tx).ExecContext(ctx, query, id, userID)
 	if err != nil {
 		return err
 	}

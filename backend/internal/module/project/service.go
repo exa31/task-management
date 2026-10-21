@@ -5,7 +5,10 @@ import (
 	"database/sql"
 	"errors"
 
+	"golang/database"
 	customErrors "golang/pkg/errors"
+
+	"github.com/jmoiron/sqlx"
 )
 
 type Service interface {
@@ -18,22 +21,55 @@ type Service interface {
 
 type service struct {
 	repo Repository
+	db   database.Transactor
 }
 
-func NewService(repo Repository) Service {
-	return &service{repo: repo}
+func NewService(repo Repository, db ...database.Transactor) Service {
+	var transactor database.Transactor
+	if len(db) > 0 {
+		transactor = db[0]
+	}
+	return &service{repo: repo, db: transactor}
 }
 
 func (s *service) Create(ctx context.Context, userID string, req *CreateProjectRequest) (*ProjectResponse, error) {
-	return s.repo.Create(ctx, userID, req)
+	if s.db != nil {
+		var res *ProjectResponse
+		err := s.db.WithTransactionCtx(ctx, func(tx *sqlx.Tx) error {
+			var err error
+			res, err = s.repo.Create(ctx, tx, userID, req)
+			return err
+		})
+		return res, err
+	}
+	return s.repo.Create(ctx, nil, userID, req)
 }
 
 func (s *service) List(ctx context.Context, userID string) ([]ProjectResponse, error) {
-	return s.repo.FindAll(ctx, userID)
+	if s.db != nil {
+		var res []ProjectResponse
+		err := s.db.WithReadOnlyTransactionCtx(ctx, func(tx *sqlx.Tx) error {
+			var err error
+			res, err = s.repo.FindAll(ctx, tx, userID)
+			return err
+		})
+		return res, err
+	}
+	return s.repo.FindAll(ctx, nil, userID)
 }
 
 func (s *service) GetByID(ctx context.Context, userID string, id int64) (*ProjectResponse, error) {
-	p, err := s.repo.FindByID(ctx, userID, id)
+	var p *ProjectResponse
+	var err error
+	if s.db != nil {
+		err = s.db.WithReadOnlyTransactionCtx(ctx, func(tx *sqlx.Tx) error {
+			var err2 error
+			p, err2 = s.repo.FindByID(ctx, tx, userID, id)
+			return err2
+		})
+	} else {
+		p, err = s.repo.FindByID(ctx, nil, userID, id)
+	}
 	if err != nil {
 		return nil, err
 	}
@@ -44,7 +80,17 @@ func (s *service) GetByID(ctx context.Context, userID string, id int64) (*Projec
 }
 
 func (s *service) Update(ctx context.Context, userID string, id int64, req *UpdateProjectRequest) (*ProjectResponse, error) {
-	p, err := s.repo.Update(ctx, userID, id, req)
+	var p *ProjectResponse
+	var err error
+	if s.db != nil {
+		err = s.db.WithTransactionCtx(ctx, func(tx *sqlx.Tx) error {
+			var err2 error
+			p, err2 = s.repo.Update(ctx, tx, userID, id, req)
+			return err2
+		})
+	} else {
+		p, err = s.repo.Update(ctx, nil, userID, id, req)
+	}
 	if err != nil {
 		return nil, err
 	}
@@ -55,7 +101,14 @@ func (s *service) Update(ctx context.Context, userID string, id int64, req *Upda
 }
 
 func (s *service) Delete(ctx context.Context, userID string, id int64) error {
-	err := s.repo.Delete(ctx, userID, id)
+	var err error
+	if s.db != nil {
+		err = s.db.WithTransactionCtx(ctx, func(tx *sqlx.Tx) error {
+			return s.repo.Delete(ctx, tx, userID, id)
+		})
+	} else {
+		err = s.repo.Delete(ctx, nil, userID, id)
+	}
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return customErrors.ProjectNotFound()

@@ -106,6 +106,7 @@ func (s *service) SetNotificationDependencies(
 func (s *service) Create(ctx context.Context, userID string, req CreateTaskRequest) (*TaskResponse, error) {
 	var res *TaskResponse
 	err := s.db.WithTransactionCtx(ctx, func(tx *sqlx.Tx) error {
+		ctx := database.ContextWithTx(ctx, tx)
 
 		thresholdMinutes, userTimezone, tzErr := s.repo.GetUserThresholdAndTimezone(ctx, tx, userID)
 		if tzErr != nil && s.logger != nil {
@@ -194,6 +195,7 @@ func (s *service) Create(ctx context.Context, userID string, req CreateTaskReque
 func (s *service) GetByID(ctx context.Context, userID string, id int64) (*TaskResponse, error) {
 	var entity *TaskResponse
 	err := s.db.WithReadOnlyTransactionCtx(ctx, func(tx *sqlx.Tx) error {
+		ctx := database.ContextWithTx(ctx, tx)
 		var err error
 		entity, err = s.repo.FindByID(ctx, tx, userID, id)
 		if err != nil {
@@ -213,6 +215,7 @@ func (s *service) GetByID(ctx context.Context, userID string, id int64) (*TaskRe
 func (s *service) FindAll(ctx context.Context, userID string, filter TaskFilter) ([]TaskResponse, error) {
 	var res []TaskResponse
 	err := s.db.WithReadOnlyTransactionCtx(ctx, func(tx *sqlx.Tx) error {
+		ctx := database.ContextWithTx(ctx, tx)
 		var err error
 		res, err = s.repo.FindAll(ctx, tx, userID, filter)
 		return err
@@ -227,6 +230,7 @@ func (s *service) Update(ctx context.Context, userID string, id int64, req Updat
 	var dueRemoved bool
 	var urgentChanged bool
 	err := s.db.WithTransactionCtx(ctx, func(tx *sqlx.Tx) error {
+		ctx := database.ContextWithTx(ctx, tx)
 		entity, err := s.repo.FindByID(ctx, tx, userID, id)
 		if err != nil {
 			return err
@@ -395,6 +399,7 @@ func (s *service) Update(ctx context.Context, userID string, id int64, req Updat
 func (s *service) Delete(ctx context.Context, userID string, id int64) error {
 	var deletedEntity *TaskResponse
 	err := s.db.WithTransactionCtx(ctx, func(tx *sqlx.Tx) error {
+		ctx := database.ContextWithTx(ctx, tx)
 		entity, err := s.repo.FindByID(ctx, tx, userID, id)
 		if err != nil {
 			return err
@@ -454,6 +459,7 @@ func (s *service) Delete(ctx context.Context, userID string, id int64) error {
 func (s *service) LogProgress(ctx context.Context, userID string, id int64, req LogProgressRequest) (*TaskResponse, error) {
 	var res *TaskResponse
 	err := s.db.WithTransactionCtx(ctx, func(tx *sqlx.Tx) error {
+		ctx := database.ContextWithTx(ctx, tx)
 		entity, err := s.repo.FindByID(ctx, tx, userID, id)
 		if err != nil {
 			return err
@@ -506,6 +512,7 @@ func (s *service) LogProgress(ctx context.Context, userID string, id int64, req 
 func (s *service) ToggleFocus(ctx context.Context, userID string, id int64) (*TaskResponse, error) {
 	var res *TaskResponse
 	err := s.db.WithTransactionCtx(ctx, func(tx *sqlx.Tx) error {
+		ctx := database.ContextWithTx(ctx, tx)
 		entity, err := s.repo.FindByID(ctx, tx, userID, id)
 		if err != nil {
 			return err
@@ -535,6 +542,7 @@ func (s *service) ToggleFocus(ctx context.Context, userID string, id int64) (*Ta
 func (s *service) CreateSubtask(ctx context.Context, userID string, taskID int64, req CreateSubtaskRequest) (*SubtaskResponse, error) {
 	var res *SubtaskResponse
 	err := s.db.WithTransactionCtx(ctx, func(tx *sqlx.Tx) error {
+		ctx := database.ContextWithTx(ctx, tx)
 		entity, err := s.repo.FindByID(ctx, tx, userID, taskID)
 		if err != nil {
 			return err
@@ -606,6 +614,7 @@ func (s *service) updateTaskStatusTx(ctx context.Context, tx *sqlx.Tx, userID st
 func (s *service) UpdateSubtask(ctx context.Context, userID string, taskID int64, subtaskID int64, req UpdateSubtaskRequest) (*SubtaskResponse, error) {
 	var res *SubtaskResponse
 	err := s.db.WithTransactionCtx(ctx, func(tx *sqlx.Tx) error {
+		ctx := database.ContextWithTx(ctx, tx)
 		entity, err := s.repo.FindByID(ctx, tx, userID, taskID)
 		if err != nil {
 			return err
@@ -688,6 +697,7 @@ func (s *service) UpdateSubtask(ctx context.Context, userID string, taskID int64
 
 func (s *service) DeleteSubtask(ctx context.Context, userID string, taskID int64, subtaskID int64) error {
 	err := s.db.WithTransactionCtx(ctx, func(tx *sqlx.Tx) error {
+		ctx := database.ContextWithTx(ctx, tx)
 		entity, err := s.repo.FindByID(ctx, tx, userID, taskID)
 		if err != nil {
 			return err
@@ -742,6 +752,7 @@ func (s *service) DeleteSubtask(ctx context.Context, userID string, taskID int64
 func (s *service) GetActivities(ctx context.Context, userID string, taskID int64) ([]TaskActivityResponse, error) {
 	var res []TaskActivityResponse
 	err := s.db.WithReadOnlyTransactionCtx(ctx, func(tx *sqlx.Tx) error {
+		ctx := database.ContextWithTx(ctx, tx)
 		entity, err := s.repo.FindByID(ctx, tx, userID, taskID)
 		if err != nil {
 			return err
@@ -758,6 +769,7 @@ func (s *service) GetActivities(ctx context.Context, userID string, taskID int64
 func (s *service) CreateActivity(ctx context.Context, userID string, taskID int64, req CreateTaskActivityRequest) (*TaskActivityResponse, error) {
 	var res *TaskActivityResponse
 	err := s.db.WithTransactionCtx(ctx, func(tx *sqlx.Tx) error {
+		ctx := database.ContextWithTx(ctx, tx)
 		entity, err := s.repo.FindByID(ctx, tx, userID, taskID)
 		if err != nil {
 			return err
@@ -823,6 +835,7 @@ func (s *service) ProcessDueWarning(ctx context.Context, taskID int64) error {
 		emailEnabled bool
 	)
 	err := s.db.WithReadOnlyTransactionCtx(ctx, func(tx *sqlx.Tx) error {
+		ctx := database.ContextWithTx(ctx, tx)
 		var err error
 		task, userEmail, userTimezone, _, emailEnabled, err = s.repo.FindByIDSystem(ctx, tx, taskID)
 		return err
@@ -913,6 +926,7 @@ func (s *service) ProcessDueWarning(ctx context.Context, taskID int64) error {
 
 		// 4. Mark status as warning sent in transaction
 	err = s.db.WithTransactionCtx(ctx, func(tx *sqlx.Tx) error {
+		ctx := database.ContextWithTx(ctx, tx)
 		return s.repo.MarkDueWarningSent(ctx, tx, taskID)
 	})
 	if err != nil {
@@ -931,6 +945,7 @@ func (s *service) ProcessDueWarning(ctx context.Context, taskID int64) error {
 func (s *service) GetWidgetBundle(ctx context.Context, userID string) (*WidgetBundleResponse, error) {
 	var bundle *WidgetBundleResponse
 	err := s.db.WithReadOnlyTransactionCtx(ctx, func(tx *sqlx.Tx) error {
+		ctx := database.ContextWithTx(ctx, tx)
 		var err error
 		bundle, err = s.repo.GetWidgetBundle(ctx, tx, userID)
 		return err
@@ -941,6 +956,7 @@ func (s *service) GetWidgetBundle(ctx context.Context, userID string) (*WidgetBu
 func (s *service) GetWorkspaceStats(ctx context.Context, userID string) (*WorkspaceStatsResponse, error) {
 	var stats *WorkspaceStatsResponse
 	err := s.db.WithReadOnlyTransactionCtx(ctx, func(tx *sqlx.Tx) error {
+		ctx := database.ContextWithTx(ctx, tx)
 		var err error
 		stats, err = s.repo.GetWorkspaceStats(ctx, tx, userID)
 		return err
@@ -954,6 +970,7 @@ func (s *service) ProcessTaskRecurrence(ctx context.Context, targetID int64) err
 		userTimezone string
 	)
 	err := s.db.WithReadOnlyTransactionCtx(ctx, func(tx *sqlx.Tx) error {
+		ctx := database.ContextWithTx(ctx, tx)
 		var err error
 		master, userTimezone, err = s.repo.FindRecurringByIDSystem(ctx, tx, targetID)
 		if err != nil {
@@ -995,6 +1012,7 @@ func (s *service) ProcessTaskRecurrence(ctx context.Context, targetID int64) err
 			s.logger.Info("recurring task has reached end date, deactivating", "recurring_id", targetID)
 		}
 		_ = s.db.WithTransactionCtx(ctx, func(tx *sqlx.Tx) error {
+			ctx := database.ContextWithTx(ctx, tx)
 			_, err := s.repo.ToggleActiveRecurring(ctx, tx, master.UserID, master.ID)
 			return err
 		})
@@ -1021,6 +1039,7 @@ func (s *service) ProcessTaskRecurrence(ctx context.Context, targetID int64) err
 	// 1. Idempotency Check: if today's instance already exists, skip creation
 	var existing *TaskResponse
 	err = s.db.WithReadOnlyTransactionCtx(ctx, func(tx *sqlx.Tx) error {
+		ctx := database.ContextWithTx(ctx, tx)
 		var err error
 		existing, err = s.repo.FindTodayInstance(ctx, tx, master.ID, todayDueDate)
 		return err
@@ -1042,6 +1061,7 @@ func (s *service) ProcessTaskRecurrence(ctx context.Context, targetID int64) err
 	// 2. Create today's instance in transaction
 	var created *TaskResponse
 	err = s.db.WithTransactionCtx(ctx, func(tx *sqlx.Tx) error {
+		ctx := database.ContextWithTx(ctx, tx)
 		var createErr error
 		created, createErr = s.repo.CreateInstanceFromRecurring(ctx, tx, master, todayDueDate)
 		if createErr != nil {
@@ -1100,6 +1120,7 @@ func (s *service) ProcessTaskRecurrence(ctx context.Context, targetID int64) err
 func (s *service) CreateRecurringTask(ctx context.Context, userID string, req CreateRecurringTaskRequest) (*RecurringTaskResponse, error) {
 	var res *RecurringTaskResponse
 	err := s.db.WithTransactionCtx(ctx, func(tx *sqlx.Tx) error {
+		ctx := database.ContextWithTx(ctx, tx)
 		var err error
 		res, err = s.repo.CreateRecurring(ctx, tx, userID, req)
 		if err != nil {
@@ -1163,6 +1184,7 @@ func (s *service) CreateRecurringTask(ctx context.Context, userID string, req Cr
 func (s *service) FindAllRecurringTasks(ctx context.Context, userID string) ([]RecurringTaskResponse, error) {
 	var list []RecurringTaskResponse
 	err := s.db.WithReadOnlyTransactionCtx(ctx, func(tx *sqlx.Tx) error {
+		ctx := database.ContextWithTx(ctx, tx)
 		var err error
 		list, err = s.repo.FindAllRecurring(ctx, tx, userID)
 		return err
@@ -1173,6 +1195,7 @@ func (s *service) FindAllRecurringTasks(ctx context.Context, userID string) ([]R
 func (s *service) GetRecurringTaskByID(ctx context.Context, userID string, id int64) (*RecurringTaskResponse, error) {
 	var res *RecurringTaskResponse
 	err := s.db.WithReadOnlyTransactionCtx(ctx, func(tx *sqlx.Tx) error {
+		ctx := database.ContextWithTx(ctx, tx)
 		var err error
 		res, err = s.repo.FindRecurringByID(ctx, tx, userID, id)
 		if err != nil {
@@ -1189,6 +1212,7 @@ func (s *service) GetRecurringTaskByID(ctx context.Context, userID string, id in
 func (s *service) UpdateRecurringTask(ctx context.Context, userID string, id int64, req UpdateRecurringTaskRequest) (*RecurringTaskResponse, error) {
 	var res *RecurringTaskResponse
 	err := s.db.WithTransactionCtx(ctx, func(tx *sqlx.Tx) error {
+		ctx := database.ContextWithTx(ctx, tx)
 		var err error
 		res, err = s.repo.UpdateRecurring(ctx, tx, userID, id, req)
 		if err != nil {
@@ -1210,6 +1234,7 @@ func (s *service) UpdateRecurringTask(ctx context.Context, userID string, id int
 
 func (s *service) DeleteRecurringTask(ctx context.Context, userID string, id int64) error {
 	return s.db.WithTransactionCtx(ctx, func(tx *sqlx.Tx) error {
+		ctx := database.ContextWithTx(ctx, tx)
 		if err := s.repo.DeleteRecurring(ctx, tx, userID, id); err != nil {
 			return err
 		}
@@ -1223,6 +1248,7 @@ func (s *service) DeleteRecurringTask(ctx context.Context, userID string, id int
 func (s *service) ToggleActiveRecurringTask(ctx context.Context, userID string, id int64) (*RecurringTaskResponse, error) {
 	var res *RecurringTaskResponse
 	err := s.db.WithTransactionCtx(ctx, func(tx *sqlx.Tx) error {
+		ctx := database.ContextWithTx(ctx, tx)
 		var err error
 		res, err = s.repo.ToggleActiveRecurring(ctx, tx, userID, id)
 		if err != nil {

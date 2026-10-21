@@ -197,7 +197,7 @@ func (r *Router) registerNotesAndTasks(api fiber.Router) {
 
 	// Projects routes (Per-user isolated)
 	projectRepo := project.NewRepository(db)
-	projectService := project.NewService(projectRepo)
+	projectService := project.NewService(projectRepo, r.DB)
 	projectHandler := project.NewHandler(projectService)
 	mcpService.SetProjectService(projectService)
 

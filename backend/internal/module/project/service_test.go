@@ -5,6 +5,8 @@ import (
 	"database/sql"
 	"testing"
 	"time"
+
+	"github.com/jmoiron/sqlx"
 )
 
 type mockRepository struct {
@@ -19,7 +21,7 @@ func newMockRepository() *mockRepository {
 	}
 }
 
-func (m *mockRepository) Create(ctx context.Context, userID string, req *CreateProjectRequest) (*ProjectResponse, error) {
+func (m *mockRepository) Create(ctx context.Context, tx *sqlx.Tx, userID string, req *CreateProjectRequest) (*ProjectResponse, error) {
 	id := m.nextID
 	m.nextID++
 	color := req.Color
@@ -39,7 +41,7 @@ func (m *mockRepository) Create(ctx context.Context, userID string, req *CreateP
 	return p, nil
 }
 
-func (m *mockRepository) FindAll(ctx context.Context, userID string) ([]ProjectResponse, error) {
+func (m *mockRepository) FindAll(ctx context.Context, tx *sqlx.Tx, userID string) ([]ProjectResponse, error) {
 	var list []ProjectResponse
 	for _, p := range m.projects {
 		if p.UserID == userID {
@@ -49,7 +51,7 @@ func (m *mockRepository) FindAll(ctx context.Context, userID string) ([]ProjectR
 	return list, nil
 }
 
-func (m *mockRepository) FindByID(ctx context.Context, userID string, id int64) (*ProjectResponse, error) {
+func (m *mockRepository) FindByID(ctx context.Context, tx *sqlx.Tx, userID string, id int64) (*ProjectResponse, error) {
 	p, ok := m.projects[id]
 	if !ok || p.UserID != userID {
 		return nil, nil
@@ -57,7 +59,7 @@ func (m *mockRepository) FindByID(ctx context.Context, userID string, id int64) 
 	return p, nil
 }
 
-func (m *mockRepository) Update(ctx context.Context, userID string, id int64, req *UpdateProjectRequest) (*ProjectResponse, error) {
+func (m *mockRepository) Update(ctx context.Context, tx *sqlx.Tx, userID string, id int64, req *UpdateProjectRequest) (*ProjectResponse, error) {
 	p, ok := m.projects[id]
 	if !ok || p.UserID != userID {
 		return nil, nil
@@ -75,7 +77,7 @@ func (m *mockRepository) Update(ctx context.Context, userID string, id int64, re
 	return p, nil
 }
 
-func (m *mockRepository) Delete(ctx context.Context, userID string, id int64) error {
+func (m *mockRepository) Delete(ctx context.Context, tx *sqlx.Tx, userID string, id int64) error {
 	p, ok := m.projects[id]
 	if !ok || p.UserID != userID {
 		return sql.ErrNoRows
