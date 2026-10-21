@@ -1,7 +1,6 @@
 package graphqlmodule
 
 import (
-	"context"
 	"fmt"
 	"time"
 
@@ -245,7 +244,18 @@ func BuildSchema(cfg SchemaConfig) (graphql.Schema, error) {
 					if !ok || userID == "" {
 						return []interface{}{}, nil
 					}
-					return cfg.ProjectRepo.FindAll(p.Context, nil, userID)
+					var items []project.ProjectResponse
+					if cfg.DB != nil {
+						err := cfg.DB.WithReadOnlyTransactionCtx(p.Context, func(tx *sqlx.Tx) error {
+							var err error
+							items, err = cfg.ProjectRepo.FindAll(p.Context, tx, userID)
+							return err
+						})
+						if err != nil {
+							return nil, err
+						}
+					}
+					return items, nil
 				},
 			},
 			"tasks": &graphql.Field{
@@ -307,7 +317,7 @@ func BuildSchema(cfg SchemaConfig) (graphql.Schema, error) {
 					if status, ok := p.Args["status"].(string); ok && status != "" {
 						filter.Status = status
 					}
-					items, _, err := cfg.ReminderRepo.FindAll(context.Background(), userID, filter)
+					items, _, err := cfg.ReminderRepo.FindAll(p.Context, userID, filter)
 					if err != nil {
 						return []interface{}{}, nil
 					}
@@ -426,7 +436,7 @@ func BuildSchema(cfg SchemaConfig) (graphql.Schema, error) {
 					if nType, ok := p.Args["type"].(string); ok {
 						filter.Type = nType
 					}
-					return cfg.NoteRepo.FindAll(context.Background(), userID, filter)
+					return cfg.NoteRepo.FindAll(p.Context, userID, filter)
 				},
 			},
 		},
@@ -451,8 +461,8 @@ func BuildSchema(cfg SchemaConfig) (graphql.Schema, error) {
 					name := p.Args["name"].(string)
 					color, _ := p.Args["color"].(string)
 					desc, _ := p.Args["description"].(string)
+					var created *project.ProjectResponse
 					if cfg.DB != nil {
-						var created *project.ProjectResponse
 						err := cfg.DB.WithTransactionCtx(p.Context, func(tx *sqlx.Tx) error {
 							var err error
 							created, err = cfg.ProjectRepo.Create(p.Context, tx, userID, &project.CreateProjectRequest{
@@ -467,11 +477,7 @@ func BuildSchema(cfg SchemaConfig) (graphql.Schema, error) {
 						}
 						return created, nil
 					}
-					return cfg.ProjectRepo.Create(p.Context, nil, userID, &project.CreateProjectRequest{
-						Name:        name,
-						Color:       color,
-						Description: desc,
-					})
+					return nil, fmt.Errorf("database transaction is not configured")
 				},
 			},
 			"createTask": &graphql.Field{

@@ -17,6 +17,27 @@ import (
 
 type dummyUserRepo struct{ usermodule.UserRepository }
 type dummyProjectRepo struct{ projectmodule.Repository }
+
+func (d *dummyProjectRepo) FindAll(ctx context.Context, tx *sqlx.Tx, userID string) ([]projectmodule.ProjectResponse, error) {
+	return []projectmodule.ProjectResponse{
+		{
+			ID:     10,
+			UserID: userID,
+			Name:   "Project Alpha",
+			Color:  "#3B82F6",
+		},
+	}, nil
+}
+
+func (d *dummyProjectRepo) Create(ctx context.Context, tx *sqlx.Tx, userID string, req *projectmodule.CreateProjectRequest) (*projectmodule.ProjectResponse, error) {
+	return &projectmodule.ProjectResponse{
+		ID:          11,
+		UserID:      userID,
+		Name:        req.Name,
+		Color:       req.Color,
+		Description: req.Description,
+	}, nil
+}
 type dummyNoteRepo struct{ notemodule.Repository }
 
 type mockTransactor struct{}
@@ -171,3 +192,107 @@ func TestBuildSchema_CalendarQuery(t *testing.T) {
 		t.Fatalf("expected 1 activity, got %v", activities)
 	}
 }
+
+func TestBuildSchema_ProjectsQuery(t *testing.T) {
+	cfg := SchemaConfig{
+		UserRepo:     &dummyUserRepo{},
+		ProjectRepo:  &dummyProjectRepo{},
+		TaskRepo:     &dummyTaskRepo{},
+		NoteRepo:     &dummyNoteRepo{},
+		ReminderRepo: &dummyReminderRepo{},
+		DB:           &mockTransactor{},
+	}
+
+	schema, err := BuildSchema(cfg)
+	if err != nil {
+		t.Fatalf("BuildSchema failed: %v", err)
+	}
+
+	query := `
+		query GetProjects {
+			projects {
+				id
+				name
+				color
+			}
+		}
+	`
+
+	ctx := context.WithValue(context.Background(), "user_id", "user-uuid-project")
+	params := graphql.Params{
+		Schema:        schema,
+		RequestString: query,
+		Context:       ctx,
+	}
+
+	result := graphql.Do(params)
+	if len(result.Errors) > 0 {
+		t.Fatalf("graphql.Do returned errors: %v", result.Errors)
+	}
+
+	data, ok := result.Data.(map[string]interface{})
+	if !ok {
+		t.Fatalf("invalid data format: %v", result.Data)
+	}
+
+	projects, ok := data["projects"].([]interface{})
+	if !ok || len(projects) != 1 {
+		t.Fatalf("expected 1 project, got %v", projects)
+	}
+
+	firstProject := projects[0].(map[string]interface{})
+	if firstProject["name"] != "Project Alpha" {
+		t.Fatalf("expected project name 'Project Alpha', got %v", firstProject["name"])
+	}
+}
+
+func TestBuildSchema_CreateProjectMutation(t *testing.T) {
+	cfg := SchemaConfig{
+		UserRepo:     &dummyUserRepo{},
+		ProjectRepo:  &dummyProjectRepo{},
+		TaskRepo:     &dummyTaskRepo{},
+		NoteRepo:     &dummyNoteRepo{},
+		ReminderRepo: &dummyReminderRepo{},
+		DB:           &mockTransactor{},
+	}
+
+	schema, err := BuildSchema(cfg)
+	if err != nil {
+		t.Fatalf("BuildSchema failed: %v", err)
+	}
+
+	query := `
+		mutation CreateProject($name: String!, $color: String, $description: String) {
+			createProject(name: $name, color: $color, description: $description) {
+				id
+				name
+				color
+				description
+			}
+		}
+	`
+
+	ctx := context.WithValue(context.Background(), "user_id", "user-uuid-project")
+	params := graphql.Params{
+		Schema:         schema,
+		RequestString:  query,
+		VariableValues: map[string]interface{}{"name": "New Project", "color": "#10B981", "description": "Test Desc"},
+		Context:        ctx,
+	}
+
+	result := graphql.Do(params)
+	if len(result.Errors) > 0 {
+		t.Fatalf("graphql.Do returned errors: %v", result.Errors)
+	}
+
+	data, ok := result.Data.(map[string]interface{})
+	if !ok {
+		t.Fatalf("invalid data format: %v", result.Data)
+	}
+
+	created, ok := data["createProject"].(map[string]interface{})
+	if !ok || created["name"] != "New Project" {
+		t.Fatalf("expected created project name 'New Project', got %v", data["createProject"])
+	}
+}
+
