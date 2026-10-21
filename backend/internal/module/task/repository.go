@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"strings"
 	"time"
 
 
@@ -253,20 +254,44 @@ func (r *repository) Create(ctx context.Context, tx *sqlx.Tx, userID string, req
 		return nil, fmt.Errorf("failed to create task: %w", err)
 	}
 
-	for i, stTitle := range req.Subtasks {
-		if stTitle == "" {
-			continue
+	if len(req.Subtasks) > 0 {
+		var validTitles []string
+		for _, stTitle := range req.Subtasks {
+			if strings.TrimSpace(stTitle) != "" {
+				validTitles = append(validTitles, stTitle)
+			}
 		}
-		subQuery := `
-			INSERT INTO subtasks (task_id, title, description, is_completed, order_index, created_at, updated_at)
-			VALUES ($1, $2, '', FALSE, $3, NOW(), NOW())
-			RETURNING id, task_id, title, COALESCE(description, '') AS description, is_completed, order_index, due_date, created_at, updated_at
-		`
-		var st SubtaskResponse
-		if err := tx.QueryRowxContext(ctx, subQuery, entity.ID, stTitle, i).StructScan(&st); err != nil {
-			return nil, fmt.Errorf("failed to create subtask: %w", err)
+		if len(validTitles) > 0 {
+			var valueStrings []string
+			var valueArgs []interface{}
+			argIdx := 1
+			for i, stTitle := range validTitles {
+				valueStrings = append(valueStrings, fmt.Sprintf("($%d, $%d, '', FALSE, $%d, NOW(), NOW())", argIdx, argIdx+1, argIdx+2))
+				valueArgs = append(valueArgs, entity.ID, stTitle, i)
+				argIdx += 3
+			}
+			batchQuery := fmt.Sprintf(`
+				INSERT INTO subtasks (task_id, title, description, is_completed, order_index, created_at, updated_at)
+				VALUES %s
+				RETURNING id, task_id, title, COALESCE(description, '') AS description, is_completed, order_index, due_date, created_at, updated_at
+			`, strings.Join(valueStrings, ", "))
+
+			rows, err := tx.QueryxContext(ctx, batchQuery, valueArgs...)
+			if err != nil {
+				return nil, fmt.Errorf("failed to batch create subtasks: %w", err)
+			}
+			defer rows.Close()
+			for rows.Next() {
+				var st SubtaskResponse
+				if err := rows.StructScan(&st); err != nil {
+					return nil, fmt.Errorf("failed to scan created subtask: %w", err)
+				}
+				subtasks = append(subtasks, st)
+			}
+			if err := rows.Err(); err != nil {
+				return nil, fmt.Errorf("error reading batch created subtasks: %w", err)
+			}
 		}
-		subtasks = append(subtasks, st)
 	}
 
 	// Fetch with project name & color if project_id is present
@@ -543,7 +568,9 @@ func (r *repository) Update(ctx context.Context, tx *sqlx.Tx, userID string, id 
 
 	if entity.Status == "done" {
 		// Automatically mark all subtasks of completed task as completed
-		_, _ = tx.ExecContext(ctx, `UPDATE subtasks SET is_completed = true, updated_at = NOW() WHERE task_id = $1`, entity.ID)
+		if _, err := tx.ExecContext(ctx, `UPDATE subtasks SET is_completed = true, updated_at = NOW() WHERE task_id = $1`, entity.ID); err != nil {
+			return nil, fmt.Errorf("failed to complete subtasks: %w", err)
+		}
 	}
 
 	subtasks, _ := r.fetchSubtasks(ctx, tx, entity.ID)
@@ -610,7 +637,9 @@ func (r *repository) LogProgress(ctx context.Context, tx *sqlx.Tx, userID string
 	}
 
 	if entity.Status == "done" {
-		_, _ = tx.ExecContext(ctx, `UPDATE subtasks SET is_completed = true, updated_at = NOW() WHERE task_id = $1`, entity.ID)
+		if _, err := tx.ExecContext(ctx, `UPDATE subtasks SET is_completed = true, updated_at = NOW() WHERE task_id = $1`, entity.ID); err != nil {
+			return nil, fmt.Errorf("failed to complete subtasks: %w", err)
+		}
 	}
 
 	subtasks, _ := r.fetchSubtasks(ctx, tx, entity.ID)
@@ -1272,21 +1301,33 @@ func (r *repository) CreateRecurring(ctx context.Context, tx *sqlx.Tx, userID st
 		return nil, fmt.Errorf("failed to create recurring task: %w", err)
 	}
 
-	for i, st := range req.Subtasks {
-		if st.Title == "" {
-			continue
+	if len(req.Subtasks) > 0 {
+		var validItems []CreateRecurringSubtaskItem
+		for _, st := range req.Subtasks {
+			if strings.TrimSpace(st.Title) != "" {
+				validItems = append(validItems, st)
+			}
 		}
-		orderIdx := st.OrderIndex
-		if orderIdx <= 0 {
-			orderIdx = i
-		}
-		subQuery := `
-			INSERT INTO recurring_subtasks (recurring_task_id, title, description, order_index, created_at, updated_at)
-			VALUES ($1, $2, $3, $4, NOW(), NOW())
-		`
-		_, err = tx.ExecContext(ctx, subQuery, entity.ID, st.Title, st.Description, orderIdx)
-		if err != nil {
-			return nil, fmt.Errorf("failed to insert recurring subtask: %w", err)
+		if len(validItems) > 0 {
+			var valueStrings []string
+			var valueArgs []interface{}
+			argIdx := 1
+			for i, st := range validItems {
+				orderIdx := st.OrderIndex
+				if orderIdx <= 0 {
+					orderIdx = i
+				}
+				valueStrings = append(valueStrings, fmt.Sprintf("($%d, $%d, $%d, $%d, NOW(), NOW())", argIdx, argIdx+1, argIdx+2, argIdx+3))
+				valueArgs = append(valueArgs, entity.ID, st.Title, st.Description, orderIdx)
+				argIdx += 4
+			}
+			batchQuery := fmt.Sprintf(`
+				INSERT INTO recurring_subtasks (recurring_task_id, title, description, order_index, created_at, updated_at)
+				VALUES %s
+			`, strings.Join(valueStrings, ", "))
+			if _, err := tx.ExecContext(ctx, batchQuery, valueArgs...); err != nil {
+				return nil, fmt.Errorf("failed to batch insert recurring subtasks: %w", err)
+			}
 		}
 	}
 
@@ -1371,19 +1412,35 @@ func (r *repository) UpdateRecurring(ctx context.Context, tx *sqlx.Tx, userID st
 	}
 
 	if req.Subtasks != nil {
-		_, _ = tx.ExecContext(ctx, "DELETE FROM recurring_subtasks WHERE recurring_task_id = $1", id)
-		for i, st := range *req.Subtasks {
-			if st.Title == "" {
-				continue
+		if _, err := tx.ExecContext(ctx, "DELETE FROM recurring_subtasks WHERE recurring_task_id = $1", id); err != nil {
+			return nil, fmt.Errorf("failed to delete existing recurring subtasks: %w", err)
+		}
+		var validItems []CreateRecurringSubtaskItem
+		for _, st := range *req.Subtasks {
+			if strings.TrimSpace(st.Title) != "" {
+				validItems = append(validItems, st)
 			}
-			orderIdx := st.OrderIndex
-			if orderIdx <= 0 {
-				orderIdx = i
+		}
+		if len(validItems) > 0 {
+			var valueStrings []string
+			var valueArgs []interface{}
+			argIdx := 1
+			for i, st := range validItems {
+				orderIdx := st.OrderIndex
+				if orderIdx <= 0 {
+					orderIdx = i
+				}
+				valueStrings = append(valueStrings, fmt.Sprintf("($%d, $%d, $%d, $%d, NOW(), NOW())", argIdx, argIdx+1, argIdx+2, argIdx+3))
+				valueArgs = append(valueArgs, id, st.Title, st.Description, orderIdx)
+				argIdx += 4
 			}
-			_, _ = tx.ExecContext(ctx, `
+			batchQuery := fmt.Sprintf(`
 				INSERT INTO recurring_subtasks (recurring_task_id, title, description, order_index, created_at, updated_at)
-				VALUES ($1, $2, $3, $4, NOW(), NOW())
-			`, id, st.Title, st.Description, orderIdx)
+				VALUES %s
+			`, strings.Join(valueStrings, ", "))
+			if _, err := tx.ExecContext(ctx, batchQuery, valueArgs...); err != nil {
+				return nil, fmt.Errorf("failed to batch insert recurring subtasks: %w", err)
+			}
 		}
 	}
 
@@ -1491,12 +1548,30 @@ func (r *repository) CreateInstanceFromRecurring(ctx context.Context, tx *sqlx.T
 		return nil, fmt.Errorf("failed to create instance from recurring task: %w", err)
 	}
 
-	for _, st := range master.Subtasks {
-		subQuery := `
-			INSERT INTO subtasks (task_id, title, description, is_completed, order_index, created_at, updated_at)
-			VALUES ($1, $2, $3, FALSE, $4, NOW(), NOW())
-		`
-		_, _ = tx.ExecContext(ctx, subQuery, entity.ID, st.Title, st.Description, st.OrderIndex)
+	if len(master.Subtasks) > 0 {
+		var validItems []RecurringSubtaskResponse
+		for _, st := range master.Subtasks {
+			if strings.TrimSpace(st.Title) != "" {
+				validItems = append(validItems, st)
+			}
+		}
+		if len(validItems) > 0 {
+			var valueStrings []string
+			var valueArgs []interface{}
+			argIdx := 1
+			for _, st := range validItems {
+				valueStrings = append(valueStrings, fmt.Sprintf("($%d, $%d, $%d, FALSE, $%d, NOW(), NOW())", argIdx, argIdx+1, argIdx+2, argIdx+3))
+				valueArgs = append(valueArgs, entity.ID, st.Title, st.Description, st.OrderIndex)
+				argIdx += 4
+			}
+			batchQuery := fmt.Sprintf(`
+				INSERT INTO subtasks (task_id, title, description, is_completed, order_index, created_at, updated_at)
+				VALUES %s
+			`, strings.Join(valueStrings, ", "))
+			if _, err := tx.ExecContext(ctx, batchQuery, valueArgs...); err != nil {
+				return nil, fmt.Errorf("failed to batch insert subtasks for recurring instance: %w", err)
+			}
+		}
 	}
 
 	if entity.ProjectID != nil {
@@ -1637,19 +1712,35 @@ func (r *repository) ConvertTaskToRecurring(ctx context.Context, tx *sqlx.Tx, us
 		return nil, fmt.Errorf("failed to create recurring task: %w", err)
 	}
 
-	// 2. Copy existing subtasks from tasks -> recurring_subtasks
-	for i, st := range task.Subtasks {
-		if st.Title == "" {
-			continue
+	// 2. Copy existing subtasks from tasks -> recurring_subtasks in batch
+	if len(task.Subtasks) > 0 {
+		var validItems []SubtaskResponse
+		for _, st := range task.Subtasks {
+			if strings.TrimSpace(st.Title) != "" {
+				validItems = append(validItems, st)
+			}
 		}
-		orderIdx := st.OrderIndex
-		if orderIdx <= 0 {
-			orderIdx = i
+		if len(validItems) > 0 {
+			var valueStrings []string
+			var valueArgs []interface{}
+			argIdx := 1
+			for i, st := range validItems {
+				orderIdx := st.OrderIndex
+				if orderIdx <= 0 {
+					orderIdx = i
+				}
+				valueStrings = append(valueStrings, fmt.Sprintf("($%d, $%d, $%d, $%d, NOW(), NOW())", argIdx, argIdx+1, argIdx+2, argIdx+3))
+				valueArgs = append(valueArgs, entity.ID, st.Title, st.Description, orderIdx)
+				argIdx += 4
+			}
+			batchQuery := fmt.Sprintf(`
+				INSERT INTO recurring_subtasks (recurring_task_id, title, description, order_index, created_at, updated_at)
+				VALUES %s
+			`, strings.Join(valueStrings, ", "))
+			if _, err := tx.ExecContext(ctx, batchQuery, valueArgs...); err != nil {
+				return nil, fmt.Errorf("failed to batch copy subtasks to recurring master: %w", err)
+			}
 		}
-		_, _ = tx.ExecContext(ctx, `
-			INSERT INTO recurring_subtasks (recurring_task_id, title, description, order_index, created_at, updated_at)
-			VALUES ($1, $2, $3, $4, NOW(), NOW())
-		`, entity.ID, st.Title, st.Description, orderIdx)
 	}
 
 	// 3. Link task instance to this new master

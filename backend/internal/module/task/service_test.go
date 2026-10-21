@@ -1395,3 +1395,67 @@ func TestTaskService_RecurringSubtasksSync(t *testing.T) {
 		t.Errorf("expected recurring task master to be synced")
 	}
 }
+
+func TestTaskService_RecurringSubtasksSync_Errors(t *testing.T) {
+	ctx := context.Background()
+	testUserID := "user-rec-err"
+	taskID := int64(102)
+	masterID := int64(502)
+
+	expectedErr := errors.New("db error")
+
+	mockRepo := &mockRepository{
+		findByIDFunc: func(ctx context.Context, userID string, id int64) (*TaskResponse, error) {
+			return &TaskResponse{
+				ID:              taskID,
+				UserID:          testUserID,
+				Title:           "Daily Task",
+				RecurringTaskID: &masterID,
+				IsRecurring:     true,
+				Subtasks: []SubtaskResponse{
+					{ID: 1, TaskID: taskID, Title: "Existing Subtask"},
+				},
+			}, nil
+		},
+		createSubtaskFunc: func(ctx context.Context, userID string, taskID int64, req CreateSubtaskRequest) (*SubtaskResponse, error) {
+			return &SubtaskResponse{ID: 2, TaskID: taskID, Title: req.Title}, nil
+		},
+		updateSubtaskFunc: func(ctx context.Context, userID string, taskID int64, subtaskID int64, req UpdateSubtaskRequest) (*SubtaskResponse, error) {
+			return &SubtaskResponse{ID: subtaskID, TaskID: taskID, Title: "Renamed"}, nil
+		},
+		deleteSubtaskFunc: func(ctx context.Context, userID string, taskID int64, subtaskID int64) error {
+			return nil
+		},
+		createRecurringSubtaskFunc: func(ctx context.Context, recID int64, title, description string, orderIndex int) error {
+			return expectedErr
+		},
+		updateRecurringSubtaskByTitleFunc: func(ctx context.Context, recID int64, oldTitle, newTitle, description string) error {
+			return expectedErr
+		},
+		deleteRecurringSubtaskByTitleFunc: func(ctx context.Context, recID int64, title string) error {
+			return expectedErr
+		},
+	}
+
+	svc := NewService(mockRepo, &mockTransactor{})
+
+	// 1. CreateSubtask error
+	_, err := svc.CreateSubtask(ctx, testUserID, taskID, CreateSubtaskRequest{Title: "Fail Subtask"})
+	if err == nil {
+		t.Fatal("expected error on CreateSubtask when recurring subtask creation fails, got nil")
+	}
+
+	// 2. UpdateSubtask error
+	newTitle := "Fail Rename"
+	_, err = svc.UpdateSubtask(ctx, testUserID, taskID, 1, UpdateSubtaskRequest{Title: &newTitle})
+	if err == nil {
+		t.Fatal("expected error on UpdateSubtask when recurring subtask update fails, got nil")
+	}
+
+	// 3. DeleteSubtask error
+	err = svc.DeleteSubtask(ctx, testUserID, taskID, 1)
+	if err == nil {
+		t.Fatal("expected error on DeleteSubtask when recurring subtask deletion fails, got nil")
+	}
+}
+
