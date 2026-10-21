@@ -93,6 +93,15 @@ public enum L10n {
         public static func activeCount(count: Int) -> String { "tasks.activeCount".localized(with: count) }
         public static var sectionSubtasks: String { "tasks.sectionSubtasks".localized }
         public static var addSubtaskPlaceholder: String { "tasks.addSubtaskPlaceholder".localized }
+        public static var subtaskDetails: String { "tasks.subtaskDetails".localized }
+        public static var subtaskTitlePlaceholder: String { "tasks.subtaskTitlePlaceholder".localized }
+        public static var subtaskDescriptionPlaceholder: String { "tasks.subtaskDescriptionPlaceholder".localized }
+        public static var subtaskDueDate: String { "tasks.subtaskDueDate".localized }
+        public static var subtaskDueDatePlaceholder: String { "tasks.subtaskDueDatePlaceholder".localized }
+        public static var subtaskDueDateExceeds: String { "tasks.subtaskDueDateExceeds".localized }
+        public static var subtaskAddDetails: String { "tasks.subtaskAddDetails".localized }
+        public static var subtaskEditTitle: String { "tasks.subtaskEditTitle".localized }
+        public static var deleteSubtaskConfirm: String { "tasks.deleteSubtaskConfirm".localized }
         public static var sectionTags: String { "tasks.sectionTags".localized }
         public static var tagsPlaceholder: String { "tasks.tagsPlaceholder".localized }
         public static var statusHeader: String { "tasks.statusHeader".localized }

@@ -510,18 +510,47 @@ public struct UpdateSubtaskRequest: Codable {
     public let description: String?
     public let isCompleted: Bool?
     public let dueDate: String?
+    public let clearDueDate: Bool
 
-    public init(title: String? = nil, description: String? = nil, isCompleted: Bool? = nil, dueDate: String? = nil) {
+    public init(
+        title: String? = nil,
+        description: String? = nil,
+        isCompleted: Bool? = nil,
+        dueDate: String? = nil,
+        clearDueDate: Bool = false
+    ) {
         self.title = title
         self.description = description
         self.isCompleted = isCompleted
         self.dueDate = dueDate
+        self.clearDueDate = clearDueDate
     }
 
     enum CodingKeys: String, CodingKey {
         case title, description
         case isCompleted = "is_completed"
         case dueDate = "due_date"
+    }
+
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encodeIfPresent(title, forKey: .title)
+        try container.encodeIfPresent(description, forKey: .description)
+        try container.encodeIfPresent(isCompleted, forKey: .isCompleted)
+        if clearDueDate {
+            try container.encodeNil(forKey: .dueDate)
+        } else {
+            try container.encodeIfPresent(dueDate, forKey: .dueDate)
+        }
+    }
+
+    public init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        title = try container.decodeIfPresent(String.self, forKey: .title)
+        description = try container.decodeIfPresent(String.self, forKey: .description)
+        isCompleted = try container.decodeIfPresent(Bool.self, forKey: .isCompleted)
+        dueDate = try container.decodeIfPresent(String.self, forKey: .dueDate)
+        clearDueDate = false
     }
 }
 

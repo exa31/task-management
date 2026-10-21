@@ -485,9 +485,27 @@ public final class TaskViewModel {
     }
 
     @MainActor
-    public func updateSubtask(taskId: Int64, subtaskId: Int64, title: String? = nil, description: String? = nil, isCompleted: Bool? = nil, dueDate: String? = nil) async -> Bool {
+    public func updateSubtask(
+        taskId: Int64,
+        subtaskId: Int64,
+        title: String? = nil,
+        description: String? = nil,
+        isCompleted: Bool? = nil,
+        dueDate: String? = nil,
+        clearDueDate: Bool = false
+    ) async -> Bool {
         do {
-            _ = try await apiClient.updateSubtask(taskId: taskId, subtaskId: subtaskId, req: UpdateSubtaskRequest(title: title, description: description, isCompleted: isCompleted, dueDate: dueDate))
+            _ = try await apiClient.updateSubtask(
+                taskId: taskId,
+                subtaskId: subtaskId,
+                req: UpdateSubtaskRequest(
+                    title: title,
+                    description: description,
+                    isCompleted: isCompleted,
+                    dueDate: dueDate,
+                    clearDueDate: clearDueDate
+                )
+            )
             AppLogger.success("Subtask updated", category: .task, metadata: ["taskId": taskId, "subtaskId": subtaskId])
             await loadTasks()
             return true

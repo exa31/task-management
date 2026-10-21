@@ -9,8 +9,6 @@ public struct TaskDetailSheet: View {
     @State private var newNoteText = ""
     @State private var isPostingNote = false
     @State private var showEditSheet = false
-    @State private var newSubtaskTitle = ""
-    @State private var isAddingSubtask = false
 
     private var currentTask: TaskItem {
         viewModel.tasks.first(where: { $0.id == task.id }) ?? task
@@ -228,56 +226,26 @@ public struct TaskDetailSheet: View {
                     if let subtasks = currentTask.subtasks, !subtasks.isEmpty {
                         VStack(spacing: 8) {
                             ForEach(subtasks) { subtask in
-                                HStack(spacing: 10) {
-                                    Button(action: {
-                                        viewModel.toggleSubtask(taskId: currentTask.id, subtaskId: subtask.id, currentCompleted: subtask.isCompleted)
-                                    }) {
-                                        Image(systemName: subtask.isCompleted ? "checkmark.square.fill" : "square")
-                                            .font(.system(size: 16))
-                                            .foregroundColor(subtask.isCompleted ? AppColors.statusDone : .secondary)
+                                SubtaskItemRowView(
+                                    subtask: subtask,
+                                    parentDueDate: currentTask.dueDate,
+                                    onToggle: { isCompleted in
+                                        viewModel.toggleSubtask(taskId: currentTask.id, subtaskId: subtask.id, currentCompleted: !isCompleted)
+                                    },
+                                    onUpdate: { title, description, dueDate, clearDueDate in
+                                        await viewModel.updateSubtask(
+                                            taskId: currentTask.id,
+                                            subtaskId: subtask.id,
+                                            title: title,
+                                            description: description,
+                                            dueDate: dueDate,
+                                            clearDueDate: clearDueDate
+                                        )
+                                    },
+                                    onDelete: {
+                                        _ = await viewModel.deleteSubtask(taskId: currentTask.id, subtaskId: subtask.id)
                                     }
-                                    .buttonStyle(.plain)
-
-                                    VStack(alignment: .leading, spacing: 3) {
-                                        Text(subtask.title)
-                                            .font(.system(size: 13))
-                                            .strikethrough(subtask.isCompleted)
-                                            .foregroundColor(subtask.isCompleted ? .secondary : .primary)
-
-                                        if let desc = subtask.description, !desc.isEmpty {
-                                            Text(desc)
-                                                .font(.system(size: 11))
-                                                .foregroundColor(.secondary)
-                                                .lineLimit(2)
-                                        }
-
-                                        if let due = subtask.dueDate, !due.isEmpty {
-                                            HStack(spacing: 4) {
-                                                Image(systemName: "calendar")
-                                                    .font(.system(size: 9))
-                                                Text(due)
-                                                    .font(.system(size: 10))
-                                            }
-                                            .foregroundColor(AppColors.primary)
-                                        }
-                                    }
-
-                                    Spacer()
-
-                                    Button(action: {
-                                        Task {
-                                            _ = await viewModel.deleteSubtask(taskId: currentTask.id, subtaskId: subtask.id)
-                                        }
-                                    }) {
-                                        Image(systemName: "trash")
-                                            .font(.system(size: 12))
-                                            .foregroundColor(Color.secondary.opacity(0.6))
-                                    }
-                                    .buttonStyle(.plain)
-                                }
-                                .padding(10)
-                                .background(Color(.secondarySystemGroupedBackground))
-                                .clipShape(RoundedRectangle(cornerRadius: 8))
+                                )
                             }
                         }
                     } else {
@@ -287,36 +255,12 @@ public struct TaskDetailSheet: View {
                             .padding(.vertical, 4)
                     }
 
-                    // Add Subtask Row
-                    HStack(spacing: 8) {
-                        TextField(L10n.Tasks.addSubtaskPlaceholder, text: $newSubtaskTitle)
-                            .font(.system(size: 13))
-                            .textFieldStyle(.plain)
-                            .padding(9)
-                            .background(Color(.secondarySystemGroupedBackground))
-                            .clipShape(RoundedRectangle(cornerRadius: 8))
-                            .overlay(
-                                RoundedRectangle(cornerRadius: 8)
-                                    .stroke(Color.secondary.opacity(0.15), lineWidth: 1)
-                            )
-                            .onSubmit {
-                                handleAddSubtask()
-                            }
-
-                        Button(action: handleAddSubtask) {
-                            if isAddingSubtask {
-                                ProgressView()
-                                    .scaleEffect(0.8)
-                                    .frame(width: 32, height: 32)
-                            } else {
-                                Image(systemName: "plus.circle.fill")
-                                    .font(.system(size: 24))
-                                    .foregroundColor(newSubtaskTitle.trimmingCharacters(in: .whitespaces).isEmpty ? Color.secondary.opacity(0.3) : AppColors.primary)
-                                    .frame(width: 32, height: 32)
-                            }
-                        }
-                        .disabled(newSubtaskTitle.trimmingCharacters(in: .whitespaces).isEmpty || isAddingSubtask)
-                    }
+                    // Add Subtask Section
+                    AddSubtaskSectionView(
+                        taskId: currentTask.id,
+                        parentDueDate: currentTask.dueDate,
+                        viewModel: viewModel
+                    )
                 }
 
                 // Last Progress Note Preview
@@ -429,21 +373,6 @@ public struct TaskDetailSheet: View {
             await viewModel.addActivityNote(taskId: task.id, note: note)
             newNoteText = ""
             isPostingNote = false
-        }
-    }
-
-    private func handleAddSubtask() {
-        let trimmed = newSubtaskTitle.trimmingCharacters(in: .whitespaces)
-        guard !trimmed.isEmpty else { return }
-        isAddingSubtask = true
-        Task {
-            let success = await viewModel.addSubtask(taskId: currentTask.id, title: trimmed)
-            await MainActor.run {
-                isAddingSubtask = false
-                if success {
-                    newSubtaskTitle = ""
-                }
-            }
         }
     }
 }
@@ -606,8 +535,6 @@ public struct EditTaskSheet: View {
     @State private var recurrenceInterval: Int
     @State private var isSubmitting: Bool = false
     @State private var errorMessage: String? = nil
-    @State private var newSubtaskTitle: String = ""
-    @State private var isAddingSubtask: Bool = false
 
     private var currentTask: TaskItem {
         viewModel.tasks.first(where: { $0.id == task.id }) ?? task
@@ -752,75 +679,38 @@ public struct EditTaskSheet: View {
                 Section(header: Text(L10n.Tasks.sectionSubtasks)) {
                     if let subtasks = currentTask.subtasks, !subtasks.isEmpty {
                         ForEach(subtasks) { subtask in
-                            HStack(spacing: 10) {
-                                Button(action: {
-                                    viewModel.toggleSubtask(taskId: task.id, subtaskId: subtask.id, currentCompleted: subtask.isCompleted)
-                                }) {
-                                    Image(systemName: subtask.isCompleted ? "checkmark.square.fill" : "square")
-                                        .font(.system(size: 16))
-                                        .foregroundColor(subtask.isCompleted ? AppColors.statusDone : .secondary)
+                            SubtaskItemRowView(
+                                subtask: subtask,
+                                parentDueDate: task.dueDate,
+                                onToggle: { isCompleted in
+                                    viewModel.toggleSubtask(taskId: task.id, subtaskId: subtask.id, currentCompleted: !isCompleted)
+                                },
+                                onUpdate: { title, description, dueDate, clearDueDate in
+                                    await viewModel.updateSubtask(
+                                        taskId: task.id,
+                                        subtaskId: subtask.id,
+                                        title: title,
+                                        description: description,
+                                        dueDate: dueDate,
+                                        clearDueDate: clearDueDate
+                                    )
+                                },
+                                onDelete: {
+                                    _ = await viewModel.deleteSubtask(taskId: task.id, subtaskId: subtask.id)
                                 }
-                                .buttonStyle(.plain)
-
-                                VStack(alignment: .leading, spacing: 3) {
-                                    Text(subtask.title)
-                                        .font(.system(size: 14))
-                                        .strikethrough(subtask.isCompleted)
-                                        .foregroundColor(subtask.isCompleted ? .secondary : .primary)
-
-                                    if let desc = subtask.description, !desc.isEmpty {
-                                        Text(desc)
-                                            .font(.system(size: 11))
-                                            .foregroundColor(.secondary)
-                                            .lineLimit(2)
-                                    }
-
-                                    if let due = subtask.dueDate, !due.isEmpty {
-                                        HStack(spacing: 4) {
-                                            Image(systemName: "calendar")
-                                                .font(.system(size: 9))
-                                            Text(due)
-                                                .font(.system(size: 10))
-                                        }
-                                        .foregroundColor(AppColors.primary)
-                                    }
-                                }
-
-                                Spacer()
-
-                                Button(action: {
-                                    Task {
-                                        _ = await viewModel.deleteSubtask(taskId: task.id, subtaskId: subtask.id)
-                                    }
-                                }) {
-                                    Image(systemName: "trash")
-                                        .font(.system(size: 13))
-                                        .foregroundColor(AppColors.priorityUrgent.opacity(0.8))
-                                }
-                                .buttonStyle(.plain)
-                            }
+                            )
                         }
+                    } else {
+                        Text(L10n.Tasks.noSubtasks)
+                            .font(.system(size: 13))
+                            .foregroundColor(.secondary)
                     }
 
-                    HStack(spacing: 8) {
-                        TextField(L10n.Tasks.addSubtaskPlaceholder, text: $newSubtaskTitle)
-                            .font(.system(size: 14))
-                            .onSubmit {
-                                handleAddEditSubtask()
-                            }
-
-                        Button(action: handleAddEditSubtask) {
-                            if isAddingSubtask {
-                                ProgressView()
-                                    .scaleEffect(0.8)
-                            } else {
-                                Image(systemName: "plus.circle.fill")
-                                    .font(.system(size: 20))
-                                    .foregroundColor(newSubtaskTitle.trimmingCharacters(in: .whitespaces).isEmpty ? Color.secondary.opacity(0.3) : AppColors.primary)
-                            }
-                        }
-                        .disabled(newSubtaskTitle.trimmingCharacters(in: .whitespaces).isEmpty || isAddingSubtask)
-                    }
+                    AddSubtaskSectionView(
+                        taskId: task.id,
+                        parentDueDate: task.dueDate,
+                        viewModel: viewModel
+                    )
                 }
 
                 Section(header: Text(L10n.Tasks.sectionTags)) {
@@ -919,19 +809,535 @@ public struct EditTaskSheet: View {
             }
         }
     }
+}
 
-    private func handleAddEditSubtask() {
-        let trimmed = newSubtaskTitle.trimmingCharacters(in: .whitespaces)
-        guard !trimmed.isEmpty else { return }
-        isAddingSubtask = true
+// MARK: - Subtask Item Row View (Preview badges, Expandable inline editor, Delete confirm)
+public struct SubtaskItemRowView: View {
+    let subtask: Subtask
+    let parentDueDate: String?
+    let onToggle: (Bool) -> Void
+    let onUpdate: (String, String?, String?, Bool) async -> Bool
+    let onDelete: () async -> Void
+
+    @State private var isExpanded: Bool = false
+    @State private var editTitle: String
+    @State private var editDescription: String
+    @State private var hasDueDate: Bool
+    @State private var editDueDate: Date
+    @State private var isSaving: Bool = false
+    @State private var showDeleteConfirm: Bool = false
+    @State private var validationError: String? = nil
+
+    public init(
+        subtask: Subtask,
+        parentDueDate: String? = nil,
+        onToggle: @escaping (Bool) -> Void,
+        onUpdate: @escaping (String, String?, String?, Bool) async -> Bool,
+        onDelete: @escaping () async -> Void
+    ) {
+        self.subtask = subtask
+        self.parentDueDate = parentDueDate
+        self.onToggle = onToggle
+        self.onUpdate = onUpdate
+        self.onDelete = onDelete
+
+        _editTitle = State(initialValue: subtask.title)
+        _editDescription = State(initialValue: subtask.description ?? "")
+
+        if let dueStr = subtask.dueDate, let parsed = DateTimeHelper.parseISO8601(dueStr) {
+            _hasDueDate = State(initialValue: true)
+            _editDueDate = State(initialValue: parsed)
+        } else {
+            _hasDueDate = State(initialValue: false)
+            _editDueDate = State(initialValue: Date().addingTimeInterval(3600 * 4))
+        }
+    }
+
+    private var parentParsedDueDate: Date? {
+        guard let parent = parentDueDate, !parent.isEmpty else { return nil }
+        return DateTimeHelper.parseISO8601(parent)
+    }
+
+    private var isExceedingParentDueDate: Bool {
+        guard hasDueDate, let parent = parentParsedDueDate else { return false }
+        return editDueDate > parent
+    }
+
+    private var canSave: Bool {
+        let trimmed = editTitle.trimmingCharacters(in: .whitespacesAndNewlines)
+        return !trimmed.isEmpty && !isExceedingParentDueDate && !isSaving
+    }
+
+    private func handleSave() {
+        let trimmedTitle = editTitle.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmedTitle.isEmpty else { return }
+        if isExceedingParentDueDate {
+            validationError = L10n.Tasks.subtaskDueDateExceeds
+            return
+        }
+
+        let trimmedDesc = editDescription.trimmingCharacters(in: .whitespacesAndNewlines)
+        let descParam: String? = trimmedDesc.isEmpty ? "" : trimmedDesc
+
+        let dueParam: String?
+        let clearDue: Bool
+        if hasDueDate {
+            dueParam = DateTimeHelper.toISOString(editDueDate)
+            clearDue = false
+        } else {
+            dueParam = nil
+            clearDue = (subtask.dueDate != nil && !subtask.dueDate!.isEmpty)
+        }
+
+        isSaving = true
+        validationError = nil
+
         Task {
-            let success = await viewModel.addSubtask(taskId: task.id, title: trimmed)
+            let success = await onUpdate(trimmedTitle, descParam, dueParam, clearDue)
             await MainActor.run {
-                isAddingSubtask = false
+                isSaving = false
                 if success {
-                    newSubtaskTitle = ""
+                    isExpanded = false
+                } else {
+                    validationError = "Failed to update subtask"
                 }
             }
         }
     }
+
+    private func handleCancel() {
+        editTitle = subtask.title
+        editDescription = subtask.description ?? ""
+        if let dueStr = subtask.dueDate, let parsed = DateTimeHelper.parseISO8601(dueStr) {
+            hasDueDate = true
+            editDueDate = parsed
+        } else {
+            hasDueDate = false
+            editDueDate = Date().addingTimeInterval(3600 * 4)
+        }
+        validationError = nil
+        withAnimation(.easeInOut(duration: 0.2)) {
+            isExpanded = false
+        }
+    }
+
+    public var body: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            summaryRow
+            if isExpanded {
+                Divider()
+                    .padding(.horizontal, 10)
+                inlineEditor
+            }
+        }
+        .background(Color(.secondarySystemGroupedBackground))
+        .clipShape(RoundedRectangle(cornerRadius: 8))
+        .overlay(
+            RoundedRectangle(cornerRadius: 8)
+                .stroke(isExpanded ? AppColors.primary.opacity(0.4) : Color.secondary.opacity(0.12), lineWidth: 1)
+        )
+        .confirmationDialog(L10n.Tasks.deleteSubtaskConfirm, isPresented: $showDeleteConfirm, titleVisibility: .visible) {
+            Button(L10n.General.delete, role: .destructive) {
+                Task {
+                    await onDelete()
+                }
+            }
+            Button(L10n.General.cancel, role: .cancel) {}
+        }
+    }
+
+    @ViewBuilder
+    private var summaryRow: some View {
+        HStack(spacing: 10) {
+            Button(action: {
+                UIImpactFeedbackGenerator(style: .light).impactOccurred()
+                onToggle(!subtask.isCompleted)
+            }) {
+                Image(systemName: subtask.isCompleted ? "checkmark.square.fill" : "square")
+                    .font(.system(size: 16))
+                    .foregroundColor(subtask.isCompleted ? AppColors.statusDone : .secondary)
+            }
+            .buttonStyle(.plain)
+
+            VStack(alignment: .leading, spacing: 3) {
+                Text(subtask.title)
+                    .font(.system(size: 13, weight: .medium))
+                    .strikethrough(subtask.isCompleted)
+                    .foregroundColor(subtask.isCompleted ? .secondary : .primary)
+                    .lineLimit(2)
+
+                if !isExpanded {
+                    badgesRow
+                }
+            }
+
+            Spacer()
+
+            Button(action: {
+                withAnimation(.easeInOut(duration: 0.2)) {
+                    if !isExpanded {
+                        editTitle = subtask.title
+                        editDescription = subtask.description ?? ""
+                        if let dueStr = subtask.dueDate, let parsed = DateTimeHelper.parseISO8601(dueStr) {
+                            hasDueDate = true
+                            editDueDate = parsed
+                        } else {
+                            hasDueDate = false
+                        }
+                    }
+                    isExpanded.toggle()
+                }
+            }) {
+                Image(systemName: isExpanded ? "chevron.up" : "chevron.down")
+                    .font(.system(size: 11, weight: .bold))
+                    .foregroundColor(isExpanded ? AppColors.primary : Color.secondary.opacity(0.7))
+                    .frame(width: 26, height: 26)
+                    .background(isExpanded ? AppColors.primary.opacity(0.1) : Color.clear)
+                    .clipShape(RoundedRectangle(cornerRadius: 6))
+            }
+            .buttonStyle(.plain)
+
+            Button(action: {
+                showDeleteConfirm = true
+            }) {
+                Image(systemName: "trash")
+                    .font(.system(size: 12))
+                    .foregroundColor(Color.secondary.opacity(0.6))
+                    .frame(width: 26, height: 26)
+            }
+            .buttonStyle(.plain)
+        }
+        .padding(10)
+    }
+
+    @ViewBuilder
+    private var badgesRow: some View {
+        let hasDesc = (subtask.description != nil && !subtask.description!.isEmpty)
+        let hasDue = (subtask.dueDate != nil && !subtask.dueDate!.isEmpty)
+        if hasDesc || hasDue {
+            HStack(spacing: 6) {
+                if let desc = subtask.description, !desc.isEmpty {
+                    HStack(spacing: 3) {
+                        Image(systemName: "text.alignleft")
+                            .font(.system(size: 8))
+                        Text(desc)
+                            .font(.system(size: 10))
+                            .lineLimit(1)
+                    }
+                    .padding(.horizontal, 5)
+                    .padding(.vertical, 2)
+                    .background(Color.secondary.opacity(0.12))
+                    .foregroundColor(.secondary)
+                    .clipShape(RoundedRectangle(cornerRadius: 4))
+                }
+
+                if let due = subtask.dueDate, !due.isEmpty {
+                    HStack(spacing: 3) {
+                        Image(systemName: "calendar")
+                            .font(.system(size: 8))
+                        Text(DateTimeHelper.formatFullDateTime(due))
+                            .font(.system(size: 10, weight: .medium))
+                    }
+                    .padding(.horizontal, 6)
+                    .padding(.vertical, 2)
+                    .background(AppColors.indigo.opacity(0.12))
+                    .foregroundColor(AppColors.indigo)
+                    .clipShape(Capsule())
+                }
+            }
+        }
+    }
+
+    @ViewBuilder
+    private var inlineEditor: some View {
+        VStack(alignment: .leading, spacing: 9) {
+            VStack(alignment: .leading, spacing: 3) {
+                Text(L10n.Tasks.subtaskTitlePlaceholder)
+                    .font(.system(size: 10, weight: .semibold))
+                    .foregroundColor(.secondary)
+                TextField(L10n.Tasks.subtaskTitlePlaceholder, text: $editTitle)
+                    .font(.system(size: 13))
+                    .textFieldStyle(.plain)
+                    .padding(8)
+                    .background(Color(.tertiarySystemGroupedBackground))
+                    .clipShape(RoundedRectangle(cornerRadius: 6))
+            }
+
+            VStack(alignment: .leading, spacing: 3) {
+                Text(L10n.Tasks.subtaskDetails)
+                    .font(.system(size: 10, weight: .semibold))
+                    .foregroundColor(.secondary)
+                TextField(L10n.Tasks.subtaskDescriptionPlaceholder, text: $editDescription, axis: .vertical)
+                    .font(.system(size: 12))
+                    .textFieldStyle(.plain)
+                    .lineLimit(2...4)
+                    .padding(8)
+                    .background(Color(.tertiarySystemGroupedBackground))
+                    .clipShape(RoundedRectangle(cornerRadius: 6))
+            }
+
+            dueDatePicker
+
+            if let err = validationError {
+                Text(err)
+                    .font(.system(size: 11))
+                    .foregroundColor(AppColors.priorityUrgent)
+            }
+
+            editorButtons
+        }
+        .padding(10)
+    }
+
+    @ViewBuilder
+    private var dueDatePicker: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            Toggle(isOn: $hasDueDate.animation()) {
+                Label(L10n.Tasks.subtaskDueDate, systemImage: "calendar")
+                    .font(.system(size: 12, weight: .medium))
+            }
+            .tint(AppColors.primary)
+
+            if hasDueDate {
+                DatePicker(
+                    "",
+                    selection: $editDueDate,
+                    displayedComponents: [.date, .hourAndMinute]
+                )
+                .datePickerStyle(.compact)
+                .labelsHidden()
+
+                if isExceedingParentDueDate {
+                    HStack(spacing: 4) {
+                        Image(systemName: "exclamationmark.triangle.fill")
+                            .font(.system(size: 10))
+                        Text(L10n.Tasks.subtaskDueDateExceeds)
+                            .font(.system(size: 10))
+                    }
+                    .foregroundColor(AppColors.priorityUrgent)
+                }
+            }
+        }
+    }
+
+    @ViewBuilder
+    private var editorButtons: some View {
+        HStack(spacing: 8) {
+            Spacer()
+            Button(action: handleCancel) {
+                Text(L10n.General.cancel)
+                    .font(.system(size: 11, weight: .medium))
+                    .foregroundColor(.secondary)
+                    .padding(.horizontal, 10)
+                    .padding(.vertical, 6)
+                    .background(Color.secondary.opacity(0.1))
+                    .clipShape(RoundedRectangle(cornerRadius: 6))
+            }
+            .buttonStyle(.plain)
+
+            Button(action: handleSave) {
+                HStack(spacing: 4) {
+                    if isSaving {
+                        ProgressView()
+                            .scaleEffect(0.7)
+                    }
+                    Text(L10n.General.save)
+                        .font(.system(size: 11, weight: .semibold))
+                }
+                .foregroundColor(.white)
+                .padding(.horizontal, 14)
+                .padding(.vertical, 6)
+                .background(canSave ? AppColors.primary : Color.secondary.opacity(0.3))
+                .clipShape(RoundedRectangle(cornerRadius: 6))
+            }
+            .buttonStyle(.plain)
+            .disabled(!canSave || isSaving)
+        }
+    }
 }
+
+// MARK: - Add Subtask Section View (With expandable Details & Due Date)
+public struct AddSubtaskSectionView: View {
+    let taskId: Int64
+    let parentDueDate: String?
+    let viewModel: TaskViewModel
+
+    @State private var newSubtaskTitle: String = ""
+    @State private var newSubtaskDescription: String = ""
+    @State private var hasDueDate: Bool = false
+    @State private var newSubtaskDueDate: Date = Date().addingTimeInterval(3600 * 4)
+    @State private var isShowingDetails: Bool = false
+    @State private var isAdding: Bool = false
+    @State private var errorMessage: String? = nil
+
+    private var parentParsedDueDate: Date? {
+        guard let parent = parentDueDate, !parent.isEmpty else { return nil }
+        return DateTimeHelper.parseISO8601(parent)
+    }
+
+    private var isExceedingParentDueDate: Bool {
+        guard hasDueDate, let parent = parentParsedDueDate else { return false }
+        return newSubtaskDueDate > parent
+    }
+
+    private var canSubmit: Bool {
+        let trimmed = newSubtaskTitle.trimmingCharacters(in: .whitespacesAndNewlines)
+        return !trimmed.isEmpty && !isExceedingParentDueDate && !isAdding
+    }
+
+    private func handleSubmit() {
+        let trimmedTitle = newSubtaskTitle.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmedTitle.isEmpty else { return }
+        if isExceedingParentDueDate {
+            errorMessage = L10n.Tasks.subtaskDueDateExceeds
+            return
+        }
+
+        let trimmedDesc = newSubtaskDescription.trimmingCharacters(in: .whitespacesAndNewlines)
+        let descParam = trimmedDesc.isEmpty ? nil : trimmedDesc
+        let dueParam = hasDueDate ? DateTimeHelper.toISOString(newSubtaskDueDate) : nil
+
+        isAdding = true
+        errorMessage = nil
+
+        Task {
+            let success = await viewModel.addSubtask(
+                taskId: taskId,
+                title: trimmedTitle,
+                description: descParam,
+                dueDate: dueParam
+            )
+            await MainActor.run {
+                isAdding = false
+                if success {
+                    newSubtaskTitle = ""
+                    newSubtaskDescription = ""
+                    hasDueDate = false
+                    isShowingDetails = false
+                } else {
+                    errorMessage = viewModel.errorMessage ?? "Failed to add subtask"
+                }
+            }
+        }
+    }
+
+    public var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            mainInputRow
+            if isShowingDetails {
+                detailsSection
+            }
+            if let err = errorMessage {
+                Text(err)
+                    .font(.system(size: 11))
+                    .foregroundColor(AppColors.priorityUrgent)
+            }
+        }
+    }
+
+    @ViewBuilder
+    private var mainInputRow: some View {
+        HStack(spacing: 8) {
+            TextField(L10n.Tasks.addSubtaskPlaceholder, text: $newSubtaskTitle)
+                .font(.system(size: 13))
+                .textFieldStyle(.plain)
+                .padding(9)
+                .background(Color(.secondarySystemGroupedBackground))
+                .clipShape(RoundedRectangle(cornerRadius: 8))
+                .overlay(
+                    RoundedRectangle(cornerRadius: 8)
+                        .stroke(Color.secondary.opacity(0.15), lineWidth: 1)
+                )
+                .onSubmit {
+                    if canSubmit {
+                        handleSubmit()
+                    }
+                }
+
+            Button(action: {
+                withAnimation(.easeInOut(duration: 0.2)) {
+                    isShowingDetails.toggle()
+                }
+            }) {
+                Image(systemName: "slider.horizontal.3")
+                    .font(.system(size: 14))
+                    .foregroundColor(isShowingDetails ? AppColors.primary : .secondary)
+                    .frame(width: 34, height: 34)
+                    .background(isShowingDetails ? AppColors.primary.opacity(0.12) : Color(.secondarySystemGroupedBackground))
+                    .clipShape(RoundedRectangle(cornerRadius: 8))
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 8)
+                            .stroke(isShowingDetails ? AppColors.primary.opacity(0.3) : Color.secondary.opacity(0.15), lineWidth: 1)
+                    )
+            }
+            .buttonStyle(.plain)
+
+            Button(action: handleSubmit) {
+                if isAdding {
+                    ProgressView()
+                        .scaleEffect(0.8)
+                        .frame(width: 34, height: 34)
+                } else {
+                    Image(systemName: "plus.circle.fill")
+                        .font(.system(size: 26))
+                        .foregroundColor(canSubmit ? AppColors.primary : Color.secondary.opacity(0.3))
+                        .frame(width: 34, height: 34)
+                }
+            }
+            .buttonStyle(.plain)
+            .disabled(!canSubmit)
+        }
+    }
+
+    @ViewBuilder
+    private var detailsSection: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            TextField(L10n.Tasks.subtaskDescriptionPlaceholder, text: $newSubtaskDescription, axis: .vertical)
+                .font(.system(size: 12))
+                .lineLimit(2...3)
+                .textFieldStyle(.plain)
+                .padding(8)
+                .background(Color(.secondarySystemGroupedBackground))
+                .clipShape(RoundedRectangle(cornerRadius: 6))
+                .overlay(
+                    RoundedRectangle(cornerRadius: 6)
+                        .stroke(Color.secondary.opacity(0.15), lineWidth: 1)
+                )
+
+            Toggle(isOn: $hasDueDate.animation()) {
+                Label(L10n.Tasks.subtaskDueDate, systemImage: "calendar")
+                    .font(.system(size: 12, weight: .medium))
+            }
+            .tint(AppColors.primary)
+
+            if hasDueDate {
+                DatePicker(
+                    "",
+                    selection: $newSubtaskDueDate,
+                    displayedComponents: [.date, .hourAndMinute]
+                )
+                .datePickerStyle(.compact)
+                .labelsHidden()
+
+                if isExceedingParentDueDate {
+                    HStack(spacing: 4) {
+                        Image(systemName: "exclamationmark.triangle.fill")
+                            .font(.system(size: 10))
+                        Text(L10n.Tasks.subtaskDueDateExceeds)
+                            .font(.system(size: 10))
+                    }
+                    .foregroundColor(AppColors.priorityUrgent)
+                }
+            }
+        }
+        .padding(10)
+        .background(Color(.secondarySystemGroupedBackground).opacity(0.6))
+        .clipShape(RoundedRectangle(cornerRadius: 8))
+        .overlay(
+            RoundedRectangle(cornerRadius: 8)
+                .stroke(Color.secondary.opacity(0.1), lineWidth: 1)
+        )
+    }
+}
+
+
