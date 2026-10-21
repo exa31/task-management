@@ -272,7 +272,7 @@ export const TaskListView: React.FC = () => {
               </span>
 
               {/* Due Date */}
-              {task.due_date && (
+              {!task.is_recurring && task.due_date && (
                 <span className="hidden lg:inline-flex items-center gap-1 text-[10px] text-slate-500 font-mono">
                   <i className="pi pi-calendar text-[9px]" />
                   {new Date(task.due_date).toLocaleDateString(locale === 'id' ? 'id-ID' : 'en-US', {

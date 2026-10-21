@@ -24,6 +24,7 @@ import type { RecurrencePattern, Subtask, TaskPriority, TaskStatus } from '@/typ
 interface SubtaskItemRowProps {
   subtask: Subtask
   taskId: number
+  isRecurring?: boolean
   onToggle: (completed: boolean) => void
   onDelete: (id: number, title: string) => void
   onUpdate: (params: {
@@ -38,6 +39,7 @@ interface SubtaskItemRowProps {
 const SubtaskItemRow: React.FC<SubtaskItemRowProps> = ({
   subtask,
   taskId,
+  isRecurring = false,
   onToggle,
   onDelete,
   onUpdate
@@ -66,7 +68,7 @@ const SubtaskItemRow: React.FC<SubtaskItemRowProps> = ({
         subtaskId: subtask.id,
         title: editTitle.trim(),
         description: editDescription.trim(),
-        dueDate: editDueDate ? editDueDate.toISOString() : null
+        dueDate: isRecurring ? null : (editDueDate ? editDueDate.toISOString() : null)
       })
       setIsExpanded(false)
     } finally {
@@ -119,7 +121,7 @@ const SubtaskItemRow: React.FC<SubtaskItemRowProps> = ({
             </span>
 
             {/* Badges / indicators when collapsed */}
-            {!isExpanded && (subtask.description || subtask.due_date) && (
+            {!isExpanded && (subtask.description || (!isRecurring && subtask.due_date)) && (
               <div className="flex flex-wrap items-center gap-1.5 pt-0.5">
                 {subtask.description && (
                   <span
@@ -130,7 +132,7 @@ const SubtaskItemRow: React.FC<SubtaskItemRowProps> = ({
                     <span className="truncate max-w-[200px]">{subtask.description}</span>
                   </span>
                 )}
-                {formattedDueDate && (
+                {!isRecurring && formattedDueDate && (
                   <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-950/60 border border-indigo-200/50 dark:border-indigo-800/40">
                     <i className="pi pi-calendar text-[9px]" />
                     {formattedDueDate}
@@ -198,22 +200,24 @@ const SubtaskItemRow: React.FC<SubtaskItemRowProps> = ({
             />
           </div>
 
-          <div>
-            <label className="block text-[11px] font-medium text-slate-600 dark:text-slate-400 mb-1">
-              {t('taskDrawer.subtaskDueDate')}
-            </label>
-            <Calendar
-              value={editDueDate}
-              onChange={(e) => setEditDueDate(e.value as Date | null)}
-              showTime
-              hourFormat="24"
-              placeholder={t('taskDrawer.subtaskDueDatePlaceholder')}
-              className="w-full text-xs"
-              inputClassName="w-full rounded-md border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 px-2.5 py-1.5 text-xs text-slate-900 dark:text-slate-100 placeholder-slate-400 focus:border-indigo-500 focus:outline-none"
-              showIcon
-              showButtonBar
-            />
-          </div>
+          {!isRecurring && (
+            <div>
+              <label className="block text-[11px] font-medium text-slate-600 dark:text-slate-400 mb-1">
+                {t('taskDrawer.subtaskDueDate')}
+              </label>
+              <Calendar
+                value={editDueDate}
+                onChange={(e) => setEditDueDate(e.value as Date | null)}
+                showTime
+                hourFormat="24"
+                placeholder={t('taskDrawer.subtaskDueDatePlaceholder')}
+                className="w-full text-xs"
+                inputClassName="w-full rounded-md border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 px-2.5 py-1.5 text-xs text-slate-900 dark:text-slate-100 placeholder-slate-400 focus:border-indigo-500 focus:outline-none"
+                showIcon
+                showButtonBar
+              />
+            </div>
+          )}
 
           <div className="flex items-center justify-end gap-1.5 pt-1">
             <button
@@ -389,7 +393,7 @@ export const TaskDrawer: React.FC = () => {
           description,
           status,
           priority,
-          due_date: dueDate ? dueDate.toISOString() : null,
+          due_date: isRecurring ? null : (dueDate ? dueDate.toISOString() : null),
           project_id: projectId,
           is_recurring: isRecurring,
           recurrence_pattern: isRecurring ? recurrencePattern : null,
@@ -424,7 +428,7 @@ export const TaskDrawer: React.FC = () => {
       taskId: task.id,
       title: newSubtaskTitle.trim(),
       description: newSubtaskDescription.trim() || undefined,
-      dueDate: newSubtaskDueDate ? newSubtaskDueDate.toISOString() : undefined
+      dueDate: isRecurring ? undefined : (newSubtaskDueDate ? newSubtaskDueDate.toISOString() : undefined)
     })
     setNewSubtaskTitle('')
     setNewSubtaskDescription('')
@@ -668,40 +672,42 @@ export const TaskDrawer: React.FC = () => {
                     </select>
                   </div>
 
-                  <div>
-                    <div className="flex items-center justify-between mb-1">
-                      <label className="block text-[11px] font-medium text-slate-600 dark:text-slate-400">
-                        {t('taskDrawer.dueDate')}
-                      </label>
-                      {dueDate && (
-                        <button
-                          type="button"
-                          onClick={() => handleDueDateChange(null)}
-                          className="text-[10px] text-slate-400 hover:text-rose-500 flex items-center gap-1 transition-colors cursor-pointer"
-                          title={t('common.clear') || 'Clear'}
-                        >
-                          <i className="pi pi-times text-[9px]" />
-                          <span>{t('common.clear') || 'Hapus'}</span>
-                        </button>
-                      )}
+                  {!isRecurring && (
+                    <div>
+                      <div className="flex items-center justify-between mb-1">
+                        <label className="block text-[11px] font-medium text-slate-600 dark:text-slate-400">
+                          {t('taskDrawer.dueDate')}
+                        </label>
+                        {dueDate && (
+                          <button
+                            type="button"
+                            onClick={() => handleDueDateChange(null)}
+                            className="text-[10px] text-slate-400 hover:text-rose-500 flex items-center gap-1 transition-colors cursor-pointer"
+                            title={t('common.clear') || 'Clear'}
+                          >
+                            <i className="pi pi-times text-[9px]" />
+                            <span>{t('common.clear') || 'Hapus'}</span>
+                          </button>
+                        )}
+                      </div>
+                      <Calendar
+                        value={dueDate}
+                        onChange={(e) => handleDueDateChange((e.value as Date) || null)}
+                        showTime
+                        hourFormat="24"
+                        showIcon
+                        dateFormat="dd/mm/yy"
+                        locale={locale}
+                        placeholder={t('taskDrawer.dueDate')}
+                        className="w-full text-xs"
+                        inputClassName="w-full rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-2.5 py-1.5 text-xs text-slate-800 dark:text-slate-200 focus:border-indigo-500 focus:outline-none transition-colors"
+                        touchUI={false}
+                        showButtonBar
+                      />
                     </div>
-                    <Calendar
-                      value={dueDate}
-                      onChange={(e) => handleDueDateChange((e.value as Date) || null)}
-                      showTime
-                      hourFormat="24"
-                      showIcon
-                      dateFormat="dd/mm/yy"
-                      locale={locale}
-                      placeholder={t('taskDrawer.dueDate')}
-                      className="w-full text-xs"
-                      inputClassName="w-full rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-2.5 py-1.5 text-xs text-slate-800 dark:text-slate-200 focus:border-indigo-500 focus:outline-none transition-colors"
-                      touchUI={false}
-                      showButtonBar
-                    />
-                  </div>
+                  )}
 
-                  <div>
+                  <div className={isRecurring ? 'col-span-2' : ''}>
                     <label className="block text-[11px] font-medium text-slate-600 dark:text-slate-400 mb-1">
                       {t('taskDrawer.projectLabel')}
                     </label>
@@ -970,6 +976,7 @@ export const TaskDrawer: React.FC = () => {
                         key={st.id}
                         subtask={st}
                         taskId={task.id}
+                        isRecurring={isRecurring}
                         onToggle={(checked) =>
                           toggleSubtaskMutation.mutate({
                             taskId: task.id,
@@ -1033,22 +1040,24 @@ export const TaskDrawer: React.FC = () => {
                             className="w-full rounded-md border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 px-2.5 py-1.5 text-xs text-slate-900 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500 focus:border-indigo-500 focus:outline-none resize-none"
                           />
                         </div>
-                        <div>
-                          <label className="block text-[11px] font-medium text-slate-600 dark:text-slate-400 mb-1">
-                            {t('taskDrawer.subtaskDueDate')}
-                          </label>
-                          <Calendar
-                            value={newSubtaskDueDate}
-                            onChange={(e) => setNewSubtaskDueDate(e.value as Date | null)}
-                            showTime
-                            hourFormat="24"
-                            placeholder={t('taskDrawer.subtaskDueDatePlaceholder')}
-                            className="w-full text-xs"
-                            inputClassName="w-full rounded-md border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 px-2.5 py-1.5 text-xs text-slate-900 dark:text-slate-100 placeholder-slate-400 focus:border-indigo-500 focus:outline-none"
-                            showIcon
-                            showButtonBar
-                          />
-                        </div>
+                        {!isRecurring && (
+                          <div>
+                            <label className="block text-[11px] font-medium text-slate-600 dark:text-slate-400 mb-1">
+                              {t('taskDrawer.subtaskDueDate')}
+                            </label>
+                            <Calendar
+                              value={newSubtaskDueDate}
+                              onChange={(e) => setNewSubtaskDueDate(e.value as Date | null)}
+                              showTime
+                              hourFormat="24"
+                              placeholder={t('taskDrawer.subtaskDueDatePlaceholder')}
+                              className="w-full text-xs"
+                              inputClassName="w-full rounded-md border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 px-2.5 py-1.5 text-xs text-slate-900 dark:text-slate-100 placeholder-slate-400 focus:border-indigo-500 focus:outline-none"
+                              showIcon
+                              showButtonBar
+                            />
+                          </div>
+                        )}
                       </div>
                     )}
                   </form>

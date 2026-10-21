@@ -103,7 +103,7 @@ export const TaskModal: React.FC = () => {
         status,
         priority,
         project_id: projectId,
-        due_date: dueDate ? dueDate.toISOString() : undefined,
+        due_date: !isRecurring && dueDate ? dueDate.toISOString() : undefined,
         is_focus: isFocus,
         tags,
         subtasks: finalSubtasks,
@@ -276,39 +276,41 @@ export const TaskModal: React.FC = () => {
           </div>
 
           {/* Due Date & Project */}
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <div className="flex items-center justify-between mb-1">
-                <label className="block text-xs font-medium text-slate-700 dark:text-slate-300">
-                  {t('taskModal.dueDateLabel')}
-                </label>
-                {dueDate && (
-                  <button
-                    type="button"
-                    onClick={() => setDueDate(null)}
-                    className="text-[10px] text-slate-400 hover:text-rose-500 flex items-center gap-1 transition-colors cursor-pointer"
-                    title={t('common.clear') || 'Clear'}
-                  >
-                    <i className="pi pi-times text-[9px]" />
-                    <span>{t('common.clear') || 'Hapus'}</span>
-                  </button>
-                )}
+          <div className={`grid ${isRecurring ? 'grid-cols-1' : 'grid-cols-2'} gap-3`}>
+            {!isRecurring && (
+              <div>
+                <div className="flex items-center justify-between mb-1">
+                  <label className="block text-xs font-medium text-slate-700 dark:text-slate-300">
+                    {t('taskModal.dueDateLabel')}
+                  </label>
+                  {dueDate && (
+                    <button
+                      type="button"
+                      onClick={() => setDueDate(null)}
+                      className="text-[10px] text-slate-400 hover:text-rose-500 flex items-center gap-1 transition-colors cursor-pointer"
+                      title={t('common.clear') || 'Clear'}
+                    >
+                      <i className="pi pi-times text-[9px]" />
+                      <span>{t('common.clear') || 'Hapus'}</span>
+                    </button>
+                  )}
+                </div>
+                <Calendar
+                  value={dueDate}
+                  onChange={(e) => setDueDate((e.value as Date) || null)}
+                  showTime
+                  hourFormat="24"
+                  dateFormat="dd/mm/yy"
+                  locale={locale}
+                  placeholder={t('taskModal.dueDateLabel')}
+                  className="w-full text-xs"
+                  inputClassName="w-full rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 px-2.5 py-1.5 text-xs text-slate-900 dark:text-slate-200 focus:border-indigo-500 focus:outline-none transition-colors"
+                  showIcon
+                  touchUI={false}
+                  showButtonBar
+                />
               </div>
-              <Calendar
-                value={dueDate}
-                onChange={(e) => setDueDate((e.value as Date) || null)}
-                showTime
-                hourFormat="24"
-                dateFormat="dd/mm/yy"
-                locale={locale}
-                placeholder={t('taskModal.dueDateLabel')}
-                className="w-full text-xs"
-                inputClassName="w-full rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 px-2.5 py-1.5 text-xs text-slate-900 dark:text-slate-200 focus:border-indigo-500 focus:outline-none transition-colors"
-                showIcon
-                touchUI={false}
-                showButtonBar
-              />
-            </div>
+            )}
 
             <div>
               <div className="flex items-center justify-between mb-1">

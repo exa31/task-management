@@ -185,7 +185,7 @@ export const TaskBoardView: React.FC = () => {
                         {t(`tasks.priority.${task.priority}`)}
                       </span>
                     </div>
-                    {task.due_date && (
+                    {!task.is_recurring && task.due_date && (
                       <span>
                         {new Date(task.due_date).toLocaleDateString(
                           locale === 'id' ? 'id-ID' : 'en-US',

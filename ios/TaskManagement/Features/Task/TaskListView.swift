@@ -886,7 +886,7 @@ struct TaskRowView: View {
                 }
 
                 Spacer()
-                if let due = task.dueDate {
+                if task.isRecurring != true, let due = task.dueDate {
                     HStack(spacing: 4) {
                         Image(systemName: "calendar")
                             .font(.system(size: 10))
@@ -1010,15 +1010,17 @@ public struct CreateTaskSheet: View {
                     }
                 }
 
-                Section(header: Text(L10n.Tasks.sectionDueDate)) {
-                    Toggle(L10n.Tasks.setDueDate, isOn: $hasDueDate)
-                    if hasDueDate {
-                        DatePicker(
-                            L10n.Tasks.dateTime,
-                            selection: $dueDate,
-                            displayedComponents: [.date, .hourAndMinute]
-                        )
-                        .datePickerStyle(.compact)
+                if !isRecurring {
+                    Section(header: Text(L10n.Tasks.sectionDueDate)) {
+                        Toggle(L10n.Tasks.setDueDate, isOn: $hasDueDate)
+                        if hasDueDate {
+                            DatePicker(
+                                L10n.Tasks.dateTime,
+                                selection: $dueDate,
+                                displayedComponents: [.date, .hourAndMinute]
+                            )
+                            .datePickerStyle(.compact)
+                        }
                     }
                 }
 
@@ -1166,7 +1168,7 @@ public struct CreateTaskSheet: View {
 
         let parsedTags = parseTags(tagsText)
         let isoDate: String?
-        if hasDueDate {
+        if !isRecurring && hasDueDate {
             let formatter = ISO8601DateFormatter()
             formatter.formatOptions = [.withInternetDateTime]
             isoDate = formatter.string(from: dueDate)

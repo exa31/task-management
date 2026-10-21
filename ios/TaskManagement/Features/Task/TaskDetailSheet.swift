@@ -229,6 +229,7 @@ public struct TaskDetailSheet: View {
                                 SubtaskItemRowView(
                                     subtask: subtask,
                                     parentDueDate: currentTask.dueDate,
+                                    isRecurring: currentTask.isRecurring == true,
                                     onToggle: { isCompleted in
                                         viewModel.toggleSubtask(taskId: currentTask.id, subtaskId: subtask.id, currentCompleted: !isCompleted)
                                     },
@@ -259,6 +260,7 @@ public struct TaskDetailSheet: View {
                     AddSubtaskSectionView(
                         taskId: currentTask.id,
                         parentDueDate: currentTask.dueDate,
+                        isRecurring: currentTask.isRecurring == true,
                         viewModel: viewModel
                     )
                 }
@@ -639,15 +641,17 @@ public struct EditTaskSheet: View {
                     }
                 }
 
-                Section(header: Text(L10n.Tasks.sectionDueDate)) {
-                    Toggle(L10n.Tasks.setDueDate, isOn: $hasDueDate)
-                    if hasDueDate {
-                        DatePicker(
-                            L10n.Tasks.dateTime,
-                            selection: $dueDate,
-                            displayedComponents: [.date, .hourAndMinute]
-                        )
-                        .datePickerStyle(.compact)
+                if !isRecurring {
+                    Section(header: Text(L10n.Tasks.sectionDueDate)) {
+                        Toggle(L10n.Tasks.setDueDate, isOn: $hasDueDate)
+                        if hasDueDate {
+                            DatePicker(
+                                L10n.Tasks.dateTime,
+                                selection: $dueDate,
+                                displayedComponents: [.date, .hourAndMinute]
+                            )
+                            .datePickerStyle(.compact)
+                        }
                     }
                 }
 
@@ -682,6 +686,7 @@ public struct EditTaskSheet: View {
                             SubtaskItemRowView(
                                 subtask: subtask,
                                 parentDueDate: task.dueDate,
+                                isRecurring: isRecurring,
                                 onToggle: { isCompleted in
                                     viewModel.toggleSubtask(taskId: task.id, subtaskId: subtask.id, currentCompleted: !isCompleted)
                                 },
@@ -709,6 +714,7 @@ public struct EditTaskSheet: View {
                     AddSubtaskSectionView(
                         taskId: task.id,
                         parentDueDate: task.dueDate,
+                        isRecurring: isRecurring,
                         viewModel: viewModel
                     )
                 }
@@ -772,12 +778,18 @@ public struct EditTaskSheet: View {
 
         let parsedTags = parseTags(tagsText)
         let isoDate: String?
-        if hasDueDate {
+        let clearDueDate: Bool
+        if isRecurring {
+            isoDate = nil
+            clearDueDate = true
+        } else if hasDueDate {
             let formatter = ISO8601DateFormatter()
             formatter.formatOptions = [.withInternetDateTime]
             isoDate = formatter.string(from: dueDate)
+            clearDueDate = false
         } else {
             isoDate = nil
+            clearDueDate = true
         }
 
         Task {
@@ -788,7 +800,7 @@ public struct EditTaskSheet: View {
                 status: status,
                 priority: priority,
                 dueDate: isoDate,
-                clearDueDate: !hasDueDate,
+                clearDueDate: clearDueDate,
                 isFocus: isFocus,
                 tags: parsedTags,
                 projectId: selectedProjectId,
@@ -815,6 +827,7 @@ public struct EditTaskSheet: View {
 public struct SubtaskItemRowView: View {
     let subtask: Subtask
     let parentDueDate: String?
+    var isRecurring: Bool = false
     let onToggle: (Bool) -> Void
     let onUpdate: (String, String?, String?, Bool) async -> Bool
     let onDelete: () async -> Void
@@ -831,12 +844,14 @@ public struct SubtaskItemRowView: View {
     public init(
         subtask: Subtask,
         parentDueDate: String? = nil,
+        isRecurring: Bool = false,
         onToggle: @escaping (Bool) -> Void,
         onUpdate: @escaping (String, String?, String?, Bool) async -> Bool,
         onDelete: @escaping () async -> Void
     ) {
         self.subtask = subtask
         self.parentDueDate = parentDueDate
+        self.isRecurring = isRecurring
         self.onToggle = onToggle
         self.onUpdate = onUpdate
         self.onDelete = onDelete
@@ -859,7 +874,7 @@ public struct SubtaskItemRowView: View {
     }
 
     private var isExceedingParentDueDate: Bool {
-        guard hasDueDate, let parent = parentParsedDueDate else { return false }
+        guard !isRecurring, hasDueDate, let parent = parentParsedDueDate else { return false }
         return editDueDate > parent
     }
 
@@ -881,7 +896,7 @@ public struct SubtaskItemRowView: View {
 
         let dueParam: String?
         let clearDue: Bool
-        if hasDueDate {
+        if !isRecurring && hasDueDate {
             dueParam = DateTimeHelper.toISOString(editDueDate)
             clearDue = false
         } else {
@@ -1013,7 +1028,7 @@ public struct SubtaskItemRowView: View {
     @ViewBuilder
     private var badgesRow: some View {
         let hasDesc = (subtask.description != nil && !subtask.description!.isEmpty)
-        let hasDue = (subtask.dueDate != nil && !subtask.dueDate!.isEmpty)
+        let hasDue = !isRecurring && (subtask.dueDate != nil && !subtask.dueDate!.isEmpty)
         if hasDesc || hasDue {
             HStack(spacing: 6) {
                 if let desc = subtask.description, !desc.isEmpty {
@@ -1031,7 +1046,7 @@ public struct SubtaskItemRowView: View {
                     .clipShape(RoundedRectangle(cornerRadius: 4))
                 }
 
-                if let due = subtask.dueDate, !due.isEmpty {
+                if !isRecurring, let due = subtask.dueDate, !due.isEmpty {
                     HStack(spacing: 3) {
                         Image(systemName: "calendar")
                             .font(.system(size: 8))
@@ -1076,7 +1091,9 @@ public struct SubtaskItemRowView: View {
                     .clipShape(RoundedRectangle(cornerRadius: 6))
             }
 
-            dueDatePicker
+            if !isRecurring {
+                dueDatePicker
+            }
 
             if let err = validationError {
                 Text(err)
@@ -1160,7 +1177,20 @@ public struct SubtaskItemRowView: View {
 public struct AddSubtaskSectionView: View {
     let taskId: Int64
     let parentDueDate: String?
+    var isRecurring: Bool = false
     let viewModel: TaskViewModel
+
+    public init(
+        taskId: Int64,
+        parentDueDate: String? = nil,
+        isRecurring: Bool = false,
+        viewModel: TaskViewModel
+    ) {
+        self.taskId = taskId
+        self.parentDueDate = parentDueDate
+        self.isRecurring = isRecurring
+        self.viewModel = viewModel
+    }
 
     @State private var newSubtaskTitle: String = ""
     @State private var newSubtaskDescription: String = ""
@@ -1176,7 +1206,7 @@ public struct AddSubtaskSectionView: View {
     }
 
     private var isExceedingParentDueDate: Bool {
-        guard hasDueDate, let parent = parentParsedDueDate else { return false }
+        guard !isRecurring, hasDueDate, let parent = parentParsedDueDate else { return false }
         return newSubtaskDueDate > parent
     }
 
@@ -1195,7 +1225,7 @@ public struct AddSubtaskSectionView: View {
 
         let trimmedDesc = newSubtaskDescription.trimmingCharacters(in: .whitespacesAndNewlines)
         let descParam = trimmedDesc.isEmpty ? nil : trimmedDesc
-        let dueParam = hasDueDate ? DateTimeHelper.toISOString(newSubtaskDueDate) : nil
+        let dueParam = (!isRecurring && hasDueDate) ? DateTimeHelper.toISOString(newSubtaskDueDate) : nil
 
         isAdding = true
         errorMessage = nil
@@ -1304,29 +1334,31 @@ public struct AddSubtaskSectionView: View {
                         .stroke(Color.secondary.opacity(0.15), lineWidth: 1)
                 )
 
-            Toggle(isOn: $hasDueDate.animation()) {
-                Label(L10n.Tasks.subtaskDueDate, systemImage: "calendar")
-                    .font(.system(size: 12, weight: .medium))
-            }
-            .tint(AppColors.primary)
+            if !isRecurring {
+                Toggle(isOn: $hasDueDate.animation()) {
+                    Label(L10n.Tasks.subtaskDueDate, systemImage: "calendar")
+                        .font(.system(size: 12, weight: .medium))
+                }
+                .tint(AppColors.primary)
 
-            if hasDueDate {
-                DatePicker(
-                    "",
-                    selection: $newSubtaskDueDate,
-                    displayedComponents: [.date, .hourAndMinute]
-                )
-                .datePickerStyle(.compact)
-                .labelsHidden()
+                if hasDueDate {
+                    DatePicker(
+                        "",
+                        selection: $newSubtaskDueDate,
+                        displayedComponents: [.date, .hourAndMinute]
+                    )
+                    .datePickerStyle(.compact)
+                    .labelsHidden()
 
-                if isExceedingParentDueDate {
-                    HStack(spacing: 4) {
-                        Image(systemName: "exclamationmark.triangle.fill")
-                            .font(.system(size: 10))
-                        Text(L10n.Tasks.subtaskDueDateExceeds)
-                            .font(.system(size: 10))
+                    if isExceedingParentDueDate {
+                        HStack(spacing: 4) {
+                            Image(systemName: "exclamationmark.triangle.fill")
+                                .font(.system(size: 10))
+                            Text(L10n.Tasks.subtaskDueDateExceeds)
+                                .font(.system(size: 10))
+                        }
+                        .foregroundColor(AppColors.priorityUrgent)
                     }
-                    .foregroundColor(AppColors.priorityUrgent)
                 }
             }
         }
