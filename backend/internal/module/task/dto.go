@@ -2,8 +2,40 @@ package task
 
 import (
 	"encoding/json"
+	"errors"
+	"fmt"
+	"strings"
 	"time"
 )
+
+var flexibleDateFormats = []string{
+	time.RFC3339Nano,
+	time.RFC3339,
+	"2006-01-02T15:04:05Z07:00",
+	"2006-01-02T15:04:05",
+	"2006-01-02 15:04:05",
+	"2006-01-02",
+}
+
+func parseFlexibleTime(val interface{}) (*time.Time, bool, error) {
+	if val == nil {
+		return nil, true, nil
+	}
+	str, ok := val.(string)
+	if !ok {
+		return nil, false, errors.New("invalid date type")
+	}
+	str = strings.TrimSpace(str)
+	if str == "" || str == "null" {
+		return nil, true, nil
+	}
+	for _, layout := range flexibleDateFormats {
+		if t, err := time.Parse(layout, str); err == nil {
+			return &t, true, nil
+		}
+	}
+	return nil, false, fmt.Errorf("cannot parse %q as date/time", str)
+}
 
 // SubtaskResponse represents a checklist item in a task.
 type SubtaskResponse struct {
@@ -37,48 +69,194 @@ type CreateTaskRequest struct {
 	RecurringTaskID    *int64     `json:"recurring_task_id"`
 }
 
-// UpdateTaskRequest payload for updating an existing task.
-type UpdateTaskRequest struct {
-	Title                *string    `json:"title" validate:"omitempty,min=1,max=255"`
-	Description          *string    `json:"description"`
-	Status               *string    `json:"status" validate:"omitempty,oneof=backlog todo in_progress review done"`
-	Priority             *string    `json:"priority" validate:"omitempty,oneof=low medium high urgent"`
-	DueDate              *time.Time `json:"due_date"`
-	HasDueDate           bool       `json:"-"`
-	IsFocus              *bool      `json:"is_focus"`
-	Tags                 *[]string  `json:"tags"`
-	ProjectID            *int64     `json:"project_id"`
-	HasProjectID         bool       `json:"-"`
-	LastProgressNote     *string    `json:"last_progress_note"`
-	IsRecurring          *bool      `json:"is_recurring"`
-	RecurrencePattern    *string    `json:"recurrence_pattern" validate:"omitempty,oneof=daily weekdays weekly monthly"`
-	RecurrenceInterval   *int       `json:"recurrence_interval" validate:"omitempty,min=1,max=365"`
-	RecurrenceEndDate    *time.Time `json:"recurrence_end_date"`
-	HasRecurrenceEndDate bool       `json:"-"`
-	RecurringTaskID      *int64     `json:"recurring_task_id"`
-}
-
-// UnmarshalJSON detects if project_id, due_date, or recurrence_end_date was explicitly provided in JSON (including null).
-func (u *UpdateTaskRequest) UnmarshalJSON(data []byte) error {
-	type Alias UpdateTaskRequest
-	aux := &struct {
-		*Alias
-	}{
-		Alias: (*Alias)(u),
+func (c *CreateTaskRequest) UnmarshalJSON(data []byte) error {
+	type Alias struct {
+		Title              string   `json:"title" validate:"required,min=1,max=255"`
+		Description        string   `json:"description"`
+		Status             string   `json:"status" validate:"omitempty,oneof=backlog todo in_progress review done"`
+		Priority           string   `json:"priority" validate:"omitempty,oneof=low medium high urgent"`
+		IsFocus            bool     `json:"is_focus"`
+		Tags               []string `json:"tags"`
+		ProjectID          *int64   `json:"project_id"`
+		SourceNoteID       *int64   `json:"source_note_id"`
+		Subtasks           []string `json:"subtasks"`
+		IsRecurring        bool     `json:"is_recurring"`
+		RecurrencePattern  string   `json:"recurrence_pattern" validate:"omitempty,oneof=daily weekdays weekly monthly"`
+		RecurrenceInterval int      `json:"recurrence_interval" validate:"omitempty,min=1,max=365"`
+		RecurringTaskID    *int64   `json:"recurring_task_id"`
 	}
+	var aux Alias
 	if err := json.Unmarshal(data, &aux); err != nil {
 		return err
 	}
+	c.Title = aux.Title
+	c.Description = aux.Description
+	c.Status = aux.Status
+	c.Priority = aux.Priority
+	c.IsFocus = aux.IsFocus
+	c.Tags = aux.Tags
+	c.ProjectID = aux.ProjectID
+	c.SourceNoteID = aux.SourceNoteID
+	c.Subtasks = aux.Subtasks
+	c.IsRecurring = aux.IsRecurring
+	c.RecurrencePattern = aux.RecurrencePattern
+	c.RecurrenceInterval = aux.RecurrenceInterval
+	c.RecurringTaskID = aux.RecurringTaskID
+
+	if c.ProjectID != nil && *c.ProjectID <= 0 {
+		c.ProjectID = nil
+	}
+
 	var raw map[string]interface{}
 	if err := json.Unmarshal(data, &raw); err == nil {
-		if _, exists := raw["project_id"]; exists {
+		if val, exists := raw["due_date"]; exists {
+			t, _, err := parseFlexibleTime(val)
+			if err != nil {
+				return err
+			}
+			c.DueDate = t
+		}
+		if val, exists := raw["recurrence_end_date"]; exists {
+			t, _, err := parseFlexibleTime(val)
+			if err != nil {
+				return err
+			}
+			c.RecurrenceEndDate = t
+		}
+	}
+	return nil
+}
+
+// UpdateTaskRequest payload for updating an existing task.
+type UpdateTaskRequest struct {
+	Title                  *string    `json:"title" validate:"omitempty,min=1,max=255"`
+	Description            *string    `json:"description"`
+	ClearDescription       bool       `json:"clear_description"`
+	HasDescription         bool       `json:"-"`
+	Status                 *string    `json:"status" validate:"omitempty,oneof=backlog todo in_progress review done"`
+	Priority               *string    `json:"priority" validate:"omitempty,oneof=low medium high urgent"`
+	DueDate                *time.Time `json:"due_date"`
+	ClearDueDate           bool       `json:"clear_due_date"`
+	HasDueDate             bool       `json:"-"`
+	IsFocus                *bool      `json:"is_focus"`
+	Tags                   *[]string  `json:"tags"`
+	ProjectID              *int64     `json:"project_id"`
+	ClearProjectID         bool       `json:"clear_project_id"`
+	HasProjectID           bool       `json:"-"`
+	LastProgressNote       *string    `json:"last_progress_note"`
+	IsRecurring            *bool      `json:"is_recurring"`
+	RecurrencePattern      *string    `json:"recurrence_pattern" validate:"omitempty,oneof=daily weekdays weekly monthly"`
+	RecurrenceInterval     *int       `json:"recurrence_interval" validate:"omitempty,min=1,max=365"`
+	RecurrenceEndDate      *time.Time `json:"recurrence_end_date"`
+	ClearRecurrenceEndDate bool       `json:"clear_recurrence_end_date"`
+	HasRecurrenceEndDate   bool       `json:"-"`
+	RecurringTaskID        *int64     `json:"recurring_task_id"`
+}
+
+// UnmarshalJSON detects if project_id, due_date, recurrence_end_date, or description was provided or explicitly cleared.
+func (u *UpdateTaskRequest) UnmarshalJSON(data []byte) error {
+	type Alias struct {
+		Title                  *string   `json:"title" validate:"omitempty,min=1,max=255"`
+		Description            *string   `json:"description"`
+		ClearDescription       bool      `json:"clear_description"`
+		Status                 *string   `json:"status" validate:"omitempty,oneof=backlog todo in_progress review done"`
+		Priority               *string   `json:"priority" validate:"omitempty,oneof=low medium high urgent"`
+		ClearDueDate           bool      `json:"clear_due_date"`
+		IsFocus                *bool     `json:"is_focus"`
+		Tags                   *[]string `json:"tags"`
+		ProjectID              *int64    `json:"project_id"`
+		ClearProjectID         bool      `json:"clear_project_id"`
+		LastProgressNote       *string   `json:"last_progress_note"`
+		IsRecurring            *bool     `json:"is_recurring"`
+		RecurrencePattern      *string   `json:"recurrence_pattern" validate:"omitempty,oneof=daily weekdays weekly monthly"`
+		RecurrenceInterval     *int      `json:"recurrence_interval" validate:"omitempty,min=1,max=365"`
+		ClearRecurrenceEndDate bool      `json:"clear_recurrence_end_date"`
+		RecurringTaskID        *int64    `json:"recurring_task_id"`
+	}
+	var aux Alias
+	if err := json.Unmarshal(data, &aux); err != nil {
+		return err
+	}
+	u.Title = aux.Title
+	u.Description = aux.Description
+	u.ClearDescription = aux.ClearDescription
+	u.Status = aux.Status
+	u.Priority = aux.Priority
+	u.ClearDueDate = aux.ClearDueDate
+	u.IsFocus = aux.IsFocus
+	u.Tags = aux.Tags
+	u.ProjectID = aux.ProjectID
+	u.ClearProjectID = aux.ClearProjectID
+	u.LastProgressNote = aux.LastProgressNote
+	u.IsRecurring = aux.IsRecurring
+	u.RecurrencePattern = aux.RecurrencePattern
+	u.RecurrenceInterval = aux.RecurrenceInterval
+	u.ClearRecurrenceEndDate = aux.ClearRecurrenceEndDate
+	u.RecurringTaskID = aux.RecurringTaskID
+
+	var raw map[string]interface{}
+	if err := json.Unmarshal(data, &raw); err == nil {
+		if val, exists := raw["project_id"]; exists {
 			u.HasProjectID = true
+			if val == nil {
+				u.ProjectID = nil
+				u.ClearProjectID = true
+			}
 		}
-		if _, exists := raw["due_date"]; exists {
+		if u.ClearProjectID || (u.ProjectID != nil && *u.ProjectID <= 0) {
+			u.HasProjectID = true
+			u.ProjectID = nil
+			u.ClearProjectID = true
+		}
+
+		if val, exists := raw["due_date"]; exists {
 			u.HasDueDate = true
+			t, _, err := parseFlexibleTime(val)
+			if err != nil {
+				return err
+			}
+			u.DueDate = t
+			if t == nil {
+				u.ClearDueDate = true
+			}
 		}
-		if _, exists := raw["recurrence_end_date"]; exists {
+		if u.ClearDueDate {
+			u.HasDueDate = true
+			u.DueDate = nil
+		}
+
+		if val, exists := raw["recurrence_end_date"]; exists {
 			u.HasRecurrenceEndDate = true
+			t, _, err := parseFlexibleTime(val)
+			if err != nil {
+				return err
+			}
+			u.RecurrenceEndDate = t
+			if t == nil {
+				u.ClearRecurrenceEndDate = true
+			}
+		}
+		if u.ClearRecurrenceEndDate {
+			u.HasRecurrenceEndDate = true
+			u.RecurrenceEndDate = nil
+		}
+
+		if val, exists := raw["description"]; exists {
+			u.HasDescription = true
+			if val == nil {
+				empty := ""
+				u.Description = &empty
+				u.ClearDescription = true
+			} else if str, ok := val.(string); ok && strings.TrimSpace(str) == "" {
+				empty := ""
+				u.Description = &empty
+				u.ClearDescription = true
+			}
+		}
+		if u.ClearDescription {
+			u.HasDescription = true
+			empty := ""
+			u.Description = &empty
 		}
 	}
 	return nil
@@ -98,34 +276,96 @@ type CreateSubtaskRequest struct {
 	DueDate     *time.Time `json:"due_date"`
 }
 
-// UpdateSubtaskRequest payload for modifying a subtask checklist item.
-type UpdateSubtaskRequest struct {
-	Title          *string    `json:"title"`
-	Description    *string    `json:"description"`
-	IsCompleted    *bool      `json:"is_completed"`
-	DueDate        *time.Time `json:"due_date"`
-	HasDueDate     bool       `json:"-"`
-	HasDescription bool       `json:"-"`
-}
-
-// UnmarshalJSON detects if due_date was explicitly provided in JSON (including null).
-func (u *UpdateSubtaskRequest) UnmarshalJSON(data []byte) error {
-	type Alias UpdateSubtaskRequest
-	aux := &struct {
-		*Alias
-	}{
-		Alias: (*Alias)(u),
+func (c *CreateSubtaskRequest) UnmarshalJSON(data []byte) error {
+	type Alias struct {
+		Title       string `json:"title" validate:"required,min=1,max=255"`
+		Description string `json:"description"`
 	}
+	var aux Alias
 	if err := json.Unmarshal(data, &aux); err != nil {
 		return err
 	}
+	c.Title = aux.Title
+	c.Description = aux.Description
+
 	var raw map[string]interface{}
 	if err := json.Unmarshal(data, &raw); err == nil {
-		if _, exists := raw["due_date"]; exists {
-			u.HasDueDate = true
+		if val, exists := raw["due_date"]; exists {
+			t, _, err := parseFlexibleTime(val)
+			if err != nil {
+				return err
+			}
+			c.DueDate = t
 		}
-		if _, exists := raw["description"]; exists {
+	}
+	return nil
+}
+
+// UpdateSubtaskRequest payload for modifying a subtask checklist item.
+type UpdateSubtaskRequest struct {
+	Title            *string    `json:"title"`
+	Description      *string    `json:"description"`
+	ClearDescription bool       `json:"clear_description"`
+	HasDescription   bool       `json:"-"`
+	IsCompleted      *bool      `json:"is_completed"`
+	DueDate          *time.Time `json:"due_date"`
+	ClearDueDate     bool       `json:"clear_due_date"`
+	HasDueDate       bool       `json:"-"`
+}
+
+// UnmarshalJSON detects if due_date, description, or clear flags were explicitly provided.
+func (u *UpdateSubtaskRequest) UnmarshalJSON(data []byte) error {
+	type Alias struct {
+		Title            *string `json:"title"`
+		Description      *string `json:"description"`
+		ClearDescription bool    `json:"clear_description"`
+		IsCompleted      *bool   `json:"is_completed"`
+		ClearDueDate     bool    `json:"clear_due_date"`
+	}
+	var aux Alias
+	if err := json.Unmarshal(data, &aux); err != nil {
+		return err
+	}
+	u.Title = aux.Title
+	u.Description = aux.Description
+	u.ClearDescription = aux.ClearDescription
+	u.IsCompleted = aux.IsCompleted
+	u.ClearDueDate = aux.ClearDueDate
+
+	var raw map[string]interface{}
+	if err := json.Unmarshal(data, &raw); err == nil {
+		if val, exists := raw["due_date"]; exists {
+			u.HasDueDate = true
+			t, _, err := parseFlexibleTime(val)
+			if err != nil {
+				return err
+			}
+			u.DueDate = t
+			if t == nil {
+				u.ClearDueDate = true
+			}
+		}
+		if u.ClearDueDate {
+			u.HasDueDate = true
+			u.DueDate = nil
+		}
+
+		if val, exists := raw["description"]; exists {
 			u.HasDescription = true
+			if val == nil {
+				empty := ""
+				u.Description = &empty
+				u.ClearDescription = true
+			} else if str, ok := val.(string); ok && strings.TrimSpace(str) == "" {
+				empty := ""
+				u.Description = &empty
+				u.ClearDescription = true
+			}
+		}
+		if u.ClearDescription {
+			u.HasDescription = true
+			empty := ""
+			u.Description = &empty
 		}
 	}
 	return nil
@@ -302,6 +542,50 @@ type CreateRecurringTaskRequest struct {
 	Subtasks           []CreateRecurringSubtaskItem `json:"subtasks"`
 }
 
+func (c *CreateRecurringTaskRequest) UnmarshalJSON(data []byte) error {
+	type Alias struct {
+		Title              string                       `json:"title" validate:"required,min=1,max=255"`
+		Description        string                       `json:"description"`
+		Priority           string                       `json:"priority" validate:"omitempty,oneof=low medium high urgent"`
+		ProjectID          *int64                       `json:"project_id"`
+		RecurrencePattern  string                       `json:"recurrence_pattern" validate:"required,oneof=daily weekdays weekly monthly"`
+		RecurrenceInterval int                          `json:"recurrence_interval" validate:"omitempty,min=1,max=365"`
+		DueTime            *string                      `json:"due_time"`
+		Subtasks           []CreateRecurringSubtaskItem `json:"subtasks"`
+	}
+	var aux Alias
+	if err := json.Unmarshal(data, &aux); err != nil {
+		return err
+	}
+	c.Title = aux.Title
+	c.Description = aux.Description
+	c.Priority = aux.Priority
+	c.ProjectID = aux.ProjectID
+	c.RecurrencePattern = aux.RecurrencePattern
+	c.RecurrenceInterval = aux.RecurrenceInterval
+	c.DueTime = aux.DueTime
+	c.Subtasks = aux.Subtasks
+
+	if c.ProjectID != nil && *c.ProjectID <= 0 {
+		c.ProjectID = nil
+	}
+	if c.DueTime != nil && strings.TrimSpace(*c.DueTime) == "" {
+		c.DueTime = nil
+	}
+
+	var raw map[string]interface{}
+	if err := json.Unmarshal(data, &raw); err == nil {
+		if val, exists := raw["recurrence_end_date"]; exists {
+			t, _, err := parseFlexibleTime(val)
+			if err != nil {
+				return err
+			}
+			c.RecurrenceEndDate = t
+		}
+	}
+	return nil
+}
+
 // CreateRecurringSubtaskItem describes a subtask in a recurring task creation request.
 type CreateRecurringSubtaskItem struct {
 	Title       string `json:"title" validate:"required,min=1,max=255"`
@@ -311,17 +595,124 @@ type CreateRecurringSubtaskItem struct {
 
 // UpdateRecurringTaskRequest payload for updating a master recurring task.
 type UpdateRecurringTaskRequest struct {
-	Title                *string                       `json:"title" validate:"omitempty,min=1,max=255"`
-	Description          *string                       `json:"description"`
-	Priority             *string                       `json:"priority" validate:"omitempty,oneof=low medium high urgent"`
-	ProjectID            *int64                        `json:"project_id"`
-	HasProjectID         bool                          `json:"-"`
-	RecurrencePattern    *string                       `json:"recurrence_pattern" validate:"omitempty,oneof=daily weekdays weekly monthly"`
-	RecurrenceInterval   *int                          `json:"recurrence_interval" validate:"omitempty,min=1,max=365"`
-	DueTime              *string                       `json:"due_time"`
-	RecurrenceEndDate    *time.Time                    `json:"recurrence_end_date"`
-	HasRecurrenceEndDate bool                          `json:"-"`
-	IsActive             *bool                         `json:"is_active"`
-	Subtasks             *[]CreateRecurringSubtaskItem `json:"subtasks"`
+	Title                  *string                       `json:"title" validate:"omitempty,min=1,max=255"`
+	Description            *string                       `json:"description"`
+	ClearDescription       bool                          `json:"clear_description"`
+	HasDescription         bool                          `json:"-"`
+	Priority               *string                       `json:"priority" validate:"omitempty,oneof=low medium high urgent"`
+	ProjectID              *int64                        `json:"project_id"`
+	ClearProjectID         bool                          `json:"clear_project_id"`
+	HasProjectID           bool                          `json:"-"`
+	RecurrencePattern      *string                       `json:"recurrence_pattern" validate:"omitempty,oneof=daily weekdays weekly monthly"`
+	RecurrenceInterval     *int                          `json:"recurrence_interval" validate:"omitempty,min=1,max=365"`
+	DueTime                *string                       `json:"due_time"`
+	ClearDueTime           bool                          `json:"clear_due_time"`
+	HasDueTime             bool                          `json:"-"`
+	RecurrenceEndDate      *time.Time                    `json:"recurrence_end_date"`
+	ClearRecurrenceEndDate bool                          `json:"clear_recurrence_end_date"`
+	HasRecurrenceEndDate   bool                          `json:"-"`
+	IsActive               *bool                         `json:"is_active"`
+	Subtasks               *[]CreateRecurringSubtaskItem `json:"subtasks"`
+}
+
+func (u *UpdateRecurringTaskRequest) UnmarshalJSON(data []byte) error {
+	type Alias struct {
+		Title                  *string                       `json:"title" validate:"omitempty,min=1,max=255"`
+		Description            *string                       `json:"description"`
+		ClearDescription       bool                          `json:"clear_description"`
+		Priority               *string                       `json:"priority" validate:"omitempty,oneof=low medium high urgent"`
+		ProjectID              *int64                        `json:"project_id"`
+		ClearProjectID         bool                          `json:"clear_project_id"`
+		RecurrencePattern      *string                       `json:"recurrence_pattern" validate:"omitempty,oneof=daily weekdays weekly monthly"`
+		RecurrenceInterval     *int                          `json:"recurrence_interval" validate:"omitempty,min=1,max=365"`
+		DueTime                *string                       `json:"due_time"`
+		ClearDueTime           bool                          `json:"clear_due_time"`
+		ClearRecurrenceEndDate bool                          `json:"clear_recurrence_end_date"`
+		IsActive               *bool                         `json:"is_active"`
+		Subtasks               *[]CreateRecurringSubtaskItem `json:"subtasks"`
+	}
+	var aux Alias
+	if err := json.Unmarshal(data, &aux); err != nil {
+		return err
+	}
+	u.Title = aux.Title
+	u.Description = aux.Description
+	u.ClearDescription = aux.ClearDescription
+	u.Priority = aux.Priority
+	u.ProjectID = aux.ProjectID
+	u.ClearProjectID = aux.ClearProjectID
+	u.RecurrencePattern = aux.RecurrencePattern
+	u.RecurrenceInterval = aux.RecurrenceInterval
+	u.DueTime = aux.DueTime
+	u.ClearDueTime = aux.ClearDueTime
+	u.ClearRecurrenceEndDate = aux.ClearRecurrenceEndDate
+	u.IsActive = aux.IsActive
+	u.Subtasks = aux.Subtasks
+
+	var raw map[string]interface{}
+	if err := json.Unmarshal(data, &raw); err == nil {
+		if val, exists := raw["project_id"]; exists {
+			u.HasProjectID = true
+			if val == nil {
+				u.ProjectID = nil
+				u.ClearProjectID = true
+			}
+		}
+		if u.ClearProjectID || (u.ProjectID != nil && *u.ProjectID <= 0) {
+			u.HasProjectID = true
+			u.ProjectID = nil
+			u.ClearProjectID = true
+		}
+
+		if val, exists := raw["due_time"]; exists {
+			u.HasDueTime = true
+			if val == nil {
+				u.DueTime = nil
+				u.ClearDueTime = true
+			} else if s, ok := val.(string); ok && strings.TrimSpace(s) == "" {
+				u.DueTime = nil
+				u.ClearDueTime = true
+			}
+		}
+		if u.ClearDueTime {
+			u.HasDueTime = true
+			u.DueTime = nil
+		}
+
+		if val, exists := raw["recurrence_end_date"]; exists {
+			u.HasRecurrenceEndDate = true
+			t, _, err := parseFlexibleTime(val)
+			if err != nil {
+				return err
+			}
+			u.RecurrenceEndDate = t
+			if t == nil {
+				u.ClearRecurrenceEndDate = true
+			}
+		}
+		if u.ClearRecurrenceEndDate {
+			u.HasRecurrenceEndDate = true
+			u.RecurrenceEndDate = nil
+		}
+
+		if val, exists := raw["description"]; exists {
+			u.HasDescription = true
+			if val == nil {
+				empty := ""
+				u.Description = &empty
+				u.ClearDescription = true
+			} else if str, ok := val.(string); ok && strings.TrimSpace(str) == "" {
+				empty := ""
+				u.Description = &empty
+				u.ClearDescription = true
+			}
+		}
+		if u.ClearDescription {
+			u.HasDescription = true
+			empty := ""
+			u.Description = &empty
+		}
+	}
+	return nil
 }
 

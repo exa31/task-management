@@ -121,6 +121,15 @@ func (s *service) Create(ctx context.Context, userID string, req CreateTaskReque
 					OrderIndex: i,
 				}
 			}
+			var dueTime *string
+			if req.DueDate != nil {
+				loc, err := time.LoadLocation(userTimezone)
+				if err != nil {
+					loc = time.Local
+				}
+				formatted := req.DueDate.In(loc).Format("15:04:05")
+				dueTime = &formatted
+			}
 			recReq := CreateRecurringTaskRequest{
 				Title:              req.Title,
 				Description:        req.Description,
@@ -129,6 +138,7 @@ func (s *service) Create(ctx context.Context, userID string, req CreateTaskReque
 				RecurrencePattern:  req.RecurrencePattern,
 				RecurrenceInterval: req.RecurrenceInterval,
 				RecurrenceEndDate:  req.RecurrenceEndDate,
+				DueTime:            dueTime,
 				Subtasks:           subItems,
 			}
 			recMaster, recErr := s.repo.CreateRecurring(ctx, tx, userID, recReq)
@@ -306,30 +316,24 @@ func (s *service) Update(ctx context.Context, userID string, id int64, req Updat
 			userTimezone = tz
 
 			if s.scheduler != nil {
-				if res.Status == "done" {
+				if res.Status == "done" || res.DueDate == nil {
 					if err := s.scheduler.CancelTaskDueAlert(ctx, res.ID); err != nil && s.logger != nil {
 						s.logger.WarnContext(ctx, "failed to cancel task due alert", "error", err, "task_id", res.ID)
 					}
-				} else if req.DueDate != nil {
-					if res.DueDate == nil {
-						if err := s.scheduler.CancelTaskDueAlert(ctx, res.ID); err != nil && s.logger != nil {
-							s.logger.WarnContext(ctx, "failed to cancel task due alert", "error", err, "task_id", res.ID)
+				} else if req.HasDueDate || req.DueDate != nil {
+					warningTime := res.DueDate.Add(-time.Duration(thresholdMinutes) * time.Minute)
+					now := time.Now()
+					if warningTime.After(now) {
+						if err := s.scheduler.ScheduleTaskDueAlert(ctx, res.ID, warningTime); err != nil && s.logger != nil {
+							s.logger.WarnContext(ctx, "failed to schedule task due alert", "error", err, "task_id", res.ID)
+						}
+					} else if res.DueDate.After(now) {
+						if err := s.scheduler.ScheduleTaskDueAlert(ctx, res.ID, now.Add(5*time.Second)); err != nil && s.logger != nil {
+							s.logger.WarnContext(ctx, "failed to schedule task due alert", "error", err, "task_id", res.ID)
 						}
 					} else {
-						warningTime := res.DueDate.Add(-time.Duration(thresholdMinutes) * time.Minute)
-						now := time.Now()
-						if warningTime.After(now) {
-							if err := s.scheduler.ScheduleTaskDueAlert(ctx, res.ID, warningTime); err != nil && s.logger != nil {
-								s.logger.WarnContext(ctx, "failed to schedule task due alert", "error", err, "task_id", res.ID)
-							}
-						} else if res.DueDate.After(now) {
-							if err := s.scheduler.ScheduleTaskDueAlert(ctx, res.ID, now.Add(5*time.Second)); err != nil && s.logger != nil {
-								s.logger.WarnContext(ctx, "failed to schedule task due alert", "error", err, "task_id", res.ID)
-							}
-						} else {
-							if err := s.scheduler.CancelTaskDueAlert(ctx, res.ID); err != nil && s.logger != nil {
-								s.logger.WarnContext(ctx, "failed to cancel task due alert", "error", err, "task_id", res.ID)
-							}
+						if err := s.scheduler.CancelTaskDueAlert(ctx, res.ID); err != nil && s.logger != nil {
+							s.logger.WarnContext(ctx, "failed to cancel task due alert", "error", err, "task_id", res.ID)
 						}
 					}
 				}

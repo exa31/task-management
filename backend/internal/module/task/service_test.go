@@ -1459,3 +1459,128 @@ func TestTaskService_RecurringSubtasksSync_Errors(t *testing.T) {
 	}
 }
 
+func TestTaskService_Update_ClearDueDate_CancelsAlert(t *testing.T) {
+	ctx := context.Background()
+	testUserID := "user-uuid-123"
+	taskID := int64(100)
+	initialDue := time.Now().Add(2 * time.Hour)
+
+	mockRepo := &mockRepository{
+		findByIDFunc: func(ctx context.Context, userID string, id int64) (*TaskResponse, error) {
+			return &TaskResponse{
+				ID:       taskID,
+				UserID:   userID,
+				Title:    "Existing Task",
+				DueDate:  &initialDue,
+				Status:   "todo",
+				Priority: "normal",
+			}, nil
+		},
+		updateFunc: func(ctx context.Context, userID string, id int64, req UpdateTaskRequest) (*TaskResponse, error) {
+			var updatedDue *time.Time
+			if !req.ClearDueDate {
+				updatedDue = req.DueDate
+			}
+			return &TaskResponse{
+				ID:       taskID,
+				UserID:   userID,
+				Title:    "Existing Task",
+				DueDate:  updatedDue,
+				Status:   "todo",
+				Priority: "normal",
+			}, nil
+		},
+		getUserThresholdFunc: func(ctx context.Context, userID string) (int, string, error) {
+			return 30, "Asia/Jakarta", nil
+		},
+	}
+
+	scheduler := newMockTaskScheduler()
+	scheduler.dueScheduled[taskID] = initialDue.Add(-30 * time.Minute)
+
+	svc := NewService(mockRepo, &mockTransactor{})
+	svc.SetNotificationDependencies(scheduler, nil, nil, nil, nil, nil)
+
+	res, err := svc.Update(ctx, testUserID, taskID, UpdateTaskRequest{
+		ClearDueDate: true,
+	})
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if res.DueDate != nil {
+		t.Fatalf("expected due date to be nil, got %v", res.DueDate)
+	}
+	if !scheduler.dueCancelled[taskID] {
+		t.Fatalf("expected scheduler alert to be cancelled for task %d", taskID)
+	}
+}
+
+func TestTaskService_Update_ConvertToRecurring_PreservesDueDate(t *testing.T) {
+	ctx := context.Background()
+	testUserID := "user-uuid-123"
+	taskID := int64(101)
+	initialDue := time.Now().Add(2 * time.Hour)
+	recMasterID := int64(999)
+
+	mockRepo := &mockRepository{
+		findByIDFunc: func(ctx context.Context, userID string, id int64) (*TaskResponse, error) {
+			return &TaskResponse{
+				ID:          taskID,
+				UserID:      userID,
+				Title:       "Existing Task",
+				DueDate:     &initialDue,
+				Status:      "todo",
+				Priority:    "normal",
+				IsRecurring: false,
+			}, nil
+		},
+		updateFunc: func(ctx context.Context, userID string, id int64, req UpdateTaskRequest) (*TaskResponse, error) {
+			isRec := true
+			return &TaskResponse{
+				ID:          taskID,
+				UserID:      userID,
+				Title:       "Existing Task",
+				DueDate:     &initialDue, // preserved!
+				Status:      "todo",
+				Priority:    "normal",
+				IsRecurring: isRec,
+			}, nil
+		},
+		convertTaskToRecurringFunc: func(ctx context.Context, userID string, tid int64, pattern string, interval int, endDate *time.Time) (*RecurringTaskResponse, error) {
+			return &RecurringTaskResponse{
+				ID:       recMasterID,
+				UserID:   userID,
+				Title:    "Existing Task",
+				IsActive: true,
+			}, nil
+		},
+		getUserThresholdFunc: func(ctx context.Context, userID string) (int, string, error) {
+			return 30, "Asia/Jakarta", nil
+		},
+	}
+
+	scheduler := newMockTaskScheduler()
+	scheduler.dueScheduled[taskID] = initialDue.Add(-30 * time.Minute)
+
+	isRecurring := true
+	svc := NewService(mockRepo, &mockTransactor{})
+	svc.SetNotificationDependencies(scheduler, nil, nil, nil, nil, nil)
+
+	res, err := svc.Update(ctx, testUserID, taskID, UpdateTaskRequest{
+		IsRecurring: &isRecurring,
+	})
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if !res.IsRecurring {
+		t.Fatal("expected task to be recurring")
+	}
+	if res.DueDate == nil {
+		t.Fatal("expected due date to be preserved, got nil")
+	}
+	if scheduler.dueCancelled[taskID] {
+		t.Fatalf("scheduler alert should not be cancelled when due date is preserved")
+	}
+}
+
+

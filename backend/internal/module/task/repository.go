@@ -451,7 +451,9 @@ func (r *repository) Update(ctx context.Context, tx *sqlx.Tx, userID string, id 
 	}
 
 	desc := existing.Description
-	if req.Description != nil {
+	if req.ClearDescription {
+		desc = ""
+	} else if req.Description != nil {
 		desc = *req.Description
 	}
 
@@ -465,9 +467,40 @@ func (r *repository) Update(ctx context.Context, tx *sqlx.Tx, userID string, id 
 		priority = *req.Priority
 	}
 
+	isRecurring := existing.IsRecurring
+	if req.IsRecurring != nil {
+		isRecurring = *req.IsRecurring
+	}
+	recurrencePattern := existing.RecurrencePattern
+	if req.RecurrencePattern != nil {
+		recurrencePattern = *req.RecurrencePattern
+	}
+	recurrenceInterval := existing.RecurrenceInterval
+	if req.RecurrenceInterval != nil {
+		recurrenceInterval = *req.RecurrenceInterval
+	}
+	if recurrenceInterval <= 0 {
+		recurrenceInterval = 1
+	}
+	recurrenceEndDate := existing.RecurrenceEndDate
+	if req.ClearRecurrenceEndDate {
+		recurrenceEndDate = nil
+	} else if req.HasRecurrenceEndDate {
+		recurrenceEndDate = req.RecurrenceEndDate
+	} else if req.RecurrenceEndDate != nil {
+		recurrenceEndDate = req.RecurrenceEndDate
+	}
+	recurringTaskID := existing.RecurringTaskID
+	if req.RecurringTaskID != nil {
+		recurringTaskID = req.RecurringTaskID
+	}
+
 	dueDate := existing.DueDate
 	var dueDateWarningSentAt = existing.DueDateWarningSentAt
-	if req.HasDueDate {
+	if req.ClearDueDate {
+		dueDate = nil
+		dueDateWarningSentAt = nil
+	} else if req.HasDueDate {
 		dueDate = req.DueDate
 		if (existing.DueDate == nil && req.DueDate != nil) ||
 			(existing.DueDate != nil && req.DueDate == nil) ||
@@ -498,7 +531,9 @@ func (r *repository) Update(ctx context.Context, tx *sqlx.Tx, userID string, id 
 	}
 
 	projectID := existing.ProjectID
-	if req.HasProjectID {
+	if req.ClearProjectID {
+		projectID = nil
+	} else if req.HasProjectID {
 		projectID = req.ProjectID
 		if projectID != nil && *projectID <= 0 {
 			projectID = nil
@@ -516,32 +551,6 @@ func (r *repository) Update(ctx context.Context, tx *sqlx.Tx, userID string, id 
 		lastProgressNote = *req.LastProgressNote
 		now := time.Now()
 		lastProgressAt = &now
-	}
-
-	isRecurring := existing.IsRecurring
-	if req.IsRecurring != nil {
-		isRecurring = *req.IsRecurring
-	}
-	recurrencePattern := existing.RecurrencePattern
-	if req.RecurrencePattern != nil {
-		recurrencePattern = *req.RecurrencePattern
-	}
-	recurrenceInterval := existing.RecurrenceInterval
-	if req.RecurrenceInterval != nil {
-		recurrenceInterval = *req.RecurrenceInterval
-	}
-	if recurrenceInterval <= 0 {
-		recurrenceInterval = 1
-	}
-	recurrenceEndDate := existing.RecurrenceEndDate
-	if req.HasRecurrenceEndDate {
-		recurrenceEndDate = req.RecurrenceEndDate
-	} else if req.RecurrenceEndDate != nil {
-		recurrenceEndDate = req.RecurrenceEndDate
-	}
-	recurringTaskID := existing.RecurringTaskID
-	if req.RecurringTaskID != nil {
-		recurringTaskID = req.RecurringTaskID
 	}
 
 	query := `
@@ -719,7 +728,9 @@ func (r *repository) UpdateSubtask(ctx context.Context, tx *sqlx.Tx, userID stri
 		title = *req.Title
 	}
 	description := existing.Description
-	if req.HasDescription {
+	if req.ClearDescription {
+		description = ""
+	} else if req.HasDescription {
 		if req.Description != nil {
 			description = *req.Description
 		} else {
@@ -733,7 +744,9 @@ func (r *repository) UpdateSubtask(ctx context.Context, tx *sqlx.Tx, userID stri
 		isCompleted = *req.IsCompleted
 	}
 	dueDate := existing.DueDate
-	if req.HasDueDate {
+	if req.ClearDueDate {
+		dueDate = nil
+	} else if req.HasDueDate {
 		dueDate = req.DueDate
 	} else if req.DueDate != nil {
 		dueDate = req.DueDate
@@ -1356,7 +1369,9 @@ func (r *repository) UpdateRecurring(ctx context.Context, tx *sqlx.Tx, userID st
 		title = *req.Title
 	}
 	desc := existing.Description
-	if req.Description != nil {
+	if req.ClearDescription {
+		desc = ""
+	} else if req.Description != nil {
 		desc = *req.Description
 	}
 	priority := existing.Priority
@@ -1375,11 +1390,17 @@ func (r *repository) UpdateRecurring(ctx context.Context, tx *sqlx.Tx, userID st
 		interval = 1
 	}
 	dueTime := existing.DueTime
-	if req.DueTime != nil {
+	if req.ClearDueTime {
+		dueTime = nil
+	} else if req.HasDueTime {
+		dueTime = req.DueTime
+	} else if req.DueTime != nil {
 		dueTime = req.DueTime
 	}
 	endDate := existing.RecurrenceEndDate
-	if req.HasRecurrenceEndDate {
+	if req.ClearRecurrenceEndDate {
+		endDate = nil
+	} else if req.HasRecurrenceEndDate {
 		endDate = req.RecurrenceEndDate
 	} else if req.RecurrenceEndDate != nil {
 		endDate = req.RecurrenceEndDate
@@ -1389,10 +1410,18 @@ func (r *repository) UpdateRecurring(ctx context.Context, tx *sqlx.Tx, userID st
 		isActive = *req.IsActive
 	}
 	projectID := existing.ProjectID
-	if req.HasProjectID {
+	if req.ClearProjectID {
+		projectID = nil
+	} else if req.HasProjectID {
 		projectID = req.ProjectID
+		if projectID != nil && *projectID <= 0 {
+			projectID = nil
+		}
 	} else if req.ProjectID != nil {
 		projectID = req.ProjectID
+		if *projectID <= 0 {
+			projectID = nil
+		}
 	}
 
 	query := `
@@ -1661,16 +1690,29 @@ func (r *repository) SyncRecurringFromTask(ctx context.Context, tx *sqlx.Tx, use
 	if pattern == "" {
 		pattern = "daily"
 	}
+
+	var dueTime *string
+	if task.DueDate != nil {
+		_, tz, _ := r.GetUserThresholdAndTimezone(ctx, tx, userID)
+		loc, err := time.LoadLocation(tz)
+		if err != nil {
+			loc = time.Local
+		}
+		formatted := task.DueDate.In(loc).Format("15:04:05")
+		dueTime = &formatted
+	}
+
 	query := `
 		UPDATE recurring_tasks
 		SET title = $1, description = $2, priority = $3, project_id = $4,
 		    recurrence_pattern = $5, recurrence_interval = $6, recurrence_end_date = $7,
-		    updated_at = NOW()
-		WHERE id = $8 AND user_id = $9
+		    due_time = $8, updated_at = NOW()
+		WHERE id = $9 AND user_id = $10
 	`
 	_, err := tx.ExecContext(ctx, query,
 		task.Title, task.Description, task.Priority, task.ProjectID,
 		pattern, interval, task.RecurrenceEndDate,
+		dueTime,
 		*task.RecurringTaskID, userID,
 	)
 	return err
@@ -1691,14 +1733,25 @@ func (r *repository) ConvertTaskToRecurring(ctx context.Context, tx *sqlx.Tx, us
 		pattern = "daily"
 	}
 
+	var dueTime *string
+	if task.DueDate != nil {
+		_, tz, _ := r.GetUserThresholdAndTimezone(ctx, tx, userID)
+		loc, err := time.LoadLocation(tz)
+		if err != nil {
+			loc = time.Local
+		}
+		formatted := task.DueDate.In(loc).Format("15:04:05")
+		dueTime = &formatted
+	}
+
 	// 1. Create recurring_tasks master
 	recQuery := `
 		INSERT INTO recurring_tasks (
 			user_id, project_id, title, description, priority,
-			recurrence_pattern, recurrence_interval, recurrence_end_date, is_active,
+			recurrence_pattern, recurrence_interval, due_time, recurrence_end_date, is_active,
 			created_at, updated_at
 		)
-		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, TRUE, NOW(), NOW())
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, TRUE, NOW(), NOW())
 		RETURNING id, user_id, project_id, title, description, priority,
 			recurrence_pattern, recurrence_interval, due_time, recurrence_end_date,
 			is_active, last_generated_at, created_at, updated_at
@@ -1706,7 +1759,7 @@ func (r *repository) ConvertTaskToRecurring(ctx context.Context, tx *sqlx.Tx, us
 	var entity recurringTaskEntity
 	err = tx.QueryRowxContext(ctx, recQuery,
 		userID, task.ProjectID, task.Title, task.Description, task.Priority,
-		pattern, interval, endDate,
+		pattern, interval, dueTime, endDate,
 	).StructScan(&entity)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create recurring task: %w", err)
@@ -1743,7 +1796,7 @@ func (r *repository) ConvertTaskToRecurring(ctx context.Context, tx *sqlx.Tx, us
 		}
 	}
 
-	// 3. Link task instance to this new master
+	// 3. Link task instance to this new master (preserves existing due_date on this task)
 	_, err = tx.ExecContext(ctx, `
 		UPDATE tasks
 		SET is_recurring = TRUE, recurrence_pattern = $1, recurrence_interval = $2,

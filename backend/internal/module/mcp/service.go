@@ -613,9 +613,22 @@ func (s *service) callTool(ctx context.Context, userID string, name string, args
 		if t, ok := args["title"].(string); ok && t != "" {
 			titlePtr = &t
 		}
-		if d, ok := args["description"].(string); ok {
-			descPtr = &d
+		clearDesc := false
+		if rawD, exists := args["description"]; exists {
+			if rawD == nil {
+				clearDesc = true
+			} else if d, ok := rawD.(string); ok {
+				if strings.TrimSpace(d) == "" {
+					clearDesc = true
+				} else {
+					descPtr = &d
+				}
+			}
 		}
+		if cd, ok := args["clear_description"].(bool); ok && cd {
+			clearDesc = true
+		}
+
 		if s, ok := args["status"].(string); ok && s != "" {
 			statusPtr = &s
 		}
@@ -624,14 +637,24 @@ func (s *service) callTool(ctx context.Context, userID string, name string, args
 		}
 		var dueTimePtr *time.Time
 		hasDueDate := false
+		clearDueDate := false
 		if rawDD, exists := args["due_date"]; exists {
 			hasDueDate = true
-			if dd, ok := rawDD.(string); ok && strings.TrimSpace(dd) != "" {
-				if t, err := parseDateTime(dd); err == nil {
+			if rawDD == nil {
+				clearDueDate = true
+			} else if dd, ok := rawDD.(string); ok {
+				trimmed := strings.TrimSpace(dd)
+				if trimmed == "" || strings.EqualFold(trimmed, "null") {
+					clearDueDate = true
+				} else if t, err := parseDateTime(trimmed); err == nil {
 					dueTimePtr = &t
 				}
 			}
 		}
+		if cdd, ok := args["clear_due_date"].(bool); ok && cdd {
+			clearDueDate = true
+		}
+
 		var isFocusPtr *bool
 		if f, ok := args["is_focus"].(bool); ok {
 			isFocusPtr = &f
@@ -644,14 +667,22 @@ func (s *service) callTool(ctx context.Context, userID string, name string, args
 
 		var projectIDPtr *int64
 		hasProjectID := false
+		clearProjectID := false
 		if rawPID, exists := args["project_id"]; exists {
 			hasProjectID = true
-			if rawPID != nil {
+			if rawPID == nil {
+				clearProjectID = true
+			} else {
 				pid := int64(parseInt(rawPID, 0))
 				if pid > 0 {
 					projectIDPtr = &pid
+				} else {
+					clearProjectID = true
 				}
 			}
+		}
+		if cpid, ok := args["clear_project_id"].(bool); ok && cpid {
+			clearProjectID = true
 		}
 
 		var isRecurringPtr *bool
@@ -669,31 +700,44 @@ func (s *service) callTool(ctx context.Context, userID string, name string, args
 		}
 		var recurrenceEndDatePtr *time.Time
 		hasRecurrenceEndDate := false
+		clearRecurrenceEndDate := false
 		if rawRED, exists := args["recurrence_end_date"]; exists {
 			hasRecurrenceEndDate = true
-			if red, ok := rawRED.(string); ok && strings.TrimSpace(red) != "" {
-				if t, err := parseDateTime(red); err == nil {
+			if rawRED == nil {
+				clearRecurrenceEndDate = true
+			} else if red, ok := rawRED.(string); ok {
+				trimmed := strings.TrimSpace(red)
+				if trimmed == "" || strings.EqualFold(trimmed, "null") {
+					clearRecurrenceEndDate = true
+				} else if t, err := parseDateTime(trimmed); err == nil {
 					recurrenceEndDatePtr = &t
 				}
 			}
 		}
+		if cred, ok := args["clear_recurrence_end_date"].(bool); ok && cred {
+			clearRecurrenceEndDate = true
+		}
 
 		res, err := s.taskService.Update(ctx, userID, taskID, task.UpdateTaskRequest{
-			Title:                titlePtr,
-			Description:          descPtr,
-			Status:               statusPtr,
-			Priority:             priorityPtr,
-			DueDate:              dueTimePtr,
-			HasDueDate:           hasDueDate,
-			IsFocus:              isFocusPtr,
-			Tags:                 tagsPtr,
-			ProjectID:            projectIDPtr,
-			HasProjectID:         hasProjectID,
-			IsRecurring:          isRecurringPtr,
-			RecurrencePattern:    recurrencePatternPtr,
-			RecurrenceInterval:   recurrenceIntervalPtr,
-			RecurrenceEndDate:    recurrenceEndDatePtr,
-			HasRecurrenceEndDate: hasRecurrenceEndDate,
+			Title:                  titlePtr,
+			Description:            descPtr,
+			Status:                 statusPtr,
+			Priority:               priorityPtr,
+			DueDate:                dueTimePtr,
+			HasDueDate:             hasDueDate,
+			ClearDueDate:           clearDueDate,
+			ClearDescription:       clearDesc,
+			IsFocus:                isFocusPtr,
+			Tags:                   tagsPtr,
+			ProjectID:              projectIDPtr,
+			HasProjectID:           hasProjectID,
+			ClearProjectID:         clearProjectID,
+			IsRecurring:            isRecurringPtr,
+			RecurrencePattern:      recurrencePatternPtr,
+			RecurrenceInterval:     recurrenceIntervalPtr,
+			RecurrenceEndDate:      recurrenceEndDatePtr,
+			HasRecurrenceEndDate:   hasRecurrenceEndDate,
+			ClearRecurrenceEndDate: clearRecurrenceEndDate,
 		})
 		if err != nil {
 			return nil, err
@@ -790,34 +834,56 @@ func (s *service) callTool(ctx context.Context, userID string, name string, args
 			titlePtr = &t
 		}
 		hasDesc := false
+		clearDesc := false
 		if d, exists := args["description"]; exists {
 			hasDesc = true
-			if str, ok := d.(string); ok {
-				descPtr = &str
+			if d == nil {
+				clearDesc = true
+			} else if str, ok := d.(string); ok {
+				if strings.TrimSpace(str) == "" {
+					clearDesc = true
+				} else {
+					descPtr = &str
+				}
 			}
 		}
+		if cd, ok := args["clear_description"].(bool); ok && cd {
+			clearDesc = true
+		}
+
 		var isCompletedPtr *bool
 		if ic, ok := args["is_completed"].(bool); ok {
 			isCompletedPtr = &ic
 		}
 		var dueTimePtr *time.Time
 		hasDueDate := false
+		clearDueDate := false
 		if rawDD, exists := args["due_date"]; exists {
 			hasDueDate = true
-			if dd, ok := rawDD.(string); ok && strings.TrimSpace(dd) != "" {
-				if t, err := parseDateTime(dd); err == nil {
+			if rawDD == nil {
+				clearDueDate = true
+			} else if dd, ok := rawDD.(string); ok {
+				trimmed := strings.TrimSpace(dd)
+				if trimmed == "" || strings.EqualFold(trimmed, "null") {
+					clearDueDate = true
+				} else if t, err := parseDateTime(trimmed); err == nil {
 					dueTimePtr = &t
 				}
 			}
 		}
+		if cdd, ok := args["clear_due_date"].(bool); ok && cdd {
+			clearDueDate = true
+		}
 
 		res, err := s.taskService.UpdateSubtask(ctx, userID, taskID, subtaskID, task.UpdateSubtaskRequest{
-			Title:          titlePtr,
-			Description:    descPtr,
-			IsCompleted:    isCompletedPtr,
-			DueDate:        dueTimePtr,
-			HasDueDate:     hasDueDate,
-			HasDescription: hasDesc,
+			Title:            titlePtr,
+			Description:      descPtr,
+			IsCompleted:      isCompletedPtr,
+			DueDate:          dueTimePtr,
+			HasDueDate:       hasDueDate,
+			HasDescription:   hasDesc,
+			ClearDueDate:     clearDueDate,
+			ClearDescription: clearDesc,
 		})
 		if err != nil {
 			return nil, err
