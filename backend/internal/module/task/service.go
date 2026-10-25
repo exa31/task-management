@@ -366,14 +366,18 @@ func (s *service) Update(ctx context.Context, userID string, id int64, req Updat
 				if !*req.IsRecurring {
 					// User turned off recurrence
 					if entity.RecurringTaskID != nil {
-						if _, err := tx.ExecContext(ctx, "UPDATE recurring_tasks SET is_active = FALSE, updated_at = NOW() WHERE id = $1 AND user_id = $2", *entity.RecurringTaskID, userID); err != nil {
-							return fmt.Errorf("failed to deactivate recurring master: %w", err)
+						if tx != nil {
+							if _, err := tx.ExecContext(ctx, "UPDATE recurring_tasks SET is_active = FALSE, updated_at = NOW() WHERE id = $1 AND user_id = $2", *entity.RecurringTaskID, userID); err != nil {
+								return fmt.Errorf("failed to deactivate recurring master: %w", err)
+							}
 						}
 						if s.recurrenceScheduler != nil {
 							_ = s.recurrenceScheduler.CancelTaskRecurrence(ctx, *entity.RecurringTaskID)
 						}
-						if _, err := tx.ExecContext(ctx, "UPDATE tasks SET recurring_task_id = NULL WHERE id = $1 AND user_id = $2", res.ID, userID); err != nil {
-							return fmt.Errorf("failed to unlink task from recurring master: %w", err)
+						if tx != nil {
+							if _, err := tx.ExecContext(ctx, "UPDATE tasks SET recurring_task_id = NULL WHERE id = $1 AND user_id = $2", res.ID, userID); err != nil {
+								return fmt.Errorf("failed to unlink task from recurring master: %w", err)
+							}
 						}
 						res.RecurringTaskID = nil
 					}
@@ -1047,7 +1051,7 @@ func (s *service) ProcessTaskRecurrence(ctx context.Context, targetID int64) err
 		return nil
 	}
 
-	if master.RecurrenceEndDate != nil && time.Now().After(*master.RecurrenceEndDate) {
+	if master.RecurrenceEndDate != nil && s.now().After(*master.RecurrenceEndDate) {
 		if s.logger != nil {
 			s.logger.Info("recurring task has reached end date, deactivating", "recurring_id", targetID)
 		}
@@ -1079,7 +1083,9 @@ func (s *service) ProcessTaskRecurrence(ctx context.Context, targetID int64) err
 		}
 		if s.recurrenceScheduler != nil {
 			nextMidnight := getNextOccurrenceMidnight(master.RecurrencePattern, master.RecurrenceInterval, nowInLoc, userTimezone, master.CreatedAt)
-			_ = s.recurrenceScheduler.ScheduleTaskRecurrence(ctx, master.ID, nextMidnight)
+			if master.RecurrenceEndDate == nil || !nextMidnight.After(*master.RecurrenceEndDate) {
+				_ = s.recurrenceScheduler.ScheduleTaskRecurrence(ctx, master.ID, nextMidnight)
+			}
 		}
 		return nil
 	}
@@ -1110,7 +1116,9 @@ func (s *service) ProcessTaskRecurrence(ctx context.Context, targetID int64) err
 		}
 		if s.recurrenceScheduler != nil {
 			nextMidnight := getNextOccurrenceMidnight(master.RecurrencePattern, master.RecurrenceInterval, nowInLoc, userTimezone, master.CreatedAt)
-			_ = s.recurrenceScheduler.ScheduleTaskRecurrence(ctx, master.ID, nextMidnight)
+			if master.RecurrenceEndDate == nil || !nextMidnight.After(*master.RecurrenceEndDate) {
+				_ = s.recurrenceScheduler.ScheduleTaskRecurrence(ctx, master.ID, nextMidnight)
+			}
 		}
 		return nil
 	}
@@ -1143,8 +1151,10 @@ func (s *service) ProcessTaskRecurrence(ctx context.Context, targetID int64) err
 
 		if s.recurrenceScheduler != nil {
 			nextMidnight := getNextOccurrenceMidnight(master.RecurrencePattern, master.RecurrenceInterval, nowInLoc, userTimezone, master.CreatedAt)
-			if err := s.recurrenceScheduler.ScheduleTaskRecurrence(ctx, master.ID, nextMidnight); err != nil {
-				return fmt.Errorf("failed to schedule next recurrence: %w", err)
+			if master.RecurrenceEndDate == nil || !nextMidnight.After(*master.RecurrenceEndDate) {
+				if err := s.recurrenceScheduler.ScheduleTaskRecurrence(ctx, master.ID, nextMidnight); err != nil {
+					return fmt.Errorf("failed to schedule next recurrence: %w", err)
+				}
 			}
 		}
 		return nil
@@ -1386,7 +1396,7 @@ func isOccurrenceDay(pattern string, interval int, targetDate time.Time, refDate
 		}
 		targetDay := time.Date(t.Year(), t.Month(), t.Day(), 0, 0, 0, 0, loc)
 		refDay := time.Date(ref.Year(), ref.Month(), ref.Day(), 0, 0, 0, 0, loc)
-		days := int(targetDay.Sub(refDay).Hours() / 24)
+		days := int((targetDay.Sub(refDay) + 12*time.Hour) / (24 * time.Hour))
 		if days < 0 {
 			return false
 		}
@@ -1398,7 +1408,7 @@ func isOccurrenceDay(pattern string, interval int, targetDate time.Time, refDate
 		}
 		targetDay := time.Date(t.Year(), t.Month(), t.Day(), 0, 0, 0, 0, loc)
 		refDay := time.Date(ref.Year(), ref.Month(), ref.Day(), 0, 0, 0, 0, loc)
-		days := int(targetDay.Sub(refDay).Hours() / 24)
+		days := int((targetDay.Sub(refDay) + 12*time.Hour) / (24 * time.Hour))
 		if days < 0 {
 			return false
 		}
@@ -1464,12 +1474,12 @@ func getNextOccurrenceMidnight(pattern string, interval int, fromTime time.Time,
 		if interval > 1 {
 			targetDay := time.Date(next.Year(), next.Month(), next.Day(), 0, 0, 0, 0, loc)
 			refDay := time.Date(ref.Year(), ref.Month(), ref.Day(), 0, 0, 0, 0, loc)
-			days := int(targetDay.Sub(refDay).Hours() / 24)
+			days := int((targetDay.Sub(refDay) + 12*time.Hour) / (24 * time.Hour))
 			weeks := days / 7
 			for weeks%interval != 0 {
 				next = next.AddDate(0, 0, 7)
 				targetDay = time.Date(next.Year(), next.Month(), next.Day(), 0, 0, 0, 0, loc)
-				days = int(targetDay.Sub(refDay).Hours() / 24)
+				days = int((targetDay.Sub(refDay) + 12*time.Hour) / (24 * time.Hour))
 				weeks = days / 7
 			}
 		}

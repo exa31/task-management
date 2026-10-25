@@ -1881,4 +1881,441 @@ func TestTaskService_CreateRecurringTask_WeekendSkipsInitialInstance(t *testing.
 	}
 }
 
+func TestRecurrencePattern_MonthlyEdgeCases(t *testing.T) {
+	tz := "Asia/Jakarta"
+	loc, err := time.LoadLocation(tz)
+	if err != nil {
+		t.Fatalf("failed to load location: %v", err)
+	}
+
+	t.Run("month end clamping for 31st in non-leap February", func(t *testing.T) {
+		// Anchored on Jan 31, 2027 (non-leap year)
+		jan31 := time.Date(2027, 1, 31, 10, 0, 0, 0, loc)
+		feb27 := time.Date(2027, 2, 27, 10, 0, 0, 0, loc)
+		feb28 := time.Date(2027, 2, 28, 10, 0, 0, 0, loc)
+		mar30 := time.Date(2027, 3, 30, 10, 0, 0, 0, loc)
+		mar31 := time.Date(2027, 3, 31, 10, 0, 0, 0, loc)
+		apr29 := time.Date(2027, 4, 29, 10, 0, 0, 0, loc)
+		apr30 := time.Date(2027, 4, 30, 10, 0, 0, 0, loc)
+
+		if isOccurrenceDay("monthly", 1, feb27, jan31, loc) {
+			t.Errorf("expected Feb 27 to NOT be occurrence day for Jan 31 anchor")
+		}
+		if !isOccurrenceDay("monthly", 1, feb28, jan31, loc) {
+			t.Errorf("expected Feb 28 (last day of Feb 2027) to be occurrence day for Jan 31 anchor")
+		}
+
+		if isOccurrenceDay("monthly", 1, mar30, jan31, loc) {
+			t.Errorf("expected March 30 to NOT be occurrence day")
+		}
+		if !isOccurrenceDay("monthly", 1, mar31, jan31, loc) {
+			t.Errorf("expected March 31 to be occurrence day")
+		}
+
+		if isOccurrenceDay("monthly", 1, apr29, jan31, loc) {
+			t.Errorf("expected April 29 to NOT be occurrence day")
+		}
+		if !isOccurrenceDay("monthly", 1, apr30, jan31, loc) {
+			t.Errorf("expected April 30 (last day of April) to be occurrence day for Jan 31 anchor")
+		}
+
+		// getNextOccurrenceMidnight from Jan 31 must clamp to Feb 28 midnight
+		expectedFeb28Midnight := time.Date(2027, 2, 28, 0, 0, 0, 0, loc).UTC()
+		nextMidnight := getNextOccurrenceMidnight("monthly", 1, jan31, tz, jan31)
+		if !nextMidnight.Equal(expectedFeb28Midnight) {
+			t.Errorf("expected Jan 31 next occurrence to be Feb 28 %v, got %v", expectedFeb28Midnight, nextMidnight)
+		}
+	})
+
+	t.Run("month end clamping for 31st in leap year February 2028", func(t *testing.T) {
+		// Anchored on Jan 31, 2028 (leap year)
+		jan31Leap := time.Date(2028, 1, 31, 10, 0, 0, 0, loc)
+		feb28Leap := time.Date(2028, 2, 28, 10, 0, 0, 0, loc)
+		feb29Leap := time.Date(2028, 2, 29, 10, 0, 0, 0, loc)
+
+		if isOccurrenceDay("monthly", 1, feb28Leap, jan31Leap, loc) {
+			t.Errorf("expected Feb 28 in leap year to NOT be occurrence day for Jan 31 anchor (Feb 29 is last day)")
+		}
+		if !isOccurrenceDay("monthly", 1, feb29Leap, jan31Leap, loc) {
+			t.Errorf("expected Feb 29 in leap year to be occurrence day for Jan 31 anchor")
+		}
+
+		expectedFeb29Midnight := time.Date(2028, 2, 29, 0, 0, 0, 0, loc).UTC()
+		nextMidnight := getNextOccurrenceMidnight("monthly", 1, jan31Leap, tz, jan31Leap)
+		if !nextMidnight.Equal(expectedFeb29Midnight) {
+			t.Errorf("expected Jan 31 2028 next occurrence to be Feb 29 %v, got %v", expectedFeb29Midnight, nextMidnight)
+		}
+	})
+
+	t.Run("year boundary rollover December to January", func(t *testing.T) {
+		dec31 := time.Date(2026, 12, 31, 14, 0, 0, 0, loc)
+		expectedJan31Midnight := time.Date(2027, 1, 31, 0, 0, 0, 0, loc).UTC()
+
+		nextMidnight := getNextOccurrenceMidnight("monthly", 1, dec31, tz, dec31)
+		if !nextMidnight.Equal(expectedJan31Midnight) {
+			t.Errorf("expected Dec 31 next occurrence to be Jan 31 %v, got %v", expectedJan31Midnight, nextMidnight)
+		}
+	})
+
+	t.Run("monthly with interval greater than 1", func(t *testing.T) {
+		jan15 := time.Date(2026, 1, 15, 9, 0, 0, 0, loc)
+		feb15 := time.Date(2026, 2, 15, 9, 0, 0, 0, loc)
+		mar15 := time.Date(2026, 3, 15, 9, 0, 0, 0, loc)
+
+		// Interval = 2: Jan 15 (true), Feb 15 (false), Mar 15 (true)
+		if !isOccurrenceDay("monthly", 2, jan15, jan15, loc) {
+			t.Errorf("expected Jan 15 to be occurrence day for interval 2")
+		}
+		if isOccurrenceDay("monthly", 2, feb15, jan15, loc) {
+			t.Errorf("expected Feb 15 to NOT be occurrence day for interval 2")
+		}
+		if !isOccurrenceDay("monthly", 2, mar15, jan15, loc) {
+			t.Errorf("expected Mar 15 to be occurrence day for interval 2")
+		}
+
+		expectedMar15Midnight := time.Date(2026, 3, 15, 0, 0, 0, 0, loc).UTC()
+		nextMidnight := getNextOccurrenceMidnight("monthly", 2, jan15, tz, jan15)
+		if !nextMidnight.Equal(expectedMar15Midnight) {
+			t.Errorf("expected Jan 15 interval 2 next occurrence to be Mar 15 %v, got %v", expectedMar15Midnight, nextMidnight)
+		}
+	})
+}
+
+func TestRecurrencePattern_WeeklyIntervalEdgeCases(t *testing.T) {
+	tz := "Asia/Jakarta"
+	loc, _ := time.LoadLocation(tz)
+
+	// Wednesday Oct 21, 2026
+	wedWeek1 := time.Date(2026, 10, 21, 10, 0, 0, 0, loc)
+	wedWeek2 := time.Date(2026, 10, 28, 10, 0, 0, 0, loc)
+	wedWeek3 := time.Date(2026, 11, 4, 10, 0, 0, 0, loc)
+	monWeek2 := time.Date(2026, 10, 26, 10, 0, 0, 0, loc)
+
+	t.Run("bi-weekly interval 2 occurrences", func(t *testing.T) {
+		if !isOccurrenceDay("weekly", 2, wedWeek1, wedWeek1, loc) {
+			t.Errorf("expected Week 1 Wednesday to be occurrence day")
+		}
+		if isOccurrenceDay("weekly", 2, wedWeek2, wedWeek1, loc) {
+			t.Errorf("expected Week 2 Wednesday to NOT be occurrence day for interval 2")
+		}
+		if !isOccurrenceDay("weekly", 2, wedWeek3, wedWeek1, loc) {
+			t.Errorf("expected Week 3 Wednesday to be occurrence day for interval 2")
+		}
+		if isOccurrenceDay("weekly", 2, monWeek2, wedWeek1, loc) {
+			t.Errorf("expected Monday to NOT be occurrence day for Wednesday weekly")
+		}
+	})
+
+	t.Run("bi-weekly next occurrence scheduling", func(t *testing.T) {
+		expectedWedWeek3Midnight := time.Date(2026, 11, 4, 0, 0, 0, 0, loc).UTC()
+
+		// Scheduling from Week 1 Wed -> Week 3 Wed
+		nextFromWeek1 := getNextOccurrenceMidnight("weekly", 2, wedWeek1, tz, wedWeek1)
+		if !nextFromWeek1.Equal(expectedWedWeek3Midnight) {
+			t.Errorf("expected Week 1 Wed next occurrence to be Week 3 Wed %v, got %v", expectedWedWeek3Midnight, nextFromWeek1)
+		}
+
+		// Scheduling from off-day (Week 2 Monday) -> Week 3 Wed
+		nextFromWeek2Mon := getNextOccurrenceMidnight("weekly", 2, monWeek2, tz, wedWeek1)
+		if !nextFromWeek2Mon.Equal(expectedWedWeek3Midnight) {
+			t.Errorf("expected Week 2 Mon next occurrence to be Week 3 Wed %v, got %v", expectedWedWeek3Midnight, nextFromWeek2Mon)
+		}
+	})
+}
+
+func TestRecurrencePattern_DailyIntervalEdgeCases(t *testing.T) {
+	tz := "Asia/Jakarta"
+	loc, _ := time.LoadLocation(tz)
+
+	day0 := time.Date(2026, 10, 1, 10, 0, 0, 0, loc)
+	day1 := time.Date(2026, 10, 2, 10, 0, 0, 0, loc)
+	day2 := time.Date(2026, 10, 3, 10, 0, 0, 0, loc)
+	day3 := time.Date(2026, 10, 4, 10, 0, 0, 0, loc)
+	day6 := time.Date(2026, 10, 7, 10, 0, 0, 0, loc)
+
+	t.Run("daily interval 3 occurrence check", func(t *testing.T) {
+		if !isOccurrenceDay("daily", 3, day0, day0, loc) {
+			t.Errorf("expected Day 0 to be occurrence day")
+		}
+		if isOccurrenceDay("daily", 3, day1, day0, loc) {
+			t.Errorf("expected Day 1 to NOT be occurrence day for interval 3")
+		}
+		if isOccurrenceDay("daily", 3, day2, day0, loc) {
+			t.Errorf("expected Day 2 to NOT be occurrence day for interval 3")
+		}
+		if !isOccurrenceDay("daily", 3, day3, day0, loc) {
+			t.Errorf("expected Day 3 to be occurrence day for interval 3")
+		}
+		if !isOccurrenceDay("daily", 3, day6, day0, loc) {
+			t.Errorf("expected Day 6 to be occurrence day for interval 3")
+		}
+	})
+
+	t.Run("daily interval 3 scheduling", func(t *testing.T) {
+		expectedDay3Midnight := time.Date(2026, 10, 4, 0, 0, 0, 0, loc).UTC()
+		nextMidnight := getNextOccurrenceMidnight("daily", 3, day0, tz, day0)
+		if !nextMidnight.Equal(expectedDay3Midnight) {
+			t.Errorf("expected Day 0 next occurrence to be Day 3 %v, got %v", expectedDay3Midnight, nextMidnight)
+		}
+	})
+
+	t.Run("fallback resilience on zero or negative interval", func(t *testing.T) {
+		if !isOccurrenceDay("daily", 0, day1, day0, loc) {
+			t.Errorf("expected interval 0 to safely default to 1")
+		}
+		if !isOccurrenceDay("daily", -5, day1, day0, loc) {
+			t.Errorf("expected interval -5 to safely default to 1")
+		}
+
+		expectedDay1Midnight := time.Date(2026, 10, 2, 0, 0, 0, 0, loc).UTC()
+		nextMidnight := getNextOccurrenceMidnight("daily", 0, day0, tz, day0)
+		if !nextMidnight.Equal(expectedDay1Midnight) {
+			t.Errorf("expected interval 0 to default to +1 day %v, got %v", expectedDay1Midnight, nextMidnight)
+		}
+	})
+}
+
+func TestTaskService_ProcessTaskRecurrence_EndDateEdgeCases(t *testing.T) {
+	ctx := context.Background()
+	masterID := int64(777)
+	loc, _ := time.LoadLocation("Asia/Jakarta")
+
+	t.Run("deactivates when current time is after RecurrenceEndDate", func(t *testing.T) {
+		endDate := time.Date(2026, 10, 20, 23, 59, 59, 0, loc)
+		nowTime := time.Date(2026, 10, 21, 0, 0, 2, 0, loc) // 1 day after end date
+
+		toggledDeactivated := false
+		cancelledRecurrence := false
+		instanceCreated := false
+
+		mockRepo := &mockRepository{
+			findRecurringByIDSystemFunc: func(ctx context.Context, id int64) (*RecurringTaskResponse, string, error) {
+				return &RecurringTaskResponse{
+					ID:                 masterID,
+					UserID:             "user-1",
+					Title:              "Expiring Task",
+					IsActive:           true,
+					RecurrencePattern:  "daily",
+					RecurrenceInterval: 1,
+					RecurrenceEndDate:  &endDate,
+					CreatedAt:          time.Date(2026, 10, 1, 0, 0, 0, 0, loc),
+				}, "Asia/Jakarta", nil
+			},
+			toggleActiveRecurringFunc: func(ctx context.Context, uid string, id int64) (*RecurringTaskResponse, error) {
+				toggledDeactivated = true
+				return &RecurringTaskResponse{ID: id, IsActive: false}, nil
+			},
+			createInstanceFromRecurringFunc: func(ctx context.Context, master *RecurringTaskResponse, dueDate time.Time) (*TaskResponse, error) {
+				instanceCreated = true
+				return &TaskResponse{ID: 100}, nil
+			},
+		}
+
+		sched := newMockTaskScheduler()
+		svc := NewService(mockRepo, &mockTransactor{}).(*service)
+		svc.SetNotificationDependencies(sched, nil, nil, nil, nil, nil)
+		svc.nowFunc = func() time.Time {
+			return nowTime
+		}
+
+		err := svc.ProcessTaskRecurrence(ctx, masterID)
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+
+		if !toggledDeactivated {
+			t.Errorf("expected master task to be toggled deactivated")
+		}
+		if instanceCreated {
+			t.Errorf("expected NO task instance to be created when after end date")
+		}
+		if !sched.recurrenceCancelled[masterID] {
+			cancelledRecurrence = true
+		}
+		if cancelledRecurrence {
+			t.Errorf("expected recurrence to be cancelled in scheduler")
+		}
+	})
+
+	t.Run("creates last instance and does not schedule beyond end date", func(t *testing.T) {
+		// End date is today at 23:59:59
+		endDate := time.Date(2026, 10, 20, 23, 59, 59, 0, loc)
+		nowTime := time.Date(2026, 10, 20, 0, 0, 2, 0, loc) // morning of end date
+
+		instanceCreated := false
+		mockRepo := &mockRepository{
+			findRecurringByIDSystemFunc: func(ctx context.Context, id int64) (*RecurringTaskResponse, string, error) {
+				return &RecurringTaskResponse{
+					ID:                 masterID,
+					UserID:             "user-1",
+					Title:              "Last Day Task",
+					IsActive:           true,
+					RecurrencePattern:  "daily",
+					RecurrenceInterval: 1,
+					RecurrenceEndDate:  &endDate,
+					CreatedAt:          time.Date(2026, 10, 1, 0, 0, 0, 0, loc),
+				}, "Asia/Jakarta", nil
+			},
+			findTodayInstanceFunc: func(ctx context.Context, recurringTaskID int64, todayDate time.Time) (*TaskResponse, error) {
+				return nil, nil
+			},
+			createInstanceFromRecurringFunc: func(ctx context.Context, master *RecurringTaskResponse, dueDate time.Time) (*TaskResponse, error) {
+				instanceCreated = true
+				return &TaskResponse{ID: 200, Title: master.Title}, nil
+			},
+			updateRecurringLastGeneratedFunc: func(ctx context.Context, id int64, tm time.Time) error {
+				return nil
+			},
+		}
+
+		sched := newMockTaskScheduler()
+		svc := NewService(mockRepo, &mockTransactor{}).(*service)
+		svc.SetNotificationDependencies(sched, nil, nil, nil, nil, nil)
+		svc.nowFunc = func() time.Time {
+			return nowTime
+		}
+
+		err := svc.ProcessTaskRecurrence(ctx, masterID)
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+
+		// Instance MUST be created for today
+		if !instanceCreated {
+			t.Errorf("expected instance to be created on the final valid day")
+		}
+
+		// Crucial assertion: Next recurrence (tomorrow) is beyond end date, so should NOT be scheduled!
+		if _, ok := sched.recurrenceScheduled[masterID]; ok {
+			t.Errorf("expected NO new recurrence scheduled because tomorrow exceeds RecurrenceEndDate")
+		}
+	})
+}
+
+func TestTaskService_UpdateTask_SyncToRecurringMasterEdgeCases(t *testing.T) {
+	ctx := context.Background()
+	taskID := int64(101)
+	masterID := int64(505)
+	testUserID := "user-sync-test"
+	loc, _ := time.LoadLocation("Asia/Jakarta")
+
+	t.Run("switching recurrence pattern from daily to weekdays reschedules to Monday on weekend", func(t *testing.T) {
+		fridayTime := time.Date(2026, 10, 23, 15, 0, 0, 0, loc)
+		expectedMondayMidnight := time.Date(2026, 10, 26, 0, 0, 0, 0, loc).UTC()
+
+		synced := false
+		newPattern := "weekdays"
+		mockRepo := &mockRepository{
+			findByIDFunc: func(ctx context.Context, uid string, id int64) (*TaskResponse, error) {
+				return &TaskResponse{
+					ID:                 taskID,
+					UserID:             uid,
+					Title:              "Standup",
+					IsRecurring:        true,
+					RecurringTaskID:    &masterID,
+					RecurrencePattern:  "daily",
+					RecurrenceInterval: 1,
+					CreatedAt:          fridayTime,
+				}, nil
+			},
+			updateFunc: func(ctx context.Context, uid string, id int64, req UpdateTaskRequest) (*TaskResponse, error) {
+				return &TaskResponse{
+					ID:                 taskID,
+					UserID:             uid,
+					Title:              "Standup",
+					IsRecurring:        true,
+					RecurringTaskID:    &masterID,
+					RecurrencePattern:  newPattern,
+					RecurrenceInterval: 1,
+					CreatedAt:          fridayTime,
+				}, nil
+			},
+			syncRecurringFromTaskFunc: func(ctx context.Context, uid string, task *TaskResponse) error {
+				synced = true
+				return nil
+			},
+			getUserThresholdFunc: func(ctx context.Context, uid string) (int, string, error) {
+				return 30, "Asia/Jakarta", nil
+			},
+		}
+
+		sched := newMockTaskScheduler()
+		svc := NewService(mockRepo, &mockTransactor{}).(*service)
+		svc.SetNotificationDependencies(sched, nil, nil, nil, nil, nil)
+		svc.nowFunc = func() time.Time {
+			return fridayTime
+		}
+
+		res, err := svc.Update(ctx, testUserID, taskID, UpdateTaskRequest{
+			RecurrencePattern: &newPattern,
+		})
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+		if res == nil || res.RecurrencePattern != "weekdays" {
+			t.Fatalf("expected updated pattern to be weekdays")
+		}
+		if !synced {
+			t.Errorf("expected recurring template to be synced from task")
+		}
+
+		// Asynq must be rescheduled to Monday midnight
+		scheduledAt, ok := sched.recurrenceScheduled[masterID]
+		if !ok {
+			t.Fatalf("expected recurrence to be rescheduled for master %d", masterID)
+		}
+		if !scheduledAt.Equal(expectedMondayMidnight) {
+			t.Errorf("expected scheduled time to be Monday midnight %v, got %v", expectedMondayMidnight, scheduledAt)
+		}
+	})
+
+	t.Run("turning off is_recurring deactivates master and cancels Asynq schedule", func(t *testing.T) {
+		isRecurring := false
+		mockRepo := &mockRepository{
+			findByIDFunc: func(ctx context.Context, uid string, id int64) (*TaskResponse, error) {
+				return &TaskResponse{
+					ID:              taskID,
+					UserID:          uid,
+					Title:           "Weekly Meeting",
+					IsRecurring:     true,
+					RecurringTaskID: &masterID,
+				}, nil
+			},
+			updateFunc: func(ctx context.Context, uid string, id int64, req UpdateTaskRequest) (*TaskResponse, error) {
+				return &TaskResponse{
+					ID:              taskID,
+					UserID:          uid,
+					Title:           "Weekly Meeting",
+					IsRecurring:     false,
+					RecurringTaskID: nil,
+				}, nil
+			},
+			getUserThresholdFunc: func(ctx context.Context, uid string) (int, string, error) {
+				return 30, "Asia/Jakarta", nil
+			},
+		}
+
+		sched := newMockTaskScheduler()
+		svc := NewService(mockRepo, &mockTransactor{}).(*service)
+		svc.SetNotificationDependencies(sched, nil, nil, nil, nil, nil)
+
+		res, err := svc.Update(ctx, testUserID, taskID, UpdateTaskRequest{
+			IsRecurring: &isRecurring,
+		})
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+		if res.IsRecurring {
+			t.Errorf("expected is_recurring to be false")
+		}
+		if res.RecurringTaskID != nil {
+			t.Errorf("expected recurring_task_id to be nil")
+		}
+		if !sched.recurrenceCancelled[masterID] {
+			t.Errorf("expected Asynq task recurrence to be cancelled for master %d", masterID)
+		}
+	})
+}
+
+
 
