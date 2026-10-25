@@ -75,6 +75,14 @@ type service struct {
 	reminderRepo        reminder.Repository
 	hub                 *realtime.Hub
 	logger              *slog.Logger
+	nowFunc             func() time.Time
+}
+
+func (s *service) now() time.Time {
+	if s.nowFunc != nil {
+		return s.nowFunc()
+	}
+	return time.Now()
 }
 
 func NewService(repo Repository, db database.Transactor) Service {
@@ -148,7 +156,12 @@ func (s *service) Create(ctx context.Context, userID string, req CreateTaskReque
 			req.RecurringTaskID = &recMaster.ID
 
 			if s.recurrenceScheduler != nil {
-				nextMidnight := getNextMidnightInUserTimezone(userTimezone)
+				loc, _ := time.LoadLocation(userTimezone)
+				if loc == nil {
+					loc = time.Local
+				}
+				nowInLoc := s.now().In(loc)
+				nextMidnight := getNextOccurrenceMidnight(recReq.RecurrencePattern, recReq.RecurrenceInterval, nowInLoc, userTimezone, recMaster.CreatedAt)
 				if err := s.recurrenceScheduler.ScheduleTaskRecurrence(ctx, recMaster.ID, nextMidnight); err != nil && s.logger != nil {
 					s.logger.WarnContext(ctx, "failed to schedule task recurrence for master", "error", err, "recurring_id", recMaster.ID)
 				}
@@ -187,7 +200,16 @@ func (s *service) Create(ctx context.Context, userID string, req CreateTaskReque
 
 			// Fallback scheduling if recurring without master
 			if res.IsRecurring && res.RecurringTaskID == nil && s.recurrenceScheduler != nil {
-				nextMidnight := getNextMidnightInUserTimezone(userTimezone)
+				loc, _ := time.LoadLocation(userTimezone)
+				if loc == nil {
+					loc = time.Local
+				}
+				nowInLoc := s.now().In(loc)
+				pattern := res.RecurrencePattern
+				if pattern == "" {
+					pattern = "daily"
+				}
+				nextMidnight := getNextOccurrenceMidnight(pattern, res.RecurrenceInterval, nowInLoc, userTimezone, res.CreatedAt)
 				if err := s.recurrenceScheduler.ScheduleTaskRecurrence(ctx, res.ID, nextMidnight); err != nil && s.logger != nil {
 					s.logger.WarnContext(ctx, "failed to schedule task recurrence", "error", err, "task_id", res.ID)
 				}
@@ -373,7 +395,12 @@ func (s *service) Update(ctx context.Context, userID string, id int64, req Updat
 						res.RecurringTaskID = &recMaster.ID
 						res.IsRecurring = true
 						if s.recurrenceScheduler != nil {
-							nextMidnight := getNextMidnightInUserTimezone(userTimezone)
+							loc, _ := time.LoadLocation(userTimezone)
+							if loc == nil {
+								loc = time.Local
+							}
+							nowInLoc := s.now().In(loc)
+							nextMidnight := getNextOccurrenceMidnight(recMaster.RecurrencePattern, recMaster.RecurrenceInterval, nowInLoc, userTimezone, recMaster.CreatedAt)
 							_ = s.recurrenceScheduler.ScheduleTaskRecurrence(ctx, recMaster.ID, nextMidnight)
 						}
 					}
@@ -382,6 +409,15 @@ func (s *service) Update(ctx context.Context, userID string, id int64, req Updat
 				// Existing recurring task updated: sync fields to recurring_tasks template
 				if err := s.repo.SyncRecurringFromTask(ctx, tx, userID, res); err != nil {
 					return fmt.Errorf("failed to sync recurring task master: %w", err)
+				}
+				if (req.RecurrencePattern != nil || req.RecurrenceInterval != nil) && s.recurrenceScheduler != nil {
+					loc, _ := time.LoadLocation(userTimezone)
+					if loc == nil {
+						loc = time.Local
+					}
+					nowInLoc := s.now().In(loc)
+					nextMidnight := getNextOccurrenceMidnight(res.RecurrencePattern, res.RecurrenceInterval, nowInLoc, userTimezone, res.CreatedAt)
+					_ = s.recurrenceScheduler.ScheduleTaskRecurrence(ctx, *res.RecurringTaskID, nextMidnight)
 				}
 			}
 		}
@@ -1030,7 +1066,24 @@ func (s *service) ProcessTaskRecurrence(ctx context.Context, targetID int64) err
 	if err != nil {
 		loc = time.Local
 	}
-	nowInLoc := time.Now().In(loc)
+	nowInLoc := s.now().In(loc)
+
+	// Guard: check if today is a valid occurrence day for this recurrence pattern
+	if !isOccurrenceDay(master.RecurrencePattern, master.RecurrenceInterval, nowInLoc, master.CreatedAt, loc) {
+		if s.logger != nil {
+			s.logger.Info("today is not an occurrence day for recurring task, skipping creation and scheduling next occurrence",
+				"recurring_id", master.ID,
+				"pattern", master.RecurrencePattern,
+				"weekday", nowInLoc.Weekday().String(),
+			)
+		}
+		if s.recurrenceScheduler != nil {
+			nextMidnight := getNextOccurrenceMidnight(master.RecurrencePattern, master.RecurrenceInterval, nowInLoc, userTimezone, master.CreatedAt)
+			_ = s.recurrenceScheduler.ScheduleTaskRecurrence(ctx, master.ID, nextMidnight)
+		}
+		return nil
+	}
+
 	todayDueDate := time.Date(nowInLoc.Year(), nowInLoc.Month(), nowInLoc.Day(), 23, 59, 59, 0, loc)
 	if master.DueTime != nil && *master.DueTime != "" {
 		if t, parseErr := time.Parse("15:04:05", *master.DueTime); parseErr == nil {
@@ -1053,10 +1106,10 @@ func (s *service) ProcessTaskRecurrence(ctx context.Context, targetID int64) err
 	}
 	if existing != nil {
 		if s.logger != nil {
-			s.logger.Info("recurring task instance already exists today, ensuring next midnight schedule is set", "recurring_id", master.ID)
+			s.logger.Info("recurring task instance already exists today, ensuring next occurrence schedule is set", "recurring_id", master.ID)
 		}
 		if s.recurrenceScheduler != nil {
-			nextMidnight := getNextMidnightInUserTimezone(userTimezone)
+			nextMidnight := getNextOccurrenceMidnight(master.RecurrencePattern, master.RecurrenceInterval, nowInLoc, userTimezone, master.CreatedAt)
 			_ = s.recurrenceScheduler.ScheduleTaskRecurrence(ctx, master.ID, nextMidnight)
 		}
 		return nil
@@ -1084,12 +1137,12 @@ func (s *service) ProcessTaskRecurrence(ctx context.Context, targetID int64) err
 			}
 		}
 
-		if err := s.repo.UpdateRecurringLastGenerated(ctx, tx, master.ID, time.Now()); err != nil {
+		if err := s.repo.UpdateRecurringLastGenerated(ctx, tx, master.ID, s.now()); err != nil {
 			return err
 		}
 
 		if s.recurrenceScheduler != nil {
-			nextMidnight := getNextMidnightInUserTimezone(userTimezone)
+			nextMidnight := getNextOccurrenceMidnight(master.RecurrencePattern, master.RecurrenceInterval, nowInLoc, userTimezone, master.CreatedAt)
 			if err := s.recurrenceScheduler.ScheduleTaskRecurrence(ctx, master.ID, nextMidnight); err != nil {
 				return fmt.Errorf("failed to schedule next recurrence: %w", err)
 			}
@@ -1141,38 +1194,42 @@ func (s *service) CreateRecurringTask(ctx context.Context, userID string, req Cr
 		if err != nil {
 			loc = time.Local
 		}
-		nowInLoc := time.Now().In(loc)
-		todayDueDate := time.Date(nowInLoc.Year(), nowInLoc.Month(), nowInLoc.Day(), 23, 59, 59, 0, loc)
-		if res.DueTime != nil && *res.DueTime != "" {
-			if t, parseErr := time.Parse("15:04:05", *res.DueTime); parseErr == nil {
-				todayDueDate = time.Date(nowInLoc.Year(), nowInLoc.Month(), nowInLoc.Day(), t.Hour(), t.Minute(), t.Second(), 0, loc)
-			} else if t, parseErr2 := time.Parse("15:04", *res.DueTime); parseErr2 == nil {
-				todayDueDate = time.Date(nowInLoc.Year(), nowInLoc.Month(), nowInLoc.Day(), t.Hour(), t.Minute(), 0, 0, loc)
+		nowInLoc := s.now().In(loc)
+
+		// Generate today's initial instance only if today is an occurrence day
+		if isOccurrenceDay(res.RecurrencePattern, res.RecurrenceInterval, nowInLoc, res.CreatedAt, loc) {
+			todayDueDate := time.Date(nowInLoc.Year(), nowInLoc.Month(), nowInLoc.Day(), 23, 59, 59, 0, loc)
+			if res.DueTime != nil && *res.DueTime != "" {
+				if t, parseErr := time.Parse("15:04:05", *res.DueTime); parseErr == nil {
+					todayDueDate = time.Date(nowInLoc.Year(), nowInLoc.Month(), nowInLoc.Day(), t.Hour(), t.Minute(), t.Second(), 0, loc)
+				} else if t, parseErr2 := time.Parse("15:04", *res.DueTime); parseErr2 == nil {
+					todayDueDate = time.Date(nowInLoc.Year(), nowInLoc.Month(), nowInLoc.Day(), t.Hour(), t.Minute(), 0, 0, loc)
+				}
+			}
+
+			createdInstance, err := s.repo.CreateInstanceFromRecurring(ctx, tx, res, todayDueDate)
+			if err != nil {
+				return err
+			}
+			if createdInstance != nil {
+				if err := s.repo.UpdateRecurringLastGenerated(ctx, tx, res.ID, s.now()); err != nil {
+					return err
+				}
+				changes, _ := json.Marshal(map[string]any{
+					"title":             createdInstance.Title,
+					"status":            createdInstance.Status,
+					"priority":          createdInstance.Priority,
+					"recurring_task_id": res.ID,
+				})
+				if _, err := s.repo.CreateActivity(ctx, tx, createdInstance.ID, userID, "task_created", "Initial recurring task instance generated", changes); err != nil {
+					return err
+				}
 			}
 		}
 
-		createdInstance, err := s.repo.CreateInstanceFromRecurring(ctx, tx, res, todayDueDate)
-		if err != nil {
-			return err
-		}
-		if createdInstance != nil {
-			if err := s.repo.UpdateRecurringLastGenerated(ctx, tx, res.ID, time.Now()); err != nil {
-				return err
-			}
-			changes, _ := json.Marshal(map[string]any{
-				"title":             createdInstance.Title,
-				"status":            createdInstance.Status,
-				"priority":          createdInstance.Priority,
-				"recurring_task_id": res.ID,
-			})
-			if _, err := s.repo.CreateActivity(ctx, tx, createdInstance.ID, userID, "task_created", "Initial recurring task instance generated", changes); err != nil {
-				return err
-			}
-		}
-
-		// Schedule next rollover at midnight
+		// Schedule next occurrence at midnight
 		if s.recurrenceScheduler != nil {
-			nextMidnight := getNextMidnightInUserTimezone(userTimezone)
+			nextMidnight := getNextOccurrenceMidnight(res.RecurrencePattern, res.RecurrenceInterval, nowInLoc, userTimezone, res.CreatedAt)
 			if err := s.recurrenceScheduler.ScheduleTaskRecurrence(ctx, res.ID, nextMidnight); err != nil && s.logger != nil {
 				s.logger.WarnContext(ctx, "failed to schedule recurring task recurrence in asynq", "error", err, "recurring_id", res.ID)
 			}
@@ -1227,7 +1284,12 @@ func (s *service) UpdateRecurringTask(ctx context.Context, userID string, id int
 				_ = s.recurrenceScheduler.CancelTaskRecurrence(ctx, res.ID)
 			} else {
 				_, tz, _ := s.repo.GetUserThresholdAndTimezone(ctx, tx, userID)
-				nextMidnight := getNextMidnightInUserTimezone(tz)
+				loc, _ := time.LoadLocation(tz)
+				if loc == nil {
+					loc = time.Local
+				}
+				nowInLoc := s.now().In(loc)
+				nextMidnight := getNextOccurrenceMidnight(res.RecurrencePattern, res.RecurrenceInterval, nowInLoc, tz, res.CreatedAt)
 				_ = s.recurrenceScheduler.ScheduleTaskRecurrence(ctx, res.ID, nextMidnight)
 			}
 		}
@@ -1263,7 +1325,12 @@ func (s *service) ToggleActiveRecurringTask(ctx context.Context, userID string, 
 				_ = s.recurrenceScheduler.CancelTaskRecurrence(ctx, res.ID)
 			} else {
 				_, tz, _ := s.repo.GetUserThresholdAndTimezone(ctx, tx, userID)
-				nextMidnight := getNextMidnightInUserTimezone(tz)
+				loc, _ := time.LoadLocation(tz)
+				if loc == nil {
+					loc = time.Local
+				}
+				nowInLoc := s.now().In(loc)
+				nextMidnight := getNextOccurrenceMidnight(res.RecurrencePattern, res.RecurrenceInterval, nowInLoc, tz, res.CreatedAt)
 				_ = s.recurrenceScheduler.ScheduleTaskRecurrence(ctx, res.ID, nextMidnight)
 			}
 		}
@@ -1295,7 +1362,71 @@ func computeNextDueDate(currentDueDate time.Time, pattern string, interval int, 
 	}
 }
 
-func getNextMidnightInUserTimezone(userTimezone string) time.Time {
+func isOccurrenceDay(pattern string, interval int, targetDate time.Time, refDate time.Time, loc *time.Location) bool {
+	if loc == nil {
+		loc = time.Local
+	}
+	if interval <= 0 {
+		interval = 1
+	}
+	if refDate.IsZero() {
+		refDate = targetDate
+	}
+	t := targetDate.In(loc)
+	ref := refDate.In(loc)
+
+	switch strings.ToLower(pattern) {
+	case "weekdays":
+		weekday := t.Weekday()
+		return weekday != time.Saturday && weekday != time.Sunday
+
+	case "daily":
+		if interval <= 1 {
+			return true
+		}
+		targetDay := time.Date(t.Year(), t.Month(), t.Day(), 0, 0, 0, 0, loc)
+		refDay := time.Date(ref.Year(), ref.Month(), ref.Day(), 0, 0, 0, 0, loc)
+		days := int(targetDay.Sub(refDay).Hours() / 24)
+		if days < 0 {
+			return false
+		}
+		return days%interval == 0
+
+	case "weekly":
+		if t.Weekday() != ref.Weekday() {
+			return false
+		}
+		targetDay := time.Date(t.Year(), t.Month(), t.Day(), 0, 0, 0, 0, loc)
+		refDay := time.Date(ref.Year(), ref.Month(), ref.Day(), 0, 0, 0, 0, loc)
+		days := int(targetDay.Sub(refDay).Hours() / 24)
+		if days < 0 {
+			return false
+		}
+		weeks := days / 7
+		return weeks%interval == 0
+
+	case "monthly":
+		monthsDiff := (t.Year()-ref.Year())*12 + int(t.Month()-ref.Month())
+		if monthsDiff < 0 || monthsDiff%interval != 0 {
+			return false
+		}
+		targetDay := t.Day()
+		refDay := ref.Day()
+		if targetDay == refDay {
+			return true
+		}
+		daysInTargetMonth := time.Date(t.Year(), t.Month()+1, 0, 0, 0, 0, 0, loc).Day()
+		if refDay > daysInTargetMonth && targetDay == daysInTargetMonth {
+			return true
+		}
+		return false
+
+	default:
+		return true
+	}
+}
+
+func getNextOccurrenceMidnight(pattern string, interval int, fromTime time.Time, userTimezone string, refDate time.Time) time.Time {
 	if userTimezone == "" {
 		userTimezone = "Asia/Jakarta"
 	}
@@ -1303,9 +1434,75 @@ func getNextMidnightInUserTimezone(userTimezone string) time.Time {
 	if err != nil {
 		loc = time.Local
 	}
-	nowInLoc := time.Now().In(loc)
-	nextMidnight := time.Date(nowInLoc.Year(), nowInLoc.Month(), nowInLoc.Day()+1, 0, 0, 0, 0, loc).UTC()
-	return nextMidnight
+	if interval <= 0 {
+		interval = 1
+	}
+	if refDate.IsZero() {
+		refDate = fromTime
+	}
+
+	t := fromTime.In(loc)
+	ref := refDate.In(loc)
+
+	switch strings.ToLower(pattern) {
+	case "weekdays":
+		next := t.AddDate(0, 0, 1)
+		for next.Weekday() == time.Saturday || next.Weekday() == time.Sunday {
+			next = next.AddDate(0, 0, 1)
+		}
+		return time.Date(next.Year(), next.Month(), next.Day(), 0, 0, 0, 0, loc).UTC()
+
+	case "daily":
+		next := t.AddDate(0, 0, interval)
+		return time.Date(next.Year(), next.Month(), next.Day(), 0, 0, 0, 0, loc).UTC()
+
+	case "weekly":
+		next := t.AddDate(0, 0, 1)
+		for next.Weekday() != ref.Weekday() {
+			next = next.AddDate(0, 0, 1)
+		}
+		if interval > 1 {
+			targetDay := time.Date(next.Year(), next.Month(), next.Day(), 0, 0, 0, 0, loc)
+			refDay := time.Date(ref.Year(), ref.Month(), ref.Day(), 0, 0, 0, 0, loc)
+			days := int(targetDay.Sub(refDay).Hours() / 24)
+			weeks := days / 7
+			for weeks%interval != 0 {
+				next = next.AddDate(0, 0, 7)
+				targetDay = time.Date(next.Year(), next.Month(), next.Day(), 0, 0, 0, 0, loc)
+				days = int(targetDay.Sub(refDay).Hours() / 24)
+				weeks = days / 7
+			}
+		}
+		return time.Date(next.Year(), next.Month(), next.Day(), 0, 0, 0, 0, loc).UTC()
+
+	case "monthly":
+		y, m, _ := t.Date()
+		targetMonth := m + time.Month(interval)
+		daysInTargetMonth := time.Date(y, targetMonth+1, 0, 0, 0, 0, 0, loc).Day()
+		targetDay := ref.Day()
+		if targetDay > daysInTargetMonth {
+			targetDay = daysInTargetMonth
+		}
+		next := time.Date(y, targetMonth, targetDay, 0, 0, 0, 0, loc)
+		if !next.After(t) {
+			targetMonth += time.Month(interval)
+			daysInTargetMonth = time.Date(y, targetMonth+1, 0, 0, 0, 0, 0, loc).Day()
+			targetDay = ref.Day()
+			if targetDay > daysInTargetMonth {
+				targetDay = daysInTargetMonth
+			}
+			next = time.Date(y, targetMonth, targetDay, 0, 0, 0, 0, loc)
+		}
+		return next.UTC()
+
+	default:
+		next := t.AddDate(0, 0, interval)
+		return time.Date(next.Year(), next.Month(), next.Day(), 0, 0, 0, 0, loc).UTC()
+	}
+}
+
+func getNextMidnightInUserTimezone(userTimezone string) time.Time {
+	return getNextOccurrenceMidnight("daily", 1, time.Now(), userTimezone, time.Now())
 }
 
 func (s *service) notifyTaskDeadlineChanged(taskID int64, title string, dueDate *time.Time, isUrgent bool, isRemoved bool, userID string) {
