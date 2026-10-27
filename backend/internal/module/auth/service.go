@@ -192,7 +192,7 @@ func (s *AuthService) Login(req *LoginRequest) (*AuthResponse, error) {
 	}, nil
 }
 
-// RefreshToken exchanges a refresh token for a new pair or rotates if <= 120 hours remaining.
+// RefreshToken exchanges a refresh token for a new pair or rotates if <= 48 hours remaining.
 func (s *AuthService) RefreshToken(refreshToken string) (*TokenPair, error) {
 	claims, err := s.jwtService.ValidateToken(refreshToken, auth.RefreshToken)
 	if err != nil {
@@ -243,8 +243,8 @@ func (s *AuthService) RefreshToken(refreshToken string) (*TokenPair, error) {
 	}
 
 	remaining := time.Until(record.ExpiresAt)
-	// If remaining <= 120 hours (5 days), rotate refresh token and slide expiration!
-	if remaining <= 120*time.Hour {
+	// If remaining <= 48 hours (2 days), rotate refresh token!
+	if remaining <= 48*time.Hour {
 		// Mark old token revoked in DB and Redis
 		_, _ = s.db.DB.Exec("UPDATE refresh_tokens SET is_revoked = true, updated_at = NOW() WHERE id = $1", record.ID)
 		_ = s.jwtService.RevokeToken(refreshToken, auth.RefreshToken)
@@ -264,7 +264,7 @@ func (s *AuthService) RefreshToken(refreshToken string) (*TokenPair, error) {
 		return newTokenPair(newPair), nil
 	}
 
-	// If remaining > 120 hours: keep the current refresh token and only issue a new access token
+	// If remaining > 48 hours: keep the current refresh token and only issue a new access token
 	accessTok, accessExp, err := s.jwtService.GenerateAccessToken(claims.UserID, claims.Email)
 	if err != nil {
 		return nil, errors.InternalError("Failed to generate access token", err)
