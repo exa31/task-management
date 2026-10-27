@@ -122,10 +122,10 @@ axiosInstance.interceptors.response.use(
       isRefreshing = true
 
       try {
-        const storedRefreshToken = getCookie('refresh_token') || ''
+        // Refresh token is strictly handled by the browser via HttpOnly cookie
         const refreshResponse = await axios.post(
           `${apiBaseUrl}/api/v1/auth/refresh`,
-          storedRefreshToken ? { refresh_token: storedRefreshToken } : {},
+          {},
           { withCredentials: true }
         )
 

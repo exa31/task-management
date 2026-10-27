@@ -59,6 +59,8 @@ export const useAuthStore = create<AuthState>((set) => ({
         setCookie('access_token', data.tokens.access_token)
         localStorage.setItem(STORAGE_KEY_TOKEN, data.tokens.access_token)
       }
+      // Note: refresh_token is handled automatically via HttpOnly cookie for web security.
+      // Do NOT store refresh_token in localStorage.
       localStorage.setItem(STORAGE_KEY_USER, JSON.stringify(data.user))
       set({
         user: data.user,
@@ -82,6 +84,8 @@ export const useAuthStore = create<AuthState>((set) => ({
         setCookie('access_token', data.tokens.access_token)
         localStorage.setItem(STORAGE_KEY_TOKEN, data.tokens.access_token)
       }
+      // Note: refresh_token is handled automatically via HttpOnly cookie for web security.
+      // Do NOT store refresh_token in localStorage.
       localStorage.setItem(STORAGE_KEY_USER, JSON.stringify(data.user))
       set({
         user: data.user,
@@ -118,7 +122,7 @@ export const useAuthStore = create<AuthState>((set) => ({
       logger.warn('Session storage access error:', err)
     }
 
-    authApi.logout().catch(() => {})
+    authApi.logout().catch(() => { })
     set({ user: null, token: null, isAuthenticated: false })
   },
 
