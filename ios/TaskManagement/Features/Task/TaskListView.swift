@@ -3,6 +3,8 @@ import SwiftUI
 public struct TaskListView: View {
     @Bindable var viewModel: TaskViewModel
     @State private var showCreateSheet = false
+    @State private var selectedTab: Int = 0
+    @State private var showCreateRecurringSheet = false
 
     public init(viewModel: TaskViewModel) {
         self.viewModel = viewModel
@@ -11,8 +13,65 @@ public struct TaskListView: View {
     public var body: some View {
         NavigationStack {
             VStack(spacing: 0) {
-                // Search Input Field
+                // Top Tab Switcher: [ Tugas | Template Berulang ]
                 HStack(spacing: 8) {
+                    Button(action: {
+                        withAnimation(.easeInOut(duration: 0.2)) { selectedTab = 0 }
+                    }) {
+                        HStack(spacing: 6) {
+                            Image(systemName: "checklist")
+                                .font(.system(size: 13, weight: .semibold))
+                            Text("\(L10n.Tasks.tabAll) (\(viewModel.tasks.count))")
+                                .font(.system(size: 13, weight: .semibold))
+                        }
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 8)
+                        .background(
+                            selectedTab == 0
+                                ? AnyShapeStyle(AppColors.brandGradient)
+                                : AnyShapeStyle(Color(.secondarySystemGroupedBackground))
+                        )
+                        .foregroundColor(selectedTab == 0 ? .white : .primary)
+                        .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 10, style: .continuous)
+                                .stroke(selectedTab == 0 ? Color.clear : Color.primary.opacity(0.08), lineWidth: 1)
+                        )
+                    }
+                    .buttonStyle(.plain)
+
+                    Button(action: {
+                        withAnimation(.easeInOut(duration: 0.2)) { selectedTab = 1 }
+                    }) {
+                        HStack(spacing: 6) {
+                            Image(systemName: "repeat")
+                                .font(.system(size: 13, weight: .semibold))
+                            Text("\(L10n.Tasks.tabRecurring) (\(viewModel.recurringTasks.count))")
+                                .font(.system(size: 13, weight: .semibold))
+                        }
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 8)
+                        .background(
+                            selectedTab == 1
+                                ? AnyShapeStyle(AppColors.brandGradient)
+                                : AnyShapeStyle(Color(.secondarySystemGroupedBackground))
+                        )
+                        .foregroundColor(selectedTab == 1 ? .white : .primary)
+                        .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 10, style: .continuous)
+                                .stroke(selectedTab == 1 ? Color.clear : Color.primary.opacity(0.08), lineWidth: 1)
+                        )
+                    }
+                    .buttonStyle(.plain)
+                }
+                .padding(.horizontal, 16)
+                .padding(.top, 8)
+                .padding(.bottom, 6)
+
+                if selectedTab == 0 {
+                    // Search Input Field
+                    HStack(spacing: 8) {
                     HStack(spacing: 6) {
                         Image(systemName: "magnifyingglass")
                             .font(.system(size: 13))
@@ -460,15 +519,24 @@ public struct TaskListView: View {
                         await viewModel.loadProjects()
                     }
                 }
+                } else {
+                    RecurringTasksView(viewModel: viewModel, showCreateSheet: $showCreateRecurringSheet)
+                }
             }
-            .navigationTitle(L10n.Tasks.title)
+            .navigationTitle(selectedTab == 0 ? L10n.Tasks.title : L10n.Tasks.recurringTitle)
             .toolbar {
                 ToolbarItem(placement: .navigationBarLeading) {
                     BrandLogoView(size: 26)
                 }
 
                 ToolbarItem(placement: .primaryAction) {
-                    Button(action: { showCreateSheet = true }) {
+                    Button(action: {
+                        if selectedTab == 0 {
+                            showCreateSheet = true
+                        } else {
+                            showCreateRecurringSheet = true
+                        }
+                    }) {
                         Image(systemName: "plus.circle.fill")
                             .font(.system(size: 20))
                             .foregroundStyle(AppColors.brandGradient)
@@ -477,6 +545,12 @@ public struct TaskListView: View {
             }
             .sheet(isPresented: $showCreateSheet) {
                 CreateTaskSheet(viewModel: viewModel)
+            }
+            .sheet(isPresented: $showCreateRecurringSheet) {
+                CreateRecurringTaskSheet(viewModel: viewModel)
+            }
+            .sheet(item: $viewModel.selectedRecurringTaskForEdit) { item in
+                EditRecurringTaskSheet(item: item, viewModel: viewModel)
             }
             .sheet(item: $viewModel.selectedTaskForDetail) { task in
                 TaskDetailSheet(task: task, viewModel: viewModel)
@@ -1201,6 +1275,804 @@ public struct CreateTaskSheet: View {
                 isSubmitting = false
                 if success {
                     onCreated?()
+                    dismiss()
+                } else {
+                    errorMessage = viewModel.errorMessage ?? L10n.Tasks.saveFailed
+                }
+            }
+        }
+    }
+}
+
+// MARK: - Recurring Tasks Management View
+struct RecurringTasksView: View {
+    @Bindable var viewModel: TaskViewModel
+    @Binding var showCreateSheet: Bool
+
+    var body: some View {
+        VStack(spacing: 0) {
+            // Search Input Field
+            HStack(spacing: 8) {
+                HStack(spacing: 6) {
+                    Image(systemName: "magnifyingglass")
+                        .font(.system(size: 13))
+                        .foregroundColor(.secondary)
+                    TextField(L10n.Tasks.searchPlaceholder, text: $viewModel.recurringSearchQuery)
+                        .font(.system(size: 13))
+                    if !viewModel.recurringSearchQuery.isEmpty {
+                        Button(action: { viewModel.recurringSearchQuery = "" }) {
+                            Image(systemName: "xmark.circle.fill")
+                                .font(.system(size: 14))
+                                .foregroundColor(.secondary)
+                        }
+                        .buttonStyle(.plain)
+                    }
+                }
+                .padding(.horizontal, 10)
+                .padding(.vertical, 8)
+                .background(Color(.secondarySystemGroupedBackground))
+                .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+                .overlay(
+                    RoundedRectangle(cornerRadius: 10, style: .continuous)
+                        .stroke(Color.primary.opacity(0.06), lineWidth: 1)
+                )
+            }
+            .padding(.horizontal, 16)
+            .padding(.top, 4)
+            .padding(.bottom, 6)
+
+            // Status Filter Pills (Semua, Aktif, Dijeda)
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: 8) {
+                    FilterButton(
+                        title: "\(L10n.Tasks.recurringStatusAll) (\(viewModel.recurringTasks.count))",
+                        icon: "tray.fill",
+                        isSelected: viewModel.recurringStatusFilter == "all"
+                    ) {
+                        viewModel.recurringStatusFilter = "all"
+                    }
+
+                    FilterButton(
+                        title: "\(L10n.Tasks.recurringActive) (\(viewModel.recurringTasks.filter { $0.isActive }.count))",
+                        icon: "checkmark.circle.fill",
+                        isSelected: viewModel.recurringStatusFilter == "active"
+                    ) {
+                        viewModel.recurringStatusFilter = "active"
+                    }
+
+                    FilterButton(
+                        title: "\(L10n.Tasks.recurringPaused) (\(viewModel.recurringTasks.filter { !$0.isActive }.count))",
+                        icon: "pause.circle.fill",
+                        isSelected: viewModel.recurringStatusFilter == "paused"
+                    ) {
+                        viewModel.recurringStatusFilter = "paused"
+                    }
+                }
+                .padding(.horizontal, 16)
+                .padding(.vertical, 4)
+            }
+
+            // Info Banner
+            HStack(spacing: 10) {
+                Image(systemName: "info.circle.fill")
+                    .foregroundColor(AppColors.primary)
+                    .font(.system(size: 15))
+                Text(L10n.Tasks.recurringSubtitle)
+                    .font(.system(size: 12))
+                    .foregroundColor(.secondary)
+                Spacer()
+            }
+            .padding(.horizontal, 12)
+            .padding(.vertical, 8)
+            .background(AppColors.primary.opacity(0.08))
+            .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+            .padding(.horizontal, 16)
+            .padding(.vertical, 4)
+
+            // Content List
+            if viewModel.isLoadingRecurring && viewModel.recurringTasks.isEmpty {
+                TaskListSkeleton(count: 4)
+                    .padding(.horizontal, 16)
+                    .padding(.top, 8)
+            } else if viewModel.filteredRecurringTasks.isEmpty {
+                Spacer()
+                VStack(spacing: 14) {
+                    ZStack {
+                        Circle()
+                            .fill(AppColors.primary.opacity(0.12))
+                            .frame(width: 72, height: 72)
+                        Image(systemName: "repeat")
+                            .font(.system(size: 32))
+                            .foregroundColor(AppColors.primary)
+                    }
+
+                    VStack(spacing: 4) {
+                        Text(L10n.Tasks.recurringEmptyTitle)
+                            .font(.system(size: 17, weight: .bold))
+                        Text(L10n.Tasks.recurringEmptyDesc)
+                            .font(.system(size: 13))
+                            .foregroundColor(.secondary)
+                            .multilineTextAlignment(.center)
+                            .padding(.horizontal, 32)
+                    }
+
+                    Button(action: { showCreateSheet = true }) {
+                        HStack(spacing: 6) {
+                            Image(systemName: "plus")
+                            Text(L10n.Tasks.createRecurringTitle)
+                        }
+                        .font(.system(size: 14, weight: .semibold))
+                        .padding(.horizontal, 16)
+                        .padding(.vertical, 10)
+                        .background(AppColors.brandGradient)
+                        .foregroundColor(.white)
+                        .clipShape(Capsule())
+                    }
+                    .padding(.top, 4)
+                }
+                Spacer()
+            } else {
+                List {
+                    ForEach(viewModel.filteredRecurringTasks) { item in
+                        RecurringTaskCardView(item: item, viewModel: viewModel)
+                            .listRowInsets(EdgeInsets(top: 6, leading: 16, bottom: 6, trailing: 16))
+                            .listRowSeparator(.hidden)
+                            .listRowBackground(Color.clear)
+                            .contentShape(Rectangle())
+                            .onTapGesture {
+                                viewModel.selectedRecurringTaskForEdit = item
+                            }
+                            .swipeActions(edge: .trailing, allowsFullSwipe: false) {
+                                Button(role: .destructive) {
+                                    Task {
+                                        _ = await viewModel.deleteRecurringTask(id: item.id)
+                                    }
+                                } label: {
+                                    Label(L10n.General.delete, systemImage: "trash")
+                                }
+                            }
+                    }
+                }
+                .listStyle(.plain)
+                .refreshable {
+                    await viewModel.loadRecurringTasks()
+                }
+            }
+        }
+    }
+}
+
+// MARK: - Recurring Task Card View
+struct RecurringTaskCardView: View {
+    let item: RecurringTaskItem
+    @Bindable var viewModel: TaskViewModel
+
+    private var recurrenceDisplay: String {
+        switch item.recurrencePattern {
+        case "daily":
+            return item.recurrenceInterval > 1 ? "\(item.recurrenceInterval) \(L10n.Tasks.unitDays)" : L10n.Tasks.patternDaily
+        case "weekdays":
+            return L10n.Tasks.patternWeekdays
+        case "weekly":
+            return item.recurrenceInterval > 1 ? "\(item.recurrenceInterval) \(L10n.Tasks.unitWeeks)" : L10n.Tasks.patternWeekly
+        case "monthly":
+            return item.recurrenceInterval > 1 ? "\(item.recurrenceInterval) \(L10n.Tasks.unitMonths)" : L10n.Tasks.patternMonthly
+        default:
+            return item.recurrencePattern.capitalized
+        }
+    }
+
+    private var priorityColor: Color {
+        switch item.priority.lowercased() {
+        case "urgent": return AppColors.priorityUrgent
+        case "high": return AppColors.priorityHigh
+        case "medium": return AppColors.priorityMedium
+        default: return AppColors.priorityLow
+        }
+    }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            // Badges row: Recurrence pattern, Due time, Priority, Project
+            HStack(spacing: 6) {
+                // Recurrence Badge
+                HStack(spacing: 4) {
+                    Image(systemName: "repeat")
+                        .font(.system(size: 10, weight: .bold))
+                    Text(recurrenceDisplay)
+                        .font(.system(size: 11, weight: .bold))
+                }
+                .padding(.horizontal, 7)
+                .padding(.vertical, 3)
+                .background(AppColors.primary.opacity(0.12))
+                .foregroundColor(AppColors.primary)
+                .clipShape(Capsule())
+
+                // Due Time Badge (if set)
+                if let dueTime = item.dueTime, !dueTime.isEmpty {
+                    HStack(spacing: 3) {
+                        Image(systemName: "clock")
+                            .font(.system(size: 10))
+                        Text(dueTime)
+                            .font(.system(size: 11, weight: .medium))
+                    }
+                    .padding(.horizontal, 6)
+                    .padding(.vertical, 3)
+                    .background(Color.secondary.opacity(0.1))
+                    .foregroundColor(.secondary)
+                    .clipShape(Capsule())
+                }
+
+                // Priority Badge
+                Text(item.priority.uppercased())
+                    .font(.system(size: 10, weight: .bold))
+                    .padding(.horizontal, 6)
+                    .padding(.vertical, 2)
+                    .background(priorityColor.opacity(0.15))
+                    .foregroundColor(priorityColor)
+                    .clipShape(Capsule())
+
+                // Project Chip
+                if let projName = item.projectName {
+                    ProjectPill(name: projName, hexColor: item.projectColor)
+                }
+
+                Spacer()
+
+                // Active / Paused Pill
+                HStack(spacing: 4) {
+                    Circle()
+                        .fill(item.isActive ? Color.green : Color.orange)
+                        .frame(width: 6, height: 6)
+                    Text(item.isActive ? L10n.Tasks.recurringActive : L10n.Tasks.recurringPaused)
+                        .font(.system(size: 11, weight: .semibold))
+                        .foregroundColor(item.isActive ? .green : .orange)
+                }
+            }
+
+            // Title and Description
+            VStack(alignment: .leading, spacing: 4) {
+                Text(item.title)
+                    .font(.system(size: 15, weight: .semibold))
+                    .foregroundColor(.primary)
+
+                if !item.description.trimmingCharacters(in: .whitespaces).isEmpty {
+                    Text(item.description)
+                        .font(.system(size: 13))
+                        .foregroundColor(.secondary)
+                        .lineLimit(2)
+                }
+            }
+
+            // Subtasks checklist summary if any
+            if let subtasks = item.subtasks, !subtasks.isEmpty {
+                HStack(spacing: 6) {
+                    Image(systemName: "checklist")
+                        .font(.system(size: 11))
+                        .foregroundColor(AppColors.primary)
+                    Text("\(subtasks.count) subtasks")
+                        .font(.system(size: 12, weight: .medium))
+                        .foregroundColor(.secondary)
+                }
+                .padding(.top, 2)
+            }
+
+            Divider()
+
+            // Card Footer: Toggle Active Switch & Edit Button
+            HStack {
+                Button(action: {
+                    Task {
+                        await viewModel.toggleActiveRecurringTask(id: item.id)
+                    }
+                }) {
+                    HStack(spacing: 6) {
+                        Image(systemName: item.isActive ? "pause.fill" : "play.fill")
+                            .font(.system(size: 11))
+                        Text(item.isActive ? L10n.Tasks.recurringPaused : L10n.Tasks.recurringActive)
+                            .font(.system(size: 12, weight: .semibold))
+                    }
+                    .padding(.horizontal, 10)
+                    .padding(.vertical, 6)
+                    .background(
+                        item.isActive
+                            ? Color.orange.opacity(0.12)
+                            : Color.green.opacity(0.12)
+                    )
+                    .foregroundColor(item.isActive ? .orange : .green)
+                    .clipShape(Capsule())
+                }
+                .buttonStyle(.plain)
+
+                Spacer()
+
+                Button(action: {
+                    viewModel.selectedRecurringTaskForEdit = item
+                }) {
+                    HStack(spacing: 4) {
+                        Image(systemName: "pencil")
+                            .font(.system(size: 11))
+                        Text(L10n.Tasks.edit)
+                            .font(.system(size: 12, weight: .medium))
+                    }
+                    .foregroundColor(AppColors.primary)
+                }
+                .buttonStyle(.plain)
+            }
+        }
+        .padding(14)
+        .background(Color(.secondarySystemGroupedBackground))
+        .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+        .overlay(
+            RoundedRectangle(cornerRadius: 14, style: .continuous)
+                .stroke(Color.primary.opacity(0.06), lineWidth: 1)
+        )
+    }
+}
+
+// MARK: - Create Recurring Task Sheet
+struct CreateRecurringTaskSheet: View {
+    @Environment(\.dismiss) private var dismiss
+    @Bindable var viewModel: TaskViewModel
+
+    @State private var title: String = ""
+    @State private var description: String = ""
+    @State private var priority: String = "medium"
+    @State private var selectedProjectId: Int64? = nil
+    @State private var recurrencePattern: String = "daily"
+    @State private var recurrenceInterval: Int = 1
+    @State private var hasDueTime: Bool = false
+    @State private var dueTimeDate: Date = Calendar.current.date(bySettingHour: 9, minute: 0, second: 0, of: Date()) ?? Date()
+    @State private var subtasks: [String] = []
+    @State private var newSubtaskText: String = ""
+    @State private var isSubmitting: Bool = false
+    @State private var errorMessage: String? = nil
+
+    var body: some View {
+        NavigationStack {
+            Form {
+                if let error = errorMessage {
+                    Section {
+                        Text(error)
+                            .foregroundColor(.red)
+                            .font(.system(size: 13))
+                    }
+                }
+
+                Section(header: Text(L10n.Tasks.sectionInfo)) {
+                    TextField(L10n.Tasks.fieldTitle, text: $title)
+                        .font(.system(size: 15))
+                    TextField(L10n.Tasks.fieldDescription, text: $description, axis: .vertical)
+                        .font(.system(size: 14))
+                        .lineLimit(3...6)
+                }
+
+                Section(header: Text(L10n.Tasks.sectionRecurrence)) {
+                    Picker(L10n.Tasks.repeatPattern, selection: $recurrencePattern) {
+                        Text(L10n.Tasks.patternDaily).tag("daily")
+                        Text(L10n.Tasks.patternWeekdays).tag("weekdays")
+                        Text(L10n.Tasks.patternWeekly).tag("weekly")
+                        Text(L10n.Tasks.patternMonthly).tag("monthly")
+                    }
+
+                    if recurrencePattern != "weekdays" {
+                        let unit = recurrencePattern == "monthly" ? L10n.Tasks.unitMonths : recurrencePattern == "weekly" ? L10n.Tasks.unitWeeks : L10n.Tasks.unitDays
+                        Stepper(L10n.Tasks.repeatInterval(interval: recurrenceInterval, unit: unit), value: $recurrenceInterval, in: 1...365)
+                    }
+
+                    Toggle(L10n.Tasks.setDueDate, isOn: $hasDueTime)
+                    if hasDueTime {
+                        DatePicker(
+                            L10n.Tasks.dateTime,
+                            selection: $dueTimeDate,
+                            displayedComponents: .hourAndMinute
+                        )
+                    }
+                }
+
+                Section(header: Text(L10n.Tasks.sectionStatusPriority)) {
+                    Picker(L10n.Tasks.priorityLabel, selection: $priority) {
+                        Text("Low").tag("low")
+                        Text("Medium").tag("medium")
+                        Text("High").tag("high")
+                        Text("Urgent").tag("urgent")
+                    }
+                }
+
+                Section(header: Text(L10n.Tasks.sectionProject)) {
+                    Picker(L10n.Tasks.selectProject, selection: $selectedProjectId) {
+                        Text(L10n.Tasks.noProject).tag(nil as Int64?)
+                        ForEach(viewModel.projects) { proj in
+                            HStack {
+                                Circle()
+                                    .fill(Color(hex: proj.color ?? "#6366F1") ?? AppColors.primary)
+                                    .frame(width: 8, height: 8)
+                                Text(proj.name)
+                            }
+                            .tag(proj.id as Int64?)
+                        }
+                    }
+                }
+
+                Section(header: HStack {
+                    Text(L10n.Tasks.sectionSubtasks)
+                    if !subtasks.isEmpty {
+                        Text("(\(subtasks.count))")
+                            .foregroundColor(AppColors.primary)
+                            .fontWeight(.bold)
+                    }
+                }) {
+                    ForEach(Array(subtasks.enumerated()), id: \.offset) { index, item in
+                        HStack {
+                            Image(systemName: "checkmark.circle")
+                                .foregroundColor(.secondary)
+                                .font(.system(size: 14))
+                            Text(item)
+                                .font(.system(size: 14))
+                            Spacer()
+                            Button(role: .destructive) {
+                                subtasks.remove(at: index)
+                            } label: {
+                                Image(systemName: "trash")
+                                    .foregroundColor(.red.opacity(0.8))
+                                    .font(.system(size: 12))
+                            }
+                            .buttonStyle(.plain)
+                        }
+                    }
+
+                    HStack {
+                        TextField(L10n.Tasks.addSubtaskPlaceholder, text: $newSubtaskText)
+                            .font(.system(size: 14))
+                            .onSubmit {
+                                addSubtask()
+                            }
+                        if !newSubtaskText.trimmingCharacters(in: .whitespaces).isEmpty {
+                            Button(action: addSubtask) {
+                                Image(systemName: "plus.circle.fill")
+                                    .font(.system(size: 20))
+                                    .foregroundColor(AppColors.primary)
+                            }
+                            .buttonStyle(.plain)
+                        }
+                    }
+                }
+            }
+            .navigationTitle(L10n.Tasks.createRecurringTitle)
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button(L10n.General.cancel) { dismiss() }
+                }
+                ToolbarItem(placement: .confirmationAction) {
+                    Button(action: handleSave) {
+                        if isSubmitting {
+                            ProgressView()
+                                .scaleEffect(0.8)
+                        } else {
+                            Text(L10n.General.save)
+                                .fontWeight(.semibold)
+                        }
+                    }
+                    .disabled(title.trimmingCharacters(in: .whitespaces).isEmpty || isSubmitting)
+                }
+            }
+        }
+    }
+
+    private func addSubtask() {
+        let text = newSubtaskText.trimmingCharacters(in: .whitespaces)
+        guard !text.isEmpty else { return }
+        subtasks.append(text)
+        newSubtaskText = ""
+    }
+
+    private func handleSave() {
+        guard !title.trimmingCharacters(in: .whitespaces).isEmpty else { return }
+        isSubmitting = true
+        errorMessage = nil
+
+        let dueTimeString: String?
+        if hasDueTime {
+            let df = DateFormatter()
+            df.dateFormat = "HH:mm"
+            dueTimeString = df.string(from: dueTimeDate)
+        } else {
+            dueTimeString = nil
+        }
+
+        var finalSubtasks = subtasks
+        let pending = newSubtaskText.trimmingCharacters(in: .whitespaces)
+        if !pending.isEmpty {
+            finalSubtasks.append(pending)
+        }
+
+        let subtaskItems: [CreateRecurringSubtaskItem]? = finalSubtasks.isEmpty ? nil : finalSubtasks.enumerated().map { index, s in
+            CreateRecurringSubtaskItem(title: s, orderIndex: index)
+        }
+
+        let req = CreateRecurringTaskRequest(
+            title: title.trimmingCharacters(in: .whitespaces),
+            description: description.trimmingCharacters(in: .whitespaces).isEmpty ? nil : description.trimmingCharacters(in: .whitespaces),
+            priority: priority,
+            projectId: selectedProjectId,
+            recurrencePattern: recurrencePattern,
+            recurrenceInterval: recurrenceInterval,
+            dueTime: dueTimeString,
+            isActive: true,
+            subtasks: subtaskItems
+        )
+
+        Task {
+            let success = await viewModel.createRecurringTask(req: req)
+            await MainActor.run {
+                isSubmitting = false
+                if success {
+                    dismiss()
+                } else {
+                    errorMessage = viewModel.errorMessage ?? L10n.Tasks.saveFailed
+                }
+            }
+        }
+    }
+}
+
+// MARK: - Edit Recurring Task Sheet
+struct EditRecurringTaskSheet: View {
+    @Environment(\.dismiss) private var dismiss
+    let item: RecurringTaskItem
+    @Bindable var viewModel: TaskViewModel
+
+    @State private var title: String
+    @State private var description: String
+    @State private var priority: String
+    @State private var selectedProjectId: Int64?
+    @State private var recurrencePattern: String
+    @State private var recurrenceInterval: Int
+    @State private var isActive: Bool
+    @State private var hasDueTime: Bool
+    @State private var dueTimeDate: Date
+    @State private var subtasks: [String]
+    @State private var newSubtaskText: String = ""
+    @State private var isSubmitting: Bool = false
+    @State private var showDeleteAlert: Bool = false
+    @State private var errorMessage: String? = nil
+
+    init(item: RecurringTaskItem, viewModel: TaskViewModel) {
+        self.item = item
+        self.viewModel = viewModel
+        _title = State(initialValue: item.title)
+        _description = State(initialValue: item.description)
+        _priority = State(initialValue: item.priority)
+        _selectedProjectId = State(initialValue: item.projectId)
+        _recurrencePattern = State(initialValue: item.recurrencePattern)
+        _recurrenceInterval = State(initialValue: item.recurrenceInterval)
+        _isActive = State(initialValue: item.isActive)
+
+        if let dt = item.dueTime, !dt.isEmpty {
+            let df = DateFormatter()
+            df.dateFormat = "HH:mm"
+            if let date = df.date(from: dt) {
+                _hasDueTime = State(initialValue: true)
+                _dueTimeDate = State(initialValue: date)
+            } else {
+                _hasDueTime = State(initialValue: false)
+                _dueTimeDate = State(initialValue: Date())
+            }
+        } else {
+            _hasDueTime = State(initialValue: false)
+            _dueTimeDate = State(initialValue: Date())
+        }
+
+        let initialSubtasks = (item.subtasks ?? []).map { $0.title }
+        _subtasks = State(initialValue: initialSubtasks)
+    }
+
+    var body: some View {
+        NavigationStack {
+            Form {
+                if let error = errorMessage {
+                    Section {
+                        Text(error)
+                            .foregroundColor(.red)
+                            .font(.system(size: 13))
+                    }
+                }
+
+                Section(header: Text(L10n.Tasks.sectionInfo)) {
+                    TextField(L10n.Tasks.fieldTitle, text: $title)
+                        .font(.system(size: 15))
+                    TextField(L10n.Tasks.fieldDescription, text: $description, axis: .vertical)
+                        .font(.system(size: 14))
+                        .lineLimit(3...6)
+                    Toggle(L10n.Tasks.recurringActive, isOn: $isActive)
+                }
+
+                Section(header: Text(L10n.Tasks.sectionRecurrence)) {
+                    Picker(L10n.Tasks.repeatPattern, selection: $recurrencePattern) {
+                        Text(L10n.Tasks.patternDaily).tag("daily")
+                        Text(L10n.Tasks.patternWeekdays).tag("weekdays")
+                        Text(L10n.Tasks.patternWeekly).tag("weekly")
+                        Text(L10n.Tasks.patternMonthly).tag("monthly")
+                    }
+
+                    if recurrencePattern != "weekdays" {
+                        let unit = recurrencePattern == "monthly" ? L10n.Tasks.unitMonths : recurrencePattern == "weekly" ? L10n.Tasks.unitWeeks : L10n.Tasks.unitDays
+                        Stepper(L10n.Tasks.repeatInterval(interval: recurrenceInterval, unit: unit), value: $recurrenceInterval, in: 1...365)
+                    }
+
+                    Toggle(L10n.Tasks.setDueDate, isOn: $hasDueTime)
+                    if hasDueTime {
+                        DatePicker(
+                            L10n.Tasks.dateTime,
+                            selection: $dueTimeDate,
+                            displayedComponents: .hourAndMinute
+                        )
+                    }
+                }
+
+                Section(header: Text(L10n.Tasks.sectionStatusPriority)) {
+                    Picker(L10n.Tasks.priorityLabel, selection: $priority) {
+                        Text("Low").tag("low")
+                        Text("Medium").tag("medium")
+                        Text("High").tag("high")
+                        Text("Urgent").tag("urgent")
+                    }
+                }
+
+                Section(header: Text(L10n.Tasks.sectionProject)) {
+                    Picker(L10n.Tasks.selectProject, selection: $selectedProjectId) {
+                        Text(L10n.Tasks.noProject).tag(nil as Int64?)
+                        ForEach(viewModel.projects) { proj in
+                            HStack {
+                                Circle()
+                                    .fill(Color(hex: proj.color ?? "#6366F1") ?? AppColors.primary)
+                                    .frame(width: 8, height: 8)
+                                Text(proj.name)
+                            }
+                            .tag(proj.id as Int64?)
+                        }
+                    }
+                }
+
+                Section(header: HStack {
+                    Text(L10n.Tasks.sectionSubtasks)
+                    if !subtasks.isEmpty {
+                        Text("(\(subtasks.count))")
+                            .foregroundColor(AppColors.primary)
+                            .fontWeight(.bold)
+                    }
+                }) {
+                    ForEach(Array(subtasks.enumerated()), id: \.offset) { index, s in
+                        HStack {
+                            Image(systemName: "checkmark.circle")
+                                .foregroundColor(.secondary)
+                                .font(.system(size: 14))
+                            Text(s)
+                                .font(.system(size: 14))
+                            Spacer()
+                            Button(role: .destructive) {
+                                subtasks.remove(at: index)
+                            } label: {
+                                Image(systemName: "trash")
+                                    .foregroundColor(.red.opacity(0.8))
+                                    .font(.system(size: 12))
+                            }
+                            .buttonStyle(.plain)
+                        }
+                    }
+
+                    HStack {
+                        TextField(L10n.Tasks.addSubtaskPlaceholder, text: $newSubtaskText)
+                            .font(.system(size: 14))
+                            .onSubmit {
+                                addSubtask()
+                            }
+                        if !newSubtaskText.trimmingCharacters(in: .whitespaces).isEmpty {
+                            Button(action: addSubtask) {
+                                Image(systemName: "plus.circle.fill")
+                                    .font(.system(size: 20))
+                                    .foregroundColor(AppColors.primary)
+                            }
+                            .buttonStyle(.plain)
+                        }
+                    }
+                }
+
+                Section {
+                    Button(role: .destructive, action: { showDeleteAlert = true }) {
+                        HStack {
+                            Spacer()
+                            Image(systemName: "trash")
+                            Text(L10n.Tasks.deleteRecurring)
+                            Spacer()
+                        }
+                    }
+                }
+            }
+            .navigationTitle(L10n.Tasks.editRecurringTitle)
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button(L10n.General.cancel) { dismiss() }
+                }
+                ToolbarItem(placement: .confirmationAction) {
+                    Button(action: handleSave) {
+                        if isSubmitting {
+                            ProgressView()
+                                .scaleEffect(0.8)
+                        } else {
+                            Text(L10n.General.save)
+                                .fontWeight(.semibold)
+                        }
+                    }
+                    .disabled(title.trimmingCharacters(in: .whitespaces).isEmpty || isSubmitting)
+                }
+            }
+            .alert(L10n.Tasks.recurringDeleteConfirm, isPresented: $showDeleteAlert) {
+                Button(L10n.General.cancel, role: .cancel) { }
+                Button(L10n.General.delete, role: .destructive) {
+                    Task {
+                        _ = await viewModel.deleteRecurringTask(id: item.id)
+                        await MainActor.run {
+                            dismiss()
+                        }
+                    }
+                }
+            } message: {
+                Text(L10n.Tasks.recurringDeleteDesc)
+            }
+        }
+    }
+
+    private func addSubtask() {
+        let text = newSubtaskText.trimmingCharacters(in: .whitespaces)
+        guard !text.isEmpty else { return }
+        subtasks.append(text)
+        newSubtaskText = ""
+    }
+
+    private func handleSave() {
+        guard !title.trimmingCharacters(in: .whitespaces).isEmpty else { return }
+        isSubmitting = true
+        errorMessage = nil
+
+        let dueTimeString: String?
+        if hasDueTime {
+            let df = DateFormatter()
+            df.dateFormat = "HH:mm"
+            dueTimeString = df.string(from: dueTimeDate)
+        } else {
+            dueTimeString = nil
+        }
+
+        var finalSubtasks = subtasks
+        let pending = newSubtaskText.trimmingCharacters(in: .whitespaces)
+        if !pending.isEmpty {
+            finalSubtasks.append(pending)
+        }
+
+        let subtaskItems: [CreateRecurringSubtaskItem]? = finalSubtasks.isEmpty ? nil : finalSubtasks.enumerated().map { index, s in
+            CreateRecurringSubtaskItem(title: s, orderIndex: index)
+        }
+
+        let req = UpdateRecurringTaskRequest(
+            title: title.trimmingCharacters(in: .whitespaces),
+            description: description.trimmingCharacters(in: .whitespaces),
+            priority: priority,
+            projectId: selectedProjectId,
+            recurrencePattern: recurrencePattern,
+            recurrenceInterval: recurrenceInterval,
+            dueTime: dueTimeString,
+            isActive: isActive,
+            subtasks: subtaskItems
+        )
+
+        Task {
+            let success = await viewModel.updateRecurringTask(id: item.id, req: req)
+            await MainActor.run {
+                isSubmitting = false
+                if success {
                     dismiss()
                 } else {
                     errorMessage = viewModel.errorMessage ?? L10n.Tasks.saveFailed

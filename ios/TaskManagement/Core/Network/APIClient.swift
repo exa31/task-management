@@ -334,6 +334,20 @@ public actor APIClient {
         return try await request(endpoint: "recurring-tasks")
     }
 
+    public func createRecurringTask(req: CreateRecurringTaskRequest) async throws -> RecurringTaskItem {
+        let body = try encoder.encode(req)
+        return try await request(endpoint: "recurring-tasks", method: "POST", body: body)
+    }
+
+    public func updateRecurringTask(id: Int64, req: UpdateRecurringTaskRequest) async throws -> RecurringTaskItem {
+        let body = try encoder.encode(req)
+        return try await request(endpoint: "recurring-tasks/\(id)", method: "PUT", body: body)
+    }
+
+    public func deleteRecurringTask(id: Int64) async throws {
+        let _: EmptyResponse = try await request(endpoint: "recurring-tasks/\(id)", method: "DELETE")
+    }
+
     public func toggleActiveRecurringTask(id: Int64) async throws -> RecurringTaskItem {
         return try await request(endpoint: "recurring-tasks/\(id)/toggle-active", method: "POST")
     }

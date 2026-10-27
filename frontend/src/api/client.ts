@@ -122,15 +122,21 @@ axiosInstance.interceptors.response.use(
       isRefreshing = true
 
       try {
-        // Refresh token is strictly handled by the browser via HttpOnly cookie
+        const storedRefreshToken =
+          getCookie('refresh_token') || localStorage.getItem('auth_refresh_token') || ''
         const refreshResponse = await axios.post(
           `${apiBaseUrl}/api/v1/auth/refresh`,
-          {},
+          storedRefreshToken ? { refresh_token: storedRefreshToken } : {},
           { withCredentials: true }
         )
 
         const rawData = refreshResponse.data?.data || refreshResponse.data
         const newAccessToken = rawData?.access_token || rawData?.tokens?.access_token
+        const newRefreshToken = rawData?.refresh_token || rawData?.tokens?.refresh_token
+
+        if (newRefreshToken) {
+          localStorage.setItem('auth_refresh_token', newRefreshToken)
+        }
 
         if (newAccessToken) {
           setCookie('access_token', newAccessToken)

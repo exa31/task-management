@@ -192,11 +192,17 @@ func (s *AuthService) Login(req *LoginRequest) (*AuthResponse, error) {
 	}, nil
 }
 
-// RefreshToken exchanges a refresh token for a new pair or rotates if <= 48 hours remaining.
+// RefreshToken exchanges a refresh token for a new pair or rotates if <= 120 hours remaining.
 func (s *AuthService) RefreshToken(refreshToken string) (*TokenPair, error) {
 	claims, err := s.jwtService.ValidateToken(refreshToken, auth.RefreshToken)
 	if err != nil {
-		return nil, err
+		// Fallback for resilient token validation if Redis was flushed/restarted:
+		// verify JWT signature and claims structure directly before rejecting.
+		if fallbackClaims, parseErr := s.jwtService.GetClaimsFromToken(refreshToken); parseErr == nil && fallbackClaims.TokenType == auth.RefreshToken {
+			claims = fallbackClaims
+		} else {
+			return nil, err
+		}
 	}
 
 	tokenHash := hashToken(refreshToken)
@@ -205,8 +211,9 @@ func (s *AuthService) RefreshToken(refreshToken string) (*TokenPair, error) {
 		UserID    string    `db:"user_id"`
 		ExpiresAt time.Time `db:"expires_at"`
 		IsRevoked bool      `db:"is_revoked"`
+		UpdatedAt time.Time `db:"updated_at"`
 	}
-	err = s.db.DB.Get(&record, "SELECT id, user_id, expires_at, is_revoked FROM refresh_tokens WHERE token_hash = $1", tokenHash)
+	err = s.db.DB.Get(&record, "SELECT id, user_id, expires_at, is_revoked, updated_at FROM refresh_tokens WHERE token_hash = $1", tokenHash)
 	if err != nil {
 		if stderrors.Is(err, sql.ErrNoRows) {
 			return nil, errors.UnauthorizedWithCode("Refresh token has expired or is invalid", constants.CodeRefreshTokenInvalid)
@@ -215,6 +222,19 @@ func (s *AuthService) RefreshToken(refreshToken string) (*TokenPair, error) {
 	}
 
 	if record.IsRevoked {
+		// Grace period (60s): If the token was revoked within the last 60 seconds (parallel request rotation race condition),
+		// issue a new access token gracefully rather than failing the request and forcibly logging the user out.
+		if time.Since(record.UpdatedAt) <= 60*time.Second && record.ExpiresAt.After(time.Now()) {
+			accessTok, accessExp, genErr := s.jwtService.GenerateAccessToken(record.UserID, claims.Email)
+			if genErr == nil {
+				return &TokenPair{
+					AccessToken:  accessTok,
+					RefreshToken: refreshToken,
+					ExpiresAt:    accessExp,
+					TokenType:    "Bearer",
+				}, nil
+			}
+		}
 		return nil, errors.UnauthorizedWithCode("Refresh token has been revoked", constants.CodeRefreshTokenRevoked)
 	}
 
@@ -223,8 +243,8 @@ func (s *AuthService) RefreshToken(refreshToken string) (*TokenPair, error) {
 	}
 
 	remaining := time.Until(record.ExpiresAt)
-	// If remaining <= 48 hours (2 days), rotate refresh token!
-	if remaining <= 48*time.Hour {
+	// If remaining <= 120 hours (5 days), rotate refresh token and slide expiration!
+	if remaining <= 120*time.Hour {
 		// Mark old token revoked in DB and Redis
 		_, _ = s.db.DB.Exec("UPDATE refresh_tokens SET is_revoked = true, updated_at = NOW() WHERE id = $1", record.ID)
 		_ = s.jwtService.RevokeToken(refreshToken, auth.RefreshToken)
@@ -244,7 +264,7 @@ func (s *AuthService) RefreshToken(refreshToken string) (*TokenPair, error) {
 		return newTokenPair(newPair), nil
 	}
 
-	// If remaining > 48 hours: keep the current refresh token and only issue a new access token
+	// If remaining > 120 hours: keep the current refresh token and only issue a new access token
 	accessTok, accessExp, err := s.jwtService.GenerateAccessToken(claims.UserID, claims.Email)
 	if err != nil {
 		return nil, errors.InternalError("Failed to generate access token", err)

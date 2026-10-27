@@ -92,6 +92,21 @@
 "tasks.activityFocusChanged" = "Focus Toggled";
 "tasks.activityDefault" = "Log Note";
 "tasks.relativeJustNow" = "Just now";
+"tasks.tabAll" = "Tasks";
+"tasks.tabRecurring" = "Recurring Templates";
+"tasks.recurringTitle" = "Recurring Templates";
+"tasks.recurringSubtitle" = "Automated recurring task schedules";
+"tasks.recurringEmptyTitle" = "No Recurring Templates";
+"tasks.recurringEmptyDesc" = "Create recurring task templates to automatically generate tasks on schedule.";
+"tasks.recurringActive" = "Active";
+"tasks.recurringPaused" = "Paused";
+"tasks.recurringStatusAll" = "All";
+"tasks.recurringDueTime" = "Due at %@";
+"tasks.recurringDeleteConfirm" = "Delete Template?";
+"tasks.recurringDeleteDesc" = "This deletes the recurring schedule. Previously created tasks will remain.";
+"tasks.createRecurringTitle" = "New Recurring Template";
+"tasks.editRecurringTitle" = "Edit Recurring Template";
+"tasks.deleteRecurring" = "Delete Template";
 
 /* Projects */
 "projects.title" = "Projects";

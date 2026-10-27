@@ -59,12 +59,13 @@ export const useAuthStore = create<AuthState>((set) => ({
         setCookie('access_token', data.tokens.access_token)
         localStorage.setItem(STORAGE_KEY_TOKEN, data.tokens.access_token)
       }
-      // Note: refresh_token is handled automatically via HttpOnly cookie for web security.
-      // Do NOT store refresh_token in localStorage.
+      if (data.tokens?.refresh_token) {
+        localStorage.setItem('auth_refresh_token', data.tokens.refresh_token)
+      }
       localStorage.setItem(STORAGE_KEY_USER, JSON.stringify(data.user))
       set({
         user: data.user,
-        token: data.tokens.access_token,
+        token: data.tokens?.access_token || null,
         isAuthenticated: true,
         loading: false
       })
@@ -84,12 +85,13 @@ export const useAuthStore = create<AuthState>((set) => ({
         setCookie('access_token', data.tokens.access_token)
         localStorage.setItem(STORAGE_KEY_TOKEN, data.tokens.access_token)
       }
-      // Note: refresh_token is handled automatically via HttpOnly cookie for web security.
-      // Do NOT store refresh_token in localStorage.
+      if (data.tokens?.refresh_token) {
+        localStorage.setItem('auth_refresh_token', data.tokens.refresh_token)
+      }
       localStorage.setItem(STORAGE_KEY_USER, JSON.stringify(data.user))
       set({
         user: data.user,
-        token: data.tokens.access_token,
+        token: data.tokens?.access_token || null,
         isAuthenticated: true,
         loading: false
       })

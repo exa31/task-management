@@ -61,6 +61,84 @@ func TestExtractRefreshTokens(t *testing.T) {
 			t.Fatalf("expected 200, got %d", resp.StatusCode)
 		}
 	})
+
+	t.Run("extracts with X-Refresh-Token header and URL-encoded cookie", func(t *testing.T) {
+		app.Post("/test-header-urlencode", func(c *fiber.Ctx) error {
+			tokens := extractRefreshTokens(c, "")
+			if len(tokens) < 2 {
+				t.Fatalf("expected at least 2 tokens, got %d: %v", len(tokens), tokens)
+			}
+			if tokens[0] != "header-token-123" {
+				t.Errorf("expected first token from header, got %s", tokens[0])
+			}
+			foundUnescaped := false
+			for _, tok := range tokens {
+				if tok == "token value with spaces" {
+					foundUnescaped = true
+					break
+				}
+			}
+			if !foundUnescaped {
+				t.Errorf("expected URL-unescaped token in candidates: %v", tokens)
+			}
+			return c.SendStatus(fiber.StatusOK)
+		})
+
+		req := httptest.NewRequest("POST", "/test-header-urlencode", nil)
+		req.Header.Set("X-Refresh-Token", "header-token-123")
+		req.Header.Set("Cookie", "refresh_token=token%20value%20with%20spaces")
+		resp, err := app.Test(req)
+		if err != nil {
+			t.Fatalf("app.Test failed: %v", err)
+		}
+		if resp.StatusCode != fiber.StatusOK {
+			t.Fatalf("expected 200, got %d", resp.StatusCode)
+		}
+	})
+}
+
+func TestSetAuthCookies_ProxySecure(t *testing.T) {
+	app := fiber.New()
+
+	app.Get("/set-cookie-test", func(c *fiber.Ctx) error {
+		setAuthCookies(c, &TokenPair{
+			AccessToken:  "test-acc",
+			RefreshToken: "test-ref",
+		})
+		return c.SendStatus(fiber.StatusOK)
+	})
+
+	t.Run("sets Secure=true when behind HTTPS reverse proxy", func(t *testing.T) {
+		req := httptest.NewRequest("GET", "/set-cookie-test", nil)
+		req.Header.Set("X-Forwarded-Proto", "https")
+		resp, err := app.Test(req)
+		if err != nil {
+			t.Fatalf("app.Test failed: %v", err)
+		}
+
+		cookies := resp.Cookies()
+		var foundRef, foundAcc bool
+		for _, ck := range cookies {
+			if ck.Name == "refresh_token" {
+				foundRef = true
+				if !ck.Secure {
+					t.Errorf("expected refresh_token to have Secure=true behind HTTPS proxy")
+				}
+				if !ck.HttpOnly {
+					t.Errorf("expected refresh_token to be HttpOnly")
+				}
+			}
+			if ck.Name == "access_token" {
+				foundAcc = true
+				if !ck.Secure {
+					t.Errorf("expected access_token to have Secure=true behind HTTPS proxy")
+				}
+			}
+		}
+		if !foundRef || !foundAcc {
+			t.Errorf("missing expected auth cookies in response: %v", cookies)
+		}
+	})
 }
 
 func TestVerifyAppleAuth(t *testing.T) {

@@ -150,3 +150,40 @@ export const taskDrawer = {
   },
   justNow: 'Baru saja'
 }
+
+export const recurring = {
+  tabAllTasks: 'Semua Tugas',
+  tabRecurringTemplates: 'Template Berulang',
+  title: 'Manajemen Template Tugas Berulang',
+  subtitle: 'Kelola jadwal berulang otomatis, jeda atau aktifkan template, serta ubah pola perulangan.',
+  createTemplateBtn: 'Buat Template Baru',
+  editTemplateTitle: 'Edit Template Tugas Berulang',
+  createTemplateTitle: 'Buat Template Tugas Berulang Baru',
+  active: 'Aktif Berjalan',
+  paused: 'Dijeda (Paused)',
+  toggleActiveTooltip: 'Klik untuk mengubah status aktif atau jeda',
+  pattern: {
+    daily: 'Setiap Hari',
+    weekdays: 'Hari Kerja (Senin–Jumat)',
+    weekly: 'Setiap Minggu',
+    monthly: 'Setiap Bulan'
+  },
+  intervalText: 'Setiap {interval}',
+  dueTimeLabel: 'Jam Deadline',
+  noDueTime: 'Tanpa Jam Khusus',
+  subtasksCount: '{count} Subtask',
+  noTemplatesFound: 'Belum Ada Template Tugas Berulang',
+  noTemplatesSubtitle: 'Buat jadwal berulang otomatis untuk tugas rutin harian, mingguan, atau bulanan Anda.',
+  deleteConfirmHeader: 'Hapus Template Tugas Berulang',
+  deleteConfirmMessage: 'Apakah Anda yakin ingin menghapus template master "{title}"? Jadwal perulangan ini tidak akan digenerate lagi di masa mendatang.',
+  deleteBtn: 'Hapus Template',
+  cancel: 'Batal',
+  save: 'Simpan Template',
+  saving: 'Menyimpan...',
+  createdSuccess: 'Template tugas berulang berhasil dibuat',
+  updatedSuccess: 'Template tugas berulang berhasil diperbarui',
+  deletedSuccess: 'Template tugas berulang berhasil dihapus',
+  resumedSuccess: 'Jadwal tugas berulang berhasil diaktifkan',
+  pausedSuccess: 'Jadwal tugas berulang berhasil dijeda'
+}
+

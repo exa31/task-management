@@ -306,6 +306,109 @@ public struct RecurringTaskItem: Codable, Identifiable, Sendable {
     }
 }
 
+public struct CreateRecurringSubtaskItem: Codable, Sendable {
+    public let title: String
+    public let orderIndex: Int
+
+    public init(title: String, orderIndex: Int) {
+        self.title = title
+        self.orderIndex = orderIndex
+    }
+
+    enum CodingKeys: String, CodingKey {
+        case title
+        case orderIndex = "order_index"
+    }
+}
+
+public struct CreateRecurringTaskRequest: Codable, Sendable {
+    public let title: String
+    public let description: String?
+    public let priority: String?
+    public let projectId: Int64?
+    public let recurrencePattern: String?
+    public let recurrenceInterval: Int?
+    public let dueTime: String?
+    public let isActive: Bool?
+    public let subtasks: [CreateRecurringSubtaskItem]?
+
+    public init(
+        title: String,
+        description: String? = nil,
+        priority: String? = "medium",
+        projectId: Int64? = nil,
+        recurrencePattern: String? = "daily",
+        recurrenceInterval: Int? = 1,
+        dueTime: String? = nil,
+        isActive: Bool? = true,
+        subtasks: [CreateRecurringSubtaskItem]? = nil
+    ) {
+        self.title = title
+        self.description = description
+        self.priority = priority
+        self.projectId = projectId
+        self.recurrencePattern = recurrencePattern
+        self.recurrenceInterval = recurrenceInterval
+        self.dueTime = dueTime
+        self.isActive = isActive
+        self.subtasks = subtasks
+    }
+
+    enum CodingKeys: String, CodingKey {
+        case title, description, priority
+        case projectId = "project_id"
+        case recurrencePattern = "recurrence_pattern"
+        case recurrenceInterval = "recurrence_interval"
+        case dueTime = "due_time"
+        case isActive = "is_active"
+        case subtasks
+    }
+}
+
+public struct UpdateRecurringTaskRequest: Codable, Sendable {
+    public let title: String?
+    public let description: String?
+    public let priority: String?
+    public let projectId: Int64?
+    public let recurrencePattern: String?
+    public let recurrenceInterval: Int?
+    public let dueTime: String?
+    public let isActive: Bool?
+    public let subtasks: [CreateRecurringSubtaskItem]?
+
+    public init(
+        title: String? = nil,
+        description: String? = nil,
+        priority: String? = nil,
+        projectId: Int64? = nil,
+        recurrencePattern: String? = nil,
+        recurrenceInterval: Int? = nil,
+        dueTime: String? = nil,
+        isActive: Bool? = nil,
+        subtasks: [CreateRecurringSubtaskItem]? = nil
+    ) {
+        self.title = title
+        self.description = description
+        self.priority = priority
+        self.projectId = projectId
+        self.recurrencePattern = recurrencePattern
+        self.recurrenceInterval = recurrenceInterval
+        self.dueTime = dueTime
+        self.isActive = isActive
+        self.subtasks = subtasks
+    }
+
+    enum CodingKeys: String, CodingKey {
+        case title, description, priority
+        case projectId = "project_id"
+        case recurrencePattern = "recurrence_pattern"
+        case recurrenceInterval = "recurrence_interval"
+        case dueTime = "due_time"
+        case isActive = "is_active"
+        case subtasks
+    }
+}
+
 public struct TaskCursorResponse: Codable {
     public let items: [TaskItem]
     public let nextCursor: Int64?

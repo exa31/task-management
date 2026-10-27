@@ -17,6 +17,40 @@ public final class TaskViewModel {
     public var isLoadingActivities = false
     public var selectedTaskForDetail: TaskItem? = nil
 
+    // MARK: - Recurring Task Templates State
+    public var recurringTasks: [RecurringTaskItem] = []
+    public var isLoadingRecurring = false
+    public var recurringSearchQuery: String = ""
+    public var recurringStatusFilter: String = "all" // "all", "active", "paused"
+    public var selectedRecurringTaskForEdit: RecurringTaskItem? = nil
+
+    public var filteredRecurringTasks: [RecurringTaskItem] {
+        recurringTasks.filter { item in
+            let matchesSearch: Bool
+            let q = recurringSearchQuery.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
+            if q.isEmpty {
+                matchesSearch = true
+            } else {
+                let titleMatch = item.title.lowercased().contains(q)
+                let descMatch = item.description.lowercased().contains(q)
+                let projectMatch = item.projectName?.lowercased().contains(q) ?? false
+                matchesSearch = titleMatch || descMatch || projectMatch
+            }
+
+            let matchesStatus: Bool
+            switch recurringStatusFilter {
+            case "active":
+                matchesStatus = item.isActive
+            case "paused":
+                matchesStatus = !item.isActive
+            default:
+                matchesStatus = true
+            }
+
+            return matchesSearch && matchesStatus
+        }
+    }
+
     private var nextCursor: Int64? = nil
     private let apiClient = APIClient.shared
 
@@ -24,6 +58,7 @@ public final class TaskViewModel {
         Task {
             await loadTasks()
             await loadProjects()
+            await loadRecurringTasks()
         }
     }
 
@@ -564,6 +599,82 @@ public final class TaskViewModel {
                 "Failed to add task activity note", error: error, category: .task,
                 metadata: ["taskId": taskId])
             self.errorMessage = error.localizedDescription
+        }
+    }
+
+    // MARK: - Recurring Task Templates CRUD
+    @MainActor
+    public func loadRecurringTasks() async {
+        isLoadingRecurring = true
+        do {
+            self.recurringTasks = try await apiClient.getRecurringTasks()
+            AppLogger.info(
+                "Recurring tasks loaded", category: .task,
+                metadata: ["count": recurringTasks.count]
+            )
+        } catch {
+            AppLogger.error("Failed to load recurring tasks", error: error, category: .task)
+            self.errorMessage = error.localizedDescription
+        }
+        isLoadingRecurring = false
+    }
+
+    @MainActor
+    public func toggleActiveRecurringTask(id: Int64) async {
+        do {
+            let updated = try await apiClient.toggleActiveRecurringTask(id: id)
+            if let index = recurringTasks.firstIndex(where: { $0.id == id }) {
+                recurringTasks[index] = updated
+            }
+            AppLogger.success("Toggled recurring task active state", category: .task, metadata: ["id": id, "isActive": updated.isActive])
+        } catch {
+            AppLogger.error("Failed to toggle recurring task", error: error, category: .task)
+            self.errorMessage = error.localizedDescription
+        }
+    }
+
+    @MainActor
+    public func deleteRecurringTask(id: Int64) async -> Bool {
+        do {
+            try await apiClient.deleteRecurringTask(id: id)
+            recurringTasks.removeAll { $0.id == id }
+            AppLogger.success("Deleted recurring task template", category: .task, metadata: ["id": id])
+            return true
+        } catch {
+            AppLogger.error("Failed to delete recurring task", error: error, category: .task)
+            self.errorMessage = error.localizedDescription
+            return false
+        }
+    }
+
+    @MainActor
+    public func createRecurringTask(req: CreateRecurringTaskRequest) async -> Bool {
+        do {
+            let item = try await apiClient.createRecurringTask(req: req)
+            recurringTasks.insert(item, at: 0)
+            AppLogger.success("Created recurring task template", category: .task, metadata: ["id": item.id])
+            await loadTasks()
+            return true
+        } catch {
+            AppLogger.error("Failed to create recurring task", error: error, category: .task)
+            self.errorMessage = error.localizedDescription
+            return false
+        }
+    }
+
+    @MainActor
+    public func updateRecurringTask(id: Int64, req: UpdateRecurringTaskRequest) async -> Bool {
+        do {
+            let item = try await apiClient.updateRecurringTask(id: id, req: req)
+            if let index = recurringTasks.firstIndex(where: { $0.id == id }) {
+                recurringTasks[index] = item
+            }
+            AppLogger.success("Updated recurring task template", category: .task, metadata: ["id": id])
+            return true
+        } catch {
+            AppLogger.error("Failed to update recurring task", error: error, category: .task)
+            self.errorMessage = error.localizedDescription
+            return false
         }
     }
 }

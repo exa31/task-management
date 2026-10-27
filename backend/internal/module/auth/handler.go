@@ -1,6 +1,7 @@
 package authmodule
 
 import (
+	"net/url"
 	"strings"
 	"time"
 
@@ -196,21 +197,33 @@ func extractRefreshTokens(c *fiber.Ctx, reqToken string) []string {
 		addCandidate(reqToken)
 	}
 
-	// 1. Parse raw Cookie header to find all occurrences of refresh_token
+	// 1. Check custom header X-Refresh-Token
+	if headerToken := c.Get("X-Refresh-Token"); headerToken != "" {
+		addCandidate(headerToken)
+	}
+
+	// 2. Parse raw Cookie header to find all occurrences of refresh_token
 	cookieHeader := c.Get("Cookie")
 	if cookieHeader != "" {
 		for _, part := range strings.Split(cookieHeader, ";") {
 			part = strings.TrimSpace(part)
 			if strings.HasPrefix(part, "refresh_token=") {
-				addCandidate(strings.TrimPrefix(part, "refresh_token="))
+				val := strings.TrimPrefix(part, "refresh_token=")
+				addCandidate(val)
+				if unescaped, err := url.QueryUnescape(val); err == nil && unescaped != val {
+					addCandidate(unescaped)
+				}
 			}
 		}
 	}
 
-	// 2. Fallback to Fiber helper if raw cookie header was empty
+	// 3. Fallback to Fiber helper if raw cookie header was empty
 	if len(candidates) == 0 {
 		if cookieVal := c.Cookies("refresh_token"); cookieVal != "" {
 			addCandidate(cookieVal)
+			if unescaped, err := url.QueryUnescape(cookieVal); err == nil && unescaped != cookieVal {
+				addCandidate(unescaped)
+			}
 		}
 	}
 
@@ -456,7 +469,7 @@ func setAuthCookies(c *fiber.Ctx, tokens *TokenPair) {
 		return
 	}
 
-	secure := c.Protocol() == "https"
+	secure := c.Protocol() == "https" || strings.EqualFold(c.Get("X-Forwarded-Proto"), "https")
 
 	// 1. Refresh token: HttpOnly cookie (inaccessible via JavaScript)
 	c.Cookie(&fiber.Cookie{

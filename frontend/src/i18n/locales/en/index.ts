@@ -11,7 +11,7 @@ import { convertModal, noteModal, notes } from './notes'
 import { projects } from './projects'
 import { reminders } from './reminders'
 import { settings } from './settings'
-import { taskDrawer, taskModal, tasks } from './tasks'
+import { recurring, taskDrawer, taskModal, tasks } from './tasks'
 
 export const en = {
   common,
@@ -22,6 +22,7 @@ export const en = {
   tasks,
   taskModal,
   taskDrawer,
+  recurring,
   projects,
   reminders,
   calendar,

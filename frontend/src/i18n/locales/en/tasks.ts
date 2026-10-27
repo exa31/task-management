@@ -151,3 +151,40 @@ export const taskDrawer = {
   },
   justNow: 'Just now'
 }
+
+export const recurring = {
+  tabAllTasks: 'All Tasks',
+  tabRecurringTemplates: 'Recurring Templates',
+  title: 'Recurring Tasks Management',
+  subtitle: 'Manage automated recurring task schedules, pause or resume templates, and adjust schedules.',
+  createTemplateBtn: 'Create Template',
+  editTemplateTitle: 'Edit Recurring Task Template',
+  createTemplateTitle: 'Create New Recurring Task Template',
+  active: 'Active',
+  paused: 'Paused',
+  toggleActiveTooltip: 'Click to toggle active or paused status',
+  pattern: {
+    daily: 'Daily',
+    weekdays: 'Weekdays (Mon–Fri)',
+    weekly: 'Weekly',
+    monthly: 'Monthly'
+  },
+  intervalText: 'Every {interval}',
+  dueTimeLabel: 'Default Due Time',
+  noDueTime: 'No Specific Time',
+  subtasksCount: '{count} Subtasks',
+  noTemplatesFound: 'No Recurring Templates Found',
+  noTemplatesSubtitle: 'Set up automated recurring templates for your routine tasks.',
+  deleteConfirmHeader: 'Delete Recurring Task Template',
+  deleteConfirmMessage: 'Are you sure you want to delete master template "{title}"? This recurring task will no longer be generated in the future.',
+  deleteBtn: 'Delete Template',
+  cancel: 'Cancel',
+  save: 'Save Template',
+  saving: 'Saving...',
+  createdSuccess: 'Recurring task template created successfully',
+  updatedSuccess: 'Recurring task template updated successfully',
+  deletedSuccess: 'Recurring task template deleted successfully',
+  resumedSuccess: 'Recurring schedule resumed',
+  pausedSuccess: 'Recurring schedule paused'
+}
+

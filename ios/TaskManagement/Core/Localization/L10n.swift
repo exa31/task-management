@@ -152,6 +152,21 @@ public enum L10n {
         public static var statusInProgress: String { "tasks.statusInProgress".localized }
         public static var statusReview: String { "tasks.statusReview".localized }
         public static var statusDone: String { "tasks.statusDone".localized }
+        public static var tabAll: String { "tasks.tabAll".localized }
+        public static var tabRecurring: String { "tasks.tabRecurring".localized }
+        public static var recurringTitle: String { "tasks.recurringTitle".localized }
+        public static var recurringSubtitle: String { "tasks.recurringSubtitle".localized }
+        public static var recurringEmptyTitle: String { "tasks.recurringEmptyTitle".localized }
+        public static var recurringEmptyDesc: String { "tasks.recurringEmptyDesc".localized }
+        public static var recurringActive: String { "tasks.recurringActive".localized }
+        public static var recurringPaused: String { "tasks.recurringPaused".localized }
+        public static var recurringStatusAll: String { "tasks.recurringStatusAll".localized }
+        public static func recurringDueTime(time: String) -> String { "tasks.recurringDueTime".localized(with: time) }
+        public static var recurringDeleteConfirm: String { "tasks.recurringDeleteConfirm".localized }
+        public static var recurringDeleteDesc: String { "tasks.recurringDeleteDesc".localized }
+        public static var createRecurringTitle: String { "tasks.createRecurringTitle".localized }
+        public static var editRecurringTitle: String { "tasks.editRecurringTitle".localized }
+        public static var deleteRecurring: String { "tasks.deleteRecurring".localized }
     }
 
     public enum Projects {

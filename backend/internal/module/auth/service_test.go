@@ -61,3 +61,21 @@ func TestAppleAllowedAudiences(t *testing.T) {
 		}
 	})
 }
+
+func TestHashToken(t *testing.T) {
+	tok1 := "test-token-value-1"
+	tok2 := "test-token-value-2"
+
+	h1 := hashToken(tok1)
+	h2 := hashToken(tok2)
+
+	if h1 == "" || h2 == "" {
+		t.Fatal("hashToken should produce non-empty hashes")
+	}
+	if h1 == h2 {
+		t.Fatal("different tokens should produce different hashes")
+	}
+	if hashToken(tok1) != h1 {
+		t.Fatal("hashToken should be deterministic")
+	}
+}
