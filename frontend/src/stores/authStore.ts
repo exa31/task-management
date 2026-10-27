@@ -59,9 +59,6 @@ export const useAuthStore = create<AuthState>((set) => ({
         setCookie('access_token', data.tokens.access_token)
         localStorage.setItem(STORAGE_KEY_TOKEN, data.tokens.access_token)
       }
-      if (data.tokens?.refresh_token) {
-        localStorage.setItem('auth_refresh_token', data.tokens.refresh_token)
-      }
       localStorage.setItem(STORAGE_KEY_USER, JSON.stringify(data.user))
       set({
         user: data.user,
@@ -84,9 +81,6 @@ export const useAuthStore = create<AuthState>((set) => ({
       if (data.tokens?.access_token) {
         setCookie('access_token', data.tokens.access_token)
         localStorage.setItem(STORAGE_KEY_TOKEN, data.tokens.access_token)
-      }
-      if (data.tokens?.refresh_token) {
-        localStorage.setItem('auth_refresh_token', data.tokens.refresh_token)
       }
       localStorage.setItem(STORAGE_KEY_USER, JSON.stringify(data.user))
       set({
