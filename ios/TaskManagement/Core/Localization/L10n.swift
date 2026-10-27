@@ -148,10 +148,44 @@ public enum L10n {
         public static var requestReview: String { "tasks.requestReview".localized }
         public static var markComplete: String { "tasks.markComplete".localized }
         public static var reopen: String { "tasks.reopen".localized }
+        public static var statusBacklog: String { "tasks.statusBacklog".localized }
         public static var statusTodo: String { "tasks.statusTodo".localized }
         public static var statusInProgress: String { "tasks.statusInProgress".localized }
         public static var statusReview: String { "tasks.statusReview".localized }
         public static var statusDone: String { "tasks.statusDone".localized }
+        public static var priorityLow: String { "tasks.priorityLow".localized }
+        public static var priorityMedium: String { "tasks.priorityMedium".localized }
+        public static var priorityHigh: String { "tasks.priorityHigh".localized }
+        public static var priorityUrgent: String { "tasks.priorityUrgent".localized }
+        public static var filterAll: String { "tasks.filterAll".localized }
+        public static var focus: String { "tasks.focus".localized }
+        public static func resetWithCount(count: Int) -> String { "tasks.resetWithCount".localized(with: count) }
+        public static func checklistCount(done: Int, total: Int) -> String { "tasks.checklistCount".localized(with: done, total) }
+        public static var logHistory: String { "tasks.logHistory".localized }
+        public static func subtasksCountShort(count: Int) -> String { "tasks.subtasksCountShort".localized(with: count) }
+        public static var updateSubtaskFailed: String { "tasks.updateSubtaskFailed".localized }
+        public static var addSubtaskFailed: String { "tasks.addSubtaskFailed".localized }
+
+        public static func localizedPriority(_ priority: String) -> String {
+            switch priority.lowercased() {
+            case "urgent": return priorityUrgent
+            case "high": return priorityHigh
+            case "medium": return priorityMedium
+            case "low": return priorityLow
+            default: return priority.capitalized
+            }
+        }
+
+        public static func localizedStatus(_ status: String) -> String {
+            switch status.lowercased() {
+            case "backlog": return statusBacklog
+            case "todo": return statusTodo
+            case "in_progress": return statusInProgress
+            case "review": return statusReview
+            case "done": return statusDone
+            default: return status.capitalized
+            }
+        }
         public static var tabAll: String { "tasks.tabAll".localized }
         public static var tabRecurring: String { "tasks.tabRecurring".localized }
         public static var recurringTitle: String { "tasks.recurringTitle".localized }

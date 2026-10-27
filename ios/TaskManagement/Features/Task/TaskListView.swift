@@ -76,7 +76,7 @@ public struct TaskListView: View {
                         Image(systemName: "magnifyingglass")
                             .font(.system(size: 13))
                             .foregroundColor(.secondary)
-                        TextField("Cari tugas, tag, atau deskripsi…", text: $viewModel.searchQuery)
+                        TextField(L10n.Tasks.searchPlaceholder, text: $viewModel.searchQuery)
                             .font(.system(size: 13))
                         if !viewModel.searchQuery.isEmpty {
                             Button(action: { viewModel.searchQuery = "" }) {
@@ -105,7 +105,7 @@ public struct TaskListView: View {
                     HStack(spacing: 8) {
                         // Project Filter Menu
                         Menu {
-                            Button("Semua Proyek") {
+                            Button(L10n.Tasks.allProjects) {
                                 viewModel.selectedProjectId = nil
                             }
                             Divider()
@@ -128,7 +128,7 @@ public struct TaskListView: View {
                                     Text(proj.name)
                                         .font(.system(size: 12, weight: .bold))
                                 } else {
-                                    Text("Proyek")
+                                    Text(L10n.Tasks.sectionProject)
                                         .font(.system(size: 12, weight: .medium))
                                 }
                                 Image(systemName: "chevron.down")
@@ -161,23 +161,23 @@ public struct TaskListView: View {
 
                         // Priority Filter Menu
                         Menu {
-                            Button("Semua Prioritas") {
+                            Button(L10n.Tasks.allPriorities) {
                                 viewModel.selectedPriority = nil
                             }
                             Divider()
-                            Button("Urgent") { viewModel.selectedPriority = "urgent" }
-                            Button("High") { viewModel.selectedPriority = "high" }
-                            Button("Medium") { viewModel.selectedPriority = "medium" }
-                            Button("Low") { viewModel.selectedPriority = "low" }
+                            Button(L10n.Tasks.priorityUrgent) { viewModel.selectedPriority = "urgent" }
+                            Button(L10n.Tasks.priorityHigh) { viewModel.selectedPriority = "high" }
+                            Button(L10n.Tasks.priorityMedium) { viewModel.selectedPriority = "medium" }
+                            Button(L10n.Tasks.priorityLow) { viewModel.selectedPriority = "low" }
                         } label: {
                             HStack(spacing: 4) {
                                 Image(systemName: "flag.fill")
                                     .font(.system(size: 11))
                                 if let priority = viewModel.selectedPriority {
-                                    Text(priority.uppercased())
+                                    Text(L10n.Tasks.localizedPriority(priority).uppercased())
                                         .font(.system(size: 12, weight: .bold))
                                 } else {
-                                    Text("Prioritas")
+                                    Text(L10n.Tasks.priorityLabel)
                                         .font(.system(size: 12, weight: .medium))
                                 }
                                 Image(systemName: "chevron.down")
@@ -215,7 +215,7 @@ public struct TaskListView: View {
                             HStack(spacing: 4) {
                                 Image(systemName: "star.fill")
                                     .font(.system(size: 11))
-                                Text(viewModel.focusTasks.count > 0 ? "Fokus (\(viewModel.focusTasks.count))" : "Fokus")
+                                Text(viewModel.focusTasks.count > 0 ? "\(L10n.Tasks.focus) (\(viewModel.focusTasks.count))" : L10n.Tasks.focus)
                                     .font(.system(size: 12, weight: viewModel.filterFocusOnly ? .bold : .medium))
                             }
                             .padding(.horizontal, 10)
@@ -253,7 +253,7 @@ public struct TaskListView: View {
                                 HStack(spacing: 4) {
                                     Image(systemName: "xmark.circle.fill")
                                         .font(.system(size: 11))
-                                    Text("Reset (\(viewModel.activeFiltersCount))")
+                                    Text(L10n.Tasks.resetWithCount(count: viewModel.activeFiltersCount))
                                         .font(.system(size: 12, weight: .bold))
                                 }
                                 .padding(.horizontal, 10)
@@ -273,35 +273,35 @@ public struct TaskListView: View {
                 ScrollView(.horizontal, showsIndicators: false) {
                     HStack(spacing: 8) {
                         FilterButton(
-                            title: "Semua (\(viewModel.tasks.count))",
+                            title: "\(L10n.Tasks.filterAll) (\(viewModel.tasks.count))",
                             icon: "tray.fill",
                             isSelected: viewModel.selectedStatus == nil
                         ) {
                             viewModel.setStatusFilter(nil)
                         }
                         FilterButton(
-                            title: "To Do (\(viewModel.tasks.filter { $0.status == "todo" }.count))",
+                            title: "\(L10n.Tasks.statusTodo) (\(viewModel.tasks.filter { $0.status == "todo" }.count))",
                             icon: "circle",
                             isSelected: viewModel.selectedStatus == "todo"
                         ) {
                             viewModel.setStatusFilter("todo")
                         }
                         FilterButton(
-                            title: "In Progress (\(viewModel.tasks.filter { $0.status == "in_progress" }.count))",
+                            title: "\(L10n.Tasks.statusInProgress) (\(viewModel.tasks.filter { $0.status == "in_progress" }.count))",
                             icon: "arrow.triangle.2.circlepath",
                             isSelected: viewModel.selectedStatus == "in_progress"
                         ) {
                             viewModel.setStatusFilter("in_progress")
                         }
                         FilterButton(
-                            title: "Review (\(viewModel.tasks.filter { $0.status == "review" }.count))",
+                            title: "\(L10n.Tasks.statusReview) (\(viewModel.tasks.filter { $0.status == "review" }.count))",
                             icon: "eye.fill",
                             isSelected: viewModel.selectedStatus == "review"
                         ) {
                             viewModel.setStatusFilter("review")
                         }
                         FilterButton(
-                            title: "Selesai (\(viewModel.tasks.filter { $0.status == "done" }.count))",
+                            title: "\(L10n.Tasks.statusDone) (\(viewModel.tasks.filter { $0.status == "done" }.count))",
                             icon: "checkmark.circle.fill",
                             isSelected: viewModel.selectedStatus == "done"
                         ) {
@@ -810,7 +810,7 @@ struct TaskRowView: View {
                 VStack(spacing: 4) {
                     ProgressBar(percent: task.progressPercent ?? 0)
                     HStack {
-                        Text("\(task.subtasksCompleted ?? 0)/\(count) checklist")
+                        Text(L10n.Tasks.checklistCount(done: task.subtasksCompleted ?? 0, total: count))
                             .font(.system(size: 10, weight: .medium))
                             .foregroundColor(.secondary)
                         Spacer()
@@ -974,7 +974,7 @@ struct TaskRowView: View {
                     HStack(spacing: 4) {
                         Image(systemName: "clock.arrow.circlepath")
                             .font(.system(size: 10, weight: .semibold))
-                        Text("Riwayat Log")
+                        Text(L10n.Tasks.logHistory)
                             .font(.system(size: 11, weight: .semibold))
                     }
                     .padding(.horizontal, 9)
@@ -1054,17 +1054,17 @@ public struct CreateTaskSheet: View {
 
                 Section(header: Text(L10n.Tasks.sectionStatusPriority)) {
                     Picker(L10n.Tasks.statusLabel, selection: $status) {
-                        Text("Backlog").tag("backlog")
-                        Text("To Do").tag("todo")
-                        Text("In Progress").tag("in_progress")
-                        Text("Review").tag("review")
+                        Text(L10n.Tasks.statusBacklog).tag("backlog")
+                        Text(L10n.Tasks.statusTodo).tag("todo")
+                        Text(L10n.Tasks.statusInProgress).tag("in_progress")
+                        Text(L10n.Tasks.statusReview).tag("review")
                     }
 
                     Picker(L10n.Tasks.priorityLabel, selection: $priority) {
-                        Text("Low").tag("low")
-                        Text("Medium").tag("medium")
-                        Text("High").tag("high")
-                        Text("Urgent").tag("urgent")
+                        Text(L10n.Tasks.priorityLow).tag("low")
+                        Text(L10n.Tasks.priorityMedium).tag("medium")
+                        Text(L10n.Tasks.priorityHigh).tag("high")
+                        Text(L10n.Tasks.priorityUrgent).tag("urgent")
                     }
                     .pickerStyle(.segmented)
                 }
@@ -1504,7 +1504,7 @@ struct RecurringTaskCardView: View {
                 }
 
                 // Priority Badge
-                Text(item.priority.uppercased())
+                Text(L10n.Tasks.localizedPriority(item.priority).uppercased())
                     .font(.system(size: 10, weight: .bold))
                     .padding(.horizontal, 6)
                     .padding(.vertical, 2)
@@ -1550,7 +1550,7 @@ struct RecurringTaskCardView: View {
                     Image(systemName: "checklist")
                         .font(.system(size: 11))
                         .foregroundColor(AppColors.primary)
-                    Text("\(subtasks.count) subtasks")
+                    Text(L10n.Tasks.subtasksCountShort(count: subtasks.count))
                         .font(.system(size: 12, weight: .medium))
                         .foregroundColor(.secondary)
                 }
@@ -1672,10 +1672,10 @@ struct CreateRecurringTaskSheet: View {
 
                 Section(header: Text(L10n.Tasks.sectionStatusPriority)) {
                     Picker(L10n.Tasks.priorityLabel, selection: $priority) {
-                        Text("Low").tag("low")
-                        Text("Medium").tag("medium")
-                        Text("High").tag("high")
-                        Text("Urgent").tag("urgent")
+                        Text(L10n.Tasks.priorityLow).tag("low")
+                        Text(L10n.Tasks.priorityMedium).tag("medium")
+                        Text(L10n.Tasks.priorityHigh).tag("high")
+                        Text(L10n.Tasks.priorityUrgent).tag("urgent")
                     }
                 }
 
@@ -1913,10 +1913,10 @@ struct EditRecurringTaskSheet: View {
 
                 Section(header: Text(L10n.Tasks.sectionStatusPriority)) {
                     Picker(L10n.Tasks.priorityLabel, selection: $priority) {
-                        Text("Low").tag("low")
-                        Text("Medium").tag("medium")
-                        Text("High").tag("high")
-                        Text("Urgent").tag("urgent")
+                        Text(L10n.Tasks.priorityLow).tag("low")
+                        Text(L10n.Tasks.priorityMedium).tag("medium")
+                        Text(L10n.Tasks.priorityHigh).tag("high")
+                        Text(L10n.Tasks.priorityUrgent).tag("urgent")
                     }
                 }
 

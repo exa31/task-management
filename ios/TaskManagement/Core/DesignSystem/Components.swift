@@ -71,7 +71,7 @@ public struct PriorityBadge: View {
         HStack(spacing: 3) {
             Image(systemName: meta.icon)
                 .font(.system(size: 9, weight: .bold))
-            Text(priority.uppercased())
+            Text(L10n.Tasks.localizedPriority(priority).uppercased())
                 .font(.system(size: 10, weight: .bold))
         }
         .foregroundColor(meta.color)
@@ -104,7 +104,7 @@ public struct StatusBadge: View {
     }
 
     public var body: some View {
-        Text(status.replacingOccurrences(of: "_", with: " ").uppercased())
+        Text(L10n.Tasks.localizedStatus(status).uppercased())
             .font(.system(size: 10, weight: .bold))
             .foregroundColor(color)
             .padding(.horizontal, 7)

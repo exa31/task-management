@@ -610,18 +610,18 @@ public struct EditTaskSheet: View {
 
                 Section(header: Text(L10n.Tasks.sectionStatusPriority)) {
                     Picker(L10n.Tasks.statusLabel, selection: $status) {
-                        Text("Backlog").tag("backlog")
-                        Text("To Do").tag("todo")
-                        Text("In Progress").tag("in_progress")
-                        Text("Review").tag("review")
-                        Text("Done").tag("done")
+                        Text(L10n.Tasks.statusBacklog).tag("backlog")
+                        Text(L10n.Tasks.statusTodo).tag("todo")
+                        Text(L10n.Tasks.statusInProgress).tag("in_progress")
+                        Text(L10n.Tasks.statusReview).tag("review")
+                        Text(L10n.Tasks.statusDone).tag("done")
                     }
 
                     Picker(L10n.Tasks.priorityLabel, selection: $priority) {
-                        Text("Low").tag("low")
-                        Text("Medium").tag("medium")
-                        Text("High").tag("high")
-                        Text("Urgent").tag("urgent")
+                        Text(L10n.Tasks.priorityLow).tag("low")
+                        Text(L10n.Tasks.priorityMedium).tag("medium")
+                        Text(L10n.Tasks.priorityHigh).tag("high")
+                        Text(L10n.Tasks.priorityUrgent).tag("urgent")
                     }
                     .pickerStyle(.segmented)
                 }
@@ -816,7 +816,7 @@ public struct EditTaskSheet: View {
                     onUpdated?()
                     dismiss()
                 } else {
-                    errorMessage = viewModel.errorMessage ?? "Gagal menyimpan perubahan tugas"
+                    errorMessage = viewModel.errorMessage ?? L10n.Tasks.saveFailed
                 }
             }
         }
@@ -914,7 +914,7 @@ public struct SubtaskItemRowView: View {
                 if success {
                     isExpanded = false
                 } else {
-                    validationError = "Failed to update subtask"
+                    validationError = L10n.Tasks.updateSubtaskFailed
                 }
             }
         }
@@ -1245,7 +1245,7 @@ public struct AddSubtaskSectionView: View {
                     hasDueDate = false
                     isShowingDetails = false
                 } else {
-                    errorMessage = viewModel.errorMessage ?? "Failed to add subtask"
+                    errorMessage = viewModel.errorMessage ?? L10n.Tasks.addSubtaskFailed
                 }
             }
         }
