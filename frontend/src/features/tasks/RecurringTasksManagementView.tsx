@@ -193,10 +193,10 @@ export const RecurringTasksManagementView: React.FC = () => {
 
   const getPatternLabel = (pattern: RecurrencePattern, interval: number) => {
     const unitMap: Record<RecurrencePattern, string> = {
-      daily: interval > 1 ? `${interval} Hari` : t('recurring.pattern.daily'),
+      daily: interval > 1 ? `${interval} ${t('recurring.days')}` : t('recurring.pattern.daily'),
       weekdays: t('recurring.pattern.weekdays'),
-      weekly: interval > 1 ? `${interval} Minggu` : t('recurring.pattern.weekly'),
-      monthly: interval > 1 ? `${interval} Bulan` : t('recurring.pattern.monthly')
+      weekly: interval > 1 ? `${interval} ${t('recurring.weeks')}` : t('recurring.pattern.weekly'),
+      monthly: interval > 1 ? `${interval} ${t('recurring.months')}` : t('recurring.pattern.monthly')
     }
     return unitMap[pattern] || pattern
   }
@@ -248,7 +248,7 @@ export const RecurringTasksManagementView: React.FC = () => {
                   : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
               }`}
             >
-              Semua ({templates.length})
+              {t('recurring.filterAll')} ({templates.length})
             </button>
             <button
               type="button"
@@ -284,7 +284,7 @@ export const RecurringTasksManagementView: React.FC = () => {
             type="text"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Cari template berulang..."
+            placeholder={t('recurring.searchPlaceholder')}
             className="w-full pl-8 pr-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-800 bg-white/90 dark:bg-slate-900/90 text-xs text-slate-900 dark:text-slate-100 placeholder-slate-400 focus:outline-none focus:border-indigo-500 transition-colors"
           />
           {searchQuery && (
@@ -314,14 +314,14 @@ export const RecurringTasksManagementView: React.FC = () => {
           <div className="p-8 text-center bg-white dark:bg-slate-900 rounded-xl border border-rose-200 dark:border-rose-900/40">
             <i className="pi pi-exclamation-circle text-rose-500 text-2xl mb-2" />
             <h3 className="text-sm font-semibold text-slate-900 dark:text-slate-100">
-              Gagal memuat template tugas berulang
+              {t('recurring.loadFailed')}
             </h3>
             <button
               type="button"
               onClick={() => refetch()}
               className="mt-3 px-3 py-1.5 rounded-lg bg-indigo-600 text-white text-xs font-medium cursor-pointer"
             >
-              Coba Lagi
+              {t('recurring.retry')}
             </button>
           </div>
         ) : filteredTemplates.length === 0 ? (
@@ -372,7 +372,7 @@ export const RecurringTasksManagementView: React.FC = () => {
                             <span className="truncate">{template.project_name}</span>
                           </span>
                         ) : (
-                          <span className="text-[10px] text-slate-400">Tanpa Project</span>
+                          <span className="text-[10px] text-slate-400">{t('recurring.noProject')}</span>
                         )}
                         <span
                           className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-semibold border ${priorityInfo.badge}`}
@@ -431,7 +431,7 @@ export const RecurringTasksManagementView: React.FC = () => {
                       {template.subtasks && template.subtasks.length > 0 && (
                         <span className="inline-flex items-center gap-1 px-2 py-1 rounded-md text-[11px] font-medium bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border border-slate-200/60 dark:border-slate-700/60">
                           <i className="pi pi-check-square text-[10px]" />
-                          <span>{template.subtasks.length} Subtasks</span>
+                          <span>{t('recurring.subtasksBadge', { count: template.subtasks.length })}</span>
                         </span>
                       )}
                     </div>
@@ -447,7 +447,7 @@ export const RecurringTasksManagementView: React.FC = () => {
                       <button
                         type="button"
                         onClick={() => openEditModal(template)}
-                        title="Edit template"
+                        title={t('recurring.editTooltip')}
                         className="p-1.5 rounded-lg text-slate-500 hover:text-indigo-600 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
                       >
                         <i className="pi pi-pencil text-xs" />
@@ -455,7 +455,7 @@ export const RecurringTasksManagementView: React.FC = () => {
                       <button
                         type="button"
                         onClick={() => handleDeleteTemplate(template)}
-                        title="Hapus template master"
+                        title={t('recurring.deleteTooltip')}
                         className="p-1.5 rounded-lg text-slate-500 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition-colors cursor-pointer"
                       >
                         <i className="pi pi-trash text-xs" />
@@ -489,13 +489,13 @@ export const RecurringTasksManagementView: React.FC = () => {
           {/* Title */}
           <div>
             <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
-              Judul Template *
+              {t('recurring.form.titleLabel')}
             </label>
             <input
               type="text"
               value={formTitle}
               onChange={(e) => setFormTitle(e.target.value)}
-              placeholder="mis. Standup Harian Tim Backend"
+              placeholder={t('recurring.form.titlePlaceholder')}
               className={`w-full px-3 py-2 rounded-lg border text-xs bg-white dark:bg-slate-950 text-slate-900 dark:text-slate-100 focus:outline-none transition-colors ${
                 formTouched && !formTitle.trim()
                   ? 'border-rose-500 focus:border-rose-500'
@@ -503,20 +503,20 @@ export const RecurringTasksManagementView: React.FC = () => {
               }`}
             />
             {formTouched && !formTitle.trim() && (
-              <span className="text-[11px] text-rose-500 mt-1 block">Judul template wajib diisi</span>
+              <span className="text-[11px] text-rose-500 mt-1 block">{t('recurring.form.titleRequired')}</span>
             )}
           </div>
 
           {/* Description */}
           <div>
             <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
-              Deskripsi
+              {t('recurring.form.descriptionLabel')}
             </label>
             <textarea
               rows={2}
               value={formDesc}
               onChange={(e) => setFormDesc(e.target.value)}
-              placeholder="Deskripsi atau catatan khusus untuk tugas berulang ini..."
+              placeholder={t('recurring.form.descriptionPlaceholder')}
               className="w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-800 text-xs bg-white dark:bg-slate-950 text-slate-900 dark:text-slate-100 focus:outline-none focus:border-indigo-500 transition-colors"
             />
           </div>
@@ -525,14 +525,14 @@ export const RecurringTasksManagementView: React.FC = () => {
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                Project / Modul
+                {t('recurring.form.projectLabel')}
               </label>
               <select
                 value={formProjectId ?? ''}
                 onChange={(e) => setFormProjectId(e.target.value ? Number(e.target.value) : null)}
                 className="w-full px-2.5 py-2 rounded-lg border border-slate-200 dark:border-slate-800 text-xs bg-white dark:bg-slate-950 text-slate-900 dark:text-slate-100 focus:outline-none focus:border-indigo-500"
               >
-                <option value="">Tanpa Project</option>
+                <option value="">{t('recurring.form.noProject')}</option>
                 {projects.map((p) => (
                   <option key={p.id} value={p.id}>
                     {p.name}
@@ -543,17 +543,17 @@ export const RecurringTasksManagementView: React.FC = () => {
 
             <div>
               <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                Prioritas
+                {t('recurring.form.priorityLabel')}
               </label>
               <select
                 value={formPriority}
                 onChange={(e) => setFormPriority(e.target.value as TaskPriority)}
                 className="w-full px-2.5 py-2 rounded-lg border border-slate-200 dark:border-slate-800 text-xs bg-white dark:bg-slate-950 text-slate-900 dark:text-slate-100 focus:outline-none focus:border-indigo-500"
               >
-                <option value="low">Rendah (Low)</option>
-                <option value="medium">Sedang (Medium)</option>
-                <option value="high">Tinggi (High)</option>
-                <option value="urgent">Mendesak (Urgent)</option>
+                <option value="low">{t('recurring.form.priorityLow')}</option>
+                <option value="medium">{t('recurring.form.priorityMedium')}</option>
+                <option value="high">{t('recurring.form.priorityHigh')}</option>
+                <option value="urgent">{t('recurring.form.priorityUrgent')}</option>
               </select>
             </div>
           </div>
@@ -562,23 +562,23 @@ export const RecurringTasksManagementView: React.FC = () => {
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                Pola Perulangan
+                {t('recurring.form.patternLabel')}
               </label>
               <select
                 value={formPattern}
                 onChange={(e) => setFormPattern(e.target.value as RecurrencePattern)}
                 className="w-full px-2.5 py-2 rounded-lg border border-slate-200 dark:border-slate-800 text-xs bg-white dark:bg-slate-950 text-slate-900 dark:text-slate-100 focus:outline-none focus:border-indigo-500"
               >
-                <option value="daily">Setiap Hari (Daily)</option>
-                <option value="weekdays">Hari Kerja (Senin–Jumat)</option>
-                <option value="weekly">Setiap Minggu (Weekly)</option>
-                <option value="monthly">Setiap Bulan (Monthly)</option>
+                <option value="daily">{t('recurring.form.patternDaily')}</option>
+                <option value="weekdays">{t('recurring.form.patternWeekdays')}</option>
+                <option value="weekly">{t('recurring.form.patternWeekly')}</option>
+                <option value="monthly">{t('recurring.form.patternMonthly')}</option>
               </select>
             </div>
 
             <div>
               <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                Interval (Frekuensi)
+                {t('recurring.form.intervalLabel')}
               </label>
               <input
                 type="number"
@@ -595,7 +595,7 @@ export const RecurringTasksManagementView: React.FC = () => {
           <div className="grid grid-cols-2 gap-3 items-center">
             <div>
               <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                Jam Deadline (Opsional)
+                {t('recurring.form.dueTimeLabel')}
               </label>
               <input
                 type="time"
@@ -611,7 +611,7 @@ export const RecurringTasksManagementView: React.FC = () => {
                   checked={formIsActive}
                   onChange={(e) => setFormIsActive(Boolean(e.value))}
                 />
-                <span>Status Template Aktif</span>
+                <span>{t('recurring.form.activeStatusLabel')}</span>
               </label>
             </div>
           </div>
@@ -619,7 +619,7 @@ export const RecurringTasksManagementView: React.FC = () => {
           {/* Checklist Subtasks Template */}
           <div className="space-y-2 pt-2 border-t border-slate-200 dark:border-slate-800">
             <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300">
-              Template Subtask (Checklist Bawaan)
+              {t('recurring.form.subtasksLabel')}
             </label>
 
             <div className="flex gap-2">
@@ -633,7 +633,7 @@ export const RecurringTasksManagementView: React.FC = () => {
                     handleAddSubtask(e)
                   }
                 }}
-                placeholder="Tambahkan butir langkah..."
+                placeholder={t('recurring.form.subtaskPlaceholder')}
                 className="flex-1 px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-800 text-xs bg-white dark:bg-slate-950 text-slate-900 dark:text-slate-100 focus:outline-none focus:border-indigo-500"
               />
               <button
@@ -641,7 +641,7 @@ export const RecurringTasksManagementView: React.FC = () => {
                 onClick={handleAddSubtask}
                 className="px-3 py-1.5 rounded-lg bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-xs font-medium text-slate-700 dark:text-slate-300 cursor-pointer"
               >
-                Tambah
+                {t('recurring.form.addSubtaskBtn')}
               </button>
             </div>
 
