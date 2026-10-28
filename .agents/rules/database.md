@@ -1,6 +1,7 @@
 ---
 description: Database transaction and query conventions for Go Fiber backend
-globs: ["backend/**/*.go"]
+trigger: glob
+globs: "backend/**/*.go"
 ---
 
 # Database & Query Rules

@@ -1,6 +1,7 @@
 ---
 description: Mandatory rules for responsive UI design, calendar multi-dot indicators, network debounce, and non-technical user communication
-globs: ["ios/TaskManagement/**/*.swift", "frontend/src/**/*.tsx", "android/**/*.kt"]
+trigger: glob
+globs: "{ios/TaskManagement/**/*.swift,frontend/src/**/*.tsx,android/**/*.kt}"
 ---
 
 # UI Responsiveness, Calendar Standards & User Communication Rules

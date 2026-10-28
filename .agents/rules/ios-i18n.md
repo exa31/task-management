@@ -1,6 +1,7 @@
 ---
 description: Mandatory iOS internationalization (L10n / I18n) and locale usage for all SwiftUI text, alerts, buttons, dialogs, and error messages
-globs: ["ios/TaskManagement/**/*.swift"]
+trigger: glob
+globs: "ios/TaskManagement/**/*.swift"
 ---
 
 # iOS Internationalization (i18n) & Localized Message Rules

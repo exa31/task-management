@@ -1,6 +1,7 @@
 ---
 description: Proactive task management lifecycle rule - automatically search, create, update, and complete tasks in Task Hub MCP without requiring explicit user prompt reminders
-globs: ["**/*"]
+trigger: always_on
+globs: "**/*"
 ---
 
 # Proactive Task Management Lifecycle Rule

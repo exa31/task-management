@@ -1,6 +1,7 @@
 ---
 description: Mandatory frontend internationalization (i18n) and locale usage for all React UI text, toasts, and dialogs
-globs: ["frontend/src/**/*.tsx", "frontend/src/**/*.ts"]
+trigger: glob
+globs: "frontend/src/**/*.{ts,tsx}"
 ---
 
 # Frontend Internationalization (i18n) & Locale Rules

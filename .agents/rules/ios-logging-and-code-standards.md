@@ -1,6 +1,7 @@
 ---
 description: Mandatory AppLogger usage, English-only diagnostic logging, and modular architecture standards for the iOS Swift application
-globs: ["ios/TaskManagement/**/*.swift"]
+trigger: glob
+globs: "ios/TaskManagement/**/*.swift"
 ---
 
 # iOS Logging & Code Architecture Standards
