@@ -134,7 +134,7 @@ public struct DeleteAccountRequest: Codable {
 }
 
 // MARK: - Task & Subtask
-public struct Subtask: Codable, Identifiable, Sendable {
+public struct Subtask: Codable, Identifiable, Sendable, Equatable {
     public let id: Int64
     public let taskId: Int64
     public var title: String
@@ -162,7 +162,7 @@ public struct Subtask: Codable, Identifiable, Sendable {
     }
 }
 
-public struct TaskItem: Codable, Identifiable, Sendable {
+public struct TaskItem: Codable, Identifiable, Sendable, Equatable {
     public let id: Int64
     public let userId: String
     public var title: String
@@ -705,7 +705,7 @@ public struct CreateTaskActivityRequest: Codable {
 }
 
 // MARK: - Project
-public struct Project: Codable, Identifiable {
+public struct Project: Codable, Identifiable, Sendable, Equatable {
     public let id: Int64
     public let name: String
     public let color: String
@@ -844,7 +844,7 @@ public struct ConvertNoteResponse: Codable {
 }
 
 // MARK: - Reminder
-public struct Reminder: Codable, Identifiable {
+public struct Reminder: Codable, Identifiable, Sendable, Equatable {
     public let id: Int64
     public let taskId: Int64?
     public let taskTitle: String?
@@ -949,6 +949,31 @@ public struct BaseResponse<T: Codable>: Codable {
     public let success: Bool
     public let data: T?
     public let message: String
+    public let code: String?
+    public let timestamp: String?
+
+    public init(success: Bool, data: T?, message: String, code: String? = nil, timestamp: String? = nil) {
+        self.success = success
+        self.data = data
+        self.message = message
+        self.code = code
+        self.timestamp = timestamp
+    }
+}
+
+// MARK: - API Error Envelope (Universal 4xx/5xx payload parser)
+public struct ApiErrorEnvelope: Codable, Sendable {
+    public let success: Bool?
+    public let message: String?
+    public let code: String?
+    public let timestamp: String?
+
+    public init(success: Bool? = nil, message: String? = nil, code: String? = nil, timestamp: String? = nil) {
+        self.success = success
+        self.message = message
+        self.code = code
+        self.timestamp = timestamp
+    }
 }
 
 // MARK: - Paginated API Response Envelope

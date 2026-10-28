@@ -1685,7 +1685,7 @@ struct CreateRecurringTaskSheet: View {
                         ForEach(viewModel.projects) { proj in
                             HStack {
                                 Circle()
-                                    .fill(Color(hex: proj.color ?? "#6366F1") ?? AppColors.primary)
+                                    .fill(Color(hex: proj.color) ?? AppColors.primary)
                                     .frame(width: 8, height: 8)
                                 Text(proj.name)
                             }
@@ -1926,7 +1926,7 @@ struct EditRecurringTaskSheet: View {
                         ForEach(viewModel.projects) { proj in
                             HStack {
                                 Circle()
-                                    .fill(Color(hex: proj.color ?? "#6366F1") ?? AppColors.primary)
+                                    .fill(Color(hex: proj.color) ?? AppColors.primary)
                                     .frame(width: 8, height: 8)
                                 Text(proj.name)
                             }

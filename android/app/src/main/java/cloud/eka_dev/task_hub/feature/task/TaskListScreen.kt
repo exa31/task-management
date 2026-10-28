@@ -1,5 +1,6 @@
 package cloud.eka_dev.task_hub.feature.task
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn

@@ -49,7 +49,11 @@ public final class ProfileViewModel {
             self.googleBound = profile.googleBound
             self.appleBound = profile.appleBound
         } catch {
-            self.errorMessage = error.localizedDescription
+            if error.isTaskOrURLCancelled {
+                AppLogger.debug("Profile loading was cancelled", category: .app)
+            } else {
+                self.errorMessage = L10n.Errors.message(for: error)
+            }
             self.name = keychain.get(key: "user_name") ?? ""
             self.email = keychain.get(key: "user_email") ?? ""
         }
@@ -73,8 +77,12 @@ public final class ProfileViewModel {
             self.isSavingProfile = false
             return true
         } catch {
-            AppLogger.error("Failed to update profile", error: error, category: .app)
-            self.errorMessage = error.localizedDescription
+            if error.isTaskOrURLCancelled {
+                AppLogger.debug("Profile save was cancelled", category: .app)
+            } else {
+                AppLogger.error("Failed to update profile", error: error, category: .app)
+                self.errorMessage = L10n.Errors.message(for: error)
+            }
             self.isSavingProfile = false
             return false
         }
@@ -91,8 +99,12 @@ public final class ProfileViewModel {
             self.successToast = L10n.Settings.avatarUpdated
             AppLogger.success("Avatar image uploaded successfully", category: .app)
         } catch {
-            AppLogger.error("Failed to upload avatar", error: error, category: .app)
-            self.errorMessage = error.localizedDescription
+            if error.isTaskOrURLCancelled {
+                AppLogger.debug("Avatar upload was cancelled", category: .app)
+            } else {
+                AppLogger.error("Failed to upload avatar", error: error, category: .app)
+                self.errorMessage = L10n.Errors.message(for: error)
+            }
         }
         self.isUploadingAvatar = false
     }
@@ -116,8 +128,12 @@ public final class ProfileViewModel {
             self.isSavingNotifications = false
             return true
         } catch {
-            AppLogger.error("Failed to update notification preferences", error: error, category: .app)
-            self.errorMessage = error.localizedDescription
+            if error.isTaskOrURLCancelled {
+                AppLogger.debug("Notification preferences save was cancelled", category: .app)
+            } else {
+                AppLogger.error("Failed to update notification preferences", error: error, category: .app)
+                self.errorMessage = L10n.Errors.message(for: error)
+            }
             self.isSavingNotifications = false
             return false
         }
@@ -136,8 +152,12 @@ public final class ProfileViewModel {
             AppLogger.success("OAuth provider unlinked successfully", category: .auth, metadata: ["provider": provider])
             return true
         } catch {
-            AppLogger.error("Failed to unbind OAuth provider", error: error, category: .auth, metadata: ["provider": provider])
-            self.errorMessage = error.localizedDescription
+            if error.isTaskOrURLCancelled {
+                AppLogger.debug("OAuth unbind was cancelled", category: .auth)
+            } else {
+                AppLogger.error("Failed to unbind OAuth provider", error: error, category: .auth, metadata: ["provider": provider])
+                self.errorMessage = L10n.Errors.message(for: error)
+            }
             return false
         }
     }
@@ -168,8 +188,12 @@ public final class ProfileViewModel {
                         self.successToast = L10n.Settings.appleConnected
                         AppLogger.success("Apple ID linked successfully to profile", category: .auth)
                     } catch {
-                        AppLogger.error("Failed to bind Apple ID", error: error, category: .auth)
-                        self.errorMessage = error.localizedDescription
+                        if error.isTaskOrURLCancelled {
+                            AppLogger.debug("Apple ID bind was cancelled", category: .auth)
+                        } else {
+                            AppLogger.error("Failed to bind Apple ID", error: error, category: .auth)
+                            self.errorMessage = L10n.Errors.message(for: error)
+                        }
                     }
                     self.isAppleBinding = false
                 }
@@ -177,7 +201,7 @@ public final class ProfileViewModel {
         case .failure(let error):
             let authError = error as? ASAuthorizationError
             if authError?.code != .canceled {
-                self.errorMessage = error.localizedDescription
+                self.errorMessage = L10n.Errors.message(for: error)
             } else {
                 AppLogger.info("User cancelled Apple ID bind sheet", category: .auth)
             }
@@ -197,7 +221,12 @@ public final class ProfileViewModel {
             self.isDeletingAccount = false
             return true
         } catch {
-            self.errorMessage = error.localizedDescription
+            if error.isTaskOrURLCancelled {
+                AppLogger.debug("Delete account was cancelled", category: .auth)
+            } else {
+                AppLogger.error("Failed to delete account", error: error, category: .auth)
+                self.errorMessage = L10n.Errors.message(for: error)
+            }
             self.isDeletingAccount = false
             return false
         }
@@ -251,7 +280,7 @@ public struct ProfileView: View {
                         .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
                     }
 
-                    if let error = viewModel.errorMessage {
+                    if let error = viewModel.errorMessage, !error.isEmpty {
                         HStack(spacing: 8) {
                             Image(systemName: "exclamationmark.triangle.fill")
                                 .foregroundColor(AppColors.priorityUrgent)

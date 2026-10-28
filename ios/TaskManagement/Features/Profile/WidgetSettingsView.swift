@@ -57,7 +57,7 @@ public struct WidgetSettingsView: View {
 
                 if isLoading && tasks.isEmpty {
                     loadingView
-                } else if let error = errorMessage, tasks.isEmpty {
+                } else if let error = errorMessage, !error.isEmpty, tasks.isEmpty {
                     errorView(error)
                 } else if activeTasks.isEmpty {
                     emptyStateView
@@ -545,8 +545,12 @@ public struct WidgetSettingsView: View {
             // Sync widget bundle
             widgetManager.syncWithTaskList(self.tasks)
         } catch {
-            self.errorMessage = error.localizedDescription
-            AppLogger.error("Failed to fetch tasks for widget settings", error: error, category: .task)
+            if error.isTaskOrURLCancelled {
+                AppLogger.debug("Widget settings fetch tasks cancelled", category: .task)
+            } else {
+                self.errorMessage = L10n.Errors.message(for: error)
+                AppLogger.error("Failed to fetch tasks for widget settings", error: error, category: .task)
+            }
         }
         isLoading = false
     }

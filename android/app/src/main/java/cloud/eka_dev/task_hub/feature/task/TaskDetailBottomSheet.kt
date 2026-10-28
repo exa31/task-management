@@ -469,7 +469,7 @@ private fun ActivityLogsTabContent(
         ) {
             OutlinedTextField(
                 value = newNoteText,
-                onNoteChange = onNoteChange,
+                onValueChange = onNoteChange,
                 placeholder = { Text(stringResource(R.string.post_note_placeholder), fontSize = 12.sp) },
                 shape = RoundedCornerShape(10.dp),
                 modifier = Modifier.weight(1f),

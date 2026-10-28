@@ -57,8 +57,8 @@ class ReminderViewModel(
     private fun listenToAlerts() {
         viewModelScope.launch {
             sseClient.events.collect { event ->
-                if (event.contains("reminder")) {
-                    _activeAlert.value = "Pengingat Baru Diterima: $event"
+                if (event.data.contains("reminder") || event.type?.contains("reminder") == true) {
+                    _activeAlert.value = "Pengingat Baru Diterima: ${event.data}"
                     loadReminders()
                 }
             }

@@ -73,6 +73,9 @@ public enum L10n {
             "tasks.subtasksCount".localized(with: done, total)
         }
         public static var detailTitle: String { "tasks.detailTitle".localized }
+        public static var deleteTask: String { "tasks.deleteTask".localized }
+        public static var deleteTaskConfirmTitle: String { "tasks.deleteTaskConfirmTitle".localized }
+        public static var deleteTaskConfirmMessage: String { "tasks.deleteTaskConfirmMessage".localized }
         public static var edit: String { "tasks.edit".localized }
         public static var editTitle: String { "tasks.editTitle".localized }
         public static var createTitle: String { "tasks.createTitle".localized }
@@ -562,5 +565,71 @@ public enum L10n {
         public static var defaultBeep: String { "sound.defaultBeep".localized }
         public static func customMusic(name: String) -> String { "sound.customMusic".localized(with: name) }
         public static var folderNotFound: String { "sound.folderNotFound".localized }
+    }
+
+    public enum Errors {
+        public static var defaultTitle: String { "errors.defaultTitle".localized }
+        public static var operationFailed: String { "errors.operationFailed".localized }
+        public static var unauthorized: String { "errors.UNAUTHORIZED".localized }
+        public static var forbidden: String { "errors.FORBIDDEN".localized }
+        public static var notFound: String { "errors.NOT_FOUND".localized }
+        public static var validationError: String { "errors.VALIDATION_ERROR".localized }
+        public static var networkError: String { "errors.NETWORK_ERROR".localized }
+        public static var internalServerError: String { "errors.INTERNAL_SERVER_ERROR".localized }
+
+        /// Resolves an error (APIError, URLError, Cancellation, or general Error) into a user-friendly, localized string.
+        /// Returns an empty string if the error is a cancellation (e.g. pull-to-refresh cancelled).
+        public static func message(for error: Error) -> String {
+            if error.isTaskOrURLCancelled {
+                return ""
+            }
+
+            if let apiError = error as? APIError {
+                if apiError.isCancelled { return "" }
+                return message(forCode: apiError.code, fallback: apiError.rawMessage)
+            }
+
+            let nsErr = error as NSError
+            if nsErr.domain == NSURLErrorDomain {
+                if nsErr.code == NSURLErrorCancelled {
+                    return ""
+                }
+                if nsErr.code == NSURLErrorNotConnectedToInternet || nsErr.code == NSURLErrorNetworkConnectionLost {
+                    return "errors.NETWORK_ERROR".localized
+                }
+            }
+
+            return "errors.operationFailed".localized
+        }
+
+        /// Resolves a backend error code to a localized message, with pattern matching fallback
+        public static func message(forCode code: String, fallback: String? = nil) -> String {
+            if code == "CANCELLED" { return "" }
+            let key = "errors.\(code)"
+            let translated = key.localized
+            if translated != key && !translated.isEmpty {
+                return translated
+            }
+
+            // Pattern-based fallback
+            if code.hasSuffix("_NOT_FOUND") {
+                return "errors.NOT_FOUND".localized
+            }
+            if code.contains("DUPLICATE") || code.contains("ALREADY_EXISTS") {
+                return "errors.DUPLICATE_ENTRY".localized
+            }
+            if code.contains("VALIDATION") {
+                return "errors.VALIDATION_ERROR".localized
+            }
+            if code.contains("AUTH") || code.contains("TOKEN") {
+                return "errors.UNAUTHORIZED".localized
+            }
+
+            if let fallback = fallback, !fallback.isEmpty {
+                return fallback
+            }
+
+            return "errors.operationFailed".localized
+        }
     }
 }

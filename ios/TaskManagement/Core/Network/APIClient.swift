@@ -1,20 +1,87 @@
 import Foundation
 
-public enum APIError: LocalizedError {
+public enum APIError: LocalizedError, Sendable {
     case invalidURL
-    case unauthorized
-    case serverError(String)
+    case unauthorized(code: String? = nil, message: String? = nil)
+    case serverError(String, code: String? = nil, statusCode: Int? = nil)
     case decodingError(Error)
     case networkError(Error)
+    case cancelled
 
-    public var errorDescription: String? {
+    public var isCancelled: Bool {
+        switch self {
+        case .cancelled:
+            return true
+        case .networkError(let err):
+            if err is CancellationError { return true }
+            let nsErr = err as NSError
+            return nsErr.domain == NSURLErrorDomain && nsErr.code == NSURLErrorCancelled
+        default:
+            return false
+        }
+    }
+
+    public var code: String {
+        switch self {
+        case .invalidURL:
+            return "BAD_REQUEST"
+        case .unauthorized(let code, _):
+            return code ?? "UNAUTHORIZED"
+        case .serverError(_, let code, let statusCode):
+            if let code = code, !code.isEmpty { return code }
+            if let statusCode = statusCode { return APIError.fallbackCode(for: statusCode) }
+            return "UNKNOWN_ERROR"
+        case .decodingError:
+            return "INTERNAL_SERVER_ERROR"
+        case .networkError(let err):
+            let nsErr = err as NSError
+            if nsErr.domain == NSURLErrorDomain && (nsErr.code == NSURLErrorNotConnectedToInternet || nsErr.code == NSURLErrorNetworkConnectionLost) {
+                return "NETWORK_ERROR"
+            }
+            return "NETWORK_ERROR"
+        case .cancelled:
+            return "CANCELLED"
+        }
+    }
+
+    public var rawMessage: String {
         switch self {
         case .invalidURL: return "Invalid server endpoint URL."
-        case .unauthorized: return "Session expired. Please sign in again."
-        case .serverError(let msg): return msg
+        case .unauthorized(_, let msg): return msg ?? "Session expired. Please sign in again."
+        case .serverError(let msg, _, _): return msg
         case .decodingError(let err): return "Failed to parse data: \(err.localizedDescription)"
         case .networkError(let err): return err.localizedDescription
+        case .cancelled: return ""
         }
+    }
+
+    public static func fallbackCode(for statusCode: Int) -> String {
+        switch statusCode {
+        case 400: return "BAD_REQUEST"
+        case 401: return "UNAUTHORIZED"
+        case 403: return "FORBIDDEN"
+        case 404: return "NOT_FOUND"
+        case 409: return "CONFLICT"
+        case 422: return "VALIDATION_ERROR"
+        case 429: return "RATE_LIMIT_EXCEEDED"
+        case 500: return "INTERNAL_SERVER_ERROR"
+        case 503: return "SERVICE_ERROR"
+        default: return "UNKNOWN_ERROR"
+        }
+    }
+
+    public var errorDescription: String? {
+        if isCancelled { return "" }
+        return L10n.Errors.message(for: self)
+    }
+}
+
+public extension Error {
+    var isTaskOrURLCancelled: Bool {
+        if self is CancellationError { return true }
+        if let apiError = self as? APIError, apiError.isCancelled { return true }
+        let nsErr = self as NSError
+        return nsErr.domain == NSURLErrorDomain && nsErr.code == NSURLErrorCancelled
     }
 }
 
@@ -40,23 +107,56 @@ public actor APIClient {
         self.encoder = JSONEncoder()
     }
 
-    /// Retrieves a valid access token. If missing and a refresh token is present, performs pre-flight refresh.
+    /// Determines if an endpoint is public (unauthenticated) and should not include a Bearer token or auto-refresh.
+    private func isPublicEndpoint(_ endpoint: String) -> Bool {
+        let publicPrefixes = [
+            "auth/login",
+            "auth/register",
+            "auth/oauth",
+            "auth/refresh",
+            "auth/dev-login",
+            "auth/apple/webhook"
+        ]
+        return publicPrefixes.contains { endpoint == $0 || endpoint.hasPrefix($0 + "/") || endpoint.hasPrefix($0 + "?") }
+    }
+
+    /// Checks if a JWT token has expired or is nearing expiration (within bufferSeconds).
+    private func isTokenExpired(_ token: String, bufferSeconds: TimeInterval = 60) -> Bool {
+        let parts = token.components(separatedBy: ".")
+        guard parts.count >= 2 else { return true }
+        var base64 = parts[1]
+            .replacingOccurrences(of: "-", with: "+")
+            .replacingOccurrences(of: "_", with: "/")
+        while base64.count % 4 != 0 {
+            base64.append("=")
+        }
+        guard let data = Data(base64Encoded: base64),
+              let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+              let exp = json["exp"] as? TimeInterval else {
+            return false
+        }
+        return Date().timeIntervalSince1970 >= (exp - bufferSeconds)
+    }
+
+    /// Retrieves a valid access token. If missing or expiring soon, performs proactive refresh when refresh token is available.
     private func getValidAccessToken() async -> String? {
-        if let token = keychain.get(key: "access_token") ?? SharedWidgetDataManager.shared.getAuthToken() {
+        let currentToken = keychain.get(key: "access_token") ?? SharedWidgetDataManager.shared.getAuthToken()
+        let hasRefreshToken = (keychain.get(key: "refresh_token") ?? SharedWidgetDataManager.shared.getRefreshToken()) != nil
+
+        if let token = currentToken, !isTokenExpired(token) {
             return token
         }
 
-        // Pre-flight check: If access token is missing, attempt refresh if refresh token exists
-        let hasRefreshToken = (keychain.get(key: "refresh_token") ?? SharedWidgetDataManager.shared.getRefreshToken()) != nil
+        // Proactive token refresh if token is expired/expiring and refresh token is present
         if hasRefreshToken {
-            AppLogger.info("Access token missing; initiating pre-flight token refresh...", category: .auth)
+            AppLogger.info("Access token missing or expired; initiating proactive refresh...", category: .auth)
             let refreshed = await refreshToken()
             if refreshed {
                 return keychain.get(key: "access_token") ?? SharedWidgetDataManager.shared.getAuthToken()
             }
         }
 
-        return nil
+        return currentToken
     }
 
     public func request<T: Codable>(
@@ -83,11 +183,11 @@ public actor APIClient {
         }
 
         // Request Interceptor: Attach Bearer token for protected endpoints
-        let isAuthRoute = endpoint.hasPrefix("auth/")
-        if !isAuthRoute {
+        let isPublic = isPublicEndpoint(endpoint)
+        if !isPublic {
             guard let token = await getValidAccessToken() else {
                 AppLogger.warn("Unauthorized: No valid session or refresh token available for '\(endpoint)'", category: .auth)
-                throw APIError.unauthorized
+                throw APIError.unauthorized()
             }
             req.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
         }
@@ -103,6 +203,19 @@ public actor APIClient {
         do {
             (data, response) = try await session.data(for: req)
         } catch {
+            if Task.isCancelled || (error as? URLError)?.code == .cancelled || (error as NSError).code == NSURLErrorCancelled {
+                AppLogger.debug("Request cancelled for endpoint '\(endpoint)'", category: .network)
+                throw APIError.cancelled
+            }
+            let durationMs = Int64((CFAbsoluteTimeGetCurrent() - startTime) * 1000)
+            CrashReporterService.shared.recordHttpError(
+                method: method,
+                path: endpoint,
+                statusCode: 0,
+                errorMessage: error.localizedDescription,
+                responseBody: nil,
+                durationMs: durationMs
+            )
             NetworkLogger.logError(url: url.absoluteString, method: method, error: error)
             throw APIError.networkError(error)
         }
@@ -122,8 +235,8 @@ public actor APIClient {
             duration: duration
         )
 
-        // Response Interceptor: Auto Refresh Token on 401
-        if httpResponse.statusCode == 401 && !isAuthRoute {
+        // Response Interceptor: Auto Refresh Token on 401 for protected endpoints
+        if httpResponse.statusCode == 401 && !isPublic {
             if retryOn401 {
                 AppLogger.warn("401 Unauthorized encountered on '\(endpoint)'. Attempting token refresh...", category: .auth)
                 let refreshed = await refreshToken()
@@ -133,17 +246,36 @@ public actor APIClient {
                 }
             }
 
-            throw APIError.unauthorized
+            let errorEnvelope = try? decoder.decode(ApiErrorEnvelope.self, from: data)
+            let code = errorEnvelope?.code ?? "UNAUTHORIZED"
+            let msg = errorEnvelope?.message ?? "Session expired. Please sign in again."
+            let durationMs = Int64(duration * 1000)
+            CrashReporterService.shared.recordHttpError(
+                method: method,
+                path: endpoint,
+                statusCode: 401,
+                errorMessage: "[\(code)] \(msg)",
+                responseBody: String(data: data, encoding: .utf8),
+                durationMs: durationMs
+            )
+            throw APIError.unauthorized(code: code, message: msg)
         }
 
         guard (200...299).contains(httpResponse.statusCode) else {
-            if let baseRes = try? decoder.decode(BaseResponse<String>.self, from: data) {
-                AppLogger.error("HTTP error response: \(baseRes.message)", category: .network, metadata: ["statusCode": httpResponse.statusCode])
-                throw APIError.serverError(baseRes.message)
-            }
-            let msg = "Server returned code \(httpResponse.statusCode)"
-            AppLogger.error("HTTP error response: \(msg)", category: .network, metadata: ["statusCode": httpResponse.statusCode])
-            throw APIError.serverError(msg)
+            let errorEnvelope = try? decoder.decode(ApiErrorEnvelope.self, from: data)
+            let code = errorEnvelope?.code ?? APIError.fallbackCode(for: httpResponse.statusCode)
+            let msg = errorEnvelope?.message ?? "Server returned code \(httpResponse.statusCode)"
+            let durationMs = Int64(duration * 1000)
+            CrashReporterService.shared.recordHttpError(
+                method: method,
+                path: endpoint,
+                statusCode: httpResponse.statusCode,
+                errorMessage: "[\(code)] \(msg)",
+                responseBody: String(data: data, encoding: .utf8),
+                durationMs: durationMs
+            )
+            AppLogger.error("HTTP error response [\(code)] (status: \(httpResponse.statusCode)): \(msg)", category: .network)
+            throw APIError.serverError(msg, code: code, statusCode: httpResponse.statusCode)
         }
 
         do {
@@ -154,8 +286,12 @@ public actor APIClient {
             if envelope.success, let empty = EmptyResponse() as? T {
                 return empty
             }
-            throw APIError.serverError(envelope.message)
+            let code = envelope.code ?? "OPERATION_FAILED"
+            throw APIError.serverError(envelope.message, code: code, statusCode: httpResponse.statusCode)
         } catch {
+            if let apiError = error as? APIError {
+                throw apiError
+            }
             if let emptyRes = try? decoder.decode(BaseResponse<EmptyResponse>.self, from: data),
                emptyRes.success,
                let empty = EmptyResponse() as? T {
@@ -170,6 +306,7 @@ public actor APIClient {
         AppLogger.warn("Token permanently rejected. Clearing credentials and broadcasting session expiration", category: .auth)
         keychain.clearAll()
         SharedWidgetDataManager.shared.clearAllTokens()
+        CrashReporterService.shared.setUserId(nil)
         await MainActor.run {
             NotificationCenter.default.post(name: .sessionExpired, object: nil)
         }
@@ -249,12 +386,14 @@ public actor APIClient {
         }
         keychain.save(key: "user_name", value: res.user.name)
         keychain.save(key: "user_email", value: res.user.email)
+        CrashReporterService.shared.setUserId(res.user.id)
         DateTimeHelper.setUserTimeZone(res.user.timezone)
         return res
     }
 
     public func getProfile() async throws -> User {
         let user: User = try await request(endpoint: "auth/profile")
+        CrashReporterService.shared.setUserId(user.id)
         DateTimeHelper.setUserTimeZone(user.timezone)
         return user
     }
@@ -555,7 +694,7 @@ public actor APIClient {
 
         guard let token = await getValidAccessToken() else {
             AppLogger.warn("Unauthorized: No valid session or refresh token available for GraphQL", category: .auth)
-            throw APIError.unauthorized
+            throw APIError.unauthorized()
         }
         req.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
 
@@ -572,6 +711,10 @@ public actor APIClient {
         do {
             (data, response) = try await session.data(for: req)
         } catch {
+            if Task.isCancelled || (error as? URLError)?.code == .cancelled || (error as NSError).code == NSURLErrorCancelled {
+                AppLogger.debug("GraphQL query cancelled", category: .network)
+                throw APIError.cancelled
+            }
             NetworkLogger.logError(url: url.absoluteString, method: "POST", error: error)
             throw APIError.networkError(error)
         }
@@ -596,7 +739,7 @@ public actor APIClient {
                     return try await graphql(query: query, variables: variables, retryOn401: false)
                 }
             }
-            throw APIError.unauthorized
+            throw APIError.unauthorized()
         }
 
         guard (200...299).contains(httpResponse.statusCode) else {

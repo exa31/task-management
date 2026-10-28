@@ -9,6 +9,7 @@ public struct TaskDetailSheet: View {
     @State private var newNoteText = ""
     @State private var isPostingNote = false
     @State private var showEditSheet = false
+    @State private var showDeleteTaskConfirm = false
 
     private var currentTask: TaskItem {
         viewModel.tasks.first(where: { $0.id == task.id }) ?? task
@@ -115,8 +116,37 @@ public struct TaskDetailSheet: View {
                     }
                 }
                 ToolbarItem(placement: .navigationBarTrailing) {
-                    Button(L10n.General.close) { dismiss() }
-                        .font(.system(size: 14, weight: .semibold))
+                    HStack(spacing: 14) {
+                        Button(role: .destructive, action: { showDeleteTaskConfirm = true }) {
+                            Image(systemName: "trash")
+                                .font(.system(size: 15, weight: .semibold))
+                                .foregroundColor(AppColors.priorityUrgent)
+                        }
+                        Button(L10n.General.close) { dismiss() }
+                            .font(.system(size: 14, weight: .semibold))
+                    }
+                }
+            }
+            .confirmationDialog(
+                L10n.Tasks.deleteTaskConfirmTitle,
+                isPresented: $showDeleteTaskConfirm,
+                titleVisibility: .visible
+            ) {
+                Button(L10n.Tasks.deleteTask, role: .destructive) {
+                    Task {
+                        let success = await viewModel.deleteTask(id: currentTask.id)
+                        if success {
+                            dismiss()
+                        }
+                    }
+                }
+                Button(L10n.General.cancel, role: .cancel) {}
+            } message: {
+                Text(L10n.Tasks.deleteTaskConfirmMessage)
+            }
+            .onChange(of: viewModel.tasks) { _, newTasks in
+                if !newTasks.contains(where: { $0.id == task.id }) {
+                    dismiss()
                 }
             }
             .sheet(isPresented: $showEditSheet) {
@@ -286,6 +316,23 @@ public struct TaskDetailSheet: View {
                         .clipShape(RoundedRectangle(cornerRadius: 10))
                     }
                 }
+
+                // Delete Task Button
+                Button(action: { showDeleteTaskConfirm = true }) {
+                    HStack(spacing: 8) {
+                        Image(systemName: "trash.fill")
+                        Text(L10n.Tasks.deleteTask)
+                    }
+                    .font(.system(size: 14, weight: .semibold))
+                    .foregroundColor(AppColors.priorityUrgent)
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 12)
+                    .background(AppColors.priorityUrgent.opacity(0.1))
+                    .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+                }
+                .buttonStyle(.plain)
+                .padding(.top, 12)
+                .padding(.bottom, 24)
             }
             .padding(16)
         }
@@ -537,6 +584,7 @@ public struct EditTaskSheet: View {
     @State private var recurrenceInterval: Int
     @State private var isSubmitting: Bool = false
     @State private var errorMessage: String? = nil
+    @State private var showDeleteConfirm: Bool = false
 
     private var currentTask: TaskItem {
         viewModel.tasks.first(where: { $0.id == task.id }) ?? task
@@ -741,6 +789,37 @@ public struct EditTaskSheet: View {
                         }
                     }
                 }
+
+                Section {
+                    Button(role: .destructive, action: { showDeleteConfirm = true }) {
+                        HStack {
+                            Spacer()
+                            Image(systemName: "trash")
+                            Text(L10n.Tasks.deleteTask)
+                                .fontWeight(.medium)
+                            Spacer()
+                        }
+                        .foregroundColor(AppColors.priorityUrgent)
+                    }
+                }
+            }
+            .confirmationDialog(
+                L10n.Tasks.deleteTaskConfirmTitle,
+                isPresented: $showDeleteConfirm,
+                titleVisibility: .visible
+            ) {
+                Button(L10n.Tasks.deleteTask, role: .destructive) {
+                    Task {
+                        let success = await viewModel.deleteTask(id: task.id)
+                        if success {
+                            dismiss()
+                            onUpdated?()
+                        }
+                    }
+                }
+                Button(L10n.General.cancel, role: .cancel) {}
+            } message: {
+                Text(L10n.Tasks.deleteTaskConfirmMessage)
             }
             .navigationTitle(L10n.Tasks.editTitle)
             .navigationBarTitleDisplayMode(.inline)

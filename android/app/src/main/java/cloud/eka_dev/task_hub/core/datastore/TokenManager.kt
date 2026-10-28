@@ -31,6 +31,10 @@ class TokenManager(private val context: Context) {
         return context.dataStore.data.map { it[REFRESH_TOKEN_KEY] }.first()
     }
 
+    suspend fun getUserId(): String? {
+        return context.dataStore.data.map { it[USER_ID_KEY] }.first()
+    }
+
     suspend fun saveTokens(accessToken: String, refreshToken: String) {
         context.dataStore.edit { prefs ->
             prefs[ACCESS_TOKEN_KEY] = accessToken
@@ -39,6 +43,7 @@ class TokenManager(private val context: Context) {
     }
 
     suspend fun saveUserInfo(id: String, name: String, email: String) {
+        cloud.eka_dev.task_hub.core.logger.CrashReporterService.instance.setUserId(id)
         context.dataStore.edit { prefs ->
             prefs[USER_ID_KEY] = id
             prefs[USER_NAME_KEY] = name
@@ -47,6 +52,7 @@ class TokenManager(private val context: Context) {
     }
 
     suspend fun clearSession() {
+        cloud.eka_dev.task_hub.core.logger.CrashReporterService.instance.setUserId(null)
         context.dataStore.edit { prefs ->
             prefs.clear()
         }

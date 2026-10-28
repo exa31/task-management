@@ -56,6 +56,11 @@ android {
         buildConfig = true
     }
 
+    compileOptions {
+        sourceCompatibility = JavaVersion.VERSION_17
+        targetCompatibility = JavaVersion.VERSION_17
+    }
+
     defaultConfig {
         applicationId = "cloud.eka_dev.task_hub"
         minSdk = 26
@@ -69,10 +74,12 @@ android {
         val defaultBaseUrl = getEnv("API_BASE_URL", "BASE_URL", "VITE_API_URL", defaultVal = "https://be-task-hub.eka-dev.cloud/api/v1/")
         val defaultSseUrl = getEnv("SSE_URL", "VITE_WS_URL", defaultVal = "${defaultBaseUrl.trimEnd('/')}/realtime/sse/events")
         val defaultGoogleClientId = getEnv("GOOGLE_CLIENT_ID", "GOOGLE_WEB_CLIENT_ID", "VITE_GOOGLE_CLIENT_ID", defaultVal = "897905079551-86q6g4ov6b966r2t7sbmqsmks5bea682.apps.googleusercontent.com")
+        val defaultLokiUrl = getEnv("LOKI_URL", defaultVal = "https://loki.eka-dev.cloud/loki/api/v1/push")
 
         buildConfigField("String", "BASE_URL", "\"$defaultBaseUrl\"")
         buildConfigField("String", "SSE_URL", "\"$defaultSseUrl\"")
         buildConfigField("String", "GOOGLE_WEB_CLIENT_ID", "\"$defaultGoogleClientId\"")
+        buildConfigField("String", "LOKI_URL", "\"$defaultLokiUrl\"")
     }
 
     signingConfigs {
@@ -138,7 +145,7 @@ dependencies {
     // DataStore & Auth
     implementation(libs.androidx.datastore.preferences)
     implementation(libs.androidx.credentials)
-    implementation(libs.androidx.credentials.play-services)
+    implementation(libs.androidx.credentials.play.services)
     implementation(libs.googleid)
 
     // Network & SSE

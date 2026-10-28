@@ -33,6 +33,7 @@
 		BB0102030405060708090004 /* TaskManagement/Core/Localization/L10n.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB0102030405060708090003 /* TaskManagement/Core/Localization/L10n.swift */; };
 		BB0102030405060708090012 /* TaskManagement/Core/Notification/PushNotificationManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB0102030405060708090011 /* TaskManagement/Core/Notification/PushNotificationManager.swift */; };
 		BB0102030405060708090022 /* TaskManagement/Core/Logger/AppLogger.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB0102030405060708090021 /* TaskManagement/Core/Logger/AppLogger.swift */; };
+		BB0102030405060708090024 /* TaskManagement/Core/Logger/CrashReporterService.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB0102030405060708090023 /* TaskManagement/Core/Logger/CrashReporterService.swift */; };
 		CC0102030405060708090002 /* TaskManagement/GoogleService-Info.plist in Resources */ = {isa = PBXBuildFile; fileRef = CC0102030405060708090001 /* TaskManagement/GoogleService-Info.plist */; };
 		CC0102030405060708090013 /* GoogleSignIn in Frameworks */ = {isa = PBXBuildFile; productRef = CC0102030405060708090011 /* GoogleSignIn */; };
 		CC0102030405060708090014 /* GoogleSignInSwift in Frameworks */ = {isa = PBXBuildFile; productRef = CC0102030405060708090012 /* GoogleSignInSwift */; };
@@ -81,6 +82,7 @@
 		WB0102030405060708090019 /* TaskManagement/Core/Network/NetworkLogger.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6DE12D7279FE4F14230F285D /* TaskManagement/Core/Network/NetworkLogger.swift */; };
 		WB0102030405060708090020 /* TaskManagement/Core/Security/KeychainManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5DD760D112150DABFD231E73 /* TaskManagement/Core/Security/KeychainManager.swift */; };
 		WB0102030405060708090021 /* TaskManagement/Core/Shared/DateTimeHelper.swift in Sources */ = {isa = PBXBuildFile; fileRef = DT0102030405060708090001 /* TaskManagement/Core/Shared/DateTimeHelper.swift */; };
+		WB0102030405060708090022 /* TaskManagement/Core/Logger/CrashReporterService.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB0102030405060708090023 /* TaskManagement/Core/Logger/CrashReporterService.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -146,6 +148,7 @@
 		CC0102030405060708090003 /* TaskManagement/Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = TaskManagement/Info.plist; sourceTree = "<group>"; };
 		BB0102030405060708090011 /* TaskManagement/Core/Notification/PushNotificationManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TaskManagement/Core/Notification/PushNotificationManager.swift; sourceTree = "<group>"; };
 		BB0102030405060708090021 /* TaskManagement/Core/Logger/AppLogger.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TaskManagement/Core/Logger/AppLogger.swift; sourceTree = "<group>"; };
+		BB0102030405060708090023 /* TaskManagement/Core/Logger/CrashReporterService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TaskManagement/Core/Logger/CrashReporterService.swift; sourceTree = "<group>"; };
 		DD0102030405060708090001 /* TaskManagement/Features/Mcp/McpViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TaskManagement/Features/Mcp/McpViewModel.swift; sourceTree = "<group>"; };
 		DD0102030405060708090003 /* TaskManagement/Features/Mcp/McpSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TaskManagement/Features/Mcp/McpSettingsView.swift; sourceTree = "<group>"; };
 		CA0102030405060708090001 /* TaskManagement/Features/Calendar/CalendarView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TaskManagement/Features/Calendar/CalendarView.swift; sourceTree = "<group>"; };
@@ -220,6 +223,7 @@
 				BB0102030405060708090003 /* TaskManagement/Core/Localization/L10n.swift */,
 				BB0102030405060708090011 /* TaskManagement/Core/Notification/PushNotificationManager.swift */,
 				BB0102030405060708090021 /* TaskManagement/Core/Logger/AppLogger.swift */,
+				BB0102030405060708090023 /* TaskManagement/Core/Logger/CrashReporterService.swift */,
 				DD0102030405060708090001 /* TaskManagement/Features/Mcp/McpViewModel.swift */,
 				DD0102030405060708090003 /* TaskManagement/Features/Mcp/McpSettingsView.swift */,
 				CA0102030405060708090001 /* TaskManagement/Features/Calendar/CalendarView.swift */,
@@ -380,6 +384,7 @@
 				9179CC5DC9DB4AA927B1C295 /* TaskManagement/TaskManagementApp.swift in Sources */,
 				BB0102030405060708090012 /* TaskManagement/Core/Notification/PushNotificationManager.swift in Sources */,
 				BB0102030405060708090022 /* TaskManagement/Core/Logger/AppLogger.swift in Sources */,
+				BB0102030405060708090024 /* TaskManagement/Core/Logger/CrashReporterService.swift in Sources */,
 				DD0102030405060708090002 /* TaskManagement/Features/Mcp/McpViewModel.swift in Sources */,
 				DD0102030405060708090004 /* TaskManagement/Features/Mcp/McpSettingsView.swift in Sources */,
 				CA0102030405060708090002 /* TaskManagement/Features/Calendar/CalendarView.swift in Sources */,
@@ -418,6 +423,7 @@
 				WB0102030405060708090013 /* TaskManagement/Core/Localization/I18n.swift in Sources */,
 				WB0102030405060708090014 /* TaskManagement/Core/Localization/L10n.swift in Sources */,
 				WB0102030405060708090017 /* TaskManagement/Core/Logger/AppLogger.swift in Sources */,
+				WB0102030405060708090022 /* TaskManagement/Core/Logger/CrashReporterService.swift in Sources */,
 				WB0102030405060708090018 /* TaskManagement/Core/Network/APIClient.swift in Sources */,
 				WB0102030405060708090019 /* TaskManagement/Core/Network/NetworkLogger.swift in Sources */,
 				WB0102030405060708090020 /* TaskManagement/Core/Security/KeychainManager.swift in Sources */,

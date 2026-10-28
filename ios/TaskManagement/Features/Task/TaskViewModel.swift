@@ -95,8 +95,12 @@ public final class TaskViewModel {
             }
 
         } catch {
-            AppLogger.error("Failed to load tasks", error: error, category: .task)
-            self.errorMessage = error.localizedDescription
+            if error.isTaskOrURLCancelled {
+                AppLogger.debug("Tasks load cancelled", category: .task)
+            } else {
+                AppLogger.error("Failed to load tasks", error: error, category: .task)
+                self.errorMessage = L10n.Errors.message(for: error)
+            }
         }
         if reset {
             self.isLoading = false
@@ -461,18 +465,25 @@ public final class TaskViewModel {
         }
     }
 
+    @discardableResult
     @MainActor
-    public func deleteTask(id: Int64) async {
+    public func deleteTask(id: Int64) async -> Bool {
         do {
             try await apiClient.deleteTask(id: id)
             tasks.removeAll { $0.id == id }
             SharedWidgetDataManager.shared.syncWithTaskList(self.tasks)
             AppLogger.success("Task deleted successfully", category: .task, metadata: ["id": id])
             await loadTasks()
+            return true
         } catch {
-            AppLogger.error(
-                "Failed to delete task", error: error, category: .task, metadata: ["id": id])
-            self.errorMessage = error.localizedDescription
+            if error.isTaskOrURLCancelled {
+                AppLogger.debug("Delete task cancelled", category: .task)
+            } else {
+                AppLogger.error(
+                    "Failed to delete task", error: error, category: .task, metadata: ["id": id])
+                self.errorMessage = L10n.Errors.message(for: error)
+            }
+            return false
         }
     }
 

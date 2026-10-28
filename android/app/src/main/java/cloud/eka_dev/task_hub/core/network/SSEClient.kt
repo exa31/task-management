@@ -1,5 +1,6 @@
 package cloud.eka_dev.task_hub.core.network
 
+import cloud.eka_dev.task_hub.BuildConfig
 import cloud.eka_dev.task_hub.core.datastore.TokenManager
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
@@ -25,6 +26,9 @@ class SSEClient(
     private val sseHttpClient = OkHttpClient.Builder()
         .readTimeout(0, TimeUnit.MILLISECONDS) // infinite for SSE stream
         .build()
+
+    val events: Flow<SSEEvent>
+        get() = observeEvents()
 
     fun observeEvents(): Flow<SSEEvent> = callbackFlow {
         val token = tokenManager.getAccessToken()

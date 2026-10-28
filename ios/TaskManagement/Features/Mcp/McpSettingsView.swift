@@ -42,7 +42,7 @@ public struct McpSettingsView: View {
                 if let toast = viewModel.toastMessage {
                     toastBanner(message: toast, isError: false)
                 }
-                if let error = viewModel.errorMessage {
+                if let error = viewModel.errorMessage, !error.isEmpty {
                     toastBanner(message: error, isError: true)
                 }
 

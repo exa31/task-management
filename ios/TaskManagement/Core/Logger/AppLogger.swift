@@ -183,5 +183,25 @@ public final class AppLogger: Sendable {
         // Forward to native os.Logger for Console.app & system log recording
         let osLog = OSLog(subsystem: subsystem, category: category.rawValue)
         os_log("%{public}@", log: osLog, type: level.osLogType, formattedString)
+
+        // Forward warning and error events to Grafana Loki via CrashReporterService
+        if level >= .warning {
+            if let error = error {
+                CrashReporterService.shared.recordError(
+                    error,
+                    reason: message,
+                    fatal: level == .error,
+                    tag: category.rawValue,
+                    customData: metadata
+                )
+            } else {
+                CrashReporterService.shared.recordLog(
+                    message: "\(message)\(metaString)",
+                    level: level.title,
+                    tag: category.rawValue,
+                    extra: metadata
+                )
+            }
+        }
     }
 }

@@ -74,6 +74,13 @@ public enum AppEnvironment: String, CaseIterable, Sendable {
         return "\(baseURL)/realtime/sse/events"
     }
 
+    public var lokiURL: String {
+        if let custom = EnvReader.value(for: "LOKI_URL"), !custom.isEmpty {
+            return custom
+        }
+        return "https://loki.eka-dev.cloud/loki/api/v1/push"
+    }
+
     public var googleClientID: String {
         if let custom = EnvReader.value(for: "GOOGLE_CLIENT_ID"), !custom.isEmpty {
             return custom
@@ -96,6 +103,10 @@ public struct AppConfig: Sendable {
 
     public static var sseURL: String {
         return environment.sseURL
+    }
+
+    public static var lokiURL: String {
+        return environment.lokiURL
     }
 
     public static var googleClientID: String {

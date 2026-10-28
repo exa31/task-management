@@ -1,6 +1,7 @@
 package cloud.eka_dev.task_hub.core.network
 
 import com.jakewharton.retrofit2.converter.kotlinx.serialization.asConverterFactory
+import cloud.eka_dev.task_hub.BuildConfig
 import cloud.eka_dev.task_hub.core.datastore.TokenManager
 import cloud.eka_dev.task_hub.core.model.*
 import kotlinx.coroutines.runBlocking
@@ -262,6 +263,7 @@ class ApiClient(
 
     val okHttpClient: OkHttpClient = OkHttpClient.Builder()
         .addInterceptor(AuthInterceptor(tokenManager))
+        .addInterceptor(LokiHttpErrorInterceptor())
         .authenticator(TokenAuthenticator(tokenManager, baseUrl, json))
         .addInterceptor(HttpLoggingInterceptor().apply {
             level = HttpLoggingInterceptor.Level.BODY

@@ -8,6 +8,7 @@ final class AppDelegate: NSObject, UIApplicationDelegate {
         _ application: UIApplication,
         didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]? = nil
     ) -> Bool {
+        CrashReporterService.shared.initialize()
         Task { @MainActor in
             PushNotificationManager.shared.configure()
             TaskHubShortcutsProvider.updateAppShortcutParameters()
@@ -78,6 +79,10 @@ struct TaskManagementApp: App {
     @Environment(\.scenePhase) private var scenePhase
     @State private var authViewModel = AuthViewModel()
     @AppStorage("app_appearance") private var appAppearance: String = "system"
+
+    init() {
+        CrashReporterService.shared.initialize()
+    }
 
     private var colorScheme: ColorScheme? {
         switch appAppearance {

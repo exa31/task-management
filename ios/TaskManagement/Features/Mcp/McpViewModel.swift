@@ -26,8 +26,12 @@ public final class McpViewModel {
             tokens = try await apiClient.getMcpTokens()
             AppLogger.info("Loaded \(tokens.count) MCP tokens successfully", category: .app)
         } catch {
-            AppLogger.error("Failed to load MCP tokens", error: error, category: .app)
-            errorMessage = error.localizedDescription
+            if error.isTaskOrURLCancelled {
+                AppLogger.debug("MCP tokens load cancelled", category: .app)
+            } else {
+                AppLogger.error("Failed to load MCP tokens", error: error, category: .app)
+                errorMessage = L10n.Errors.message(for: error)
+            }
         }
         isLoading = false
     }
@@ -48,8 +52,12 @@ public final class McpViewModel {
             isGenerating = false
             return true
         } catch {
-            AppLogger.error("Failed to generate MCP token", error: error, category: .app)
-            errorMessage = error.localizedDescription
+            if error.isTaskOrURLCancelled {
+                AppLogger.debug("MCP token generation cancelled", category: .app)
+            } else {
+                AppLogger.error("Failed to generate MCP token", error: error, category: .app)
+                errorMessage = L10n.Errors.message(for: error)
+            }
             isGenerating = false
             return false
         }
@@ -65,8 +73,12 @@ public final class McpViewModel {
             revokingTokenId = nil
             return true
         } catch {
-            AppLogger.error("Failed to revoke MCP token", error: error, category: .app, metadata: ["id": id])
-            errorMessage = error.localizedDescription
+            if error.isTaskOrURLCancelled {
+                AppLogger.debug("MCP token revocation cancelled", category: .app)
+            } else {
+                AppLogger.error("Failed to revoke MCP token", error: error, category: .app, metadata: ["id": id])
+                errorMessage = L10n.Errors.message(for: error)
+            }
             revokingTokenId = nil
             return false
         }
