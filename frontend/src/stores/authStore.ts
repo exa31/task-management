@@ -1,7 +1,7 @@
 import { create } from 'zustand'
 
 import { authApi } from '@/api'
-import { getCookie, removeCookie, setCookie } from '@/api/client'
+import { getValidAccessToken, removeCookie, setCookie } from '@/api/client'
 import type { DevLoginPayload, OAuthLoginPayload, User } from '@/types'
 import { logger } from '@/utils'
 
@@ -31,13 +31,13 @@ export const useAuthStore = create<AuthState>((set) => ({
       return null
     }
   })(),
-  token: getCookie('access_token') || localStorage.getItem(STORAGE_KEY_TOKEN),
-  isAuthenticated: Boolean(getCookie('access_token') || localStorage.getItem(STORAGE_KEY_TOKEN)),
+  token: getValidAccessToken(),
+  isAuthenticated: Boolean(getValidAccessToken()),
   loading: false,
   error: null,
 
   checkAuth: () => {
-    const token = getCookie('access_token') || localStorage.getItem(STORAGE_KEY_TOKEN)
+    const token = getValidAccessToken()
     const userStr = localStorage.getItem(STORAGE_KEY_USER)
     if (token && userStr) {
       try {
