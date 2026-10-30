@@ -220,10 +220,10 @@ const SubtaskItemRow: React.FC<SubtaskItemRowProps> = ({
                     type="button"
                     onClick={() => setEditDueDate(null)}
                     className="text-[10px] text-slate-400 hover:text-rose-500 flex items-center gap-1 transition-colors cursor-pointer"
-                    title={t('common.clear') || 'Clear'}
+                    title={t('common.clear')}
                   >
                     <i className="pi pi-times text-[9px]" />
-                    <span>{t('common.clear') || 'Hapus'}</span>
+                    <span>{t('common.clear')}</span>
                   </button>
                 )}
               </div>
@@ -901,7 +901,7 @@ export const TaskDetailModal: React.FC = () => {
                 {/* Status, Priority, Project, Due Date Attributes Card */}
                 <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/80 dark:bg-slate-950/50 p-4 space-y-3.5 shadow-xs">
                   <h4 className="text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
-                    Atribut Tugas
+                    {t('taskDrawer.taskAttributesTitle')}
                   </h4>
 
                   {/* Status & Priority Row */}
@@ -974,10 +974,10 @@ export const TaskDetailModal: React.FC = () => {
                             type="button"
                             onClick={() => handleDueDateChange(null)}
                             className="text-[10px] text-slate-400 hover:text-rose-500 flex items-center gap-1 transition-colors cursor-pointer"
-                            title={t('common.clear') || 'Clear'}
+                            title={t('common.clear')}
                           >
                             <i className="pi pi-times text-[9px]" />
-                            <span>{t('common.clear') || 'Hapus'}</span>
+                            <span>{t('common.clear')}</span>
                           </button>
                         )}
                       </div>
@@ -1087,10 +1087,10 @@ export const TaskDetailModal: React.FC = () => {
                                 type="button"
                                 onClick={() => setRecurrenceEndDate(null)}
                                 className="text-[10px] text-slate-400 hover:text-rose-500 flex items-center gap-1 transition-colors cursor-pointer"
-                                title={t('common.clear') || 'Clear'}
+                                title={t('common.clear')}
                               >
                                 <i className="pi pi-times text-[9px]" />
-                                <span>{t('common.clear') || 'Hapus'}</span>
+                                <span>{t('common.clear')}</span>
                               </button>
                             )}
                           </div>

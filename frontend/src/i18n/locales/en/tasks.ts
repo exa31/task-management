@@ -75,6 +75,7 @@ export const taskModal = {
 
 export const taskDrawer = {
   taskIdBadge: 'TASK-{id}',
+  taskAttributesTitle: 'Task Attributes',
   status: 'Status',
   priority: 'Priority',
   dueDate: 'Due Date',

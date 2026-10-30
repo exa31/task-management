@@ -74,6 +74,7 @@ export const taskModal = {
 
 export const taskDrawer = {
   taskIdBadge: 'TUGAS-{id}',
+  taskAttributesTitle: 'Atribut Tugas',
   status: 'Status',
   priority: 'Prioritas',
   dueDate: 'Tenggat Waktu',
