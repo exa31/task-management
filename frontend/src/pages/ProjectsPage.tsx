@@ -2,7 +2,7 @@ import React, { useMemo, useState } from 'react'
 
 import { ProjectsSkeleton } from '@/components'
 import { ProjectAccordionItem, ProjectModal } from '@/features/projects'
-import { TaskDrawer, TaskModal } from '@/features/tasks'
+import { TaskDetailModal, TaskModal } from '@/features/tasks'
 import { useProjects, useTasks } from '@/hooks'
 import { useTranslation } from '@/i18n'
 import type { Project } from '@/types'
@@ -244,9 +244,9 @@ export const ProjectsPage: React.FC = () => {
         initialProject={editingProject}
       />
 
-      {/* Task Creation & Drawer Modals */}
+      {/* Task Creation & Detail Modals */}
       <TaskModal />
-      <TaskDrawer />
+      <TaskDetailModal />
     </div>
   )
 }

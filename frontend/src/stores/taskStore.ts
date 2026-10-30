@@ -5,6 +5,7 @@ import type { Task } from '@/types'
 interface TaskUIState {
   selectedTask: Task | null
   isDrawerOpen: boolean
+  isDetailModalOpen: boolean
   activeView: 'list' | 'board'
   filterStatus: string
   filterPriority: string
@@ -22,12 +23,15 @@ interface TaskUIState {
   setSearchQuery: (query: string) => void
   openDrawer: (task: Task) => void
   closeDrawer: () => void
+  openDetailModal: (task: Task) => void
+  closeDetailModal: () => void
   setSelectedTask: (task: Task | null) => void
 }
 
 export const useTaskStore = create<TaskUIState>((set) => ({
   selectedTask: null,
   isDrawerOpen: false,
+  isDetailModalOpen: false,
   activeView: 'list',
   filterStatus: '',
   filterPriority: '',
@@ -43,7 +47,11 @@ export const useTaskStore = create<TaskUIState>((set) => ({
   setFilterProject: (projectId) => set({ filterProject: projectId }),
   setFilterFocusOnly: (focus) => set({ filterFocusOnly: focus }),
   setSearchQuery: (query) => set({ searchQuery: query }),
-  openDrawer: (task) => set({ selectedTask: task, isDrawerOpen: true }),
-  closeDrawer: () => set({ selectedTask: null, isDrawerOpen: false }),
+  openDrawer: (task) => set({ selectedTask: task, isDrawerOpen: true, isDetailModalOpen: true }),
+  closeDrawer: () => set({ selectedTask: null, isDrawerOpen: false, isDetailModalOpen: false }),
+  openDetailModal: (task) =>
+    set({ selectedTask: task, isDrawerOpen: true, isDetailModalOpen: true }),
+  closeDetailModal: () =>
+    set({ selectedTask: null, isDrawerOpen: false, isDetailModalOpen: false }),
   setSelectedTask: (task) => set({ selectedTask: task })
 }))

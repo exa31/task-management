@@ -1,7 +1,7 @@
 import { useQueryClient } from '@tanstack/react-query'
 import React, { useMemo, useState } from 'react'
 
-import { TaskDrawer } from '@/features/tasks/TaskDrawer'
+import { TaskDetailModal } from '@/features/tasks/TaskDetailModal'
 import { TaskModal } from '@/features/tasks/TaskModal'
 import {
   calendarKeys,
@@ -817,8 +817,8 @@ export const CalendarPage: React.FC = () => {
         </div>
       </div>
 
-      {/* Global Task Drawer & Modal */}
-      <TaskDrawer />
+      {/* Global Task Detail & Creation Modals */}
+      <TaskDetailModal />
       <TaskModal />
     </div>
   )

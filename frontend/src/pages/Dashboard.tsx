@@ -11,7 +11,7 @@ import {
 import { ConvertToTaskModal } from '@/features/notes/ConvertToTaskModal'
 import { NoteCard } from '@/features/notes/NoteCard'
 import { NoteModal } from '@/features/notes/NoteModal'
-import { TaskDrawer } from '@/features/tasks/TaskDrawer'
+import { TaskDetailModal } from '@/features/tasks/TaskDetailModal'
 import { TaskFocusHorizon } from '@/features/tasks/TaskFocusHorizon'
 import { TaskModal } from '@/features/tasks/TaskModal'
 import {
@@ -468,8 +468,8 @@ export default function Dashboard() {
         </div>
       </div>
 
-      {/* Global Modals & Drawers */}
-      <TaskDrawer />
+      {/* Global Modals */}
+      <TaskDetailModal />
       <TaskModal />
 
       <NoteModal

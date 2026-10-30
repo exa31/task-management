@@ -1,5 +1,6 @@
 export * from './TaskActivityTimeline'
 export * from './TaskBoardView'
+export * from './TaskDetailModal'
 export * from './TaskDrawer'
 export * from './TaskFilterBar'
 export * from './TaskFocusHorizon'

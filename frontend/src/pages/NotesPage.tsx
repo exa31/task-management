@@ -1,7 +1,7 @@
 import React from 'react'
 
 import { NoteGrid } from '@/features/notes/NoteGrid'
-import { TaskDrawer } from '@/features/tasks/TaskDrawer'
+import { TaskDetailModal } from '@/features/tasks/TaskDetailModal'
 import { useNotes } from '@/hooks'
 import { useTranslation } from '@/i18n'
 
@@ -77,8 +77,8 @@ export const NotesPage: React.FC = () => {
       {/* Note Grid */}
       <NoteGrid />
 
-      {/* Drawer */}
-      <TaskDrawer />
+      {/* Task Detail Modal */}
+      <TaskDetailModal />
     </div>
   )
 }

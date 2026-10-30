@@ -3,7 +3,7 @@ import { useSearchParams } from 'react-router-dom'
 
 import { RecurringTasksManagementView } from '@/features/tasks/RecurringTasksManagementView'
 import { TaskBoardView } from '@/features/tasks/TaskBoardView'
-import { TaskDrawer } from '@/features/tasks/TaskDrawer'
+import { TaskDetailModal } from '@/features/tasks/TaskDetailModal'
 import { TaskFilterBar } from '@/features/tasks/TaskFilterBar'
 import { TaskFocusHorizon } from '@/features/tasks/TaskFocusHorizon'
 import { TaskListView } from '@/features/tasks/TaskListView'
@@ -103,8 +103,8 @@ export const TasksPage: React.FC = () => {
         </div>
       )}
 
-      {/* Quick Slide-Over Drawer & Create Modal */}
-      <TaskDrawer />
+      {/* Task Detail Modal & Create Modal */}
+      <TaskDetailModal />
       <TaskModal />
     </div>
   )

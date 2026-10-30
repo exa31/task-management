@@ -126,6 +126,7 @@ export const taskDrawer = {
   unpinFocusTooltip: 'Hapus dari Horizon Fokus',
   deleteTaskTooltip: 'Hapus tugas ini',
   closeDrawerTooltip: 'Tutup sidebar (Esc)',
+  closeModalTooltip: 'Tutup modal (Esc)',
   saveProgressTooltip: 'Simpan catatan progres',
   addSubtaskTooltip: 'Tambah butir subtask',
   deleteSubtaskTooltip: 'Hapus butir subtask',

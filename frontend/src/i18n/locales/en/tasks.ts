@@ -127,6 +127,7 @@ export const taskDrawer = {
   unpinFocusTooltip: 'Remove task from focus horizon',
   deleteTaskTooltip: 'Delete this task',
   closeDrawerTooltip: 'Close drawer (Esc)',
+  closeModalTooltip: 'Close modal (Esc)',
   saveProgressTooltip: 'Save progress note log',
   addSubtaskTooltip: 'Add subtask item',
   deleteSubtaskTooltip: 'Delete subtask',
